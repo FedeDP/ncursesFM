@@ -2,7 +2,7 @@
  * open video/image if correct programs are specified in settings file *
  * Bookmarks/devices tabs * -> Bookmarks defined in .conf file?
  * split source code **
- * directories (copy/new/remove/move/cut) support **
+ * directories (copy/remove/move/cut) support ** -> using "rm -rf" to remove not-empty dir?
  * multiple files copy ** -> list of ps.copied_file
  * archives support ** -> execl tar?
  */

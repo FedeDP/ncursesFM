@@ -14,7 +14,7 @@
 #define INFO_LINE 0
 #define ERR_LINE 1
 #define INFO_HEIGHT 2
-#define HELPER_HEIGHT 12
+#define HELPER_HEIGHT 13
 #define STAT_COL 30
 #define MAX_FILENAME_LENGTH 25
 
@@ -63,6 +63,7 @@ static void *thread_paste(void *pasted);
 static void check_pasted(int **cut);
 static void undo_copy(void);
 static void rename_file_folders(void);
+static void create_dir(void);
 static void free_everything(void);
 static void print_info(char *str, int i);
 static void clear_info(int i);
@@ -225,8 +226,7 @@ static void main_loop(int *quit, int *cut)
             new_file();
             break;
         case 'r': //remove file
-            if (namelist[ps.active][ps.current_position[ps.active]]->d_type !=  DT_DIR)
-                remove_file(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+            remove_file(namelist[ps.active][ps.current_position[ps.active]]->d_name);
             break;
         case 'c': case 'x': // copy file
             if ((namelist[ps.active][ps.current_position[ps.active]]->d_type !=  DT_DIR) && (ps.copied_file == NULL))
@@ -250,6 +250,9 @@ static void main_loop(int *quit, int *cut)
         case 'o': // o to rename
             rename_file_folders();
             break;
+        case 'd': // d to create folder
+            create_dir();
+            break;
         case 'q': /* q to exit */
             *quit = 1;
             break;
@@ -261,6 +264,8 @@ static void change_dir(char *str)
     chdir(str);
     getcwd(ps.my_cwd[ps.active], PATH_MAX);
     list_everything(ps.active, 0, dim - 2, 1, 1);
+    clear_info(INFO_LINE);
+    clear_info(ERR_LINE);
 }
 
 static void switch_hidden(void)
@@ -341,8 +346,6 @@ static void iso_mount_service(char *str)
 {
     pid_t pid;
     char mount_point[strlen(str) - 4 + strlen(config.iso_mount_point)];
-    int old_number_of_files = ps.number_of_files[ps.active];
-    char *mesg = "Fuseiso/fuse was not found.";
     strcpy(mount_point, config.iso_mount_point);
     strncat(mount_point, str, strlen(str) - 4);
     pid = fork();
@@ -357,9 +360,6 @@ static void iso_mount_service(char *str)
     rmdir(mount_point);
     list_everything(ps.active, 0, dim - 2, 1, 1);
     sync_changes();
-    if (ps.number_of_files[ps.active] == old_number_of_files) {
-        print_info(mesg, ERR_LINE);
-    }
 }
 
 static void new_file(void)
@@ -384,18 +384,16 @@ static void new_file(void)
 static void remove_file(char *str)
 {
     char mesg[25] = "Are you serious? y/n:> ", c;
-    int result = 0;
     echo();
     print_info(mesg, INFO_LINE);
     c = wgetch(info_win);
     if (c == 'y') {
-        result = remove(str);
-        if (result == 0) {
+        if (remove(str) == - 1) {
+            print_info(strerror(errno), ERR_LINE);
+        } else {
             list_everything(ps.active, 0, dim - 2, 1, 1);
             sync_changes();
-            print_info("File removed.", INFO_LINE);
-        } else {
-            print_info(strerror(errno), ERR_LINE);
+            print_info("File/dir removed.", INFO_LINE);
         }
     } else {
         clear_info(INFO_LINE);
@@ -626,7 +624,7 @@ static void undo_copy(void)
 
 static void rename_file_folders(void)
 {
-    char *mesg = "Insert new file name:> ", str[80];
+    char *mesg = "Insert new name:> ", str[80];
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
@@ -636,6 +634,22 @@ static void rename_file_folders(void)
         list_everything(ps.active, 0, dim - 2, 1, 1);
         sync_changes();
         print_info("File renamed.", INFO_LINE);
+    }
+    noecho();
+}
+
+static void create_dir(void)
+{
+    char *mesg = "Insert new folder name:> ", str[80];
+    echo();
+    print_info(mesg, INFO_LINE);
+    wgetstr(info_win, str);
+    if (mkdir(str, 0700) == - 1) {
+        print_info(strerror(errno), ERR_LINE);
+    } else {
+        list_everything(ps.active, 0, dim - 2, 1, 1);
+        sync_changes();
+        print_info("Folder created.", INFO_LINE);
     }
     noecho();
 }
@@ -707,9 +721,10 @@ static void helper_print(void)
     wprintw(helper_win, " * Enter to surf between folders (follows ls colors) or to open files with $editor var.\n");
     wprintw(helper_win, " * Enter will eventually mount your ISO files in $path.\n");
     wprintw(helper_win, " * You must have fuseiso installed. To unmount, simply press again enter on the same iso file.\n");
-    wprintw(helper_win, " * Press h to trigger the showing of hide files. o to rename current file/dir.\n");
+    wprintw(helper_win, " * Press h to trigger the showing of hide files.\n");
     wprintw(helper_win, " * c to copy, p to paste, and x to cut a file. c again to remove from memory previously copied (not yet pasted) file.\n");
     wprintw(helper_win, " * s to see stat about files in current folder (Sizes and permissions).\n");
+    wprintw(helper_win, " * o to rename current file/dir; d to create new dir.\n");
     wprintw(helper_win, " * t to create new tab (at most one more). w to close tab.\n");
     wprintw(helper_win, " * You can't close first tab. Use q to quit.");
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
