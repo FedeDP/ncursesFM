@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include <ftw.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,15 +42,15 @@ static int is_hidden(const struct dirent *current_file);
 static void screen_init(void);
 static void screen_end(void);
 static void main_loop(int *quit, int *cut);
-static void change_dir(char *str);
+static void change_dir(void);
 static void switch_hidden(void);
-static void manage_file(char *str);
-static void open_file(char *str);
+static void manage_file(void);
+static void open_file(void);
 static void helper_function(int argc, char *argv[]);
 static void init_func(void);
-static void iso_mount_service(char *str);
+static void iso_mount_service(void);
 static void new_file(void);
-static void remove_file(char *str);
+static void remove_file(void);
 static void my_sort(int win);
 static void new_tab(void);
 static void delete_tab(void);
@@ -57,13 +59,15 @@ static void scroll_up(void);
 static void scroll_helper_func(int x, int direction);
 static void sync_changes(void);
 static void colored_folders(int i, int win);
-static void copy_file(char *str);
+static void copy_file(void);
 static void paste_file(int **cut);
 static void *thread_paste(void *pasted);
 static void check_pasted(int **cut);
 static void undo_copy(void);
 static void rename_file_folders(void);
 static void create_dir(void);
+int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+int rmrf(char *path);
 static void free_everything(void);
 static void print_info(char *str, int i);
 static void clear_info(int i);
@@ -202,11 +206,10 @@ static void main_loop(int *quit, int *cut)
             switch_hidden();
             break;
         case 10: // enter to change dir or open a file.
-            if ((namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_DIR) ||
-                (namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_LNK ))
-                change_dir(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+            if ((namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_DIR) || (namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_LNK ))
+                change_dir();
             else
-                manage_file(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+                manage_file();
             break;
         case 't': // t to open second tab
             if (ps.cont < MAX_TABS)
@@ -226,11 +229,11 @@ static void main_loop(int *quit, int *cut)
             new_file();
             break;
         case 'r': //remove file
-            remove_file(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+            remove_file();
             break;
         case 'c': case 'x': // copy file
             if ((namelist[ps.active][ps.current_position[ps.active]]->d_type !=  DT_DIR) && (ps.copied_file == NULL))
-                copy_file(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+                copy_file();
             else if (ps.copied_file != NULL)
                 undo_copy();
             if (c == 'x')
@@ -259,9 +262,9 @@ static void main_loop(int *quit, int *cut)
     }
 }
 
-static void change_dir(char *str)
+static void change_dir(void)
 {
-    chdir(str);
+    chdir(namelist[ps.active][ps.current_position[ps.active]]->d_name);
     getcwd(ps.my_cwd[ps.active], PATH_MAX);
     list_everything(ps.active, 0, dim - 2, 1, 1);
     clear_info(INFO_LINE);
@@ -276,30 +279,30 @@ static void switch_hidden(void)
         list_everything(i, 0, dim - 2, 1, 1);
 }
 
-static void manage_file(char *str)
+static void manage_file(void)
 {
     char ext[4];
-    strcpy(ext, str + (strlen(str) - 4));
+    strcpy(ext, namelist[ps.active][ps.current_position[ps.active]]->d_name + (strlen(namelist[ps.active][ps.current_position[ps.active]]->d_name) - 4));
     if ((strcmp(ext, ".iso") == 0) || (strcmp(ext, ".bin") == 0) || (strcmp(ext, ".nrg") == 0) || (strcmp(ext, ".img") == 0) || (strcmp(ext, ".mdf") == 0))  {
         if (config.iso_mount_point != NULL)
-            iso_mount_service(str);
+            iso_mount_service();
         else
             print_info("You have to specify an iso mount point in config file.", ERR_LINE);
     } else {
         if ((config.editor != NULL) && (namelist[ps.active][ps.current_position[ps.active]]->d_type == DT_REG))
-            open_file(str);
+            open_file();
         else
             print_info("You have to specify an editor in config file.", ERR_LINE);
     }
 }
 
-static void open_file(char *str)
+static void open_file(void)
 {
     pid_t pid;
     endwin();
     pid = fork();
     if (pid == 0) { /* child */
-        if (execl(config.editor, config.editor, str, NULL) == -1)
+        if (execl(config.editor, config.editor, namelist[ps.active][ps.current_position[ps.active]]->d_name, NULL) == -1)
             print_info(strerror(errno), ERR_LINE);
     } else {
         waitpid(pid, NULL, 0);
@@ -344,18 +347,18 @@ static void init_func(void)
     config_destroy(&cfg);
 }
 
-static void iso_mount_service(char *str)
+static void iso_mount_service(void)
 {
     pid_t pid;
-    char mount_point[strlen(str) - 4 + strlen(config.iso_mount_point)];
+    char mount_point[strlen(namelist[ps.active][ps.current_position[ps.active]]->d_name) - 4 + strlen(config.iso_mount_point)];
     strcpy(mount_point, config.iso_mount_point);
-    strncat(mount_point, str, strlen(str) - 4);
+    strncat(mount_point, namelist[ps.active][ps.current_position[ps.active]]->d_name, strlen(namelist[ps.active][ps.current_position[ps.active]]->d_name) - 4);
     pid = fork();
     if (pid == 0) {
         if (mkdir(mount_point, ACCESSPERMS) == -1) {
             execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
         } else
-            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", str, mount_point, NULL);
+            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", namelist[ps.active][ps.current_position[ps.active]]->d_name, mount_point, NULL);
     } else {
         waitpid(pid, NULL, 0);
     }
@@ -383,15 +386,20 @@ static void new_file(void)
     noecho();
 }
 
-static void remove_file(char *str)
+static void remove_file(void)
 {
     char mesg[25] = "Are you serious? y/n:> ", c;
+    int res = 0;
     echo();
     print_info(mesg, INFO_LINE);
     c = wgetch(info_win);
     if (c == 'y') {
-        if (remove(str) == - 1) {
-            print_info(strerror(errno), ERR_LINE);
+        if (namelist[ps.active][ps.current_position[ps.active]]->d_type == DT_DIR)
+            rmrf(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+        else
+            res = remove(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+        if(res == -1) {
+                print_info(strerror(errno), ERR_LINE);
         } else {
             list_everything(ps.active, 0, dim - 2, 1, 1);
             sync_changes();
@@ -525,12 +533,12 @@ static void colored_folders(int i, int win)
     }
 }
 
-static void copy_file(char *str)
+static void copy_file(void)
 {
-    ps.copied_file = malloc(strlen(str) + strlen(ps.my_cwd[ps.active]) + 1);
+    ps.copied_file = malloc(strlen(namelist[ps.active][ps.current_position[ps.active]]->d_name) + strlen(ps.my_cwd[ps.active]) + 1);
     strcpy(ps.copied_file, ps.my_cwd[ps.active]);
     strcat(ps.copied_file, "/");
-    strcat(ps.copied_file, str);
+    strcat(ps.copied_file, namelist[ps.active][ps.current_position[ps.active]]->d_name);
     strcpy(copied_dir, ps.my_cwd[ps.active]);
 }
 
@@ -654,6 +662,19 @@ static void create_dir(void)
         print_info("Folder created.", INFO_LINE);
     }
     noecho();
+}
+
+int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+{
+    int res = remove(path);
+    if (res)
+        print_info(strerror(errno), ERR_LINE);
+    return res;
+}
+
+int rmrf(char *path)
+{
+    return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS);
 }
 
 static void free_everything(void)
