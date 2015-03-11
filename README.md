@@ -11,6 +11,7 @@ It has following features for now:
 * in-program helper message (press 'l')
 * sync between tabs
 * rename file/folders support
+* move file support (use cut for this. If file is "cut" on the same filesystem, it will be moved.)
 
 As soon as possible there will be a PKGBUILD for archlinux.
 

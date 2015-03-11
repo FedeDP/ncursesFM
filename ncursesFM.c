@@ -58,11 +58,11 @@ static void scroll_helper_func(int x, int direction);
 static void sync_changes(void);
 static void colored_folders(int i, int win);
 static void copy_file(char *str);
-static void paste_file(int cut);
+static void paste_file(int **cut);
 static void *thread_paste(void *pasted);
 static void check_pasted(int **cut);
 static void undo_copy(void);
-static void change_name(void);
+static void rename_file_folders(void);
 static void free_everything(void);
 static void print_info(char *str, int i);
 static void clear_info(int i);
@@ -197,17 +197,17 @@ static void main_loop(int *quit, int *cut)
         case KEY_DOWN:
             scroll_down();
             break;
-        case 'h':
+        case 'h': // h to show hidden files
             switch_hidden();
             break;
-        case 10:
+        case 10: // enter to change dir or open a file.
             if ((namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_DIR) ||
                 (namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_LNK ))
                 change_dir(namelist[ps.active][ps.current_position[ps.active]]->d_name);
             else
                 manage_file(namelist[ps.active][ps.current_position[ps.active]]->d_name);
             break;
-        case 't':
+        case 't': // t to open second tab
             if (ps.cont < MAX_TABS)
                 new_tab();
             break;
@@ -238,7 +238,7 @@ static void main_loop(int *quit, int *cut)
             break;
         case 'v': // paste file
             if (ps.copied_file != NULL)
-                paste_file(*cut);
+                paste_file(&cut);
             break;
         case 'l':
             trigger_show_helper_message();
@@ -248,7 +248,7 @@ static void main_loop(int *quit, int *cut)
             list_everything(ps.active, ps.delta[ps.active], dim - 2, 1, 0);
             break;
         case 'o': // o to rename
-            change_name();
+            rename_file_folders();
             break;
         case 'q': /* q to exit */
             *quit = 1;
@@ -534,11 +534,30 @@ static void copy_file(char *str)
     strcpy(copied_dir, ps.my_cwd[ps.active]);
 }
 
-static void paste_file(int cut)
+static void paste_file(int **cut)
 {
     pthread_t th;
+    struct stat file_stat_copied, file_stat_pasted;
     strcpy(pasted_dir, ps.my_cwd[ps.active]);
-    pthread_create(&th, NULL, thread_paste, &pasted);
+    stat(ps.copied_file, &file_stat_copied);
+    stat(pasted_dir, &file_stat_pasted);
+    if ((file_stat_copied.st_dev == file_stat_pasted.st_dev) && (**cut == 1)) {
+        strcat(pasted_dir, strrchr(ps.copied_file, '/'));
+        if (rename(ps.copied_file, pasted_dir) == - 1) {
+            print_info(strerror(errno), ERR_LINE);
+        } else {
+            **cut = 0;
+            list_everything(ps.active, 0, dim - 2, 1, 1);
+            sync_changes();
+            print_info("File renamed.", INFO_LINE);
+            free(ps.copied_file);
+            ps.copied_file = NULL;
+            memset(pasted_dir, 0, strlen(pasted_dir));
+            pasted = 0;
+        }
+    } else {
+        pthread_create(&th, NULL, thread_paste, &pasted);
+    }
 }
 
 static void *thread_paste(void *pasted)
@@ -605,7 +624,7 @@ static void undo_copy(void)
     print_info("Copy file canceled.", INFO_LINE);
 }
 
-static void change_name(void)
+static void rename_file_folders(void)
 {
     char *mesg = "Insert new file name:> ", str[80];
     echo();

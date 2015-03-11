@@ -1,9 +1,8 @@
 /* TODO:
  * open video/image if correct programs are specified in settings file *
- * Bookmarks/devices tabs *
- * split files **
- * directories (copy/new/remove) support **
- * multiple files copy **
+ * Bookmarks/devices tabs * -> Bookmarks defined in .conf file?
+ * split source code **
+ * directories (copy/new/remove/move/cut) support **
+ * multiple files copy ** -> list of ps.copied_file
  * archives support ** -> execl tar?
- * move file/folder **
  */
