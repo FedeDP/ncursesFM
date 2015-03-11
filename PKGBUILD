@@ -2,7 +2,7 @@
 
 pkgname=ncursesfm-git
 _gitname=ncursesFM
-pkgver=11
+pkgver=12
 pkgrel=1
 pkgdesc="A FileManager written in c and ncurses library."
 arch=('i686' 'x86_64')
@@ -28,6 +28,7 @@ build()
 package() {
     cd $srcdir/$_gitname
     mkdir -p $pkgdir/usr/bin
-    cp ncursesfm $pkgdir/usr/bin
-    cp ncursesFM.conf $pkgdir/etc/default
+    install -Dm755 ncursesfm $pkgdir/usr/bin
+    mkdir -p $pkgdir/etc/default
+    install -Dm644 ncursesFM.conf $pkgdir/etc/default
 }
