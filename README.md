@@ -9,6 +9,8 @@ It has following features for now:
 * show hidden files
 * stats support (permissions and sizes)
 * in-program helper message (press 'l')
+* sync between tabs
+* rename file/folders support
 
 As soon as possible there will be a PKGBUILD for archlinux.
 

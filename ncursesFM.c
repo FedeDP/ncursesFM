@@ -62,6 +62,7 @@ static void paste_file(int cut);
 static void *thread_paste(void *pasted);
 static void check_pasted(int **cut);
 static void undo_copy(void);
+static void change_name(void);
 static void free_everything(void);
 static void print_info(char *str, int i);
 static void clear_info(int i);
@@ -245,6 +246,9 @@ static void main_loop(int *quit, int *cut)
         case 's': // show stat about files (size and perms)
             ps.stat_active[ps.active] = 1 - ps.stat_active[ps.active];
             list_everything(ps.active, ps.delta[ps.active], dim - 2, 1, 0);
+            break;
+        case 'o': // o to rename
+            change_name();
             break;
         case 'q': /* q to exit */
             *quit = 1;
@@ -601,6 +605,22 @@ static void undo_copy(void)
     print_info("Copy file canceled.", INFO_LINE);
 }
 
+static void change_name(void)
+{
+    char *mesg = "Insert new file name:> ", str[80];
+    echo();
+    print_info(mesg, INFO_LINE);
+    wgetstr(info_win, str);
+    if (rename(namelist[ps.active][ps.current_position[ps.active]]->d_name, str) == - 1) {
+        print_info(strerror(errno), ERR_LINE);
+    } else {
+        list_everything(ps.active, 0, dim - 2, 1, 1);
+        sync_changes();
+        print_info("File renamed.", INFO_LINE);
+    }
+    noecho();
+}
+
 static void free_everything(void)
 {
     int i, j;
@@ -665,10 +685,10 @@ static void trigger_show_helper_message(void)
 static void helper_print(void)
 {
     wprintw(helper_win, "\n HELPER MESSAGE:\n * n and r to create/remove a file.\n");
-    wprintw(helper_win, " * Enter to surf between folders (green; bold green are symlinks) or to open files with $editor var.\n");
+    wprintw(helper_win, " * Enter to surf between folders (follows ls colors) or to open files with $editor var.\n");
     wprintw(helper_win, " * Enter will eventually mount your ISO files in $path.\n");
     wprintw(helper_win, " * You must have fuseiso installed. To unmount, simply press again enter on the same iso file.\n");
-    wprintw(helper_win, " * Press h to trigger the showing of hide files.\n");
+    wprintw(helper_win, " * Press h to trigger the showing of hide files. o to rename current file/dir.\n");
     wprintw(helper_win, " * c to copy, p to paste, and x to cut a file. c again to remove from memory previously copied (not yet pasted) file.\n");
     wprintw(helper_win, " * s to see stat about files in current folder (Sizes and permissions).\n");
     wprintw(helper_win, " * t to create new tab (at most one more). w to close tab.\n");
