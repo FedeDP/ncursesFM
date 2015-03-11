@@ -15,6 +15,6 @@ It has following features for now:
 
 As soon as possible there will be a PKGBUILD for archlinux.
 
-It needs ncurses, libconfig and (optional) fuseiso.
+It requires ncurses, libconfig and (optionally) fuseiso.
 
 ![Alt text](ncursesfm.png?raw=true)
