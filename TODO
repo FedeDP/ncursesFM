@@ -1,0 +1,9 @@
+/* TODO:
+ * open video/image if correct programs are specified in settings file *
+ * Bookmarks/devices tabs *
+ * split files **
+ * directories (copy/new/remove) support **
+ * multiple files copy **
+ * archives support ** -> execl tar?
+ * move file/folder **
+ */
