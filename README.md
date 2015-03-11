@@ -19,7 +19,7 @@ It reads following variables from ncursesFM.conf (using libconfig)...remember to
 * show_hidden -> whether to show hidden files by default or not.
 * iso_mount_point -> mount point of any iso (for example /home/$your_username). Mount point will be "$iso_mount_point/iso_name".
 
-As soon as possible there will be a PKGBUILD for archlinux.
+PKGBUILD for Archlinux is here! I'll upload this to AUR as soon as I finish some basic functions (i.e. folder functions at least).
 
 It requires ncurses, libconfig and (optionally) fuseiso.
 
