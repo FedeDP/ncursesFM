@@ -278,7 +278,9 @@ static void switch_hidden(void)
 
 static void manage_file(char *str)
 {
-    if (strcmp(str + (strlen(str) - 4), ".iso") == 0) {
+    char ext[4];
+    strcpy(ext, str + (strlen(str) - 4));
+    if ((strcmp(ext, ".iso") == 0) || (strcmp(ext, ".bin") == 0) || (strcmp(ext, ".nrg") == 0) || (strcmp(ext, ".img") == 0) || (strcmp(ext, ".mdf") == 0))  {
         if (config.iso_mount_point != NULL)
             iso_mount_service(str);
         else
