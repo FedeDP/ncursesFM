@@ -14,6 +14,11 @@ It has following features for now:
 * move file support (use cut for this. If file is "cut" on the same filesystem, it will be moved.)
 * create dir, remove *empty* dir support
 
+It reads following variables from ncursesFM.conf (using libconfig)...remember to set them!
+* editor -> editor used to open files
+* show_hidden -> whether to show hidden files by default or not.
+* iso_mount_point -> mount point of any iso (for example /home/$your_username). Mount point will be "$iso_mount_point/iso_name".
+
 As soon as possible there will be a PKGBUILD for archlinux.
 
 It requires ncurses, libconfig and (optionally) fuseiso.
