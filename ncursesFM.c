@@ -61,13 +61,13 @@ static void sync_changes(void);
 static void colored_folders(int i, int win);
 static void copy_file(void);
 static void paste_file(int **cut);
-static void *thread_paste(void *pasted);
+static void *cpr(void *pasted);
 static void check_pasted(int **cut);
 static void undo_copy(void);
 static void rename_file_folders(void);
 static void create_dir(void);
-int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-int rmrf(char *path);
+static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+static int rmrf(char *path);
 static void free_everything(void);
 static void print_info(char *str, int i);
 static void clear_info(int i);
@@ -79,7 +79,7 @@ static const char *config_file_name = "ncursesFM.conf";
 static WINDOW *file_manager[MAX_TABS], *info_win, *helper_win = NULL;
 static char pasted_dir[PATH_MAX], copied_dir[PATH_MAX];
 static int dim, pasted = 0;
-struct dirent **namelist[MAX_TABS] = {NULL, NULL};
+static struct dirent **namelist[MAX_TABS] = {NULL, NULL};
 static struct conf config = {
     .editor = NULL,
     .show_hidden = 0,
@@ -232,7 +232,7 @@ static void main_loop(int *quit, int *cut)
             remove_file();
             break;
         case 'c': case 'x': // copy file
-            if ((namelist[ps.active][ps.current_position[ps.active]]->d_type !=  DT_DIR) && (ps.copied_file == NULL))
+            if /*((namelist[ps.active][ps.current_position[ps.active]]->d_type !=  DT_DIR) && */(ps.copied_file == NULL)//)
                 copy_file();
             else if (ps.copied_file != NULL)
                 undo_copy();
@@ -300,13 +300,11 @@ static void open_file(void)
 {
     pid_t pid;
     endwin();
-    pid = fork();
-    if (pid == 0) { /* child */
-        if (execl(config.editor, config.editor, namelist[ps.active][ps.current_position[ps.active]]->d_name, NULL) == -1)
-            print_info(strerror(errno), ERR_LINE);
-    } else {
+    pid = vfork();
+    if (pid == 0)  /* child */
+        execl(config.editor, config.editor, namelist[ps.active][ps.current_position[ps.active]]->d_name, NULL);
+    else
         waitpid(pid, NULL, 0);
-    }
     refresh();
 }
 
@@ -353,7 +351,7 @@ static void iso_mount_service(void)
     char mount_point[strlen(namelist[ps.active][ps.current_position[ps.active]]->d_name) - 4 + strlen(config.iso_mount_point)];
     strcpy(mount_point, config.iso_mount_point);
     strncat(mount_point, namelist[ps.active][ps.current_position[ps.active]]->d_name, strlen(namelist[ps.active][ps.current_position[ps.active]]->d_name) - 4);
-    pid = fork();
+    pid = vfork();
     if (pid == 0) {
         if (mkdir(mount_point, ACCESSPERMS) == -1) {
             execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
@@ -370,7 +368,7 @@ static void iso_mount_service(void)
 static void new_file(void)
 {
     FILE *f;
-    char *mesg = "Insert new file name:> ", str[80];
+    char *mesg = "Insert new file name:> ", str[PATH_MAX];
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
@@ -388,7 +386,7 @@ static void new_file(void)
 
 static void remove_file(void)
 {
-    char mesg[25] = "Are you serious? y/n:> ", c;
+    char *mesg = "Are you serious? y/n:> ", c;
     int res = 0;
     echo();
     print_info(mesg, INFO_LINE);
@@ -398,7 +396,7 @@ static void remove_file(void)
             rmrf(namelist[ps.active][ps.current_position[ps.active]]->d_name);
         else
             res = remove(namelist[ps.active][ps.current_position[ps.active]]->d_name);
-        if(res == -1) {
+        if (res == -1) {
                 print_info(strerror(errno), ERR_LINE);
         } else {
             list_everything(ps.active, 0, dim - 2, 1, 1);
@@ -561,68 +559,48 @@ static void paste_file(int **cut)
             free(ps.copied_file);
             ps.copied_file = NULL;
             memset(pasted_dir, 0, strlen(pasted_dir));
-            pasted = 0;
         }
     } else {
-        pthread_create(&th, NULL, thread_paste, &pasted);
+        pthread_create(&th, NULL, cpr, &pasted);
     }
 }
 
-static void *thread_paste(void *pasted)
+
+static void *cpr(void *pasted)
 {
-    FILE *source_fp, *dest_fp;
-    char str[80], buffer[512];
-    int n = 1;
-    source_fp = fopen(ps.copied_file, "r");
-    strcpy(str, ps.my_cwd[ps.active]);
-    strcat(str, strrchr(ps.copied_file, '/'));
-    if (access(str, F_OK) != - 1) {
-        fclose(source_fp);
-        *((int *)pasted) = -1;
-        return NULL;
-    } else {
-        dest_fp = fopen(str, "w");
-        while (n != EOF) {
-            n = fread(buffer, 1, 512, source_fp);
-            if (n == 0)
-                break;
-            fwrite(buffer, 1, n, dest_fp);
-        }
+    pid_t pid;
+    int status;
+    pid = vfork();
+    if (pid == 0)
+        execl("/usr/bin/cp", "/usr/bin/cp", "-r", ps.copied_file, pasted_dir, NULL);
+    else {
+        waitpid(pid, &status, 0);
+        *(int *)pasted = 1;
     }
-    *((int *)pasted) = 1;
-    fclose(source_fp);
-    fclose(dest_fp);
     return NULL;
 }
 
 static void check_pasted(int **cut)
 {
     int i;
-    switch (pasted) {
-        case 1:
-            if (**cut == 1) {
-                remove(ps.copied_file);
-                **cut = 0;
-                for (i = 0; i < ps.cont; i++) {
-                    if (strcmp(copied_dir, ps.my_cwd[i]) == 0)
-                        list_everything(i, 0, dim - 2, 1, 1);
-                }
-            }
-            for (i = 0; i < ps.cont; i++) {
-                if (strcmp(pasted_dir, ps.my_cwd[i]) == 0)
-                    list_everything(i, 0, dim - 2, 1, 1);
-            }
-            free(ps.copied_file);
-            ps.copied_file = NULL;
-            memset(pasted_dir, 0, strlen(pasted_dir));
-            print_info("File copied.", INFO_LINE);
-            pasted = 0;
-            break;
-        case -1:
-            print_info("Cannot copy here. Check user permissions.", ERR_LINE);
-            pasted = 0;
-            break;
+    if (**cut == 1) {
+        remove(ps.copied_file);
+        **cut = 0;
+        for (i = 0; i < ps.cont; i++) {
+            if (strcmp(copied_dir, ps.my_cwd[i]) == 0)
+                list_everything(i, 0, dim - 2, 1, 1);
+        }
     }
+    for (i = 0; i < ps.cont; i++) {
+        if (strcmp(pasted_dir, ps.my_cwd[i]) == 0)
+            list_everything(i, 0, dim - 2, 1, 1);
+    }
+    free(ps.copied_file);
+    ps.copied_file = NULL;
+    memset(copied_dir, 0, strlen(copied_dir));
+    memset(pasted_dir, 0, strlen(pasted_dir));
+    print_info("File copied.", INFO_LINE);
+    pasted = 0;
 }
 
 static void undo_copy(void)
@@ -664,7 +642,7 @@ static void create_dir(void)
     noecho();
 }
 
-int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
     int res = remove(path);
     if (res)
@@ -672,7 +650,7 @@ int recursive_remove(const char *path, const struct stat *sb, int typeflag, stru
     return res;
 }
 
-int rmrf(char *path)
+static int rmrf(char *path)
 {
     return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS);
 }

@@ -12,7 +12,7 @@ It has following features for now:
 * sync between tabs
 * rename file/folders support
 * move file support (use cut for this. If file is "cut" on the same filesystem, it will be moved.)
-* create dir, remove dir support
+* create, remove, copy dir support.
 
 It reads following variables from ncursesFM.conf (using libconfig)...remember to set them!
 * editor -> editor used to open files
