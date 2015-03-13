@@ -7,4 +7,5 @@
  * Thread safe? ***
  * search function **
  * symlinking file/dir support *
+ * understand why copy does not wrefresh instantly
  */

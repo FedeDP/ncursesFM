@@ -74,7 +74,7 @@ static void clear_info(int i);
 static void trigger_show_helper_message(void);
 static void helper_print(void);
 static void show_stat(int init, int end, int win);
-static char *get_full_path(char *str, char *file);
+static void quit_func(void);
 
 static const char *config_file_name = "ncursesFM.conf";
 static WINDOW *file_manager[MAX_TABS], *info_win, *helper_win = NULL;
@@ -262,8 +262,7 @@ static void main_loop(int *quit, int *cut)
             create_dir();
             break;
         case 'q': /* q to exit */
-            if (pasted == - 1)
-                pthread_join(th, NULL);
+            quit_func();
             *quit = 1;
             break;
     }
@@ -395,18 +394,11 @@ static void new_file(void)
 static void remove_file(void)
 {
     char *mesg = "Are you serious? y/n:> ", c;
-    int res = 0;
     echo();
     print_info(mesg, INFO_LINE);
     c = wgetch(info_win);
     if (c == 'y') {
-        if (namelist[ps.active][ps.current_position[ps.active]]->d_type == DT_DIR)
-            rmrf(namelist[ps.active][ps.current_position[ps.active]]->d_name);
-        else
-            res = remove(namelist[ps.active][ps.current_position[ps.active]]->d_name);
-        if (res == -1) {
-                print_info(strerror(errno), ERR_LINE);
-        } else {
+        if (rmrf(namelist[ps.active][ps.current_position[ps.active]]->d_name) == 0) {
             list_everything(ps.active, 0, dim - 2, 1, 1);
             sync_changes();
             print_info("File/dir removed.", INFO_LINE);
@@ -541,7 +533,9 @@ static void colored_folders(int i, int win)
 
 static void copy_file(void)
 {
-    get_full_path(namelist[ps.active][ps.current_position[ps.active]]->d_name, ps.copied_file);
+    strcpy(ps.copied_file, ps.my_cwd[ps.active]);
+    strcat(ps.copied_file, "/");
+    strcat(ps.copied_file, namelist[ps.active][ps.current_position[ps.active]]->d_name);
     strcpy(copied_dir, ps.my_cwd[ps.active]);
 }
 
@@ -766,10 +760,15 @@ static void show_stat(int init, int end, int win)
     }
 }
 
-static char *get_full_path(char *str, char file[])
+static void quit_func(void)
 {
-    strcpy(file, ps.my_cwd[ps.active]);
-    strcat(file, "/");
-    strcat(file, str);
-    return file;
+    char c, *mesg = "A paste job is still running. Do you want to wait for it?(You should!) y/n:> ";
+    if (pasted == - 1) {
+        echo();
+        print_info(mesg, INFO_LINE);
+        c = wgetch(info_win);
+        if (c == 'y')
+            pthread_join(th, NULL);
+        noecho();
+    }
 }
