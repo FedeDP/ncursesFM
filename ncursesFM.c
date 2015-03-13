@@ -74,6 +74,7 @@ static void clear_info(int i);
 static void trigger_show_helper_message(void);
 static void helper_print(void);
 static void show_stat(int init, int end, int win);
+static void set_nodelay(bool x);
 static void quit_func(void);
 
 static const char *config_file_name = "ncursesFM.conf";
@@ -163,6 +164,7 @@ static void screen_init(void)
     raw();
     noecho();
     curs_set(0);
+    wtimeout(file_manager[ps.active], - 1);
     dim = LINES - INFO_HEIGHT;
     file_manager[ps.active] = subwin(stdscr, dim, COLS, 0, 0);
     scrollok(file_manager[ps.active], TRUE);
@@ -191,12 +193,11 @@ static void screen_end(void)
 static void main_loop(int *quit, int *cut)
 {
     int c;
-    if (strlen(ps.copied_file) != 0)
-        print_info("A file is waiting to be pasted.", INFO_LINE);
     if (pasted == 1) {
         check_pasted(*cut);
         *cut = 0;
         print_info("File copied.", INFO_LINE);
+        set_nodelay(FALSE);
     }
     c = wgetch(file_manager[ps.active]);
     switch (c) {
@@ -210,7 +211,7 @@ static void main_loop(int *quit, int *cut)
             switch_hidden();
             break;
         case 10: // enter to change dir or open a file.
-            if ((namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_DIR) || (namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_LNK ))
+            if ((namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_DIR) || (namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_LNK))
                 change_dir();
             else
                 manage_file();
@@ -238,6 +239,7 @@ static void main_loop(int *quit, int *cut)
         case 'c': case 'x': // copy file
             if ((strcmp(namelist[ps.active][ps.current_position[ps.active]]->d_name, "..") != 0) && (strlen(ps.copied_file) == 0)) {
                 copy_file();
+                print_info("A file is waiting to be pasted.", INFO_LINE);
                 if (c == 'x')
                     *cut = 1;
             }
@@ -245,8 +247,10 @@ static void main_loop(int *quit, int *cut)
                 undo_copy(&cut);
             break;
         case 'v': // paste file
-            if (strlen(ps.copied_file) != 0)
+            if (strlen(ps.copied_file) != 0) {
+                set_nodelay(TRUE);
                 paste_file(&cut);
+            }
             break;
         case 'l':
             trigger_show_helper_message();
@@ -439,6 +443,7 @@ static void new_tab(void)
     keypad(file_manager[ps.active], TRUE);
     scrollok(file_manager[ps.active], TRUE);
     idlok(file_manager[ps.active], TRUE);
+    wtimeout(file_manager[ps.active], - 1);
     getcwd(ps.my_cwd[ps.active], PATH_MAX);
     list_everything(ps.active, 0, dim - 2, 1, 1);
 }
@@ -541,18 +546,20 @@ static void copy_file(void)
 
 static void paste_file(int **cut)
 {
+    char pasted_file[PATH_MAX];
     struct stat file_stat_copied, file_stat_pasted;
     strcpy(pasted_dir, ps.my_cwd[ps.active]);
     stat(copied_dir, &file_stat_copied);
     stat(pasted_dir, &file_stat_pasted);
     if (strcmp(pasted_dir, copied_dir) != 0) {
         if ((file_stat_copied.st_dev == file_stat_pasted.st_dev) && (**cut == 1)) {
-            strcat(pasted_dir, strrchr(ps.copied_file, '/'));
-            if (rename(ps.copied_file, pasted_dir) == - 1) {
+            strcpy(pasted_file, pasted_dir);
+            strcat(pasted_file, strrchr(ps.copied_file, '/'));
+            if (rename(ps.copied_file, pasted_file) == - 1) {
                 print_info(strerror(errno), ERR_LINE);
             } else {
-                **cut = 0;
                 check_pasted(**cut);
+                **cut = 0;
                 print_info("File renamed.", INFO_LINE);
             }
         } else {
@@ -583,7 +590,7 @@ static void check_pasted(int cut)
 {
     int i;
     if (cut == 1) {
-        remove(ps.copied_file);
+        rmrf(ps.copied_file);
         for (i = 0; i < ps.cont; i++) {
             if (strcmp(copied_dir, ps.my_cwd[i]) == 0)
                 list_everything(i, 0, dim - 2, 1, 1);
@@ -677,6 +684,8 @@ static void clear_info(int i)
 {
     wmove(info_win, i, 0);
     wclrtoeol(info_win);
+    if (strlen(ps.copied_file) != 0)
+        mvwprintw(info_win, INFO_LINE, 1, "A file is waiting to be pasted.");
     wrefresh(info_win);
 }
 
@@ -758,6 +767,13 @@ static void show_stat(int init, int end, int win)
         wprintw(file_manager[win], (file_stat.st_mode & S_IWOTH) ? "w" : "-");
         wprintw(file_manager[win], (file_stat.st_mode & S_IXOTH) ? "x" : "-");
     }
+}
+
+static void set_nodelay(bool x)
+{
+    int i;
+    for (i = 0; i < ps.cont; i++)
+        nodelay(file_manager[i], x);
 }
 
 static void quit_func(void)
