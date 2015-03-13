@@ -2,17 +2,17 @@
 Ncurses File Manager for linux
 
 It has following features for now:
-* basic file functions support: copy/paste/cut, new/remove. Paste is executed in a different thread.
+* basic file/dir functions support: copy/paste/cut, new/remove, rename.
 * 2 tabs support.
-* iso mount support (you must have fuseiso installed)
-* open files with $editor (settings defined) var
-* show hidden files
-* stats support (permissions and sizes)
-* in-program helper message (press 'l')
-* sync between tabs
-* rename file/folders support
-* move file support (use cut for this. If file is "cut" on the same filesystem, it will be moved.)
-* create, remove, copy dir support.
+* iso mount support -> you must have fuseiso installed.
+* open files with $editor (settings defined) var.
+* show hidden files.
+* stats support (permissions and sizes).
+* in-program helper message -> press 'l'.
+* sync between tabs.
+* rename file/folders support.
+* move file/folders support -> use cut for this. If file is "cut" on the same filesystem, it will be moved, otherwise it will be copied.
+* Paste is executed in a different thread. If you try to quit while paste thread is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
 
 It reads following variables from ncursesFM.conf (using libconfig)...remember to set them!
 * editor -> editor used to open files
