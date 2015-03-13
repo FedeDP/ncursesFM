@@ -164,7 +164,6 @@ static void screen_init(void)
     raw();
     noecho();
     curs_set(0);
-    wtimeout(file_manager[ps.active], - 1);
     dim = LINES - INFO_HEIGHT;
     file_manager[ps.active] = subwin(stdscr, dim, COLS, 0, 0);
     scrollok(file_manager[ps.active], TRUE);
@@ -443,7 +442,6 @@ static void new_tab(void)
     keypad(file_manager[ps.active], TRUE);
     scrollok(file_manager[ps.active], TRUE);
     idlok(file_manager[ps.active], TRUE);
-    wtimeout(file_manager[ps.active], - 1);
     getcwd(ps.my_cwd[ps.active], PATH_MAX);
     list_everything(ps.active, 0, dim - 2, 1, 1);
 }
