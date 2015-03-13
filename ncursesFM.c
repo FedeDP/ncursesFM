@@ -191,7 +191,7 @@ static void screen_end(void)
 static void main_loop(int *quit, int *cut)
 {
     int c;
-    if (ps.copied_file[0] != '\0')
+    if (strlen(ps.copied_file) != 0)
         print_info("A file is waiting to be pasted.", INFO_LINE);
     if (pasted == 1) {
         check_pasted(*cut);
@@ -236,16 +236,16 @@ static void main_loop(int *quit, int *cut)
             remove_file();
             break;
         case 'c': case 'x': // copy file
-            if ((strcmp(namelist[ps.active][ps.current_position[ps.active]]->d_name, "..") != 0) && (ps.copied_file[0] == '\0')) {
+            if ((strcmp(namelist[ps.active][ps.current_position[ps.active]]->d_name, "..") != 0) && (strlen(ps.copied_file) == 0)) {
                 copy_file();
                 if (c == 'x')
                     *cut = 1;
             }
-            else if (ps.copied_file[0] != '\0')
+            else if (strlen(ps.copied_file) != 0)
                 undo_copy(&cut);
             break;
         case 'v': // paste file
-            if (ps.copied_file[0] != '\0')
+            if (strlen(ps.copied_file) != 0)
                 paste_file(&cut);
             break;
         case 'l':
