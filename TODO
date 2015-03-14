@@ -2,9 +2,7 @@
  * open video/image if correct programs are specified in settings file *
  * Bookmarks/devices tabs * -> Bookmarks defined in .conf file? *
  * split source code **
- * multiple files copy ** -> list of ps.copied_file
  * archives support ** -> execl tar?
- * Thread safe? ***
  * search function **
  * symlinking file/dir support *
  */

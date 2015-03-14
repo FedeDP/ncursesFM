@@ -34,6 +34,8 @@ struct vars {
     int delta[MAX_TABS];
     int stat_active[MAX_TABS];
     char copied_file[PATH_MAX];
+    char pasted_dir[PATH_MAX];
+    char copied_dir[PATH_MAX];
     char my_cwd[MAX_TABS][PATH_MAX];
 };
 
@@ -70,16 +72,16 @@ static int recursive_remove(const char *path, const struct stat *sb, int typefla
 static int rmrf(char *path);
 static void free_everything(void);
 static void print_info(char *str, int i);
-static void clear_info(int i);
+static void clear_info(void);
 static void trigger_show_helper_message(void);
 static void helper_print(void);
 static void show_stat(int init, int end, int win);
 static void set_nodelay(bool x);
+static void get_full_path(char *full_path_current_position);
 static void quit_func(void);
 
 static const char *config_file_name = "ncursesFM.conf";
 static WINDOW *file_manager[MAX_TABS], *info_win, *helper_win = NULL;
-static char pasted_dir[PATH_MAX], copied_dir[PATH_MAX];
 static int dim, pasted = 0;
 static struct dirent **namelist[MAX_TABS] = {NULL, NULL};
 static pthread_t th;
@@ -238,7 +240,8 @@ static void main_loop(int *quit, int *cut)
         case 'c': case 'x': // copy file
             if ((strcmp(namelist[ps.active][ps.current_position[ps.active]]->d_name, "..") != 0) && (strlen(ps.copied_file) == 0)) {
                 copy_file();
-                print_info("A file is waiting to be pasted.", INFO_LINE);
+                clear_info();
+                wrefresh(info_win);
                 if (c == 'x')
                     *cut = 1;
             }
@@ -276,8 +279,7 @@ static void change_dir(void)
     chdir(namelist[ps.active][ps.current_position[ps.active]]->d_name);
     getcwd(ps.my_cwd[ps.active], PATH_MAX);
     list_everything(ps.active, 0, dim - 2, 1, 1);
-    clear_info(INFO_LINE);
-    clear_info(ERR_LINE);
+    clear_info();
 }
 
 static void switch_hidden(void)
@@ -290,7 +292,12 @@ static void switch_hidden(void)
 
 static void manage_file(void)
 {
-    char ext[4];
+    char ext[4], full_path_current_position[PATH_MAX];
+    get_full_path(full_path_current_position);
+    if (strcmp(ps.copied_file, full_path_current_position) == 0) {
+        print_info("You're trying to open a file/dir previously selected for copy. Please cancel the copy before.", ERR_LINE);
+        return;
+    }
     strcpy(ext, namelist[ps.active][ps.current_position[ps.active]]->d_name + (strlen(namelist[ps.active][ps.current_position[ps.active]]->d_name) - 4));
     if ((strcmp(ext, ".iso") == 0) || (strcmp(ext, ".bin") == 0) || (strcmp(ext, ".nrg") == 0) || (strcmp(ext, ".img") == 0) || (strcmp(ext, ".mdf") == 0))  {
         if (config.iso_mount_point != NULL)
@@ -396,7 +403,12 @@ static void new_file(void)
 
 static void remove_file(void)
 {
-    char *mesg = "Are you serious? y/n:> ", c;
+    char *mesg = "Are you serious? y/n:> ", c, full_path_current_position[PATH_MAX];
+    get_full_path(full_path_current_position);
+    if (strcmp(ps.copied_file, full_path_current_position) == 0) {
+        print_info("You're trying to remove a file/dir previously selected for copy. Please cancel the copy before.", ERR_LINE);
+        return;
+    }
     echo();
     print_info(mesg, INFO_LINE);
     c = wgetch(info_win);
@@ -407,7 +419,7 @@ static void remove_file(void)
             print_info("File/dir removed.", INFO_LINE);
         }
     } else {
-        clear_info(INFO_LINE);
+        clear_info();
     }
     noecho();
 }
@@ -514,8 +526,6 @@ static void sync_changes(void)
     if (ps.cont == 2) {
         if (strcmp(ps.my_cwd[ps.active], ps.my_cwd[1 - ps.active]) == 0)
             list_everything(1 - ps.active, 0, dim - 2, 1, 1);
-        if ((ps.copied_file[0] != '\0') && (strncmp(ps.copied_file, ps.my_cwd[1 - ps.active], strlen(ps.my_cwd[1 - ps.active])) == 0))
-            list_everything(1 - ps.active, 0, dim - 2, 1, 1);
     }
 }
 
@@ -536,22 +546,20 @@ static void colored_folders(int i, int win)
 
 static void copy_file(void)
 {
-    strcpy(ps.copied_file, ps.my_cwd[ps.active]);
-    strcat(ps.copied_file, "/");
-    strcat(ps.copied_file, namelist[ps.active][ps.current_position[ps.active]]->d_name);
-    strcpy(copied_dir, ps.my_cwd[ps.active]);
+    get_full_path(ps.copied_file);
+    strcpy(ps.copied_dir, ps.my_cwd[ps.active]);
 }
 
 static void paste_file(int **cut)
 {
     char pasted_file[PATH_MAX];
     struct stat file_stat_copied, file_stat_pasted;
-    strcpy(pasted_dir, ps.my_cwd[ps.active]);
-    stat(copied_dir, &file_stat_copied);
-    stat(pasted_dir, &file_stat_pasted);
-    if (strcmp(pasted_dir, copied_dir) != 0) {
+    strcpy(ps.pasted_dir, ps.my_cwd[ps.active]);
+    stat(ps.copied_dir, &file_stat_copied);
+    stat(ps.pasted_dir, &file_stat_pasted);
+    if (strcmp(ps.pasted_dir, ps.copied_dir) != 0) {
         if ((file_stat_copied.st_dev == file_stat_pasted.st_dev) && (**cut == 1)) {
-            strcpy(pasted_file, pasted_dir);
+            strcpy(pasted_file, ps.pasted_dir);
             strcat(pasted_file, strrchr(ps.copied_file, '/'));
             if (rename(ps.copied_file, pasted_file) == - 1) {
                 print_info(strerror(errno), ERR_LINE);
@@ -576,7 +584,7 @@ static void *cpr(void *pasted)
     *(int *)pasted = - 1;
     pid = vfork();
     if (pid == 0)
-        execl("/usr/bin/cp", "/usr/bin/cp", "-r", ps.copied_file, pasted_dir, NULL);
+        execl("/usr/bin/cp", "/usr/bin/cp", "-r", ps.copied_file, ps.pasted_dir, NULL);
     else {
         waitpid(pid, &status, 0);
         *(int *)pasted = 1;
@@ -590,31 +598,36 @@ static void check_pasted(int cut)
     if (cut == 1) {
         rmrf(ps.copied_file);
         for (i = 0; i < ps.cont; i++) {
-            if (strcmp(copied_dir, ps.my_cwd[i]) == 0)
+            if (strcmp(ps.copied_dir, ps.my_cwd[i]) == 0)
                 list_everything(i, 0, dim - 2, 1, 1);
         }
     }
     for (i = 0; i < ps.cont; i++) {
-        if (strcmp(pasted_dir, ps.my_cwd[i]) == 0)
+        if (strcmp(ps.pasted_dir, ps.my_cwd[i]) == 0)
             list_everything(i, 0, dim - 2, 1, 1);
     }
     memset(ps.copied_file, 0, strlen(ps.copied_file));
-    memset(copied_dir, 0, strlen(copied_dir));
-    memset(pasted_dir, 0, strlen(pasted_dir));
+    memset(ps.copied_dir, 0, strlen(ps.copied_dir));
+    memset(ps.pasted_dir, 0, strlen(ps.pasted_dir));
     pasted = 0;
 }
 
 static void undo_copy(int **cut)
 {
     memset(ps.copied_file, 0, strlen(ps.copied_file));
-    memset(copied_dir, 0, strlen(copied_dir));
+    memset(ps.copied_dir, 0, strlen(ps.copied_dir));
     **cut = 0;
     print_info("Copy file canceled.", INFO_LINE);
 }
 
 static void rename_file_folders(void)
 {
-    char *mesg = "Insert new name:> ", str[80];
+    char *mesg = "Insert new name:> ", str[PATH_MAX], full_path_current_position[PATH_MAX];
+    get_full_path(full_path_current_position);
+    if (strcmp(ps.copied_file, full_path_current_position) == 0) {
+        print_info("You're trying to rename a file/dir previously selected for copy. Please cancel the copy before.", ERR_LINE);
+        return;
+    }
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
@@ -673,17 +686,16 @@ static void free_everything(void)
 
 static void print_info(char *str, int i)
 {
-    clear_info(i);
+    clear_info();
     mvwprintw(info_win, i, 1, str);
     wrefresh(info_win);
 }
 
-static void clear_info(int i)
+static void clear_info(void)
 {
-    wmove(info_win, i, 0);
-    wclrtoeol(info_win);
+    wclear(info_win);
     if (strlen(ps.copied_file) != 0)
-        mvwprintw(info_win, INFO_LINE, 1, "A file is waiting to be pasted.");
+        mvwprintw(info_win, INFO_LINE, COLS - strlen("A file is waiting to be pasted."), "A file is waiting to be pasted.");
     wrefresh(info_win);
 }
 
@@ -772,6 +784,13 @@ static void set_nodelay(bool x)
     int i;
     for (i = 0; i < ps.cont; i++)
         nodelay(file_manager[i], x);
+}
+
+static void get_full_path(char *full_path_current_position)
+{
+    strcpy(full_path_current_position, ps.my_cwd[ps.active]);
+    strcat(full_path_current_position, "/");
+    strcat(full_path_current_position,namelist[ps.active][ps.current_position[ps.active]]->d_name);
 }
 
 static void quit_func(void)
