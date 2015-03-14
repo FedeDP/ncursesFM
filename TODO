@@ -5,4 +5,5 @@
  * archives support ** -> execl tar?
  * search function **
  * symlinking file/dir support *
+ * copy more files support -> 1) func to remove selected files from copy list. 2) change pasted functions to paste all listed files. Be aware of various checks!
  */
