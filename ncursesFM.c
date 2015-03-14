@@ -43,7 +43,7 @@ static void list_everything(int win, int old_dim, int end, int erase, int reset)
 static int is_hidden(const struct dirent *current_file);
 static void screen_init(void);
 static void screen_end(void);
-static void main_loop(int *quit, int *cut);
+static void main_loop(int *quit, int *cut, int *old_number_files);
 static void change_dir(void);
 static void switch_hidden(void);
 static void manage_file(void);
@@ -62,9 +62,9 @@ static void scroll_helper_func(int x, int direction);
 static void sync_changes(void);
 static void colored_folders(int i, int win);
 static void copy_file(void);
-static void paste_file(int **cut);
+static void paste_file(int **cut, int **old_number_files);
 static void *cpr(void *pasted);
-static void check_pasted(int cut);
+static void check_pasted(int cut, int old_number_files);
 static void undo_copy(int **cut);
 static void rename_file_folders(void);
 static void create_dir(void);
@@ -100,14 +100,14 @@ static struct vars ps = {
 
 int main(int argc, char *argv[])
 {
-    int quit = 0, cut = 0;
+    int quit = 0, cut = 0, old_number_files;
     helper_function(argc, argv);
     init_func();
     screen_init();
     getcwd(ps.my_cwd[ps.active], PATH_MAX);
     list_everything(ps.active, 0, dim - 2, 1, 1);
     while (!quit)
-        main_loop(&quit, &cut);
+        main_loop(&quit, &cut, &old_number_files);
     free_everything();
     screen_end();
     return 0;
@@ -191,14 +191,12 @@ static void screen_end(void)
     delwin(stdscr);
 }
 
-static void main_loop(int *quit, int *cut)
+static void main_loop(int *quit, int *cut, int *old_number_files)
 {
     int c;
     if (pasted == 1) {
-        check_pasted(*cut);
+        check_pasted(*cut, *old_number_files);
         *cut = 0;
-        print_info("File copied.", INFO_LINE);
-        set_nodelay(FALSE);
     }
     c = wgetch(file_manager[ps.active]);
     switch (c) {
@@ -251,7 +249,7 @@ static void main_loop(int *quit, int *cut)
         case 'v': // paste file
             if (strlen(ps.copied_file) != 0) {
                 set_nodelay(TRUE);
-                paste_file(&cut);
+                paste_file(&cut, &old_number_files);
             }
             break;
         case 'l':
@@ -550,10 +548,11 @@ static void copy_file(void)
     strcpy(ps.copied_dir, ps.my_cwd[ps.active]);
 }
 
-static void paste_file(int **cut)
+static void paste_file(int **cut, int **old_number_files)
 {
     char pasted_file[PATH_MAX];
     struct stat file_stat_copied, file_stat_pasted;
+    **old_number_files = ps.number_of_files[ps.active];
     strcpy(ps.pasted_dir, ps.my_cwd[ps.active]);
     stat(ps.copied_dir, &file_stat_copied);
     stat(ps.pasted_dir, &file_stat_pasted);
@@ -561,13 +560,9 @@ static void paste_file(int **cut)
         if ((file_stat_copied.st_dev == file_stat_pasted.st_dev) && (**cut == 1)) {
             strcpy(pasted_file, ps.pasted_dir);
             strcat(pasted_file, strrchr(ps.copied_file, '/'));
-            if (rename(ps.copied_file, pasted_file) == - 1) {
+            pasted = 1;
+            if (rename(ps.copied_file, pasted_file) == - 1)
                 print_info(strerror(errno), ERR_LINE);
-            } else {
-                check_pasted(**cut);
-                **cut = 0;
-                print_info("File renamed.", INFO_LINE);
-            }
         } else {
             pthread_create(&th, NULL, cpr, &pasted);
         }
@@ -592,24 +587,35 @@ static void *cpr(void *pasted)
     return NULL;
 }
 
-static void check_pasted(int cut)
+static void check_pasted(int cut, int old_number_files)
 {
     int i;
-    if (cut == 1) {
-        rmrf(ps.copied_file);
+    struct dirent **temp;
+    if (old_number_files != scandir(ps.pasted_dir, &temp, is_hidden, NULL)) {
+        if (cut == 1) {
+            rmrf(ps.copied_file);
+            for (i = 0; i < ps.cont; i++) {
+                if (strcmp(ps.copied_dir, ps.my_cwd[i]) == 0)
+                    list_everything(i, 0, dim - 2, 1, 1);
+            }
+        }
         for (i = 0; i < ps.cont; i++) {
-            if (strcmp(ps.copied_dir, ps.my_cwd[i]) == 0)
+            if (strcmp(ps.pasted_dir, ps.my_cwd[i]) == 0)
                 list_everything(i, 0, dim - 2, 1, 1);
         }
-    }
-    for (i = 0; i < ps.cont; i++) {
-        if (strcmp(ps.pasted_dir, ps.my_cwd[i]) == 0)
-            list_everything(i, 0, dim - 2, 1, 1);
+        if (cut == 0)
+            print_info("File copied.", INFO_LINE);
+        else
+            print_info("File renamed.", INFO_LINE);
+    } else {
+        if (cut == 0)
+            print_info("Could not paste.", ERR_LINE);
     }
     memset(ps.copied_file, 0, strlen(ps.copied_file));
     memset(ps.copied_dir, 0, strlen(ps.copied_dir));
     memset(ps.pasted_dir, 0, strlen(ps.pasted_dir));
     pasted = 0;
+    set_nodelay(FALSE);
 }
 
 static void undo_copy(int **cut)
@@ -694,7 +700,7 @@ static void print_info(char *str, int i)
 static void clear_info(void)
 {
     wclear(info_win);
-    if (strlen(ps.copied_file) != 0)
+    if ((strlen(ps.copied_file) != 0) && (pasted == 0))
         mvwprintw(info_win, INFO_LINE, COLS - strlen("A file is waiting to be pasted."), "A file is waiting to be pasted.");
     wrefresh(info_win);
 }
