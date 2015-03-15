@@ -689,17 +689,17 @@ static void check_pasted(void)
         }
     }
     while (tmp) {
-        if (tmp->cut == 1) {
+        if (tmp->cut == 1)
             rmrf(tmp->copied_file);
+        if ((tmp->cut == 1) || (tmp->cut == -1)) {
             for (i = 0; i < ps.cont; i++) {
-                if (printed[i] == 1)
-                    continue;
-                if (strcmp(tmp->copied_dir, ps.my_cwd[i]) == 0)
+                if ((printed[i] == 0) && (strcmp(tmp->copied_dir, ps.my_cwd[i]) == 0))
                     list_everything(i, 0, dim - 2, 1, 1);
             }
         }
         tmp = tmp->next;
     }
+    chdir(ps.my_cwd[ps.active]); // ensure process cwd is the one from active view
     print_info("Every files has been copied/moved.", INFO_LINE);
     free_copied_list(ps.copied_files);
     ps.copied_files = NULL;
@@ -777,7 +777,8 @@ static void free_everything(void)
     }
     free(config.editor);
     free(config.iso_mount_point);
-    free(ps.copied_files);
+    if (ps.copied_files)
+        free_copied_list(ps.copied_files);
 }
 
 static void print_info(char *str, int i)
