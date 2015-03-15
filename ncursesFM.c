@@ -53,6 +53,7 @@ static void main_loop(int *quit, int *old_number_files);
 static void change_dir(void);
 static void switch_hidden(void);
 static void manage_file(void);
+static int isIso(char *ext);
 static void open_file(void);
 static void helper_function(int argc, char *argv[]);
 static void init_func(void);
@@ -88,7 +89,9 @@ static void set_nodelay(bool x);
 static void get_full_path(char *full_path_current_position);
 static void quit_func(void);
 
-static const char *config_file_name = "ncursesFM.conf"; // will be "/etc/default/ncursesFM.conf"
+// static const char *config_file_name = "/etc/default/ncursesFM.conf";
+static const char *config_file_name = "ncursesFM.conf";
+static const char *iso_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
 static WINDOW *file_manager[MAX_TABS], *info_win, *helper_win = NULL;
 static int dim, pasted = 0;
 static struct dirent **namelist[MAX_TABS] = {NULL, NULL};
@@ -300,17 +303,28 @@ static void manage_file(void)
         tmp = tmp->next;
     }
     ext = strrchr(namelist[ps.active][ps.current_position[ps.active]]->d_name, '.');
-    if ((ext) && ((strcmp(ext, ".iso") == 0) || (strcmp(ext, ".bin") == 0) || (strcmp(ext, ".nrg") == 0) || (strcmp(ext, ".img") == 0) || (strcmp(ext, ".mdf") == 0))) {
-        if (config.iso_mount_point != NULL)
+    if ((ext) && (isIso(ext))) {
+        if (config.iso_mount_point)
             iso_mount_service();
         else
             print_info("You have to specify an iso mount point in config file.", ERR_LINE);
     } else {
-        if ((config.editor != NULL) && (namelist[ps.active][ps.current_position[ps.active]]->d_type == DT_REG))
+        if ((config.editor) && (namelist[ps.active][ps.current_position[ps.active]]->d_type == DT_REG))
             open_file();
         else
             print_info("You have to specify an editor in config file.", ERR_LINE);
     }
+}
+
+static int isIso(char *ext)
+{
+    int i = 0;
+    while (*(iso_extensions + i)) {
+        if (strcmp(ext, *(iso_extensions + i)) == 0)
+            return 1;
+        i++;
+    }
+    return 0;
 }
 
 static void open_file(void)
@@ -318,7 +332,7 @@ static void open_file(void)
     pid_t pid;
     endwin();
     pid = vfork();
-    if (pid == 0)  /* child */
+    if (pid == 0)
         execl(config.editor, config.editor, namelist[ps.active][ps.current_position[ps.active]]->d_name, NULL);
     else
         waitpid(pid, NULL, 0);
@@ -343,21 +357,21 @@ static void helper_function(int argc, char *argv[])
 static void init_func(void)
 {
     config_t cfg;
-    const char *str, *str2;
+    const char *str_editor, *str_hidden;
     config_init(&cfg);
     if (!config_read_file(&cfg, config_file_name)) {
         printf("\n%s:%d - %s\n", config_error_file(&cfg), config_error_line(&cfg), config_error_text(&cfg));
         config_destroy(&cfg);
         exit(1);
     }
-    if (config_lookup_string(&cfg, "editor", &str)) {
-        config.editor = malloc(strlen(str) * sizeof(char) + 1);
-        strcpy(config.editor, str);
+    if (config_lookup_string(&cfg, "editor", &str_editor)) {
+        config.editor = malloc(strlen(str_editor) * sizeof(char) + 1);
+        strcpy(config.editor, str_editor);
     }
     config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
-    if (config_lookup_string(&cfg, "iso_mount_point", &str2)) {
-        config.iso_mount_point = malloc(strlen(str2) * sizeof(char) + 1);
-        strcpy(config.iso_mount_point, str2);
+    if (config_lookup_string(&cfg, "iso_mount_point", &str_hidden)) {
+        config.iso_mount_point = malloc(strlen(str_hidden) * sizeof(char) + 1);
+        strcpy(config.iso_mount_point, str_hidden);
     }
     config_destroy(&cfg);
 }
@@ -379,8 +393,11 @@ static void iso_mount_service(void)
         waitpid(pid, NULL, 0);
     }
     rmdir(mount_point);
-    list_everything(ps.active, 0, dim - 2, 1, 1);
-    sync_changes();
+    if (strcmp(config.iso_mount_point, ps.my_cwd[ps.active]) == 0)
+        list_everything(ps.active, 0, dim - 2, 1, 1);
+    if (strcmp(config.iso_mount_point, ps.my_cwd[1 - ps.active]) == 0)
+        list_everything(1 - ps.active, 0, dim - 2, 1, 1);
+    chdir(ps.my_cwd[ps.active]);
 }
 
 static void new_file(void)
@@ -831,12 +848,12 @@ static void trigger_show_helper_message(void)
 static void helper_print(void)
 {
     wprintw(helper_win, "\n HELPER MESSAGE:\n * n and r to create/remove a file.\n");
-    wprintw(helper_win, " * Enter to surf between folders (follows ls colors) or to open files with $editor var.\n");
+    wprintw(helper_win, " * Enter to surf between folders or to open files with $editor var.\n");
     wprintw(helper_win, " * Enter will eventually mount your ISO files in $path.\n");
     wprintw(helper_win, " * You must have fuseiso installed. To unmount, simply press again enter on the same iso file.\n");
-    wprintw(helper_win, " * Press h to trigger the showing of hide files.\n");
-    wprintw(helper_win, " * c to copy, p to paste, and x to cut a file. c again to remove from memory previously copied (not yet pasted) file.\n");
-    wprintw(helper_win, " * s to see stat about files in current folder (Sizes and permissions).\n");
+    wprintw(helper_win, " * Press h to trigger the showing of hide files. s to see stat about files in current folder.\n");
+    wprintw(helper_win, " * c to copy, p to paste, and x to cut a file/dir.\n");
+    wprintw(helper_win, " * You can copy as many files/dirs as you want. c again on a file/dir to remove it from copy list.\n");
     wprintw(helper_win, " * o to rename current file/dir; d to create new dir.\n");
     wprintw(helper_win, " * t to create new tab (at most one more). w to close tab.\n");
     wprintw(helper_win, " * You can't close first tab. Use q to quit.");
