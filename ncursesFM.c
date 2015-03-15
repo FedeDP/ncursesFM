@@ -290,13 +290,17 @@ static void switch_hidden(void)
 static void manage_file(void)
 {
     char ext[4], full_path_current_position[PATH_MAX];
+    copied_file_list *tmp = ps.copied_files;
     get_full_path(full_path_current_position);
-    if ((ps.copied_files) && (strcmp(ps.copied_files->copied_file, full_path_current_position) == 0)) {
-        print_info("You're trying to open a file/dir previously selected for copy. Please cancel the copy before.", ERR_LINE);
-        return;
+    while (tmp) {
+        if (strcmp(tmp->copied_file, full_path_current_position) == 0) {
+            print_info("You're trying to open a file/dir previously selected for copy. Please cancel the copy before.", ERR_LINE);
+            return;
+        }
+        tmp = tmp->next;
     }
-    strcpy(ext, namelist[ps.active][ps.current_position[ps.active]]->d_name + (strlen(namelist[ps.active][ps.current_position[ps.active]]->d_name) - 4));
-    if ((strcmp(ext, ".iso") == 0) || (strcmp(ext, ".bin") == 0) || (strcmp(ext, ".nrg") == 0) || (strcmp(ext, ".img") == 0) || (strcmp(ext, ".mdf") == 0))  {
+    strcpy(ext, strrchr(namelist[ps.active][ps.current_position[ps.active]]->d_name, '.'));
+    if ((strcmp(ext, ".iso") == 0) || (strcmp(ext, ".bin") == 0) || (strcmp(ext, ".nrg") == 0) || (strcmp(ext, ".img") == 0) || (strcmp(ext, ".mdf") == 0)) {
         if (config.iso_mount_point != NULL)
             iso_mount_service();
         else
@@ -401,10 +405,14 @@ static void new_file(void)
 static void remove_file(void)
 {
     char *mesg = "Are you serious? y/n:> ", c, full_path_current_position[PATH_MAX];
+    copied_file_list *tmp = ps.copied_files;
     get_full_path(full_path_current_position);
-    if ((ps.copied_files) && (strcmp(ps.copied_files->copied_file, full_path_current_position) == 0)) {
-        print_info("You're trying to remove a file/dir previously selected for copy. Please cancel the copy before.", ERR_LINE);
-        return;
+    while (tmp) {
+        if (strcmp(tmp->copied_file, full_path_current_position) == 0) {
+            print_info("You're trying to remove a file/dir previously selected for copy. Please cancel the copy before.", ERR_LINE);
+            return;
+        }
+        tmp = tmp->next;
     }
     echo();
     print_info(mesg, INFO_LINE);
