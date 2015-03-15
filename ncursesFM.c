@@ -605,7 +605,6 @@ static void copy_file(char c)
         ps.copied_files->next = NULL;
     }
     clear_info();
-    wrefresh(info_win);
 }
 
 static void paste_file(void)
@@ -615,27 +614,37 @@ static void paste_file(void)
     struct stat file_stat_copied, file_stat_pasted;
     copied_file_list *tmp = ps.copied_files;
     strcpy(ps.pasted_dir, ps.my_cwd[ps.active]);
-    stat(ps.pasted_dir, &file_stat_pasted);
-    while (tmp) {
-        size++;
-        if (strcmp(ps.pasted_dir, tmp->copied_dir) != 0) {
-            stat(tmp->copied_dir, &file_stat_copied);
-            if ((file_stat_copied.st_dev == file_stat_pasted.st_dev) && (tmp->cut == 1)) {
-                strcpy(pasted_file, ps.pasted_dir);
-                strcat(pasted_file, strrchr(tmp->copied_file, '/'));
-                tmp->cut = -1;
-                size--;
-                if (rename(tmp->copied_file, pasted_file) == - 1)
-                    print_info(strerror(errno), ERR_LINE);
-            }
-        } else
-            print_info("Cannot copy a file in the same folder.", ERR_LINE);
-        tmp = tmp->next;
+    if (access(ps.pasted_dir, W_OK) == 0) {
+        stat(ps.pasted_dir, &file_stat_pasted);
+        while (tmp) {
+            size++;
+            if (strcmp(ps.pasted_dir, tmp->copied_dir) != 0) {
+                stat(tmp->copied_dir, &file_stat_copied);
+                if ((file_stat_copied.st_dev == file_stat_pasted.st_dev) && (tmp->cut == 1)) {
+                    strcpy(pasted_file, ps.pasted_dir);
+                    strcat(pasted_file, strrchr(tmp->copied_file, '/'));
+                    tmp->cut = -1;
+                    size--;
+                    if (rename(tmp->copied_file, pasted_file) == - 1)
+                        print_info(strerror(errno), ERR_LINE);
+                }
+            } else
+                print_info("Cannot copy a file in the same folder.", ERR_LINE);
+            tmp = tmp->next;
+        }
+        if (size > 0)
+            pthread_create(&th, NULL, cpr, NULL);
+        else
+            pasted = 1;
+    } else {
+        wclear(info_win);
+        mvwprintw(info_win, ERR_LINE, 1, "Cannot copy here. Check user permissions.");
+        wrefresh(info_win);
+        free_copied_list(ps.copied_files);
+        ps.copied_files = NULL;
+        memset(ps.pasted_dir, 0, strlen(ps.pasted_dir));
+        set_nodelay(FALSE);
     }
-    if (size > 0)
-        pthread_create(&th, NULL, cpr, NULL);
-    else
-        pasted = 1;
 }
 
 

@@ -5,5 +5,4 @@
  * archives support ** -> execl tar?
  * search function ** -> only file in current directory tree. -> nftw?
  * symlinking file/dir support *
- * make a proper check to see if "cpr" failed.
  */
