@@ -60,6 +60,7 @@ static void init_func(void);
 static void iso_mount_service(void);
 static void new_file(void);
 static void remove_file(void);
+static int file_isCopied(void);
 static void my_sort(int win);
 static void new_tab(void);
 static void delete_tab(void);
@@ -81,7 +82,7 @@ static int recursive_remove(const char *path, const struct stat *sb, int typefla
 static int rmrf(char *path);
 static void free_everything(void);
 static void print_info(char *str, int i);
-static void clear_info(void);
+static void clear_info(int i);
 static void trigger_show_helper_message(void);
 static void helper_print(void);
 static void show_stat(int init, int end, int win);
@@ -279,7 +280,8 @@ static void change_dir(void)
     chdir(namelist[ps.active][ps.current_position[ps.active]]->d_name);
     getcwd(ps.my_cwd[ps.active], PATH_MAX);
     list_everything(ps.active, 0, dim - 2, 1, 1);
-    clear_info();
+    clear_info(INFO_LINE);
+    clear_info(ERR_LINE);
 }
 
 static void switch_hidden(void)
@@ -292,16 +294,9 @@ static void switch_hidden(void)
 
 static void manage_file(void)
 {
-    char *ext, full_path_current_position[PATH_MAX];
-    copied_file_list *tmp = ps.copied_files;
-    get_full_path(full_path_current_position);
-    while (tmp) {
-        if (strcmp(tmp->copied_file, full_path_current_position) == 0) {
-            print_info("You're trying to open a file/dir previously selected for copy. Please cancel the copy before.", ERR_LINE);
-            return;
-        }
-        tmp = tmp->next;
-    }
+    char *ext;
+    if (file_isCopied())
+        return;
     ext = strrchr(namelist[ps.active][ps.current_position[ps.active]]->d_name, '.');
     if ((ext) && (isIso(ext))) {
         if (config.iso_mount_point)
@@ -421,29 +416,39 @@ static void new_file(void)
 
 static void remove_file(void)
 {
-    char *mesg = "Are you serious? y/n:> ", c, full_path_current_position[PATH_MAX];
-    copied_file_list *tmp = ps.copied_files;
-    get_full_path(full_path_current_position);
-    while (tmp) {
-        if (strcmp(tmp->copied_file, full_path_current_position) == 0) {
-            print_info("You're trying to remove a file/dir previously selected for copy. Please cancel the copy before.", ERR_LINE);
-            return;
-        }
-        tmp = tmp->next;
-    }
+    char *mesg = "Are you serious? y/n:> ", c;
+    if (file_isCopied())
+        return;
     echo();
     print_info(mesg, INFO_LINE);
     c = wgetch(info_win);
     if (c == 'y') {
-        if (rmrf(namelist[ps.active][ps.current_position[ps.active]]->d_name) == 0) {
+        if (rmrf(namelist[ps.active][ps.current_position[ps.active]]->d_name) == -1)
+            print_info("Could not remove. Check user permissions.", ERR_LINE);
+        else {
             list_everything(ps.active, 0, dim - 2, 1, 1);
             sync_changes();
             print_info("File/dir removed.", INFO_LINE);
         }
     } else {
-        clear_info();
+        clear_info(INFO_LINE);
     }
     noecho();
+}
+
+static int file_isCopied(void)
+{
+    char full_path_current_position[PATH_MAX];
+    copied_file_list *tmp = ps.copied_files;
+    get_full_path(full_path_current_position);
+    while (tmp) {
+        if (strcmp(tmp->copied_file, full_path_current_position) == 0) {
+            print_info("The file is already selected for copy. Please cancel the copy before.", ERR_LINE);
+            return 1;
+        }
+        tmp = tmp->next;
+    }
+    return 0;
 }
 
 static void my_sort(int win)
@@ -629,7 +634,8 @@ static void copy_file(char c)
             ps.copied_files->cut = 1;
         ps.copied_files->next = NULL;
     }
-    clear_info();
+    mvwprintw(info_win, INFO_LINE, COLS - strlen("File added to copy list."), "File added to copy list.");
+    wrefresh(info_win);
 }
 
 static void paste_file(void)
@@ -707,7 +713,9 @@ static void check_pasted(void)
     }
     while (tmp) {
         if (tmp->cut == 1)
-            rmrf(tmp->copied_file);
+            if (rmrf(tmp->copied_file) == -1) {
+                print_info("Could not cut. Check user permissions.", ERR_LINE);
+            }
         if ((tmp->cut == 1) || (tmp->cut == -1)) {
             for (i = 0; i < ps.cont; i++) {
                 if ((printed[i] == 0) && (strcmp(tmp->copied_dir, ps.my_cwd[i]) == 0))
@@ -716,7 +724,7 @@ static void check_pasted(void)
         }
         tmp = tmp->next;
     }
-    chdir(ps.my_cwd[ps.active]); // ensure process cwd is the one from active view
+    chdir(ps.my_cwd[ps.active]);
     print_info("Every files has been copied/moved.", INFO_LINE);
     free_copied_list(ps.copied_files);
     ps.copied_files = NULL;
@@ -734,12 +742,9 @@ static void free_copied_list(copied_file_list *h)
 
 static void rename_file_folders(void)
 {
-    char *mesg = "Insert new name:> ", str[PATH_MAX], full_path_current_position[PATH_MAX];
-    get_full_path(full_path_current_position);
-    if (strcmp(ps.copied_files->copied_file, full_path_current_position) == 0) {
-        print_info("You're trying to rename a file/dir previously selected for copy. Please cancel the copy before.", ERR_LINE);
+    char *mesg = "Insert new name:> ", str[PATH_MAX];
+    if (file_isCopied())
         return;
-    }
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
@@ -771,15 +776,14 @@ static void create_dir(void)
 
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
-    int res = remove(path);
-    if (res)
-        print_info(strerror(errno), ERR_LINE);
-    return res;
+    return remove(path);
 }
 
 static int rmrf(char *path)
 {
-    return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS);
+    if (access(path, W_OK) == 0)
+        return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS);
+    return -1;
 }
 
 static void free_everything(void)
@@ -800,14 +804,15 @@ static void free_everything(void)
 
 static void print_info(char *str, int i)
 {
-    clear_info();
+    clear_info(i);
     mvwprintw(info_win, i, 1, str);
     wrefresh(info_win);
 }
 
-static void clear_info(void)
+static void clear_info(int i)
 {
-    wclear(info_win);
+    wmove(info_win, i, 1);
+    wclrtoeol(info_win);
     if ((ps.copied_files) && (pasted == 0))
         mvwprintw(info_win, INFO_LINE, COLS - strlen("File added to copy list."), "File added to copy list.");
     wrefresh(info_win);
