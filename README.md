@@ -2,7 +2,7 @@
 Ncurses File Manager for linux
 
 It has following features for now:
-* basic file/dir functions support: copy/paste/cut, new/remove, rename. Copy/cut: multiple file selection for copy works. To remove a file from "copy list" just press c/x again on it.
+* basic file/dir functions support: copy/paste/cut, new/remove, rename. Copy/cut: to remove a file previously selected for copy just press c/x again on it.
 * 2 tabs support.
 * iso mount support -> you must have fuseiso installed.
 * open files with $editor (settings defined) var.
