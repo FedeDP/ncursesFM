@@ -24,6 +24,7 @@ struct conf {
     char *editor;
     int show_hidden;
     char *iso_mount_point;
+    char *starting_dir;
 };
 
 typedef struct list {
@@ -109,7 +110,8 @@ static pthread_t th;
 static struct conf config = {
     .editor = NULL,
     .show_hidden = 0,
-    .iso_mount_point = NULL
+    .iso_mount_point = NULL,
+    .starting_dir = NULL
 };
 static struct vars ps = {
     .active = 0,
@@ -125,7 +127,10 @@ int main(int argc, char *argv[])
     helper_function(argc, argv);
     init_func();
     screen_init();
-    getcwd(ps.my_cwd[ps.active], PATH_MAX);
+    if (!config.starting_dir)
+        getcwd(ps.my_cwd[ps.active], PATH_MAX);
+    else
+        strcpy(ps.my_cwd[ps.active], config.starting_dir);
     list_everything(ps.active, 0, dim - 2, 1, 1);
     while (!quit)
         main_loop(&quit, &old_number_files);
@@ -152,7 +157,7 @@ static void helper_function(int argc, char *argv[])
 static void init_func(void)
 {
     config_t cfg;
-    const char *str_editor, *str_hidden;
+    const char *str_editor, *str_hidden, *str_starting_dir;
     config_init(&cfg);
     if (!config_read_file(&cfg, config_file_name)) {
         printf("\n%s:%d - %s\n", config_error_file(&cfg), config_error_line(&cfg), config_error_text(&cfg));
@@ -167,6 +172,10 @@ static void init_func(void)
     if (config_lookup_string(&cfg, "iso_mount_point", &str_hidden)) {
         config.iso_mount_point = malloc(strlen(str_hidden) * sizeof(char) + 1);
         strcpy(config.iso_mount_point, str_hidden);
+    }
+    if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) {
+        config.starting_dir = malloc(strlen(str_starting_dir) * sizeof(char) + 1);
+        strcpy(config.starting_dir, str_starting_dir);
     }
     config_destroy(&cfg);
 }

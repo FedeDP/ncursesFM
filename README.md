@@ -19,6 +19,7 @@ It reads following variables from ncursesFM.conf (using libconfig)...remember to
 * editor -> editor used to open files
 * show_hidden -> whether to show hidden files by default or not.
 * iso_mount_point -> mount point of any iso (for example /home/$your_username). Mount point will be "$iso_mount_point/iso_name".
+* starting_directory -> directory in which the fm will start.
 
 PKGBUILD for Archlinux is here! Soon on AUR.
 
