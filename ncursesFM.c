@@ -627,18 +627,18 @@ static void iso_mount_service(char *str)
     strcpy(mount_point, config.iso_mount_point);
     strcat(mount_point, "/");
     strncat(mount_point, str, strlen(str) - 4);
-    pid = vfork();
-    if (pid == 0) {
-        if (access("/usr/bin/fuseiso", F_OK ) != -1) {
+    if (access("/usr/bin/fuseiso", F_OK ) != -1) {
+        pid = vfork();
+        if (pid == 0) {
             if (mkdir(mount_point, ACCESSPERMS) == -1) {
                 execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
             } else
                 execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", str, mount_point, NULL);
         } else {
-            print_info("You need fuseiso for iso mounting.", ERR_LINE);
+            waitpid(pid, NULL, 0);
         }
     } else {
-        waitpid(pid, NULL, 0);
+        print_info("You need fuseiso for iso mounting.", ERR_LINE);
     }
     rmdir(mount_point);
     if (strcmp(config.iso_mount_point, ps.my_cwd[ps.active]) == 0)
