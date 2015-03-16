@@ -865,7 +865,7 @@ static int recursive_remove(const char *path, const struct stat *sb, int typefla
 static int rmrf(char *path)
 {
     if (access(path, W_OK) == 0)
-        return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS);
+        return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS | FTW_MOUNT);
     return -1;
 }
 
@@ -881,7 +881,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     if (strncmp(str, searched_string, strlen(searched_string)) == 0) {
         found_searched[i] = malloc(sizeof(char) * strlen(path));
         strcpy(found_searched[i], path);
-        if (typeflag == FTW_DP) {
+        if (typeflag == FTW_D) {
             found_searched[i] = realloc(found_searched[i], sizeof(char) * strlen(path) + 1);
             strcat(found_searched[i], "/");
         }
@@ -891,7 +891,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 
 static int search_file(char *path)
 {
-    return nftw(path, recursive_search, 64, FTW_DEPTH | FTW_PHYS);
+    return nftw(path, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
 }
 
 static void search(void)
