@@ -89,6 +89,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 static int search_file(char *path);
 static void search(void);
 static int search_loop(int size);
+static void print_support(char *str);
 /* Helper functions */
 static int isIso(char *ext);
 static int file_isCopied(void);
@@ -444,9 +445,9 @@ static void helper_print(void)
     wprintw(helper_win, " * Enter will eventually mount your ISO files in $path.\n");
     wprintw(helper_win, " * You must have fuseiso installed. To unmount, simply press again enter on the same iso file.\n");
     wprintw(helper_win, " * Press h to trigger the showing of hide files. s to see stat about files in current folder.\n");
-    wprintw(helper_win, " * c to copy, p to paste, and x to cut a file/dir.\n");
+    wprintw(helper_win, " * c to copy, p to paste, and x to cut a file/dir. p to print a file.\n");
     wprintw(helper_win, " * You can copy as many files/dirs as you want. c again on a file/dir to remove it from copy list.\n");
-    wprintw(helper_win, " * o to rename current file/dir; d to create new dir. b to search (case sensitive) for a file.\n");
+    wprintw(helper_win, " * o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.\n");
     wprintw(helper_win, " * t to create new tab (at most one more). w to close tab.\n");
     wprintw(helper_win, " * You can't close first tab. Use q to quit.");
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
@@ -557,8 +558,12 @@ static void main_loop(int *quit, int *old_number_files)
         case 'd': // d to create folder
             create_dir();
             break;
-        case 'b': //search
+        case 'f': // b to search
             search();
+            break;
+        case 'p': // p to print
+            if (namelist[ps.active][ps.current_position[ps.active]]->d_type == DT_REG)
+                print_support(namelist[ps.active][ps.current_position[ps.active]]->d_name);
             break;
         case 'q': /* q to exit */
             quit_func();
@@ -986,6 +991,22 @@ static int search_loop(int size)
         }
     } while ((c != 'q') && (ps.number_of_files[ps.active] == size));
     return c;
+}
+
+static void print_support(char *str)
+{
+    pid_t pid;
+    char *mesg = "Do you really want to print this file? y/n:> ", c;
+    if (file_isCopied())
+        return;
+    echo();
+    print_info(mesg, INFO_LINE);
+    c = wgetch(info_win);
+    if (c == 'y') {
+        pid = vfork();
+        if (pid == 0)
+            execl("/usr/bin/lpr", "/usr/bin/lpr", str, NULL);
+    }
 }
 
 static int isIso(char *ext)
