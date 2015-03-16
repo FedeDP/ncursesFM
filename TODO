@@ -2,6 +2,5 @@
  * Bookmarks/devices tabs * -> Bookmarks defined in .conf file? *
  * split source code **
  * archives support ** -> execl tar?
- * search function ** -> only file in current directory tree. -> nftw?
- * symlinking file/dir support * http://www.gnu.org/software/libc/manual/html_node/Symbolic-Links.html -> very easy
+ * be aware that searched files list may be longer than (dim - 2)
  */
