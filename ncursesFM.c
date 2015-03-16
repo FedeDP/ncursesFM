@@ -69,9 +69,9 @@ static void main_loop(int *quit, int *old_number_files);
 /* FM functions */
 static void change_dir(char *str);
 static void switch_hidden(void);
-static void manage_file(void);
-static void open_file(void);
-static void iso_mount_service(void);
+static void manage_file(char *str);
+static void open_file(char *str);
+static void iso_mount_service(char *str);
 static void new_file(void);
 static void remove_file(void);
 static void manage_c_press(char c);
@@ -503,7 +503,7 @@ static void main_loop(int *quit, int *old_number_files)
             if ((namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_DIR) || (namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_LNK))
                 change_dir(namelist[ps.active][ps.current_position[ps.active]]->d_name);
             else
-                manage_file();
+                manage_file(namelist[ps.active][ps.current_position[ps.active]]->d_name);
             break;
         case 't': // t to open second tab
             if (ps.cont < MAX_TABS)
@@ -575,50 +575,50 @@ static void switch_hidden(void)
         list_everything(i, 0, dim - 2, 1, 1);
 }
 
-static void manage_file(void)
+static void manage_file(char *str)
 {
     char *ext;
     if (file_isCopied())
         return;
-    ext = strrchr(namelist[ps.active][ps.current_position[ps.active]]->d_name, '.');
+    ext = strrchr(str, '.');
     if ((ext) && (isIso(ext))) {
         if (config.iso_mount_point)
-            iso_mount_service();
+            iso_mount_service(str);
         else
             print_info("You have to specify an iso mount point in config file.", ERR_LINE);
     } else {
-        if ((config.editor) && (namelist[ps.active][ps.current_position[ps.active]]->d_type == DT_REG))
-            open_file();
+        if (config.editor)
+            open_file(str);
         else
             print_info("You have to specify an editor in config file.", ERR_LINE);
     }
 }
 
-static void open_file(void)
+static void open_file(char *str)
 {
     pid_t pid;
     endwin();
     pid = vfork();
     if (pid == 0)
-        execl(config.editor, config.editor, namelist[ps.active][ps.current_position[ps.active]]->d_name, NULL);
+        execl(config.editor, config.editor, str, NULL);
     else
         waitpid(pid, NULL, 0);
     refresh();
 }
 
-static void iso_mount_service(void)
+static void iso_mount_service(char *str)
 {
     pid_t pid;
-    char mount_point[strlen(namelist[ps.active][ps.current_position[ps.active]]->d_name) - 4 + strlen(config.iso_mount_point)];
+    char mount_point[strlen(str) - 4 + strlen(config.iso_mount_point)];
     strcpy(mount_point, config.iso_mount_point);
     strcat(mount_point, "/");
-    strncat(mount_point, namelist[ps.active][ps.current_position[ps.active]]->d_name, strlen(namelist[ps.active][ps.current_position[ps.active]]->d_name) - 4);
+    strncat(mount_point, str, strlen(str) - 4);
     pid = vfork();
     if (pid == 0) {
         if (mkdir(mount_point, ACCESSPERMS) == -1) {
             execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
         } else
-            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", namelist[ps.active][ps.current_position[ps.active]]->d_name, mount_point, NULL);
+            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", str, mount_point, NULL);
     } else {
         waitpid(pid, NULL, 0);
     }
@@ -961,9 +961,13 @@ static int search_loop(int size)
                 break;
             case 10:
                 str = strrchr(found_searched[ps.current_position[ps.active]], '/');
-                found_searched[ps.current_position[ps.active]][strlen(found_searched[ps.current_position[ps.active]]) - strlen(str)] = '\0';
-                ps.number_of_files[ps.active] = old_size;
-                change_dir(found_searched[ps.current_position[ps.active]]);
+                if (strlen(str) == 1) {
+                    found_searched[ps.current_position[ps.active]][strlen(found_searched[ps.current_position[ps.active]]) - strlen(str)] = '\0';
+                    ps.number_of_files[ps.active] = old_size;
+                    change_dir(found_searched[ps.current_position[ps.active]]);
+                } else {
+                    manage_file(found_searched[ps.current_position[ps.active]]);
+                }
                 break;
         }
         wattroff(file_manager[ps.active], A_BOLD);
@@ -971,7 +975,7 @@ static int search_loop(int size)
             wborder(file_manager[ps.active], '|', '|', '-', '-', '+', '+', '+', '+');
             mvwprintw(file_manager[ps.active], 0, 0, "Found file searching %s: ", searched_string);
         }
-    } while ((c != 'q') && (c != 10));
+    } while ((c != 'q') && (ps.number_of_files[ps.active] == size));
     return c;
 }
 
