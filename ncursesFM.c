@@ -358,11 +358,11 @@ static void colored_folders(int i, int win)
 {
     struct stat file_stat;
     wattron(file_manager[win], A_BOLD);
-    if ((namelist[win][i]->d_type == DT_DIR) || (namelist[win][i]->d_type == DT_LNK)) {
+    if (namelist[win][i]->d_type == DT_DIR)
         wattron(file_manager[win], COLOR_PAIR(1));
-        if (namelist[win][i]->d_type == DT_LNK)
-            wattron(file_manager[win], COLOR_PAIR(3));
-    } else if (namelist[win][i]->d_type == DT_REG) {
+    else if (namelist[win][i]->d_type == DT_LNK)
+        wattron(file_manager[win], COLOR_PAIR(3));
+    else if (namelist[win][i]->d_type == DT_REG) {
         stat(namelist[win][i]->d_name, &file_stat);
         if (file_stat.st_mode & S_IXUSR)
             wattron(file_manager[win], COLOR_PAIR(2));
@@ -879,12 +879,10 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     strcpy(str, strrchr(path, '/'));
     memmove(str, str + 1, strlen(str));
     if (strncmp(str, searched_string, strlen(searched_string)) == 0) {
-        found_searched[i] = malloc(sizeof(char) * strlen(path));
+        found_searched[i] = malloc(sizeof(char) * PATH_MAX);
         strcpy(found_searched[i], path);
-        if (typeflag == FTW_D) {
-            found_searched[i] = realloc(found_searched[i], sizeof(char) * strlen(path) + 1);
+        if (typeflag == FTW_D)
             strcat(found_searched[i], "/");
-        }
     }
     return 0;
 }
@@ -914,8 +912,10 @@ static void search(void)
     wclear(file_manager[ps.active]);
     wborder(file_manager[ps.active], '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(file_manager[ps.active], 0, 0, "Found file searching %s: ", searched_string);
+    wattron(file_manager[ps.active], A_BOLD);
     for (i = 0; (i < dim - 2) && (found_searched[i]); i++)
         mvwprintw(file_manager[ps.active], INITIAL_POSITION + i, 4, "%s", found_searched[i]);
+    wattroff(file_manager[ps.active], A_BOLD);
     if (search_loop(i) == 'q')
         list_everything(ps.active, 0, dim - 2, 1, 1);
     clear_info(INFO_LINE);
