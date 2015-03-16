@@ -629,10 +629,14 @@ static void iso_mount_service(char *str)
     strncat(mount_point, str, strlen(str) - 4);
     pid = vfork();
     if (pid == 0) {
-        if (mkdir(mount_point, ACCESSPERMS) == -1) {
-            execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
-        } else
-            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", str, mount_point, NULL);
+        if (access("/usr/bin/fuseiso", F_OK ) != -1) {
+            if (mkdir(mount_point, ACCESSPERMS) == -1) {
+                execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
+            } else
+                execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", str, mount_point, NULL);
+        } else {
+            print_info("You need fuseiso for iso mounting.", ERR_LINE);
+        }
     } else {
         waitpid(pid, NULL, 0);
     }
@@ -1003,9 +1007,14 @@ static void print_support(char *str)
     print_info(mesg, INFO_LINE);
     c = wgetch(info_win);
     if (c == 'y') {
-        pid = vfork();
-        if (pid == 0)
-            execl("/usr/bin/lpr", "/usr/bin/lpr", str, NULL);
+        if (access("/usr/bin/lpr", F_OK ) != -1) {
+            pid = vfork();
+            if (pid == 0)
+                execl("/usr/bin/lpr", "/usr/bin/lpr", str, NULL);
+        } else {
+            clear_info(INFO_LINE);
+            print_info("You must have cups installed.", ERR_LINE);
+        }
     }
 }
 
