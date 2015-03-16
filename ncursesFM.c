@@ -54,8 +54,8 @@ static int is_hidden(const struct dirent *current_file);
 static void my_sort(int win);
 static void new_tab(void);
 static void delete_tab(void);
-static void scroll_down(void);
-static void scroll_up(void);
+static void scroll_down(char *str);
+static void scroll_up(char *str);
 static void scroll_helper_func(int x, int direction);
 static void sync_changes(void);
 static void colored_folders(int i, int win);
@@ -223,6 +223,7 @@ static void list_everything(int win, int old_dim, int end, int erase, int reset)
         ps.number_of_files[win] = scandir(ps.my_cwd[win], &namelist[win], is_hidden, alphasort);
         my_sort(win);
     }
+
     wborder(file_manager[win], '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(file_manager[win], 0, 0, "Current dir: %.*s ", COLS / ps.cont, ps.my_cwd[win]);
     for (i = old_dim; (i < ps.number_of_files[win]) && (i  < old_dim + end); i++) {
@@ -304,7 +305,7 @@ static void delete_tab(void)
     ps.cont--;
 }
 
-static void scroll_down(void)
+static void scroll_down(char *str)
 {
     int real_height = dim - 2;
     ps.current_position[ps.active]++;
@@ -315,14 +316,19 @@ static void scroll_down(void)
     if (ps.current_position[ps.active] - real_height == ps.delta[ps.active]) {
         scroll_helper_func(real_height, 1);
         ps.delta[ps.active]++;
-        list_everything(ps.active, ps.current_position[ps.active], 1, 0, 0);
+        if (!str)
+            list_everything(ps.active, ps.current_position[ps.active], 1, 0, 0);
+        else {
+            mvwprintw(file_manager[ps.active], real_height, 4, str);
+            mvwprintw(file_manager[ps.active], INITIAL_POSITION + ps.current_position[ps.active] - ps.delta[ps.active], 1, "->");
+        }
     } else {
         mvwprintw(file_manager[ps.active], ps.current_position[ps.active] - ps.delta[ps.active], 1, "  ");
         mvwprintw(file_manager[ps.active], ps.current_position[ps.active] - ps.delta[ps.active] + INITIAL_POSITION, 1, "->");
     }
 }
 
-static void scroll_up(void)
+static void scroll_up(char *str)
 {
     ps.current_position[ps.active]--;
     if (ps.current_position[ps.active] < 0) {
@@ -332,7 +338,12 @@ static void scroll_up(void)
     if (ps.current_position[ps.active] < ps.delta[ps.active]) {
         scroll_helper_func(INITIAL_POSITION, - 1);
         ps.delta[ps.active]--;
-        list_everything(ps.active, ps.delta[ps.active], 1, 0, 0);
+        if (!str)
+            list_everything(ps.active, ps.delta[ps.active], 1, 0, 0);
+        else {
+            mvwprintw(file_manager[ps.active], INITIAL_POSITION, 4, str);
+            mvwprintw(file_manager[ps.active], INITIAL_POSITION + ps.current_position[ps.active] - ps.delta[ps.active], 1, "->");
+        }
     } else {
         mvwprintw(file_manager[ps.active], ps.current_position[ps.active] - ps.delta[ps.active] + 2, 1, "  ");
         mvwprintw(file_manager[ps.active], ps.current_position[ps.active] - ps.delta[ps.active] + 1, 1, "->");
@@ -480,10 +491,10 @@ static void main_loop(int *quit, int *old_number_files)
     c = wgetch(file_manager[ps.active]);
     switch (c) {
         case KEY_UP:
-            scroll_up();
+            scroll_up(NULL);
             break;
         case KEY_DOWN:
-            scroll_down();
+            scroll_down(NULL);
             break;
         case 'h': // h to show hidden files
             switch_hidden();
@@ -895,7 +906,7 @@ static int search_file(char *path)
 static void search(void)
 {
     char *mesg = "Insert filename to be found, at least 3 chars:> ";
-    int i;
+    int i = 0, old_size = ps.number_of_files[ps.active];
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, searched_string);
@@ -905,7 +916,7 @@ static void search(void)
         return;
     }
     search_file(ps.my_cwd[ps.active]);
-    if (!found_searched[0]) {
+    if (!found_searched[i]) {
         print_info("No files found.", INFO_LINE);
         return;
     }
@@ -916,8 +927,12 @@ static void search(void)
     for (i = 0; (i < dim - 2) && (found_searched[i]); i++)
         mvwprintw(file_manager[ps.active], INITIAL_POSITION + i, 4, "%s", found_searched[i]);
     wattroff(file_manager[ps.active], A_BOLD);
-    if (search_loop(i) == 'q')
+    while (found_searched[i])
+        i++;
+    if (search_loop(i) == 'q') {
+        ps.number_of_files[ps.active] = old_size;
         list_everything(ps.active, 0, dim - 2, 1, 1);
+    }
     clear_info(INFO_LINE);
     for (i = 0; found_searched[i]; i++) {
         found_searched[i] = realloc(found_searched[i], 0);
@@ -928,29 +943,33 @@ static void search(void)
 static int search_loop(int size)
 {
     char *str;
-    int c, i = 0, old_i = 0;
+    int c, old_size = ps.number_of_files[ps.active];
+    ps.delta[ps.active] = 0;
+    ps.current_position[ps.active] = 0;
+    ps.number_of_files[ps.active] = size;
     print_info("q to leave search win", INFO_LINE);
+    mvwprintw(file_manager[ps.active], INITIAL_POSITION, 1, "->");
     do {
-        mvwprintw(file_manager[ps.active], INITIAL_POSITION + old_i, 1, "  ");
-        if (i == size)
-            i = 0;
-        else if (i < 0)
-            i = size - 1;
-        old_i = i;
-        mvwprintw(file_manager[ps.active], INITIAL_POSITION + i, 1, "->");
         c = wgetch(file_manager[ps.active]);
+        wattron(file_manager[ps.active], A_BOLD);
         switch (c) {
             case KEY_UP:
-                i--;
+                scroll_up(found_searched[ps.current_position[ps.active]]);
                 break;
             case KEY_DOWN:
-                i++;
+                scroll_down(found_searched[ps.current_position[ps.active]]);
                 break;
             case 10:
-                str = strrchr(found_searched[i], '/');
-                found_searched[i][strlen(found_searched[i]) - strlen(str)] = '\0';
-                change_dir(found_searched[i]);
+                str = strrchr(found_searched[ps.current_position[ps.active]], '/');
+                found_searched[ps.current_position[ps.active]][strlen(found_searched[ps.current_position[ps.active]]) - strlen(str)] = '\0';
+                ps.number_of_files[ps.active] = old_size;
+                change_dir(found_searched[ps.current_position[ps.active]]);
                 break;
+        }
+        wattroff(file_manager[ps.active], A_BOLD);
+        if ((c == KEY_UP) || (c == KEY_DOWN)) {
+            wborder(file_manager[ps.active], '|', '|', '-', '-', '+', '+', '+', '+');
+            mvwprintw(file_manager[ps.active], 0, 0, "Found file searching %s: ", searched_string);
         }
     } while ((c != 'q') && (c != 10));
     return c;

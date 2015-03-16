@@ -2,5 +2,4 @@
  * Bookmarks/devices tabs * -> Bookmarks defined in .conf file? *
  * split source code **
  * archives support ** -> execl tar?
- * be aware that searched files list may be longer than (dim - 2)
  */
