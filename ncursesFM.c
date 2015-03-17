@@ -405,6 +405,8 @@ static void clear_info(int i)
     wclrtoeol(info_win);
     if ((ps.copied_files) && (pasted == 0))
         mvwprintw(info_win, INFO_LINE, COLS - strlen("File added to copy list."), "File added to copy list.");
+    else if (pasted == -1)
+        mvwprintw(info_win, INFO_LINE, COLS - strlen("Pasting files..."), "Pasting_files...");
     wrefresh(info_win);
 }
 
@@ -786,7 +788,6 @@ static void paste_file(void)
     copied_file_list *tmp = ps.copied_files;
     strcpy(ps.pasted_dir, ps.my_cwd[ps.active]);
     if (access(ps.pasted_dir, W_OK) == 0) {
-        print_info("Pasting files.", INFO_LINE);
         stat(ps.pasted_dir, &file_stat_pasted);
         while (tmp) {
             if (strcmp(ps.pasted_dir, tmp->copied_dir) != 0) {
@@ -806,10 +807,15 @@ static void paste_file(void)
             }
             tmp = tmp->next;
         }
-        if (size > 0)
+        if (size > 0) {
+            wmove(info_win, INFO_LINE, 1);
+            wclrtoeol(info_win);
+            mvwprintw(info_win, INFO_LINE, COLS - strlen("Pasting files..."), "Pasting_files...");
+            wrefresh(info_win);
             pthread_create(&th, NULL, cpr, NULL);
-        else
+        } else {
             pasted = 1;
+        }
     } else {
         wclear(info_win);
         mvwprintw(info_win, ERR_LINE, 1, "Cannot copy here. Check user permissions.");
