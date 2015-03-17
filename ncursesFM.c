@@ -45,7 +45,7 @@ struct vars {
     char pasted_dir[PATH_MAX];
     char my_cwd[MAX_TABS][PATH_MAX];
 };
-/* UI FUNCTIONS */
+/* UI functions */
 static void helper_function(int argc, char *argv[]);
 static void init_func(void);
 static void screen_init(void);
@@ -66,8 +66,9 @@ static void trigger_show_helper_message(void);
 static void helper_print(void);
 static void show_stat(int init, int end, int win);
 static void set_nodelay(bool x);
-static void main_loop(int *quit, int *old_number_files);
+static void resize_everything(void);
 /* FM functions */
+static void main_loop(int *quit, int *old_number_files);
 static void change_dir(char *str);
 static void switch_hidden(void);
 static void manage_file(char *str);
@@ -140,6 +141,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+/* UI functions */
 static void helper_function(int argc, char *argv[])
 {
     if (argc == 1)
@@ -493,6 +495,22 @@ static void set_nodelay(bool x)
         nodelay(file_manager[i], x);
 }
 
+static void resize_everything(void)
+{
+    int i;
+    dim = LINES - INFO_HEIGHT;
+    for (i = 0; i < ps.cont; i++) {
+        wresize(file_manager[i], dim, COLS / ps.cont);
+        mvwin(file_manager[i], 0, i * COLS / ps.cont);
+        list_everything(i, ps.delta[i], dim - 2, 1, 0);
+    }
+    wresize(info_win, INFO_HEIGHT, COLS);
+    mvwin(info_win, dim, 0);
+    wclear(info_win);
+    wrefresh(info_win);
+}
+
+/* FM functions */
 static void main_loop(int *quit, int *old_number_files)
 {
     int c;
@@ -564,6 +582,9 @@ static void main_loop(int *quit, int *old_number_files)
         case 'p': // p to print
             if (namelist[ps.active][ps.current_position[ps.active]]->d_type == DT_REG)
                 print_support(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+            break;
+        case KEY_RESIZE:
+            resize_everything();
             break;
         case 'q': /* q to exit */
             quit_func();
@@ -693,6 +714,12 @@ static void manage_c_press(char c)
 {
     if (remove_from_list(namelist[ps.active][ps.current_position[ps.active]]->d_name) == 0)
         copy_file(c);
+    else {
+        if (ps.copied_files)
+            print_info("File deleted from copy list.", INFO_LINE);
+        else
+            print_info("File deleted from copy list. Copy list empty.", INFO_LINE);
+    }
 }
 
 static int remove_from_list(char *name)
@@ -706,10 +733,6 @@ static int remove_from_list(char *name)
     if (strcmp(str, name) == 0) {
         ps.copied_files = ps.copied_files->next;
         free(tmp);
-        if (ps.copied_files)
-            print_info("File deleted from copy list.", INFO_LINE);
-        else
-            print_info("File deleted from copy list. Copy list empty.", INFO_LINE);
         return 1;
     }
     memset(str, 0, strlen(str));
@@ -720,7 +743,6 @@ static int remove_from_list(char *name)
             temp = tmp->next;
             tmp->next = tmp->next->next;
             free(temp);
-            print_info("File deleted from copy list.", INFO_LINE);
             return 1;
         }
         tmp = tmp->next;
@@ -764,10 +786,11 @@ static void paste_file(void)
     copied_file_list *tmp = ps.copied_files;
     strcpy(ps.pasted_dir, ps.my_cwd[ps.active]);
     if (access(ps.pasted_dir, W_OK) == 0) {
+        print_info("Pasting files.", INFO_LINE);
         stat(ps.pasted_dir, &file_stat_pasted);
         while (tmp) {
-            size++;
             if (strcmp(ps.pasted_dir, tmp->copied_dir) != 0) {
+                size++;
                 stat(tmp->copied_dir, &file_stat_copied);
                 if ((file_stat_copied.st_dev == file_stat_pasted.st_dev) && (tmp->cut == 1)) {
                     strcpy(pasted_file, ps.pasted_dir);
@@ -777,8 +800,10 @@ static void paste_file(void)
                     if (rename(tmp->copied_file, pasted_file) == - 1)
                         print_info(strerror(errno), ERR_LINE);
                 }
-            } else
+            } else {
                 print_info("Cannot copy a file in the same folder.", ERR_LINE);
+                remove_from_list(tmp->copied_file);
+            }
             tmp = tmp->next;
         }
         if (size > 0)
@@ -1018,6 +1043,7 @@ static void print_support(char *str)
     }
 }
 
+/* Helper functions */
 static int isIso(char *ext)
 {
     int i = 0;
@@ -1051,6 +1077,7 @@ static void get_full_path(char *full_path_current_position)
     strcat(full_path_current_position,namelist[ps.active][ps.current_position[ps.active]]->d_name);
 }
 
+/* Quit functions */
 static void free_copied_list(copied_file_list *h)
 {
     if (h->next)
