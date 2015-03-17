@@ -94,6 +94,7 @@ static void print_support(char *str);
 static int isIso(char *ext);
 static int file_isCopied(void);
 static void get_full_path(char *full_path_current_position);
+static int ask_user(char *str);
 /* Quit functions */
 static void free_copied_list(copied_file_list *h);
 static void free_everything(void);
@@ -674,13 +675,10 @@ static void new_file(void)
 
 static void remove_file(void)
 {
-    char *mesg = "Are you serious? y/n:> ", c;
+    char *mesg = "Are you serious? y/n:> ";
     if (file_isCopied())
         return;
-    echo();
-    print_info(mesg, INFO_LINE);
-    c = wgetch(info_win);
-    if (c == 'y') {
+    if (ask_user(mesg) == 1) {
         if (rmrf(namelist[ps.active][ps.current_position[ps.active]]->d_name) == -1)
             print_info("Could not remove. Check user permissions.", ERR_LINE);
         else {
@@ -688,10 +686,7 @@ static void remove_file(void)
             sync_changes();
             print_info("File/dir removed.", INFO_LINE);
         }
-    } else {
-        clear_info(INFO_LINE);
     }
-    noecho();
 }
 
 static void manage_c_press(char c)
@@ -873,6 +868,7 @@ static void rename_file_folders(void)
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
+    noecho();
     if (rename(namelist[ps.active][ps.current_position[ps.active]]->d_name, str) == - 1) {
         print_info(strerror(errno), ERR_LINE);
     } else {
@@ -880,7 +876,6 @@ static void rename_file_folders(void)
         sync_changes();
         print_info("File renamed.", INFO_LINE);
     }
-    noecho();
 }
 
 static void create_dir(void)
@@ -889,6 +884,7 @@ static void create_dir(void)
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
+    noecho();
     if (mkdir(str, 0700) == - 1) {
         print_info(strerror(errno), ERR_LINE);
     } else {
@@ -896,7 +892,6 @@ static void create_dir(void)
         sync_changes();
         print_info("Folder created.", INFO_LINE);
     }
-    noecho();
 }
 
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -973,7 +968,7 @@ static void search(void)
 
 static int search_loop(int size)
 {
-    char *str;
+    char *str = NULL;
     int c, old_size = ps.number_of_files[ps.active];
     ps.delta[ps.active] = 0;
     ps.current_position[ps.active] = 0;
@@ -992,12 +987,12 @@ static int search_loop(int size)
                 break;
             case 10:
                 str = strrchr(found_searched[ps.current_position[ps.active]], '/');
-                if (strlen(str) == 1) {
+                if ((strlen(str) != 1) && (ask_user("Open file? y to open, n to switch to the folder") == 1))
+                    manage_file(found_searched[ps.current_position[ps.active]]);
+                else {
                     found_searched[ps.current_position[ps.active]][strlen(found_searched[ps.current_position[ps.active]]) - strlen(str)] = '\0';
                     ps.number_of_files[ps.active] = old_size;
                     change_dir(found_searched[ps.current_position[ps.active]]);
-                } else {
-                    manage_file(found_searched[ps.current_position[ps.active]]);
                 }
                 break;
         }
@@ -1013,19 +1008,15 @@ static int search_loop(int size)
 static void print_support(char *str)
 {
     pid_t pid;
-    char *mesg = "Do you really want to print this file? y/n:> ", c;
+    char *mesg = "Do you really want to print this file? y/n:> ";
     if (file_isCopied())
         return;
-    echo();
-    print_info(mesg, INFO_LINE);
-    c = wgetch(info_win);
-    if (c == 'y') {
+    if (ask_user(mesg) == 1) {
         if (access("/usr/bin/lpr", F_OK ) != -1) {
             pid = vfork();
             if (pid == 0)
                 execl("/usr/bin/lpr", "/usr/bin/lpr", str, NULL);
         } else {
-            clear_info(INFO_LINE);
             print_info("You must have cups installed.", ERR_LINE);
         }
     }
@@ -1065,6 +1056,19 @@ static void get_full_path(char *full_path_current_position)
     strcat(full_path_current_position,namelist[ps.active][ps.current_position[ps.active]]->d_name);
 }
 
+static int ask_user(char *str)
+{
+    char c;
+    echo();
+    print_info(str, INFO_LINE);
+    c = wgetch(info_win);
+    noecho();
+    clear_info(INFO_LINE);
+    if (c == 'y')
+        return 1;
+    return 0;
+}
+
 /* Quit functions */
 static void free_copied_list(copied_file_list *h)
 {
@@ -1092,13 +1096,9 @@ static void free_everything(void)
 
 static void quit_func(void)
 {
-    char c, *mesg = "A paste job is still running. Do you want to wait for it?(You should!) y/n:> ";
+    char *mesg = "A paste job is still running. Do you want to wait for it?(You should!) y/n:> ";
     if (pasted == - 1) {
-        echo();
-        print_info(mesg, INFO_LINE);
-        c = wgetch(info_win);
-        if (c == 'y')
+        if (ask_user(mesg) == 1)
             pthread_join(th, NULL);
-        noecho();
     }
 }
