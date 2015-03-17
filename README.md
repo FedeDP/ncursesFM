@@ -1,7 +1,7 @@
 # ncursesFM
 Ncurses File Manager for linux
 
-It has following features for now:
+It has following features:
 * file/dir functions support: copy/paste/cut, new/remove, rename. Copy/cut: to remove a file previously selected for copy just press c/x again on it.
 * 2 tabs support.
 * iso mount support -> you must have fuseiso installed.
@@ -21,6 +21,8 @@ It reads following variables from ncursesFM.conf (using libconfig)...remember to
 * show_hidden -> whether to show hidden files by default or not.
 * iso_mount_point -> mount point of any iso (for example /home/$your_username). Mount point will be "$iso_mount_point/iso_name".
 * starting_directory -> default starting directory.
+
+IT DOES NOT SUPPORT TERMINAL RESIZE. It is meant to be used maximized, or from a tty.
 
 PKGBUILD for Archlinux is here! Soon on AUR.
 

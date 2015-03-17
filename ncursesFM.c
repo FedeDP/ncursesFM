@@ -66,7 +66,6 @@ static void trigger_show_helper_message(void);
 static void helper_print(void);
 static void show_stat(int init, int end, int win);
 static void set_nodelay(bool x);
-static void resize_everything(void);
 /* FM functions */
 static void main_loop(int *quit, int *old_number_files);
 static void change_dir(char *str);
@@ -497,21 +496,6 @@ static void set_nodelay(bool x)
         nodelay(file_manager[i], x);
 }
 
-static void resize_everything(void)
-{
-    int i;
-    dim = LINES - INFO_HEIGHT;
-    for (i = 0; i < ps.cont; i++) {
-        wresize(file_manager[i], dim, COLS / ps.cont);
-        mvwin(file_manager[i], 0, i * COLS / ps.cont);
-        list_everything(i, ps.delta[i], dim - 2, 1, 0);
-    }
-    wresize(info_win, INFO_HEIGHT, COLS);
-    mvwin(info_win, dim, 0);
-    wclear(info_win);
-    wrefresh(info_win);
-}
-
 /* FM functions */
 static void main_loop(int *quit, int *old_number_files)
 {
@@ -553,7 +537,8 @@ static void main_loop(int *quit, int *old_number_files)
             new_file();
             break;
         case 'r': //remove file
-            remove_file();
+            if (strcmp(namelist[ps.active][ps.current_position[ps.active]]->d_name, "..") != 0)
+                remove_file();
             break;
         case 'c': case 'x': // copy file
             if (strcmp(namelist[ps.active][ps.current_position[ps.active]]->d_name, "..") != 0)
@@ -584,9 +569,6 @@ static void main_loop(int *quit, int *old_number_files)
         case 'p': // p to print
             if (namelist[ps.active][ps.current_position[ps.active]]->d_type == DT_REG)
                 print_support(namelist[ps.active][ps.current_position[ps.active]]->d_name);
-            break;
-        case KEY_RESIZE:
-            resize_everything();
             break;
         case 'q': /* q to exit */
             quit_func();
