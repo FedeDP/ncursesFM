@@ -44,6 +44,7 @@ struct vars {
     copied_file_list *copied_files;
     char pasted_dir[PATH_MAX];
     char my_cwd[MAX_TABS][PATH_MAX];
+    int pasted;
 };
 /* UI functions */
 static void helper_function(int argc, char *argv[]);
@@ -104,7 +105,7 @@ static void quit_func(void);
 static const char *config_file_name = "ncursesFM.conf";
 static const char *iso_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
 static WINDOW *file_manager[MAX_TABS], *info_win, *helper_win = NULL;
-static int dim, pasted = 0;
+static int dim;
 static struct dirent **namelist[MAX_TABS] = {NULL, NULL};
 static char *found_searched[PATH_MAX];
 static char searched_string[PATH_MAX];
@@ -120,7 +121,8 @@ static struct vars ps = {
     .cont = 1,
     .delta = {0, 0},
     .stat_active = {0, 0},
-    .copied_files = NULL
+    .copied_files = NULL,
+    .pasted = 0
 };
 
 int main(int argc, char *argv[])
@@ -237,7 +239,7 @@ static void list_everything(int win, int old_dim, int end, int erase, int reset)
     }
 
     wborder(file_manager[win], '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(file_manager[win], 0, 0, "Current dir: %.*s ", COLS / ps.cont, ps.my_cwd[win]);
+    mvwprintw(file_manager[win], 0, 0, "Current:%.*s", COLS / ps.cont - 1 - strlen("Current:"), ps.my_cwd[win]);
     for (i = old_dim; (i < ps.number_of_files[win]) && (i  < old_dim + end); i++) {
         colored_folders(i, win);
         mvwprintw(file_manager[win], INITIAL_POSITION + i - ps.delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, namelist[win][i]->d_name);
@@ -282,13 +284,13 @@ static void my_sort(int win)
 
 static void new_tab(void)
 {
-    wresize(file_manager[ps.active], dim, COLS / 2);
+    ps.cont++;
+    wresize(file_manager[ps.active], dim, COLS / ps.cont);
     wborder(file_manager[ps.active], '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(file_manager[ps.active], 0, 0, "Current dir: %.*s ", COLS / ps.cont, ps.my_cwd[ps.active]);
+    mvwprintw(file_manager[ps.active], 0, 0, "Current:%.*s", COLS / ps.cont - 1 - strlen("Current:"), ps.my_cwd[ps.active]);
     wrefresh(file_manager[ps.active]);
     ps.active = 1;
-    file_manager[ps.active] = subwin(stdscr, dim, COLS / 2, 0, COLS / 2);
-    ps.cont++;
+    file_manager[ps.active] = subwin(stdscr, dim, COLS / ps.cont, 0, COLS / ps.cont);
     keypad(file_manager[ps.active], TRUE);
     scrollok(file_manager[ps.active], TRUE);
     idlok(file_manager[ps.active], TRUE);
@@ -313,7 +315,7 @@ static void delete_tab(void)
     wborder(file_manager[ps.active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wresize(file_manager[ps.active], dim, COLS);
     wborder(file_manager[ps.active], '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(file_manager[ps.active], 0, 0, "Current dir: %.*s ", COLS / ps.cont, ps.my_cwd[ps.active]);
+    mvwprintw(file_manager[ps.active], 0, 0, "Current:%.*s", COLS / ps.cont - 1 - strlen("Current:"), ps.my_cwd[ps.active]);
     ps.cont--;
 }
 
@@ -403,9 +405,9 @@ static void clear_info(int i)
 {
     wmove(info_win, i, 1);
     wclrtoeol(info_win);
-    if ((ps.copied_files) && (pasted == 0))
+    if ((ps.copied_files) && (ps.pasted == 0))
         mvwprintw(info_win, INFO_LINE, COLS - strlen("File added to copy list."), "File added to copy list.");
-    else if (pasted == -1)
+    else if (ps.pasted == -1)
         mvwprintw(info_win, INFO_LINE, COLS - strlen("Pasting files..."), "Pasting_files...");
     wrefresh(info_win);
 }
@@ -418,7 +420,7 @@ static void trigger_show_helper_message(void)
         for (i = 0; i < ps.cont; i++) {
             wresize(file_manager[i], dim, COLS / ps.cont);
             wborder(file_manager[i], '|', '|', '-', '-', '+', '+', '+', '+');
-            mvwprintw(file_manager[i], 0, 0, "Current dir: %.*s ", COLS / ps.cont, ps.my_cwd[i]);
+            mvwprintw(file_manager[i], 0, 0, "Current:%.*s", COLS / ps.cont - 1 - strlen("Current:"), ps.my_cwd[i]);
             if (ps.current_position[i] > dim - 3) {
                 ps.current_position[i] = dim - 3 + ps.delta[i];
                 mvwprintw(file_manager[i], ps.current_position[i] - ps.delta[i] + INITIAL_POSITION, 1, "->");
@@ -501,7 +503,7 @@ static void set_nodelay(bool x)
 static void main_loop(int *quit, int *old_number_files)
 {
     int c;
-    if (pasted == 1)
+    if (ps.pasted == 1)
         check_pasted();
     c = wgetch(file_manager[ps.active]);
     switch (c) {
@@ -790,8 +792,9 @@ static void paste_file(void)
             mvwprintw(info_win, INFO_LINE, COLS - strlen("Pasting files..."), "Pasting_files...");
             wrefresh(info_win);
             pthread_create(&th, NULL, cpr, NULL);
+            pthread_detach(th);
         } else {
-            pasted = 1;
+            ps.pasted = 1;
         }
     } else {
         wclear(info_win);
@@ -810,7 +813,7 @@ static void *cpr(void *x)
     pid_t pid;
     int status;
     copied_file_list *tmp = ps.copied_files;
-    pasted = -1;
+    ps.pasted = -1;
     while (tmp) {
         if (tmp->cut != -1) {
             pid = vfork();
@@ -821,7 +824,7 @@ static void *cpr(void *x)
         }
         tmp = tmp->next;
     }
-    pasted = 1;
+    ps.pasted = 1;
     return NULL;
 }
 
@@ -855,7 +858,7 @@ static void check_pasted(void)
     free_copied_list(ps.copied_files);
     ps.copied_files = NULL;
     memset(ps.pasted_dir, 0, strlen(ps.pasted_dir));
-    pasted = 0;
+    ps.pasted = 0;
     set_nodelay(FALSE);
 }
 
@@ -1097,7 +1100,7 @@ static void free_everything(void)
 static void quit_func(void)
 {
     char *mesg = "A paste job is still running. Do you want to wait for it?(You should!) y/n:> ";
-    if (pasted == - 1) {
+    if (ps.pasted == - 1) {
         if (ask_user(mesg) == 1)
             pthread_join(th, NULL);
     }
