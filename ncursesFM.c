@@ -1,3 +1,26 @@
+/* BEGIN_COMMON_COPYRIGHT_HEADER
+ *
+ * NcursesFM: file manager in C with ncurses UI for linux.
+ * https://github.com/FedeDP/ncursesFM
+ *
+ * Copyright (C) 2015  Federico Di Pierro <nierro92@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * END_COMMON_COPYRIGHT_HEADER */
+
+
 #define _GNU_SOURCE
 #include <ftw.h>
 #include <dirent.h>
@@ -151,10 +174,12 @@ static void helper_function(int argc, char *argv[])
     if (strcmp(argv[1], "-h") != 0)
         printf("Use '-h' to view helper message\n");
     else {
-        printf("\tNcurses FM Helper message:\n");
+        printf("\tNcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
+        printf("\tThis program comes with ABSOLUTELY NO WARRANTY;\n");
+        printf("\tThis is free software, and you are welcome to redistribute it under certain conditions;\n");
+        printf("\tIt is GPL licensed. Have a look at COPYING file.\n");
         printf("\t\t* Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
-        printf("\t\t* Press 'l' during the program to view a more detailed helper message.\n");
-        printf("\tWritten by: Federico Di Pierro: https://github.com/FedeDP.\n.");
+        printf("\t\t* Press 'l' while in program to view a more detailed helper message.\n");
     }
     exit(0);
 }
