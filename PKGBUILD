@@ -9,7 +9,8 @@ arch=('i686' 'x86_64')
 url="https://github.com/FedeDP/${_gitname}"
 license=('GPL')
 depends=('ncurses' 'libconfig')
-optdepends=('fuseiso: iso images mount support')
+optdepends=('fuseiso: iso images mount support'
+            'cups: for printing support')
 makedepends=('git')
 source=("git://github.com/FedeDP/${_gitname}.git")
 md5sums=("SKIP")
