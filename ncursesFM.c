@@ -39,7 +39,7 @@
 #define INFO_LINE 0
 #define ERR_LINE 1
 #define INFO_HEIGHT 2
-#define HELPER_HEIGHT 13
+#define HELPER_HEIGHT 14
 #define STAT_COL 30
 #define MAX_FILENAME_LENGTH 25
 
@@ -487,7 +487,8 @@ static void helper_print(void)
     wprintw(helper_win, " * You can copy as many files/dirs as you want. c again on a file/dir to remove it from copy list.\n");
     wprintw(helper_win, " * o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.\n");
     wprintw(helper_win, " * t to create new tab (at most one more). w to close tab.\n");
-    wprintw(helper_win, " * You can't close first tab. Use q to quit.");
+    wprintw(helper_win, " * You can't close first tab. Use q to quit.\n");
+    wprintw(helper_win, " * Take a look to /etc/default/ncursesFM.conf file to change some settings.");
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
 }
 
