@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
         strcpy(ps.my_cwd[ps.active], config.starting_dir);
     } else {
         if (access(config.starting_dir, F_OK) == -1)
-            print_info("Check starting_directory option in config file. The directory currently specified thas't exist.", INFO_LINE);
+            print_info("Check starting_directory entry in config file. The directory currently specified thas't exist.", INFO_LINE);
         getcwd(ps.my_cwd[ps.active], PATH_MAX);
     }
     list_everything(ps.active, 0, dim - 2, 1, 1);
@@ -202,6 +202,10 @@ static void init_func(void)
         strcpy(config.editor, str_editor);
     }
     config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
+    if (config.show_hidden != 0) {
+        if (config.show_hidden != 1)
+            config.show_hidden = 1;
+    }
     if (config_lookup_string(&cfg, "iso_mount_point", &str_hidden)) {
         config.iso_mount_point = malloc(strlen(str_hidden) * sizeof(char) + 1);
         strcpy(config.iso_mount_point, str_hidden);
