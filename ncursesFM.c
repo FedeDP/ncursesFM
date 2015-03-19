@@ -154,10 +154,13 @@ int main(int argc, char *argv[])
     helper_function(argc, argv);
     init_func();
     screen_init();
-    if (!config.starting_dir)
-        getcwd(ps.my_cwd[ps.active], PATH_MAX);
-    else
+    if ((config.starting_dir) && (access(config.starting_dir, F_OK) != -1)) {
         strcpy(ps.my_cwd[ps.active], config.starting_dir);
+    } else {
+        if (access(config.starting_dir, F_OK) == -1)
+            print_info("Check starting_directory option in config file. The directory currently specified thas't exist.", INFO_LINE);
+        getcwd(ps.my_cwd[ps.active], PATH_MAX);
+    }
     list_everything(ps.active, 0, dim - 2, 1, 1);
     while (!quit)
         main_loop(&quit, &old_number_files);
