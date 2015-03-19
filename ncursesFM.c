@@ -326,6 +326,7 @@ static void new_tab(void)
 static void delete_tab(void)
 {
     int i;
+    ps.cont--;
     wclear(file_manager[ps.active]);
     delwin(file_manager[ps.active]);
     file_manager[ps.active] = NULL;
@@ -341,7 +342,6 @@ static void delete_tab(void)
     wresize(file_manager[ps.active], dim, COLS);
     wborder(file_manager[ps.active], '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(file_manager[ps.active], 0, 0, "Current:%.*s", COLS / ps.cont - 1 - strlen("Current:"), ps.my_cwd[ps.active]);
-    ps.cont--;
 }
 
 static void scroll_down(char *str)
@@ -996,7 +996,7 @@ static void search(void)
 
 static int search_loop(int size)
 {
-    char *str = NULL;
+    char *str = NULL, *mesg = "Open file? y to open, n to switch to the folder";
     int c, old_size = ps.number_of_files[ps.active];
     ps.delta[ps.active] = 0;
     ps.current_position[ps.active] = 0;
@@ -1015,7 +1015,7 @@ static int search_loop(int size)
                 break;
             case 10:
                 str = strrchr(found_searched[ps.current_position[ps.active]], '/');
-                if ((strlen(str) != 1) && (ask_user("Open file? y to open, n to switch to the folder") == 1))
+                if ((strlen(str) != 1) && (ask_user(mesg) == 1))
                     manage_file(found_searched[ps.current_position[ps.active]]);
                 else {
                     found_searched[ps.current_position[ps.active]][strlen(found_searched[ps.current_position[ps.active]]) - strlen(str)] = '\0';
@@ -1037,8 +1037,6 @@ static void print_support(char *str)
 {
     pid_t pid;
     char *mesg = "Do you really want to print this file? y/n:> ";
-    if (file_isCopied())
-        return;
     if (ask_user(mesg) == 1) {
         if (access("/usr/bin/lpr", F_OK ) != -1) {
             pid = vfork();
@@ -1125,8 +1123,6 @@ static void free_everything(void)
 static void quit_func(void)
 {
     char *mesg = "A paste job is still running. Do you want to wait for it?(You should!) y/n:> ";
-    if (ps.pasted == - 1) {
-        if (ask_user(mesg) == 1)
-            pthread_join(th, NULL);
-    }
+    if ((ps.pasted == - 1) && (ask_user(mesg) == 1))
+        pthread_join(th, NULL);
 }
