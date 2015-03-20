@@ -1,5 +1,4 @@
 /* TODO:
  * Bookmarks/devices tabs * -> Bookmarks defined in .conf file? *
- * split source code **
  * archives support ** -> execl tar?
  */
