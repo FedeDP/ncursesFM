@@ -1,6 +1,6 @@
 # Maintainer: Federico Di Pierro <nierro92@gmail.com>
 
-pkgname=ncursesfm-git
+pkgname=ncursesFM-git
 _gitname=ncursesFM
 pkgver=12
 pkgrel=1
