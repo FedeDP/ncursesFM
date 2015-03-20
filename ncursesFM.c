@@ -284,7 +284,7 @@ static void list_everything(int win, int old_dim, int end, int erase, int reset)
     wrefresh(file_manager[win]);
 }
 
-int is_hidden(const struct dirent *current_file)
+static int is_hidden(const struct dirent *current_file)
 {
     if ((strlen(current_file->d_name) == 1) && (current_file->d_name[0] == '.'))
         return (FALSE);
