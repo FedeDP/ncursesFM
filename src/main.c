@@ -25,9 +25,9 @@
 #include <libconfig.h>
 #include <unistd.h>
 
-void helper_function(int argc, char *argv[]);
-void init_func(void);
-void main_loop(int *quit, int *old_number_files);
+static void helper_function(int argc, char *argv[]);
+static void init_func(void);
+static void main_loop(int *quit, int *old_number_files);
 
 // static const char *config_file_name = "/etc/default/ncursesFM.conf";
 static const char *config_file_name = "ncursesFM.conf";
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 }
 
 /* UI functions */
-void helper_function(int argc, char *argv[])
+static void helper_function(int argc, char *argv[])
 {
     if (argc == 1)
         return;
@@ -71,7 +71,7 @@ void helper_function(int argc, char *argv[])
     exit(0);
 }
 
-void init_func(void)
+static void init_func(void)
 {
     config_t cfg;
     const char *str_editor, *str_hidden, *str_starting_dir;
@@ -110,7 +110,7 @@ void init_func(void)
 }
 
 /* FM functions */
-void main_loop(int *quit, int *old_number_files)
+static void main_loop(int *quit, int *old_number_files)
 {
     int c;
     if (ps.pasted == 1)
