@@ -50,15 +50,15 @@ void manage_file(char *str)
         return;
     ext = strrchr(str, '.');
     if ((ext) && (isIso(ext))) {
-        if (config.iso_mount_point)
+        if ((config.iso_mount_point) && (access(config.iso_mount_point, W_OK ) != -1))
             iso_mount_service(str);
         else
-            print_info("You have to specify an iso mount point in config file.", ERR_LINE);
+            print_info("You have to specify an iso mount point in config file and you must have write permissions there.", ERR_LINE);
     } else {
-        if (config.editor)
+        if ((config.editor) && (access(config.editor, X_OK ) != -1))
             open_file(str);
         else
-            print_info("You have to specify an editor in config file.", ERR_LINE);
+            print_info("You have to specify a valid editor in config file.", ERR_LINE);
     }
 }
 
