@@ -13,7 +13,9 @@ optdepends=('fuseiso: iso images mount support'
             'cups: for printing support')
 makedepends=('git')
 source=("git://github.com/FedeDP/${_gitname}.git")
-md5sums=("SKIP")
+backup=('etc/default/ncursesFM.conf')
+install=ncursesFM.install
+sha256sums=("SKIP")
 
 pkgver() {
 	cd ${_gitname}
