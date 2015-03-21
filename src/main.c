@@ -35,14 +35,6 @@ static const char *config_file_name = "ncursesFM.conf";
 int main(int argc, char *argv[])
 {
     int quit = 0, old_number_files;
-    config.editor = NULL;
-    config.show_hidden = 0;
-    config.iso_mount_point = NULL;
-    config.starting_dir = NULL;
-    ps.active = 0;
-    ps.cont = 1;
-    ps.copied_files = NULL;
-    ps.pasted = 0;
     helper_function(argc, argv);
     init_func();
     screen_init();
@@ -83,28 +75,36 @@ void init_func(void)
 {
     config_t cfg;
     const char *str_editor, *str_hidden, *str_starting_dir;
+    ps.active = 0;
+    ps.cont = 1;
+    ps.copied_files = NULL;
+    ps.pasted = 0;
     config_init(&cfg);
-    if (!config_read_file(&cfg, config_file_name)) {
-        printf("\n%s:%d - %s\n", config_error_file(&cfg), config_error_line(&cfg), config_error_text(&cfg));
-        config_destroy(&cfg);
-        exit(1);
-    }
-    if (config_lookup_string(&cfg, "editor", &str_editor)) {
-        config.editor = malloc(strlen(str_editor) * sizeof(char) + 1);
-        strcpy(config.editor, str_editor);
-    }
-    config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
-    if (config.show_hidden != 0) {
-        if (config.show_hidden != 1)
-            config.show_hidden = 1;
-    }
-    if (config_lookup_string(&cfg, "iso_mount_point", &str_hidden)) {
-        config.iso_mount_point = malloc(strlen(str_hidden) * sizeof(char) + 1);
-        strcpy(config.iso_mount_point, str_hidden);
-    }
-    if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) {
-        config.starting_dir = malloc(strlen(str_starting_dir) * sizeof(char) + 1);
-        strcpy(config.starting_dir, str_starting_dir);
+    if (config_read_file(&cfg, config_file_name)) {
+        if (config_lookup_string(&cfg, "editor", &str_editor)) {
+            config.editor = malloc(strlen(str_editor) * sizeof(char) + 1);
+            strcpy(config.editor, str_editor);
+        }
+        config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
+        if (config.show_hidden != 0) {
+            if (config.show_hidden != 1)
+                config.show_hidden = 1;
+        }
+        if (config_lookup_string(&cfg, "iso_mount_point", &str_hidden)) {
+            config.iso_mount_point = malloc(strlen(str_hidden) * sizeof(char) + 1);
+            strcpy(config.iso_mount_point, str_hidden);
+        }
+        if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) {
+            config.starting_dir = malloc(strlen(str_starting_dir) * sizeof(char) + 1);
+            strcpy(config.starting_dir, str_starting_dir);
+        }
+    } else {
+        printf("Config file not found. Check /etc/default/ncursesFM.conf. Using default values.\n");
+        sleep(1);
+        config.editor = NULL;
+        config.show_hidden = 0;
+        config.iso_mount_point = NULL;
+        config.starting_dir = NULL;
     }
     config_destroy(&cfg);
 }
