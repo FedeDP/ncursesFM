@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
         strcpy(ps.my_cwd[ps.active], config.starting_dir);
     } else {
         if (access(config.starting_dir, F_OK) == -1)
-            print_info("Check starting_directory entry in config file. The directory currently specified thas't exist.", INFO_LINE);
+            print_info("Check starting_directory entry in config file. The directory currently specified doesn't exist.", INFO_LINE);
         getcwd(ps.my_cwd[ps.active], PATH_MAX);
     }
     list_everything(ps.active, 0, dim - 2, 1, 1);
