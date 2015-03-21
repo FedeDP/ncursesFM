@@ -176,7 +176,7 @@ static void main_loop(int *quit, int *old_number_files)
         case 'd': // d to create folder
             create_dir();
             break;
-        case 'f': // b to search
+        case 'f': // f to search
             search();
             break;
         case 'p': // p to print

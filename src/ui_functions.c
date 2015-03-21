@@ -92,7 +92,7 @@ void list_everything(int win, int old_dim, int end, int erase, int reset)
     wrefresh(file_manager[win]);
 }
 
-int is_hidden(const struct dirent *current_file)
+static int is_hidden(const struct dirent *current_file)
 {
     if ((strlen(current_file->d_name) == 1) && (current_file->d_name[0] == '.'))
         return (FALSE);
@@ -104,7 +104,7 @@ int is_hidden(const struct dirent *current_file)
     return (TRUE);
 }
 
-void my_sort(int win)
+static void my_sort(int win)
 {
     struct dirent *temp;
     int i, j;
@@ -204,7 +204,7 @@ void scroll_up(char *str)
     }
 }
 
-void scroll_helper_func(int x, int direction)
+static void scroll_helper_func(int x, int direction)
 {
     mvwprintw(file_manager[ps.active], x, 1, "  ");
     wborder(file_manager[ps.active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
@@ -219,7 +219,7 @@ void sync_changes(void)
     }
 }
 
-void colored_folders(int i, int win)
+static void colored_folders(int i, int win)
 {
     struct stat file_stat;
     wattron(file_manager[win], A_BOLD);
@@ -284,7 +284,7 @@ void trigger_show_helper_message(void)
     }
 }
 
-void helper_print(void)
+static void helper_print(void)
 {
     wprintw(helper_win, "\n HELPER MESSAGE:\n * n and r to create/remove a file.\n");
     wprintw(helper_win, " * Enter to surf between folders or to open files with $editor var.\n");

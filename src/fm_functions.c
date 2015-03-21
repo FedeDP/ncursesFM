@@ -62,7 +62,7 @@ void manage_file(char *str)
     }
 }
 
-void open_file(char *str)
+static void open_file(char *str)
 {
     pid_t pid;
     endwin();
@@ -74,7 +74,7 @@ void open_file(char *str)
     refresh();
 }
 
-void iso_mount_service(char *str)
+static void iso_mount_service(char *str)
 {
     pid_t pid;
     char mount_point[strlen(str) - 4 + strlen(config.iso_mount_point)];
@@ -149,7 +149,7 @@ void manage_c_press(char c)
     }
 }
 
-int remove_from_list(char *name)
+static int remove_from_list(char *name)
 {
     copied_file_list *tmp = ps.copied_files, *temp = NULL;
     char str[PATH_MAX];
@@ -178,7 +178,7 @@ int remove_from_list(char *name)
     return 0;
 }
 
-void copy_file(char c)
+static void copy_file(char c)
 {
     copied_file_list *tmp;
     if (ps.copied_files) {
@@ -254,7 +254,7 @@ void paste_file(void)
 }
 
 
-void *cpr(void *x)
+static void *cpr(void *x)
 {
     pid_t pid;
     int status;
@@ -343,19 +343,19 @@ void create_dir(void)
     }
 }
 
-int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
     return remove(path);
 }
 
-int rmrf(char *path)
+static int rmrf(char *path)
 {
     if (access(path, W_OK) == 0)
         return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS | FTW_MOUNT);
     return -1;
 }
 
-int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
     int i = 0;
     char str[PATH_MAX];
@@ -373,7 +373,7 @@ int recursive_search(const char *path, const struct stat *sb, int typeflag, stru
     return 0;
 }
 
-int search_file(char *path)
+static int search_file(char *path)
 {
     return nftw(path, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
 }
@@ -415,7 +415,7 @@ void search(void)
     }
 }
 
-int search_loop(int size)
+static int search_loop(int size)
 {
     char *str = NULL, *mesg = "Open file? y to open, n to switch to the folder";
     int c, old_size = ps.number_of_files[ps.active];
