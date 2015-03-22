@@ -24,7 +24,7 @@ It reads following variables from ncursesFM.conf (using libconfig)...remember to
 
 IT DOES NOT SUPPORT TERMINAL RESIZE. It is meant to be used maximized, or from a tty.
 
-PKGBUILD for Archlinux is here! Soon on AUR.
+Archlinux users can now install ncursesFM from aur: https://aur.archlinux.org/packages/ncursesfm-git/
 
 It requires ncurses, libconfig and (optionally) {fuseiso, cups}
 
