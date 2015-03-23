@@ -76,6 +76,7 @@ static void open_file(char *str)
 
 static void iso_mount_service(char *str)
 {
+    int i;
     pid_t pid;
     char mount_point[strlen(str) - 4 + strlen(config.iso_mount_point)];
     strcpy(mount_point, config.iso_mount_point);
@@ -95,10 +96,10 @@ static void iso_mount_service(char *str)
         print_info("You need fuseiso for iso mounting.", ERR_LINE);
     }
     rmdir(mount_point);
-    if (strcmp(config.iso_mount_point, ps.my_cwd[ps.active]) == 0)
-        list_everything(ps.active, 0, dim - 2, 1, 1);
-    if (strcmp(config.iso_mount_point, ps.my_cwd[1 - ps.active]) == 0)
-        list_everything(1 - ps.active, 0, dim - 2, 1, 1);
+    for (i = 0; i < ps.cont; i++) {
+        if (strcmp(config.iso_mount_point, ps.my_cwd[i]) == 0)
+            list_everything(i, 0, dim - 2, 1, 1);
+    }
     chdir(ps.my_cwd[ps.active]);
 }
 
