@@ -115,7 +115,6 @@ void new_file(void)
         print_info(strerror(errno), ERR_LINE);
     } else {
         fclose(f);
-        list_everything(ps.active, 0, dim - 2, 1, 1);
         sync_changes();
         print_info("File created.", INFO_LINE);
     }
@@ -131,7 +130,6 @@ void remove_file(void)
         if (rmrf(namelist[ps.active][ps.current_position[ps.active]]->d_name) == -1)
             print_info("Could not remove. Check user permissions.", ERR_LINE);
         else {
-            list_everything(ps.active, 0, dim - 2, 1, 1);
             sync_changes();
             print_info("File/dir removed.", INFO_LINE);
         }
@@ -322,7 +320,6 @@ void rename_file_folders(void)
     if (rename(namelist[ps.active][ps.current_position[ps.active]]->d_name, str) == - 1) {
         print_info(strerror(errno), ERR_LINE);
     } else {
-        list_everything(ps.active, 0, dim - 2, 1, 1);
         sync_changes();
         print_info("File renamed.", INFO_LINE);
     }
@@ -338,7 +335,6 @@ void create_dir(void)
     if (mkdir(str, 0700) == - 1) {
         print_info(strerror(errno), ERR_LINE);
     } else {
-        list_everything(ps.active, 0, dim - 2, 1, 1);
         sync_changes();
         print_info("Folder created.", INFO_LINE);
     }

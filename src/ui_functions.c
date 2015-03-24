@@ -213,6 +213,7 @@ static void scroll_helper_func(int x, int direction)
 
 void sync_changes(void)
 {
+    list_everything(ps.active, 0, dim - 2, 1, 1);
     if (ps.cont == 2) {
         if (strcmp(ps.my_cwd[ps.active], ps.my_cwd[1 - ps.active]) == 0)
             list_everything(1 - ps.active, 0, dim - 2, 1, 1);
