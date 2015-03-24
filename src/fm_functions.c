@@ -204,6 +204,14 @@ static void copy_file(char c)
     wrefresh(info_win);
 }
 
+/*
+ * Quite hard to understand.
+ * Fist I check if we have write permissions in pasted_dir. Otherwise we'll delete copied list and print an error message.
+ * Then for each copied file I check if pasted_dir is the same dir in which we're copying. If it's the same, i'll delete that copied file.
+ * Then I check if files are on the same fs and the action is "cut" (and not paste). If that's the case, i'll just "rename" the file
+ * and set tmp->cut = -1 (needed in check_pasted).
+ * For remaining copied_files, a paste thread will be executed.
+ */
 void paste_file(void)
 {
     char pasted_file[PATH_MAX];
@@ -243,7 +251,7 @@ void paste_file(void)
         }
     } else {
         wclear(info_win);
-        mvwprintw(info_win, ERR_LINE, 1, "Cannot copy here. Check user permissions.");
+        mvwprintw(info_win, ERR_LINE, 1, "Cannot copy here. Check user permissions. Copy list destroyed.");
         wrefresh(info_win);
         free_copied_list(ps.copied_files);
         ps.copied_files = NULL;
@@ -286,10 +294,10 @@ void check_pasted(void)
         }
     }
     while (tmp) {
-        if (tmp->cut == 1)
-            if (rmrf(tmp->copied_file) == -1) {
+        if (tmp->cut == 1) {
+            if (rmrf(tmp->copied_file) == -1)
                 print_info("Could not cut. Check user permissions.", ERR_LINE);
-            }
+        }
         if ((tmp->cut == 1) || (tmp->cut == -1)) {
             for (i = 0; i < ps.cont; i++) {
                 if ((printed[i] == 0) && (strcmp(tmp->copied_dir, ps.my_cwd[i]) == 0))
