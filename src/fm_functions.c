@@ -281,6 +281,13 @@ static void *cpr(void *x)
     return NULL;
 }
 
+/*
+ * First i check if ps.cont paths are in the same folder as pasted_dir, and if yes, printed[i] will sign
+ * that "i" tab was already updated.
+ * Then for each file i see if we are in the same folder where it was copied, and if that's the case,
+ * i update that tab too.
+ * If tmp->cut == 1, i'll have to remove that copied_file.
+ */
 void check_pasted(void)
 {
     int i, printed[ps.cont];
