@@ -79,10 +79,10 @@ static void iso_mount_service(char *str)
     int i;
     pid_t pid;
     char mount_point[strlen(str) - 4 + strlen(config.iso_mount_point)];
-    strcpy(mount_point, config.iso_mount_point);
-    strcat(mount_point, "/");
-    strncat(mount_point, str, strlen(str) - 4);
     if (access("/usr/bin/fuseiso", F_OK) != -1) {
+        strcpy(mount_point, config.iso_mount_point);
+        strcat(mount_point, "/");
+        strncat(mount_point, str, strlen(str) - 4);
         pid = vfork();
         if (pid == 0) {
             if (mkdir(mount_point, ACCESSPERMS) == -1) {
@@ -91,16 +91,19 @@ static void iso_mount_service(char *str)
                 execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", str, mount_point, NULL);
         } else {
             waitpid(pid, NULL, 0);
+            if (rmdir(mount_point) == 0)
+                print_info("Iso succesfully unmounted.", INFO_LINE);
+            else
+                print_info("Iso succesfully mounted.", INFO_LINE);
+            for (i = 0; i < ps.cont; i++) {
+                if (strcmp(config.iso_mount_point, ps.my_cwd[i]) == 0)
+                    list_everything(i, 0, dim - 2, 1, 1);
+            }
+            chdir(ps.my_cwd[ps.active]);
         }
     } else {
         print_info("You need fuseiso for iso mounting.", ERR_LINE);
     }
-    rmdir(mount_point);
-    for (i = 0; i < ps.cont; i++) {
-        if (strcmp(config.iso_mount_point, ps.my_cwd[i]) == 0)
-            list_everything(i, 0, dim - 2, 1, 1);
-    }
-    chdir(ps.my_cwd[ps.active]);
 }
 
 void new_file(void)
