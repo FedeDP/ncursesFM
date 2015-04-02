@@ -17,6 +17,7 @@ struct conf {
     int show_hidden;
     char *iso_mount_point;
     char *starting_dir;
+    int second_tab_starting_dir;
 };
 
 typedef struct list {

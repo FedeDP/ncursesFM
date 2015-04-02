@@ -134,7 +134,10 @@ void new_tab(void)
     keypad(file_manager[ps.active], TRUE);
     scrollok(file_manager[ps.active], TRUE);
     idlok(file_manager[ps.active], TRUE);
-    getcwd(ps.my_cwd[ps.active], PATH_MAX);
+    if ((config.second_tab_starting_dir != 0) && (config.starting_dir) && (access(config.starting_dir, F_OK) != -1))
+        strcpy(ps.my_cwd[ps.active], config.starting_dir);
+    else
+        getcwd(ps.my_cwd[ps.active], PATH_MAX);
     list_everything(ps.active, 0, dim - 2, 1, 1);
 }
 

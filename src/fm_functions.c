@@ -38,7 +38,10 @@ void change_dir(char *str)
 void switch_hidden(void)
 {
     int i;
-    config.show_hidden = 1 - config.show_hidden;
+    if (config.show_hidden == 0)
+        config.show_hidden = 1;
+    else
+        config.show_hidden = 0;
     for (i = 0; i < ps.cont; i++)
         list_everything(i, 0, dim - 2, 1, 1);
 }

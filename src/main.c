@@ -30,7 +30,7 @@ static void init_func(void);
 static void main_loop(int *quit, int *old_number_files);
 
 static const char *config_file_name = "/etc/default/ncursesFM.conf";
-//static const char *config_file_name = "ncursesFM.conf";  // local test entry
+//static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, char *argv[])
 {
@@ -53,22 +53,21 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-/* UI functions */
 static void helper_function(int argc, char *argv[])
 {
-    if (argc == 1)
-        return;
-    if (strcmp(argv[1], "-h") != 0)
-        printf("Use '-h' to view helper message\n");
-    else {
-        printf("\tNcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
-        printf("\tThis program comes with ABSOLUTELY NO WARRANTY;\n");
-        printf("\tThis is free software, and you are welcome to redistribute it under certain conditions;\n");
-        printf("\tIt is GPL licensed. Have a look at COPYING file.\n");
-        printf("\t\t* Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
-        printf("\t\t* Press 'l' while in program to view a more detailed helper message.\n");
+    if (argc != 1) {
+        if (strcmp(argv[1], "-h") != 0)
+            printf("Use '-h' to view helper message\n");
+        else {
+            printf("\tNcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
+            printf("\tThis program comes with ABSOLUTELY NO WARRANTY;\n");
+            printf("\tThis is free software, and you are welcome to redistribute it under certain conditions;\n");
+            printf("\tIt is GPL licensed. Have a look at COPYING file.\n");
+            printf("\t\t* Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
+            printf("\t\t* Press 'l' while in program to view a more detailed helper message.\n");
+        }
+        exit(0);
     }
-    exit(0);
 }
 
 static void init_func(void)
@@ -85,11 +84,8 @@ static void init_func(void)
             config.editor = malloc(strlen(str_editor) * sizeof(char) + 1);
             strcpy(config.editor, str_editor);
         }
-        config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
-        if (config.show_hidden != 0) {
-            if (config.show_hidden != 1)
-                config.show_hidden = 1;
-        }
+        if (!(config_lookup_int(&cfg, "show_hidden", &config.show_hidden)))
+            config.show_hidden = 0;
         if (config_lookup_string(&cfg, "iso_mount_point", &str_hidden)) {
             config.iso_mount_point = malloc(strlen(str_hidden) * sizeof(char) + 1);
             strcpy(config.iso_mount_point, str_hidden);
@@ -98,6 +94,8 @@ static void init_func(void)
             config.starting_dir = malloc(strlen(str_starting_dir) * sizeof(char) + 1);
             strcpy(config.starting_dir, str_starting_dir);
         }
+        if (!(config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir)))
+            config.second_tab_starting_dir = 0;
     } else {
         printf("Config file not found. Check /etc/default/ncursesFM.conf. Using default values.\n");
         sleep(1);
