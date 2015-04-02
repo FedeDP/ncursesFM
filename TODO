@@ -1,5 +1,5 @@
 /* TODO:
  * Bookmarks/devices tabs * -> Bookmarks defined in .conf file? *
- * archives support ** -> execl tar? fuse filesystem to mount them?
- * nano launched in its own WINDOW * (not stdscr!) -> makefile -lutil . forkpty... NEWTERM(), set_term() ncurses function
+ * archives support ** -> archivemount http://archive09.linux.com/feature/132196
+ * nano launched in its own WINDOW * (not stdscr!) -> forkpty... ?? *very hard
  */
