@@ -21,6 +21,7 @@ It reads following variables from ncursesFM.conf (using libconfig)...remember to
 * editor -> editor used to open files
 * show_hidden -> whether to show hidden files by default or not.
 * starting_directory -> default starting directory.
+* use_default_starting_dir_second_tab -> whether to use "starting_directory" when opening second tab. Otherwise current tab will be used.
 
 IT DOES NOT SUPPORT TERMINAL RESIZE. It is meant to be used maximized, or from a tty.
 
