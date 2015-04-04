@@ -29,8 +29,8 @@ static void helper_function(int argc, char *argv[]);
 static void init_func(void);
 static void main_loop(int *quit, int *old_number_files);
 
-static const char *config_file_name = "/etc/default/ncursesFM.conf";
-//static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
+//static const char *config_file_name = "/etc/default/ncursesFM.conf";
+static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, char *argv[])
 {
@@ -39,13 +39,13 @@ int main(int argc, char *argv[])
     init_func();
     screen_init();
     if ((config.starting_dir) && (access(config.starting_dir, F_OK) != -1)) {
-        strcpy(ps.my_cwd[ps.active], config.starting_dir);
+        strcpy(ps[active].my_cwd, config.starting_dir);
     } else {
         if (access(config.starting_dir, F_OK) == -1)
             print_info("Check starting_directory entry in config file. The directory currently specified doesn't exist.", INFO_LINE);
-        getcwd(ps.my_cwd[ps.active], PATH_MAX);
+        getcwd(ps[active].my_cwd, PATH_MAX);
     }
-    list_everything(ps.active, 0, dim - 2, 1, 1);
+    list_everything(active, 0, dim - 2, 1, 1);
     while (!quit)
         main_loop(&quit, &old_number_files);
     free_everything();
@@ -74,10 +74,10 @@ static void init_func(void)
 {
     config_t cfg;
     const char *str_editor, *str_hidden, *str_starting_dir;
-    ps.active = 0;
-    ps.cont = 1;
-    ps.copied_files = NULL;
-    ps.pasted = 0;
+    active = 0;
+    cont = 1;
+    copied_files = NULL;
+    pasted = 0;
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
         if (config_lookup_string(&cfg, "editor", &str_editor)) {
@@ -86,10 +86,6 @@ static void init_func(void)
         }
         if (!(config_lookup_int(&cfg, "show_hidden", &config.show_hidden)))
             config.show_hidden = 0;
-        if (config_lookup_string(&cfg, "iso_mount_point", &str_hidden)) {
-            config.iso_mount_point = malloc(strlen(str_hidden) * sizeof(char) + 1);
-            strcpy(config.iso_mount_point, str_hidden);
-        }
         if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) {
             config.starting_dir = malloc(strlen(str_starting_dir) * sizeof(char) + 1);
             strcpy(config.starting_dir, str_starting_dir);
@@ -101,7 +97,6 @@ static void init_func(void)
         sleep(1);
         config.editor = NULL;
         config.show_hidden = 0;
-        config.iso_mount_point = NULL;
         config.starting_dir = NULL;
     }
     config_destroy(&cfg);
@@ -111,9 +106,11 @@ static void init_func(void)
 static void main_loop(int *quit, int *old_number_files)
 {
     int c;
-    if (ps.pasted == 1)
+    struct stat file_stat;
+    stat(ps[active].namelist[ps[active].current_position]->d_name, &file_stat);
+    if (pasted == 1)
         check_pasted();
-    c = wgetch(file_manager[ps.active]);
+    c = wgetch(ps[active].file_manager);
     switch (c) {
         case KEY_UP:
             scroll_up(NULL);
@@ -125,38 +122,40 @@ static void main_loop(int *quit, int *old_number_files)
             switch_hidden();
             break;
         case 10: // enter to change dir or open a file.
-            if ((namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_DIR) || (namelist[ps.active][ps.current_position[ps.active]]->d_type ==  DT_LNK))
-                change_dir(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+            if ((S_ISDIR(file_stat.st_mode)) || (S_ISLNK(file_stat.st_mode)))
+                change_dir(ps[active].namelist[ps[active].current_position]->d_name);
             else
-                manage_file(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+                manage_file(ps[active].namelist[ps[active].current_position]->d_name);
             break;
         case 't': // t to open second tab
-            if (ps.cont < MAX_TABS)
+            if (cont < MAX_TABS)
                 new_tab();
             break;
         case 9: // tab to change tab
-            if (ps.cont == MAX_TABS) {
-                ps.active = 1 - ps.active;
-                chdir(ps.my_cwd[ps.active]);
+            if (cont == MAX_TABS) {
+                active = 1 - active;
+                chdir(ps[active].my_cwd);
             }
             break;
         case 'w': //close ps.active new_tab
-            if (ps.active != 0)
+            if (active != 0)
                 delete_tab();
             break;
         case 'n': // new file
             new_file();
             break;
         case 'r': //remove file
-            if (strcmp(namelist[ps.active][ps.current_position[ps.active]]->d_name, "..") != 0)
+            if (strcmp(ps[active].namelist[ps[active].current_position]->d_name, "..") != 0)
                 remove_file();
             break;
-        case 'c': case 'x': // copy file
-            if (strcmp(namelist[ps.active][ps.current_position[ps.active]]->d_name, "..") != 0)
+        case 'c': case 'x': // copy/cut file
+            if ((strcmp(ps[active].namelist[ps[active].current_position]->d_name, "..") != 0) && (pasted != -1))
                 manage_c_press(c);
+            else if (pasted == -1)
+                print_info("A paste job is still active. Wait for it.", INFO_LINE);
             break;
         case 'v': // paste file
-            if (ps.copied_files) {
+            if (copied_files) {
                 set_nodelay(TRUE);
                 paste_file();
             }
@@ -165,8 +164,8 @@ static void main_loop(int *quit, int *old_number_files)
             trigger_show_helper_message();
             break;
         case 's': // show stat about files (size and perms)
-            ps.stat_active[ps.active] = 1 - ps.stat_active[ps.active];
-            list_everything(ps.active, ps.delta[ps.active], dim - 2, 1, 0);
+            ps[active].stat_active = 1 - ps[active].stat_active;
+            list_everything(active, ps[active].delta, dim - 2, 1, 0);
             break;
         case 'o': // o to rename
             rename_file_folders();
@@ -178,8 +177,8 @@ static void main_loop(int *quit, int *old_number_files)
             search();
             break;
         case 'p': // p to print
-            if (namelist[ps.active][ps.current_position[ps.active]]->d_type == DT_REG)
-                print_support(namelist[ps.active][ps.current_position[ps.active]]->d_name);
+            if (S_ISREG(file_stat.st_mode))
+                print_support(ps[active].namelist[ps[active].current_position]->d_name);
             break;
         case 'q': /* q to exit */
             quit_func();

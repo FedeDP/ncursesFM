@@ -29,8 +29,8 @@ static char searched_string[PATH_MAX];
 void change_dir(char *str)
 {
     chdir(str);
-    getcwd(ps.my_cwd[ps.active], PATH_MAX);
-    list_everything(ps.active, 0, dim - 2, 1, 1);
+    getcwd(ps[active].my_cwd, PATH_MAX);
+    list_everything(active, 0, dim - 2, 1, 1);
     clear_info(INFO_LINE);
     clear_info(ERR_LINE);
 }
@@ -42,21 +42,18 @@ void switch_hidden(void)
         config.show_hidden = 1;
     else
         config.show_hidden = 0;
-    for (i = 0; i < ps.cont; i++)
+    for (i = 0; i < cont; i++)
         list_everything(i, 0, dim - 2, 1, 1);
 }
 
 void manage_file(char *str)
 {
-    char *ext;
+    int dim;
     if (file_isCopied())
         return;
-    ext = strrchr(str, '.');
-    if ((ext) && (isIso(ext))) {
-        if ((config.iso_mount_point) && (access(config.iso_mount_point, W_OK) != -1))
-            iso_mount_service(str);
-        else
-            print_info("You have to specify an iso mount point in config file and you must have write permissions there.", ERR_LINE);
+    dim = isArchive(str);
+    if (dim) {
+        mount_service(str, dim);
     } else {
         if ((config.editor) && (access(config.editor, X_OK) != -1))
             open_file(str);
@@ -77,35 +74,29 @@ static void open_file(char *str)
     refresh();
 }
 
-static void iso_mount_service(char *str)
+static void mount_service(char *str, int dim)
 {
-    int i;
     pid_t pid;
-    char mount_point[strlen(str) - 4 + strlen(config.iso_mount_point)];
-    if (access("/usr/bin/fuseiso", F_OK) != -1) {
-        strcpy(mount_point, config.iso_mount_point);
-        strcat(mount_point, "/");
-        strncat(mount_point, str, strlen(str) - 4);
+    char mount_point[strlen(str) - dim + 1];
+    if (access("/usr/bin/archivemount", F_OK) != -1) {
+        strncpy(mount_point, str, strlen(str) - dim); //check
+        mount_point[strlen(str) - dim] = '\0';
         pid = vfork();
         if (pid == 0) {
-            if (mkdir(mount_point, ACCESSPERMS) == -1) {
+            if (mkdir(mount_point, ACCESSPERMS) == -1)
                 execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
-            } else
-                execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", str, mount_point, NULL);
+            else
+                execl("/usr/bin/archivemount", "/usr/bin/archivemount", str, mount_point, NULL);
         } else {
             waitpid(pid, NULL, 0);
             if (rmdir(mount_point) == 0)
-                print_info("Iso succesfully unmounted.", INFO_LINE);
+                print_info("Succesfully unmounted.", INFO_LINE);
             else
-                print_info("Iso succesfully mounted.", INFO_LINE);
-            for (i = 0; i < ps.cont; i++) {
-                if (strcmp(config.iso_mount_point, ps.my_cwd[i]) == 0)
-                    list_everything(i, 0, dim - 2, 1, 1);
-            }
-            chdir(ps.my_cwd[ps.active]);
+                print_info("Succesfully mounted.", INFO_LINE);
+            sync_changes();
         }
     } else {
-        print_info("You need fuseiso for iso mounting.", ERR_LINE);
+        print_info("You need archivemount for mounting support.", ERR_LINE);
     }
 }
 
@@ -133,7 +124,7 @@ void remove_file(void)
     if (file_isCopied())
         return;
     if (ask_user(mesg) == 1) {
-        if (rmrf(namelist[ps.active][ps.current_position[ps.active]]->d_name) == -1)
+        if (rmrf(ps[active].namelist[ps[active].current_position]->d_name) == -1)
             print_info("Could not remove. Check user permissions.", ERR_LINE);
         else {
             sync_changes();
@@ -144,10 +135,10 @@ void remove_file(void)
 
 void manage_c_press(char c)
 {
-    if (remove_from_list(namelist[ps.active][ps.current_position[ps.active]]->d_name) == 0)
+    if (remove_from_list(ps[active].namelist[ps[active].current_position]->d_name) == 0)
         copy_file(c);
     else {
-        if (ps.copied_files)
+        if (copied_files)
             print_info("File deleted from copy list.", INFO_LINE);
         else
             print_info("File deleted from copy list. Copy list empty.", INFO_LINE);
@@ -156,14 +147,14 @@ void manage_c_press(char c)
 
 static int remove_from_list(char *name)
 {
-    copied_file_list *tmp = ps.copied_files, *temp = NULL;
+    copied_file_list *tmp = copied_files, *temp = NULL;
     char str[PATH_MAX];
-    if (!ps.copied_files)
+    if (!copied_files)
         return 0;
-    strcpy(str, strrchr(ps.copied_files->copied_file, '/'));
+    strcpy(str, strrchr(copied_files->copied_file, '/'));
     memmove(str, str + 1, strlen(str));
     if (strcmp(str, name) == 0) {
-        ps.copied_files = ps.copied_files->next;
+        copied_files = copied_files->next;
         free(tmp);
         return 1;
     }
@@ -186,25 +177,25 @@ static int remove_from_list(char *name)
 static void copy_file(char c)
 {
     copied_file_list *tmp;
-    if (ps.copied_files) {
-        tmp = ps.copied_files;
+    if (copied_files) {
+        tmp = copied_files;
         while(tmp->next)
             tmp = tmp->next;
         tmp->next = malloc(sizeof(struct list));
-        get_full_path(tmp->next->copied_file);
-        strcpy(tmp->next->copied_dir, ps.my_cwd[ps.active]);
+        get_full_path(tmp->next->copied_file, ps[active].current_position, active);
+        strcpy(tmp->next->copied_dir, ps[active].my_cwd);
         tmp->next->cut = 0;
         if (c == 'x')
             tmp->next->cut = 1;
         tmp->next->next = NULL;
     } else {
-        ps.copied_files = malloc(sizeof(struct list));
-        get_full_path(ps.copied_files->copied_file);
-        strcpy(ps.copied_files->copied_dir, ps.my_cwd[ps.active]);
-        ps.copied_files->cut = 0;
+        copied_files = malloc(sizeof(struct list));
+        get_full_path(copied_files->copied_file, ps[active].current_position, active);
+        strcpy(copied_files->copied_dir, ps[active].my_cwd);
+        copied_files->cut = 0;
         if (c == 'x')
-            ps.copied_files->cut = 1;
-        ps.copied_files->next = NULL;
+            copied_files->cut = 1;
+        copied_files->next = NULL;
     }
     mvwprintw(info_win, INFO_LINE, COLS - strlen("File added to copy list."), "File added to copy list.");
     wrefresh(info_win);
@@ -223,16 +214,16 @@ void paste_file(void)
     char pasted_file[PATH_MAX];
     int size = 0;
     struct stat file_stat_copied, file_stat_pasted;
-    copied_file_list *tmp = ps.copied_files;
-    strcpy(ps.pasted_dir, ps.my_cwd[ps.active]);
-    if (access(ps.pasted_dir, W_OK) == 0) {
-        stat(ps.pasted_dir, &file_stat_pasted);
+    copied_file_list *tmp = copied_files;
+    strcpy(pasted_dir, ps[active].my_cwd);
+    if (access(pasted_dir, W_OK) == 0) {
+        stat(pasted_dir, &file_stat_pasted);
         while (tmp) {
-            if (strcmp(ps.pasted_dir, tmp->copied_dir) != 0) {
+            if (strcmp(pasted_dir, tmp->copied_dir) != 0) {
                 size++;
                 stat(tmp->copied_dir, &file_stat_copied);
                 if ((file_stat_copied.st_dev == file_stat_pasted.st_dev) && (tmp->cut == 1)) {
-                    strcpy(pasted_file, ps.pasted_dir);
+                    strcpy(pasted_file, pasted_dir);
                     strcat(pasted_file, strrchr(tmp->copied_file, '/'));
                     tmp->cut = -1;
                     size--;
@@ -253,15 +244,15 @@ void paste_file(void)
             pthread_create(&th, NULL, cpr, NULL);
             pthread_detach(th);
         } else {
-            ps.pasted = 1;
+            pasted = 1;
         }
     } else {
         wclear(info_win);
         mvwprintw(info_win, ERR_LINE, 1, "Cannot copy here. Check user permissions. Copy list destroyed.");
         wrefresh(info_win);
-        free_copied_list(ps.copied_files);
-        ps.copied_files = NULL;
-        memset(ps.pasted_dir, 0, strlen(ps.pasted_dir));
+        free_copied_list(copied_files);
+        copied_files = NULL;
+        memset(pasted_dir, 0, strlen(pasted_dir));
         set_nodelay(FALSE);
     }
 }
@@ -271,19 +262,19 @@ static void *cpr(void *x)
 {
     pid_t pid;
     int status;
-    copied_file_list *tmp = ps.copied_files;
-    ps.pasted = -1;
+    copied_file_list *tmp = copied_files;
+    pasted = -1;
     while (tmp) {
         if (tmp->cut != -1) {
             pid = vfork();
             if (pid == 0)
-                execl("/usr/bin/cp", "/usr/bin/cp", "-r", tmp->copied_file, ps.pasted_dir, NULL);
+                execl("/usr/bin/cp", "/usr/bin/cp", "-r", tmp->copied_file, pasted_dir, NULL);
             else
                 waitpid(pid, &status, 0);
         }
         tmp = tmp->next;
     }
-    ps.pasted = 1;
+    pasted = 1;
     return NULL;
 }
 
@@ -296,10 +287,10 @@ static void *cpr(void *x)
  */
 void check_pasted(void)
 {
-    int i, printed[ps.cont];
-    copied_file_list *tmp = ps.copied_files;
-    for (i = 0; i < ps.cont; i++) {
-        if (strcmp(ps.pasted_dir, ps.my_cwd[i]) == 0) {
+    int i, printed[cont];
+    copied_file_list *tmp = copied_files;
+    for (i = 0; i < cont; i++) {
+        if (strcmp(pasted_dir, ps[i].my_cwd) == 0) {
             list_everything(i, 0, dim - 2, 1, 1);
             printed[i] = 1;
         } else {
@@ -312,19 +303,19 @@ void check_pasted(void)
                 print_info("Could not cut. Check user permissions.", ERR_LINE);
         }
         if ((tmp->cut == 1) || (tmp->cut == -1)) {
-            for (i = 0; i < ps.cont; i++) {
-                if ((printed[i] == 0) && (strcmp(tmp->copied_dir, ps.my_cwd[i]) == 0))
+            for (i = 0; i < cont; i++) {
+                if ((printed[i] == 0) && (strcmp(tmp->copied_dir, ps[i].my_cwd) == 0))
                     list_everything(i, 0, dim - 2, 1, 1);
             }
         }
         tmp = tmp->next;
     }
-    chdir(ps.my_cwd[ps.active]);
+    chdir(ps[active].my_cwd);
     print_info("Every files has been copied/moved.", INFO_LINE);
-    free_copied_list(ps.copied_files);
-    ps.copied_files = NULL;
-    memset(ps.pasted_dir, 0, strlen(ps.pasted_dir));
-    ps.pasted = 0;
+    free_copied_list(copied_files);
+    copied_files = NULL;
+    memset(pasted_dir, 0, strlen(pasted_dir));
+    pasted = 0;
     set_nodelay(FALSE);
 }
 
@@ -338,7 +329,7 @@ void rename_file_folders(void)
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
     noecho();
-    if (rename(namelist[ps.active][ps.current_position[ps.active]]->d_name, str) == - 1) {
+    if (rename(ps[active].namelist[ps[active].current_position]->d_name, str) == - 1) {
         print_info(strerror(errno), ERR_LINE);
     } else {
         sync_changes();
@@ -399,7 +390,7 @@ static int search_file(char *path)
 void search(void)
 {
     char *mesg = "Insert filename to be found, at least 3 chars:> ";
-    int i = 0, old_size = ps.number_of_files[ps.active];
+    int i = 0, old_size = ps[active].number_of_files;
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, searched_string);
@@ -408,23 +399,23 @@ void search(void)
         clear_info(INFO_LINE);
         return;
     }
-    search_file(ps.my_cwd[ps.active]);
+    search_file(ps[active].my_cwd);
     if (!found_searched[i]) {
         print_info("No files found.", INFO_LINE);
         return;
     }
-    wclear(file_manager[ps.active]);
-    wborder(file_manager[ps.active], '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(file_manager[ps.active], 0, 0, "Found file searching %s: ", searched_string);
-    wattron(file_manager[ps.active], A_BOLD);
+    wclear(ps[active].file_manager);
+    wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
+    mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %s: ", searched_string);
+    wattron(ps[active].file_manager, A_BOLD);
     for (i = 0; (i < dim - 2) && (found_searched[i]); i++)
-        mvwprintw(file_manager[ps.active], INITIAL_POSITION + i, 4, "%s", found_searched[i]);
-    wattroff(file_manager[ps.active], A_BOLD);
+        mvwprintw(ps[active].file_manager, INITIAL_POSITION + i, 4, "%s", found_searched[i]);
+    wattroff(ps[active].file_manager, A_BOLD);
     while (found_searched[i])
         i++;
     if (search_loop(i) == 'q') {
-        ps.number_of_files[ps.active] = old_size;
-        list_everything(ps.active, 0, dim - 2, 1, 1);
+        ps[active].number_of_files = old_size;
+        list_everything(active, 0, dim - 2, 1, 1);
     }
     clear_info(INFO_LINE);
     for (i = 0; found_searched[i]; i++) {
@@ -436,39 +427,39 @@ void search(void)
 static int search_loop(int size)
 {
     char *str = NULL, *mesg = "Open file? y to open, n to switch to the folder";
-    int c, old_size = ps.number_of_files[ps.active];
-    ps.delta[ps.active] = 0;
-    ps.current_position[ps.active] = 0;
-    ps.number_of_files[ps.active] = size;
+    int c, old_size = ps[active].number_of_files;
+    ps[active].delta = 0;
+    ps[active].current_position = 0;
+    ps[active].number_of_files = size;
     print_info("q to leave search win", INFO_LINE);
-    mvwprintw(file_manager[ps.active], INITIAL_POSITION, 1, "->");
+    mvwprintw(ps[active].file_manager, INITIAL_POSITION, 1, "->");
     do {
-        c = wgetch(file_manager[ps.active]);
-        wattron(file_manager[ps.active], A_BOLD);
+        c = wgetch(ps[active].file_manager);
+        wattron(ps[active].file_manager, A_BOLD);
         switch (c) {
             case KEY_UP:
-                scroll_up(found_searched[ps.current_position[ps.active]]);
+                scroll_up(found_searched[ps[active].current_position]);
                 break;
             case KEY_DOWN:
-                scroll_down(found_searched[ps.current_position[ps.active]]);
+                scroll_down(found_searched[ps[active].current_position]);
                 break;
             case 10:
-                str = strrchr(found_searched[ps.current_position[ps.active]], '/');
+                str = strrchr(found_searched[ps[active].current_position], '/');
                 if ((strlen(str) != 1) && (ask_user(mesg) == 1))
-                    manage_file(found_searched[ps.current_position[ps.active]]);
+                    manage_file(found_searched[ps[active].current_position]);
                 else {
-                    found_searched[ps.current_position[ps.active]][strlen(found_searched[ps.current_position[ps.active]]) - strlen(str)] = '\0';
-                    ps.number_of_files[ps.active] = old_size;
-                    change_dir(found_searched[ps.current_position[ps.active]]);
+                    found_searched[ps[active].current_position][strlen(found_searched[ps[active].current_position]) - strlen(str)] = '\0';
+                    ps[active].number_of_files = old_size;
+                    change_dir(found_searched[ps[active].current_position]);
                 }
                 break;
         }
-        wattroff(file_manager[ps.active], A_BOLD);
+        wattroff(ps[active].file_manager, A_BOLD);
         if ((c == KEY_UP) || (c == KEY_DOWN)) {
-            wborder(file_manager[ps.active], '|', '|', '-', '-', '+', '+', '+', '+');
-            mvwprintw(file_manager[ps.active], 0, 0, "Found file searching %s: ", searched_string);
+            wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
+            mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %s: ", searched_string);
         }
-    } while ((c != 'q') && (ps.number_of_files[ps.active] == size));
+    } while ((c != 'q') && (ps[active].number_of_files == size));
     return c;
 }
 

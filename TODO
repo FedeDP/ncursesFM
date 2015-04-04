@@ -1,5 +1,4 @@
 /* TODO:
- * Bookmarks/devices tabs * -> Bookmarks defined in .conf file? *
- * archives support ** -> archivemount http://archive09.linux.com/feature/132196
  * nano launched in its own WINDOW * (not stdscr!) -> forkpty... ?? *very hard
+ * add other supported compress extensions (search about libarchive supported ext) -> very easy
  */

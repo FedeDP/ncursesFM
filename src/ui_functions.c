@@ -36,19 +36,19 @@ void screen_init(void)
     noecho();
     curs_set(0);
     dim = LINES - INFO_HEIGHT;
-    file_manager[ps.active] = subwin(stdscr, dim, COLS, 0, 0);
-    scrollok(file_manager[ps.active], TRUE);
-    idlok(file_manager[ps.active], TRUE);
+    ps[active].file_manager = subwin(stdscr, dim, COLS, 0, 0);
+    scrollok(ps[active].file_manager, TRUE);
+    idlok(ps[active].file_manager, TRUE);
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
-    keypad(file_manager[ps.active], TRUE);
+    keypad(ps[active].file_manager, TRUE);
 }
 
 void screen_end(void)
 {
     int i;
-    for (i = 0; i < ps.cont; i++) {
-        wclear(file_manager[i]);
-        delwin(file_manager[i]);
+    for (i = 0; i < cont; i++) {
+        wclear(ps[i].file_manager);
+        delwin(ps[i].file_manager);
     }
     if (helper_win) {
         wclear(helper_win);
@@ -63,33 +63,32 @@ void screen_end(void)
 void list_everything(int win, int old_dim, int end, int erase, int reset)
 {
     int i;
-    chdir(ps.my_cwd[win]);
+    chdir(ps[win].my_cwd);
     if (erase == 1) {
-        for (i = 0; i < ps.number_of_files[win]; i++)
-            free(namelist[win][i]);
-        free(namelist[win]);
-        namelist[win] = NULL;
-        wclear(file_manager[win]);
+        for (i = 0; i < ps[win].number_of_files; i++)
+            free(ps[win].namelist[i]);
+        free(ps[win].namelist);
+        ps[win].namelist = NULL;
+        wclear(ps[win].file_manager);
         if (reset == 1) {
-            ps.delta[win] = 0;
-            ps.current_position[win] = 0;
+            ps[win].delta = 0;
+            ps[win].current_position = 0;
         }
-        ps.number_of_files[win] = scandir(ps.my_cwd[win], &namelist[win], is_hidden, alphasort);
+        ps[win].number_of_files = scandir(ps[win].my_cwd, &ps[win].namelist, is_hidden, alphasort);
         my_sort(win);
     }
-
-    wborder(file_manager[win], '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(file_manager[win], 0, 0, "Current:%.*s", COLS / ps.cont - 1 - strlen("Current:"), ps.my_cwd[win]);
-    for (i = old_dim; (i < ps.number_of_files[win]) && (i  < old_dim + end); i++) {
+    wborder(ps[win].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
+    mvwprintw(ps[win].file_manager, 0, 0, "Current:%.*s", COLS / cont - 1 - strlen("Current:"), ps[win].my_cwd);
+    for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
         colored_folders(i, win);
-        mvwprintw(file_manager[win], INITIAL_POSITION + i - ps.delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, namelist[win][i]->d_name);
-        wattroff(file_manager[win], COLOR_PAIR(1));
-        wattroff(file_manager[win], A_BOLD);
+        mvwprintw(ps[win].file_manager, INITIAL_POSITION + i - ps[win].delta, 4, "%.*s", MAX_FILENAME_LENGTH, ps[win].namelist[i]->d_name);
+        wattroff(ps[win].file_manager, COLOR_PAIR(1));
+        wattroff(ps[win].file_manager, A_BOLD);
     }
-    mvwprintw(file_manager[win], INITIAL_POSITION + ps.current_position[win] - ps.delta[win], 1, "->");
-    if (ps.stat_active[win] == 1)
+    mvwprintw(ps[win].file_manager, INITIAL_POSITION + ps[win].current_position - ps[win].delta, 1, "->");
+    if (ps[win].stat_active == 1)
         show_stat(old_dim, end, win);
-    wrefresh(file_manager[win]);
+    wrefresh(ps[win].file_manager);
 }
 
 static int is_hidden(const struct dirent *current_file)
@@ -107,14 +106,21 @@ static int is_hidden(const struct dirent *current_file)
 static void my_sort(int win)
 {
     struct dirent *temp;
+    struct stat file_stat[2];
+    char full_path[PATH_MAX];
     int i, j;
-    for (i = 0; i < ps.number_of_files[win] - 1; i++) {
-        if (namelist[win][i]->d_type !=  DT_DIR) {
-            for (j = i + 1; j < ps.number_of_files[win]; j++) {
-                if (namelist[win][j]->d_type == DT_DIR) {
-                    temp = namelist[win][j];
-                    namelist[win][j] = namelist[win][i];
-                    namelist[win][i] = temp;
+    for (i = 0; i < ps[win].number_of_files - 1; i++) {
+        get_full_path(full_path, i, win);
+        lstat(full_path, &file_stat[0]);
+        if (!S_ISDIR(file_stat[0].st_mode)) {
+            for (j = i + 1; j < ps[win].number_of_files; j++) {
+                memset(full_path, 0, strlen(full_path));
+                get_full_path(full_path, j, win);
+                lstat(full_path, &file_stat[1]);
+                if (S_ISDIR(file_stat[1].st_mode)) {
+                    temp = ps[win].namelist[j];
+                    ps[win].namelist[j] = ps[win].namelist[i];
+                    ps[win].namelist[i] = temp;
                     break;
                 }
             }
@@ -124,118 +130,114 @@ static void my_sort(int win)
 
 void new_tab(void)
 {
-    ps.cont++;
-    wresize(file_manager[ps.active], dim, COLS / ps.cont);
-    wborder(file_manager[ps.active], '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(file_manager[ps.active], 0, 0, "Current:%.*s", COLS / ps.cont - 1 - strlen("Current:"), ps.my_cwd[ps.active]);
-    wrefresh(file_manager[ps.active]);
-    ps.active = 1;
-    file_manager[ps.active] = subwin(stdscr, dim, COLS / ps.cont, 0, COLS / ps.cont);
-    keypad(file_manager[ps.active], TRUE);
-    scrollok(file_manager[ps.active], TRUE);
-    idlok(file_manager[ps.active], TRUE);
+    cont++;
+    wresize(ps[active].file_manager, dim, COLS / cont);
+    wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
+    mvwprintw(ps[active].file_manager, 0, 0, "Current:%.*s", COLS / cont - 1 - strlen("Current:"), ps[active].my_cwd);
+    wrefresh(ps[active].file_manager);
+    active = 1;
+    ps[active].file_manager = subwin(stdscr, dim, COLS / cont, 0, COLS / cont);
+    keypad(ps[active].file_manager, TRUE);
+    scrollok(ps[active].file_manager, TRUE);
+    idlok(ps[active].file_manager, TRUE);
     if ((config.second_tab_starting_dir != 0) && (config.starting_dir) && (access(config.starting_dir, F_OK) != -1))
-        strcpy(ps.my_cwd[ps.active], config.starting_dir);
+        strcpy(ps[active].my_cwd, config.starting_dir);
     else
-        getcwd(ps.my_cwd[ps.active], PATH_MAX);
-    list_everything(ps.active, 0, dim - 2, 1, 1);
+        getcwd(ps[active].my_cwd, PATH_MAX);
+    list_everything(active, 0, dim - 2, 1, 1);
 }
 
 void delete_tab(void)
 {
     int i;
-    ps.cont--;
-    wclear(file_manager[ps.active]);
-    delwin(file_manager[ps.active]);
-    file_manager[ps.active] = NULL;
-    for (i = ps.number_of_files[ps.active] - 1; i >= 0; i--)
-        free(namelist[ps.active][i]);
-    free(namelist[ps.active]);
-    namelist[ps.active] = NULL;
-    ps.number_of_files[ps.active] = 0;
-    ps.stat_active[ps.active] = 0;
-    memset(ps.my_cwd[ps.active], 0, sizeof(ps.my_cwd[ps.active]));
-    ps.active = 0;
-    wborder(file_manager[ps.active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-    wresize(file_manager[ps.active], dim, COLS);
-    wborder(file_manager[ps.active], '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(file_manager[ps.active], 0, 0, "Current:%.*s", COLS / ps.cont - 1 - strlen("Current:"), ps.my_cwd[ps.active]);
+    cont--;
+    wclear(ps[active].file_manager);
+    delwin(ps[active].file_manager);
+    ps[active].file_manager = NULL;
+    for (i = ps[active].number_of_files - 1; i >= 0; i--)
+        free(ps[active].namelist[i]);
+    free(ps[active].namelist);
+    ps[active].namelist = NULL;
+    ps[active].number_of_files = 0;
+    ps[active].stat_active = 0;
+    memset(ps[active].my_cwd, 0, sizeof(ps[active].my_cwd));
+    active = 0;
+    wborder(ps[active].file_manager, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wresize(ps[active].file_manager, dim, COLS);
+    wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
+    mvwprintw(ps[active].file_manager, 0, 0, "Current:%.*s", COLS / cont - 1 - strlen("Current:"), ps[active].my_cwd);
 }
 
 void scroll_down(char *str)
 {
     int real_height = dim - 2;
-    ps.current_position[ps.active]++;
-    if (ps.current_position[ps.active] == ps.number_of_files[ps.active]) {
-        ps.current_position[ps.active]--;
-        return;
-    }
-    if (ps.current_position[ps.active] - real_height == ps.delta[ps.active]) {
-        scroll_helper_func(real_height, 1);
-        ps.delta[ps.active]++;
-        if (!str)
-            list_everything(ps.active, ps.current_position[ps.active], 1, 0, 0);
-        else {
-            mvwprintw(file_manager[ps.active], real_height, 4, str);
-            mvwprintw(file_manager[ps.active], INITIAL_POSITION + ps.current_position[ps.active] - ps.delta[ps.active], 1, "->");
+    if (ps[active].current_position < ps[active].number_of_files - 1) {
+        ps[active].current_position++;
+        if (ps[active].current_position - real_height == ps[active].delta) {
+            scroll_helper_func(real_height, 1);
+            ps[active].delta++;
+            if (!str)
+                list_everything(active, ps[active].current_position, 1, 0, 0);
+            else {
+                mvwprintw(ps[active].file_manager, real_height, 4, str);
+                mvwprintw(ps[active].file_manager, INITIAL_POSITION + ps[active].current_position - ps[active].delta, 1, "->");
+            }
+        } else {
+            mvwprintw(ps[active].file_manager, ps[active].current_position - ps[active].delta, 1, "  ");
+            mvwprintw(ps[active].file_manager, ps[active].current_position - ps[active].delta + INITIAL_POSITION, 1, "->");
         }
-    } else {
-        mvwprintw(file_manager[ps.active], ps.current_position[ps.active] - ps.delta[ps.active], 1, "  ");
-        mvwprintw(file_manager[ps.active], ps.current_position[ps.active] - ps.delta[ps.active] + INITIAL_POSITION, 1, "->");
     }
 }
 
 void scroll_up(char *str)
 {
-    ps.current_position[ps.active]--;
-    if (ps.current_position[ps.active] < 0) {
-        ps.current_position[ps.active]++;
-        return;
-    }
-    if (ps.current_position[ps.active] < ps.delta[ps.active]) {
-        scroll_helper_func(INITIAL_POSITION, - 1);
-        ps.delta[ps.active]--;
-        if (!str)
-            list_everything(ps.active, ps.delta[ps.active], 1, 0, 0);
-        else {
-            mvwprintw(file_manager[ps.active], INITIAL_POSITION, 4, str);
-            mvwprintw(file_manager[ps.active], INITIAL_POSITION + ps.current_position[ps.active] - ps.delta[ps.active], 1, "->");
+    if (ps[active].current_position > 0) {
+        ps[active].current_position--;
+        if (ps[active].current_position < ps[active].delta) {
+            scroll_helper_func(INITIAL_POSITION, - 1);
+            ps[active].delta--;
+            if (!str)
+                list_everything(active, ps[active].delta, 1, 0, 0);
+            else {
+                mvwprintw(ps[active].file_manager, INITIAL_POSITION, 4, str);
+                mvwprintw(ps[active].file_manager, INITIAL_POSITION + ps[active].current_position - ps[active].delta, 1, "->");
+            }
+        } else {
+            mvwprintw(ps[active].file_manager, ps[active].current_position - ps[active].delta + 2, 1, "  ");
+            mvwprintw(ps[active].file_manager, ps[active].current_position - ps[active].delta + 1, 1, "->");
         }
-    } else {
-        mvwprintw(file_manager[ps.active], ps.current_position[ps.active] - ps.delta[ps.active] + 2, 1, "  ");
-        mvwprintw(file_manager[ps.active], ps.current_position[ps.active] - ps.delta[ps.active] + 1, 1, "->");
     }
 }
 
 static void scroll_helper_func(int x, int direction)
 {
-    mvwprintw(file_manager[ps.active], x, 1, "  ");
-    wborder(file_manager[ps.active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-    wscrl(file_manager[ps.active], direction);
+    mvwprintw(ps[active].file_manager, x, 1, "  ");
+    wborder(ps[active].file_manager, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wscrl(ps[active].file_manager, direction);
 }
 
 void sync_changes(void)
 {
-    list_everything(ps.active, 0, dim - 2, 1, 1);
-    if (ps.cont == 2) {
-        if (strcmp(ps.my_cwd[ps.active], ps.my_cwd[1 - ps.active]) == 0)
-            list_everything(1 - ps.active, 0, dim - 2, 1, 1);
+    if (cont == 2) {
+        if (strcmp(ps[active].my_cwd, ps[1 - active].my_cwd) == 0)
+            list_everything(1 - active, 0, dim - 2, 1, 1);
     }
+    list_everything(active, 0, dim - 2, 1, 1);
 }
 
 static void colored_folders(int i, int win)
 {
     struct stat file_stat;
-    wattron(file_manager[win], A_BOLD);
-    if (namelist[win][i]->d_type == DT_DIR)
-        wattron(file_manager[win], COLOR_PAIR(1));
-    else if (namelist[win][i]->d_type == DT_LNK)
-        wattron(file_manager[win], COLOR_PAIR(3));
-    else if (namelist[win][i]->d_type == DT_REG) {
-        stat(namelist[win][i]->d_name, &file_stat);
-        if (file_stat.st_mode & S_IXUSR)
-            wattron(file_manager[win], COLOR_PAIR(2));
-    }
+    char full_path[PATH_MAX];
+    get_full_path(full_path, i, win);
+    lstat(full_path, &file_stat);
+    wattron(ps[win].file_manager, A_BOLD);
+    if (S_ISDIR(file_stat.st_mode))
+        wattron(ps[win].file_manager, COLOR_PAIR(1));
+    else if (S_ISLNK(file_stat.st_mode))
+        wattron(ps[win].file_manager, COLOR_PAIR(3));
+    else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR))
+        wattron(ps[win].file_manager, COLOR_PAIR(2));
 }
 
 void print_info(char *str, int i)
@@ -249,9 +251,9 @@ void clear_info(int i)
 {
     wmove(info_win, i, 1);
     wclrtoeol(info_win);
-    if ((ps.copied_files) && (ps.pasted == 0))
+    if ((copied_files) && (pasted == 0))
         mvwprintw(info_win, INFO_LINE, COLS - strlen("File added to copy list."), "File added to copy list.");
-    else if (ps.pasted == -1)
+    else if (pasted == -1)
         mvwprintw(info_win, INFO_LINE, COLS - strlen("Pasting files..."), "Pasting_files...");
     wrefresh(info_win);
 }
@@ -261,15 +263,15 @@ void trigger_show_helper_message(void)
     int i;
     if (helper_win == NULL) {
         dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
-        for (i = 0; i < ps.cont; i++) {
-            wresize(file_manager[i], dim, COLS / ps.cont);
-            wborder(file_manager[i], '|', '|', '-', '-', '+', '+', '+', '+');
-            mvwprintw(file_manager[i], 0, 0, "Current:%.*s", COLS / ps.cont - 1 - strlen("Current:"), ps.my_cwd[i]);
-            if (ps.current_position[i] > dim - 3) {
-                ps.current_position[i] = dim - 3 + ps.delta[i];
-                mvwprintw(file_manager[i], ps.current_position[i] - ps.delta[i] + INITIAL_POSITION, 1, "->");
+        for (i = 0; i < cont; i++) {
+            wresize(ps[i].file_manager, dim, COLS / cont);
+            wborder(ps[i].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
+            mvwprintw(ps[i].file_manager, 0, 0, "Current:%.*s", COLS / cont - 1 - strlen("Current:"), ps[i].my_cwd);
+            if (ps[i].current_position > dim - 3) {
+                ps[i].current_position = dim - 3 + ps[i].delta;
+                mvwprintw(ps[i].file_manager, ps[i].current_position - ps[i].delta + INITIAL_POSITION, 1, "->");
             }
-            wrefresh(file_manager[i]);
+            wrefresh(ps[i].file_manager);
         }
         helper_win = subwin(stdscr, HELPER_HEIGHT, COLS, LINES - INFO_HEIGHT - HELPER_HEIGHT, 0);
         wclear(helper_win);
@@ -280,10 +282,10 @@ void trigger_show_helper_message(void)
         delwin(helper_win);
         helper_win = NULL;
         dim = LINES - INFO_HEIGHT;
-        for (i = 0; i < ps.cont; i++) {
-            wborder(file_manager[i], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-            wresize(file_manager[i], dim, COLS / ps.cont);
-            list_everything(i, dim - 2 - HELPER_HEIGHT + ps.delta[i], HELPER_HEIGHT, 0, 0);
+        for (i = 0; i < cont; i++) {
+            wborder(ps[i].file_manager, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+            wresize(ps[i].file_manager, dim, COLS / cont);
+            list_everything(i, dim - 2 - HELPER_HEIGHT + ps[i].delta, HELPER_HEIGHT, 0, 0);
         }
     }
 }
@@ -292,8 +294,8 @@ static void helper_print(void)
 {
     wprintw(helper_win, "\n HELPER MESSAGE:\n * n and r to create/remove a file.\n");
     wprintw(helper_win, " * Enter to surf between folders or to open files with $editor var.\n");
-    wprintw(helper_win, " * Enter will eventually mount your ISO files in $path.\n");
-    wprintw(helper_win, " * You must have fuseiso installed. To unmount, simply press again enter on the same iso file.\n");
+    wprintw(helper_win, " * Enter will eventually mount your ISO/compressed files.\n");
+    wprintw(helper_win, " * You must have archivemount installed. To unmount, simply press again enter on the same iso file.\n");
     wprintw(helper_win, " * Press h to trigger the showing of hide files. s to see stat about files in current folder.\n");
     wprintw(helper_win, " * c to copy, p to paste, and x to cut a file/dir. p to print a file.\n");
     wprintw(helper_win, " * You can copy as many files/dirs as you want. c again on a file/dir to remove it from copy list.\n");
@@ -310,36 +312,33 @@ void show_stat(int init, int end, int win)
     unsigned long total_size = 0;
     struct stat file_stat;
     if (init == 0) {
-        for (i = 1; i < ps.number_of_files[win]; i++) {
-            stat(namelist[win][i]->d_name, &file_stat);
+        for (i = 1; i < ps[win].number_of_files; i++) {
+            stat(ps[win].namelist[i]->d_name, &file_stat);
             total_size = total_size + file_stat.st_size;
         }
-        mvwprintw(file_manager[win], INITIAL_POSITION, STAT_COL, "Total size: %lu KB", total_size / 1024);
+        mvwprintw(ps[win].file_manager, INITIAL_POSITION, STAT_COL, "Total size: %lu KB", total_size / 1024);
         i = 1;
     }
-    for (; ((i < init + end) && (i < ps.number_of_files[win])); i++) {
-        if (stat(namelist[win][i]->d_name, &file_stat) == - 1) { //debug
-            mvwprintw(file_manager[win], i + INITIAL_POSITION - ps.delta[win], STAT_COL, "%s/%s %s", ps.my_cwd[win], namelist[win][i]->d_name, strerror(errno));
-            return;
-        }
-        mvwprintw(file_manager[win], i + INITIAL_POSITION - ps.delta[win], STAT_COL, "Size: %d KB", file_stat.st_size / 1024);
-        wprintw(file_manager[win], "\tPerm: ");
-        wprintw(file_manager[win], (S_ISDIR(file_stat.st_mode)) ? "d" : "-");
-        wprintw(file_manager[win], (file_stat.st_mode & S_IRUSR) ? "r" : "-");
-        wprintw(file_manager[win], (file_stat.st_mode & S_IWUSR) ? "w" : "-");
-        wprintw(file_manager[win], (file_stat.st_mode & S_IXUSR) ? "x" : "-");
-        wprintw(file_manager[win], (file_stat.st_mode & S_IRGRP) ? "r" : "-");
-        wprintw(file_manager[win], (file_stat.st_mode & S_IWGRP) ? "w" : "-");
-        wprintw(file_manager[win], (file_stat.st_mode & S_IXGRP) ? "x" : "-");
-        wprintw(file_manager[win], (file_stat.st_mode & S_IROTH) ? "r" : "-");
-        wprintw(file_manager[win], (file_stat.st_mode & S_IWOTH) ? "w" : "-");
-        wprintw(file_manager[win], (file_stat.st_mode & S_IXOTH) ? "x" : "-");
+    for (; ((i < init + end) && (i < ps[win].number_of_files)); i++) {
+        stat(ps[win].namelist[i]->d_name, &file_stat);
+        mvwprintw(ps[win].file_manager, i + INITIAL_POSITION - ps[win].delta, STAT_COL, "Size: %d KB", file_stat.st_size / 1024);
+        wprintw(ps[win].file_manager, "\tPerm: ");
+        wprintw(ps[win].file_manager, (S_ISDIR(file_stat.st_mode)) ? "d" : "-");
+        wprintw(ps[win].file_manager, (file_stat.st_mode & S_IRUSR) ? "r" : "-");
+        wprintw(ps[win].file_manager, (file_stat.st_mode & S_IWUSR) ? "w" : "-");
+        wprintw(ps[win].file_manager, (file_stat.st_mode & S_IXUSR) ? "x" : "-");
+        wprintw(ps[win].file_manager, (file_stat.st_mode & S_IRGRP) ? "r" : "-");
+        wprintw(ps[win].file_manager, (file_stat.st_mode & S_IWGRP) ? "w" : "-");
+        wprintw(ps[win].file_manager, (file_stat.st_mode & S_IXGRP) ? "x" : "-");
+        wprintw(ps[win].file_manager, (file_stat.st_mode & S_IROTH) ? "r" : "-");
+        wprintw(ps[win].file_manager, (file_stat.st_mode & S_IWOTH) ? "w" : "-");
+        wprintw(ps[win].file_manager, (file_stat.st_mode & S_IXOTH) ? "x" : "-");
     }
 }
 
 void set_nodelay(bool x)
 {
     int i;
-    for (i = 0; i < ps.cont; i++)
-        nodelay(file_manager[i], x);
+    for (i = 0; i < cont; i++)
+        nodelay(ps[i].file_manager, x);
 }

@@ -33,23 +33,22 @@ void free_copied_list(copied_file_list *h)
 void free_everything(void)
 {
     int i, j;
-    for (j = 0; j < ps.cont; j++) {
-        if (namelist[j] != NULL) {
-            for (i = ps.number_of_files[j] - 1; i >= 0; i--)
-                free(namelist[j][i]);
-            free(namelist[j]);
+    for (j = 0; j < cont; j++) {
+        if (ps[j].namelist != NULL) {
+            for (i = ps[j].number_of_files - 1; i >= 0; i--)
+                free(ps[j].namelist[i]);
+            free(ps[j].namelist);
         }
     }
     free(config.editor);
-    free(config.iso_mount_point);
-    if (ps.copied_files)
-        free_copied_list(ps.copied_files);
+    if (copied_files)
+        free_copied_list(copied_files);
 }
 
 
 void quit_func(void)
 {
     char *mesg = "A paste job is still running. Do you want to wait for it?(You should!) y/n:> ";
-    if ((ps.pasted == - 1) && (ask_user(mesg) == 1))
+    if ((pasted == - 1) && (ask_user(mesg) == 1))
         pthread_join(th, NULL);
 }

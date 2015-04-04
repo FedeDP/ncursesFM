@@ -15,7 +15,6 @@
 struct conf {
     char *editor;
     int show_hidden;
-    char *iso_mount_point;
     char *starting_dir;
     int second_tab_starting_dir;
 };
@@ -28,21 +27,19 @@ typedef struct list {
 } copied_file_list;
 
 struct vars {
-    int current_position[MAX_TABS];
-    int number_of_files[MAX_TABS];
-    int active;
-    int cont;
-    int delta[MAX_TABS];
-    int stat_active[MAX_TABS];
-    copied_file_list *copied_files;
-    char pasted_dir[PATH_MAX];
-    char my_cwd[MAX_TABS][PATH_MAX];
-    int pasted;
+    int current_position;
+    int number_of_files;
+    int delta;
+    int stat_active;
+    char my_cwd[PATH_MAX];
+    WINDOW *file_manager;
+    struct dirent **namelist;
 };
 
+copied_file_list *copied_files;
 pthread_t th;
 struct conf config;
-struct vars ps;
-WINDOW *file_manager[MAX_TABS], *info_win;
-int dim;
-struct dirent **namelist[MAX_TABS];
+struct vars ps[MAX_TABS];
+WINDOW *info_win;
+int dim, pasted, active, cont;
+char pasted_dir[PATH_MAX];
