@@ -29,8 +29,8 @@ static void helper_function(int argc, char *argv[]);
 static void init_func(void);
 static void main_loop(int *quit, int *old_number_files);
 
-static const char *config_file_name = "/etc/default/ncursesFM.conf";
-//static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
+//static const char *config_file_name = "/etc/default/ncursesFM.conf";
+static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, char *argv[])
 {
@@ -38,14 +38,6 @@ int main(int argc, char *argv[])
     helper_function(argc, argv);
     init_func();
     screen_init();
-    if ((config.starting_dir) && (access(config.starting_dir, F_OK) != -1)) {
-        strcpy(ps[active].my_cwd, config.starting_dir);
-    } else {
-        if (access(config.starting_dir, F_OK) == -1)
-            print_info("Check starting_directory entry in config file. The directory currently specified doesn't exist.", INFO_LINE);
-        getcwd(ps[active].my_cwd, PATH_MAX);
-    }
-    list_everything(active, 0, dim - 2, 1, 1);
     while (!quit)
         main_loop(&quit, &old_number_files);
     free_everything();
@@ -74,8 +66,7 @@ static void init_func(void)
 {
     config_t cfg;
     const char *str_editor, *str_hidden, *str_starting_dir;
-    active = 0;
-    cont = 1;
+    cont = 0;
     copied_files = NULL;
     pasted = 0;
     config_init(&cfg);

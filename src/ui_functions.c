@@ -36,11 +36,13 @@ void screen_init(void)
     noecho();
     curs_set(0);
     dim = LINES - INFO_HEIGHT;
-    ps[active].file_manager = subwin(stdscr, dim, COLS, 0, 0);
-    scrollok(ps[active].file_manager, TRUE);
-    idlok(ps[active].file_manager, TRUE);
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
-    keypad(ps[active].file_manager, TRUE);
+    if ((config.starting_dir) && (access(config.starting_dir, F_OK) == -1)) {
+        print_info("Check starting_directory entry in config file. The directory currently specified doesn't exist.", INFO_LINE);
+        free(config.starting_dir);
+        config.starting_dir = NULL;
+    }
+    new_tab();
 }
 
 void screen_end(void)
@@ -107,16 +109,12 @@ static void my_sort(int win)
 {
     struct dirent *temp;
     struct stat file_stat[2];
-    char full_path[PATH_MAX];
     int i, j;
     for (i = 0; i < ps[win].number_of_files - 1; i++) {
-        get_full_path(full_path, i, win);
-        lstat(full_path, &file_stat[0]);
+        lstat(ps[win].namelist[i]->d_name, &file_stat[0]);
         if (!S_ISDIR(file_stat[0].st_mode)) {
             for (j = i + 1; j < ps[win].number_of_files; j++) {
-                memset(full_path, 0, strlen(full_path));
-                get_full_path(full_path, j, win);
-                lstat(full_path, &file_stat[1]);
+                lstat(ps[win].namelist[j]->d_name, &file_stat[1]);
                 if (S_ISDIR(file_stat[1].st_mode)) {
                     temp = ps[win].namelist[j];
                     ps[win].namelist[j] = ps[win].namelist[i];
@@ -131,18 +129,26 @@ static void my_sort(int win)
 void new_tab(void)
 {
     cont++;
-    wresize(ps[active].file_manager, dim, COLS / cont);
-    wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(ps[active].file_manager, 0, 0, "Current:%.*s", COLS / cont - 1 - strlen("Current:"), ps[active].my_cwd);
-    wrefresh(ps[active].file_manager);
-    active = 1;
-    ps[active].file_manager = subwin(stdscr, dim, COLS / cont, 0, COLS / cont);
+    if (cont == 2) {
+        wresize(ps[active].file_manager, dim, COLS / cont);
+        wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
+        mvwprintw(ps[active].file_manager, 0, 0, "Current:%.*s", COLS / cont - 1 - strlen("Current:"), ps[active].my_cwd);
+        wrefresh(ps[active].file_manager);
+    }
+    active = cont - 1;
+    ps[active].file_manager = subwin(stdscr, dim, COLS / cont, 0, (COLS * active) / cont);
     keypad(ps[active].file_manager, TRUE);
     scrollok(ps[active].file_manager, TRUE);
     idlok(ps[active].file_manager, TRUE);
-    if ((config.second_tab_starting_dir != 0) && (config.starting_dir) && (access(config.starting_dir, F_OK) != -1))
-        strcpy(ps[active].my_cwd, config.starting_dir);
-    else
+    if (config.starting_dir) {
+        if (cont == 1) {
+            strcpy(ps[active].my_cwd, config.starting_dir);
+        } else {
+            if (config.second_tab_starting_dir != 0)
+                strcpy(ps[active].my_cwd, config.starting_dir);
+        }
+    }
+    if (strlen(ps[active].my_cwd) == 0)
         getcwd(ps[active].my_cwd, PATH_MAX);
     list_everything(active, 0, dim - 2, 1, 1);
 }
@@ -161,7 +167,7 @@ void delete_tab(void)
     ps[active].number_of_files = 0;
     ps[active].stat_active = 0;
     memset(ps[active].my_cwd, 0, sizeof(ps[active].my_cwd));
-    active = 0;
+    active = cont - 1;
     wborder(ps[active].file_manager, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wresize(ps[active].file_manager, dim, COLS);
     wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
@@ -228,9 +234,7 @@ void sync_changes(void)
 static void colored_folders(int i, int win)
 {
     struct stat file_stat;
-    char full_path[PATH_MAX];
-    get_full_path(full_path, i, win);
-    lstat(full_path, &file_stat);
+    lstat(ps[win].namelist[i]->d_name, &file_stat);
     wattron(ps[win].file_manager, A_BOLD);
     if (S_ISDIR(file_stat.st_mode))
         wattron(ps[win].file_manager, COLOR_PAIR(1));
