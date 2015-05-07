@@ -29,8 +29,8 @@ static void helper_function(int argc, char *argv[]);
 static void init_func(void);
 static void main_loop(int *quit, int *old_number_files);
 
-//static const char *config_file_name = "/etc/default/ncursesFM.conf";
-static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
+static const char *config_file_name = "/etc/default/ncursesFM.conf";
+//static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, char *argv[])
 {
@@ -69,6 +69,8 @@ static void init_func(void)
     cont = 0;
     copied_files = NULL;
     pasted = 0;
+    config.editor = NULL;
+    config.starting_dir = NULL;
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
         if (config_lookup_string(&cfg, "editor", &str_editor)) {
@@ -77,7 +79,7 @@ static void init_func(void)
         }
         if (!(config_lookup_int(&cfg, "show_hidden", &config.show_hidden)))
             config.show_hidden = 0;
-        if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) {
+        if ((config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) && (access(str_starting_dir, F_OK) != -1)) {
             config.starting_dir = malloc(strlen(str_starting_dir) * sizeof(char) + 1);
             strcpy(config.starting_dir, str_starting_dir);
         }
@@ -86,14 +88,10 @@ static void init_func(void)
     } else {
         printf("Config file not found. Check /etc/default/ncursesFM.conf. Using default values.\n");
         sleep(1);
-        config.editor = NULL;
-        config.show_hidden = 0;
-        config.starting_dir = NULL;
     }
     config_destroy(&cfg);
 }
 
-/* FM functions */
 static void main_loop(int *quit, int *old_number_files)
 {
     int c;

@@ -36,13 +36,8 @@ void screen_init(void)
     noecho();
     curs_set(0);
     dim = LINES - INFO_HEIGHT;
-    info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
-    if ((config.starting_dir) && (access(config.starting_dir, F_OK) == -1)) {
-        print_info("Check starting_directory entry in config file. The directory currently specified doesn't exist.", INFO_LINE);
-        free(config.starting_dir);
-        config.starting_dir = NULL;
-    }
     new_tab();
+    info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
 }
 
 void screen_end(void)
@@ -141,12 +136,8 @@ void new_tab(void)
     scrollok(ps[active].file_manager, TRUE);
     idlok(ps[active].file_manager, TRUE);
     if (config.starting_dir) {
-        if (cont == 1) {
+        if ((cont == 1) || (config.second_tab_starting_dir != 0))
             strcpy(ps[active].my_cwd, config.starting_dir);
-        } else {
-            if (config.second_tab_starting_dir != 0)
-                strcpy(ps[active].my_cwd, config.starting_dir);
-        }
     }
     if (strlen(ps[active].my_cwd) == 0)
         getcwd(ps[active].my_cwd, PATH_MAX);
