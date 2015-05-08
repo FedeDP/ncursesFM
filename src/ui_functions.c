@@ -317,7 +317,7 @@ void show_stat(int init, int end, int win)
     for (; ((i < init + end) && (i < ps[win].number_of_files)); i++) {
         stat(ps[win].namelist[i]->d_name, &file_stat);
         mvwprintw(ps[win].file_manager, i + INITIAL_POSITION - ps[win].delta, STAT_COL, "Size: %d KB", file_stat.st_size / 1024);
-        wprintw(ps[win].file_manager, "\tPerm: ");
+        wprintw(ps[win].file_manager, "  Perm: ");
         wprintw(ps[win].file_manager, (S_ISDIR(file_stat.st_mode)) ? "d" : "-");
         wprintw(ps[win].file_manager, (file_stat.st_mode & S_IRUSR) ? "r" : "-");
         wprintw(ps[win].file_manager, (file_stat.st_mode & S_IWUSR) ? "w" : "-");

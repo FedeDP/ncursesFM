@@ -1,5 +1,7 @@
 /* TODO:
  * nano launched in its own WINDOW * (not stdscr!) -> forkpty... ?? -> very hard
  * add other supported compress extensions (search about libarchive supported ext) -> very easy
- * usi libarchive directly... -> hard
+ * use libarchive directly... -> hard
+ * add option to compress files /folders (nftw...) -> i already have a skeleton function
+ * try to semplify paste_file, cpr, recursive_copy and check_pasted.
  */

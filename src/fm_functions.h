@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 void change_dir(char *str);
 void switch_hidden(void);
@@ -18,6 +19,7 @@ static int remove_from_list(char *name);
 static void copy_file(char c);
 void paste_file(void);
 static void *cpr(void *x);
+static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 void check_pasted(void);
 void rename_file_folders(void);
 void create_dir(void);

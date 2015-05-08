@@ -25,6 +25,7 @@
 
 static char *found_searched[PATH_MAX];
 static char searched_string[PATH_MAX];
+static int old_level;
 
 void change_dir(char *str)
 {
@@ -203,7 +204,7 @@ static void copy_file(char c)
 
 /*
  * Quite hard to understand.
- * Fist I check if we have write permissions in pasted_dir. Otherwise we'll delete copied list and print an error message.
+ * Fist I check if we have write permissions in pasted_dir. Otherwise we'll print an error message.
  * Then for each copied file I check if pasted_dir is the same dir in which we're copying. If it's the same, i'll delete that copied file.
  * Then I check if files are on the same fs and the action is "cut" (and not paste). If that's the case, i'll just "rename" the file
  * and set tmp->cut = -1 (needed in check_pasted).
@@ -214,27 +215,28 @@ void paste_file(void)
     char pasted_file[PATH_MAX];
     int size = 0;
     struct stat file_stat_copied, file_stat_pasted;
-    copied_file_list *tmp = copied_files;
+    copied_file_list *tmp = copied_files, *temp = NULL;
     strcpy(pasted_dir, ps[active].my_cwd);
     if (access(pasted_dir, W_OK) == 0) {
+        set_nodelay(TRUE);
         stat(pasted_dir, &file_stat_pasted);
-        while (tmp) {
-            if (strcmp(pasted_dir, tmp->copied_dir) != 0) {
-                size++;
-                stat(tmp->copied_dir, &file_stat_copied);
-                if ((file_stat_copied.st_dev == file_stat_pasted.st_dev) && (tmp->cut == 1)) {
-                    strcpy(pasted_file, pasted_dir);
-                    strcat(pasted_file, strrchr(tmp->copied_file, '/'));
-                    tmp->cut = -1;
-                    size--;
-                    if (rename(tmp->copied_file, pasted_file) == - 1)
-                        print_info(strerror(errno), ERR_LINE);
-                }
-            } else {
-                print_info("Cannot copy a file in the same folder.", ERR_LINE);
+        for(; tmp; tmp = tmp->next) {
+            while (strcmp(pasted_dir, tmp->copied_dir) == 0) {
+                print_info("Cannot paste a file in the same folder where it was copied. This file will be removed from copy list.", ERR_LINE);
+                temp = tmp->next;
                 remove_from_list(tmp->copied_file);
+                tmp = temp;
             }
-            tmp = tmp->next;
+            stat(tmp->copied_dir, &file_stat_copied);
+            if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
+                strcpy(pasted_file, pasted_dir);
+                strcat(pasted_file, strrchr(tmp->copied_file, '/'));
+                tmp->cut = -1;
+                if (rename(tmp->copied_file, pasted_file) == - 1)
+                    print_info(strerror(errno), ERR_LINE);
+            } else {
+                size++;
+            }
         }
         if (size > 0) {
             wmove(info_win, INFO_LINE, 1);
@@ -247,35 +249,59 @@ void paste_file(void)
             pasted = 1;
         }
     } else {
-        wclear(info_win);
-        mvwprintw(info_win, ERR_LINE, 1, "Cannot copy here. Check user permissions. Copy list destroyed.");
-        wrefresh(info_win);
-        free_copied_list(copied_files);
-        copied_files = NULL;
-        memset(pasted_dir, 0, strlen(pasted_dir));
-        set_nodelay(FALSE);
+        print_info("Cannot copy here. Check user permissions. Copy somewhere else please.", ERR_LINE);
     }
 }
 
-
 static void *cpr(void *x)
 {
-    pid_t pid;
-    int status;
     copied_file_list *tmp = copied_files;
+    char old_pasted_dir[PATH_MAX];
+    strcpy(old_pasted_dir, pasted_dir);
     pasted = -1;
     while (tmp) {
         if (tmp->cut != -1) {
-            pid = vfork();
-            if (pid == 0)
-                execl("/usr/bin/cp", "/usr/bin/cp", "-r", tmp->copied_file, pasted_dir, NULL);
-            else
-                waitpid(pid, &status, 0);
+            old_level = 0;
+            nftw(tmp->copied_file, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
+            strcpy(pasted_dir, old_pasted_dir);
         }
         tmp = tmp->next;
     }
     pasted = 1;
     return NULL;
+}
+
+static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+{
+    int buff[8192];
+    int len, fd_to, fd_from;
+    char pasted_file[PATH_MAX];
+    char x[strlen(path) - strlen(strrchr(path, '/')) + 1];
+    if (ftwbuf->level != old_level) {
+        if (ftwbuf->level > old_level) {
+            strncpy(x, path, strlen(path) - strlen(strrchr(path, '/')));
+            x[strlen(path) - strlen(strrchr(path, '/'))] = '\0';
+            strcat(pasted_dir, strrchr(x, '/'));
+        } else {
+            pasted_dir[strlen(pasted_dir) - strlen(strrchr(pasted_dir, '/')) + 1]= '\0';
+        }
+        old_level = ftwbuf->level;
+    }
+    strcpy(pasted_file, pasted_dir);
+    strcat(pasted_file, strrchr(path, '/'));
+    if (typeflag == FTW_D) {
+        mkdir(pasted_file, sb->st_mode);
+    } else {
+        fd_to = open(pasted_file, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, sb->st_mode);
+        fd_from = open(path, O_RDONLY);
+        len = read(fd_from, buff, sizeof(buff));
+        while (len > 0) {
+            write(fd_to, buff, len);
+            len = read(fd_from, buff, sizeof(buff));
+        }
+        close(fd_to);
+        close(fd_from);
+    }
 }
 
 /*

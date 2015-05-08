@@ -29,8 +29,8 @@ static void helper_function(int argc, char *argv[]);
 static void init_func(void);
 static void main_loop(int *quit, int *old_number_files);
 
-static const char *config_file_name = "/etc/default/ncursesFM.conf";
-//static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
+//static const char *config_file_name = "/etc/default/ncursesFM.conf";
+static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, char *argv[])
 {
@@ -144,10 +144,8 @@ static void main_loop(int *quit, int *old_number_files)
                 print_info("A paste job is still active. Wait for it.", INFO_LINE);
             break;
         case 'v': // paste file
-            if (copied_files) {
-                set_nodelay(TRUE);
+            if (copied_files)
                 paste_file();
-            }
             break;
         case 'l':
             trigger_show_helper_message();
