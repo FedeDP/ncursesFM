@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <cups/cups.h>
+#include <archive.h>
+#include <archive_entry.h>
 
 void change_dir(char *str);
 void switch_hidden(void);
@@ -17,7 +19,7 @@ void new_file(void);
 void remove_file(void);
 void manage_c_press(char c);
 static int remove_from_list(char *name);
-static void copy_file(char c);
+static void select_file(char c);
 void paste_file(void);
 static void *cpr(void *x);
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
@@ -31,4 +33,7 @@ static int search_file(char *path);
 void search(void);
 static int search_loop(int size);
 void print_support(char *str);
-void *print_file(void *filename);
+static void *print_file(void *filename);
+void create_archive(void);
+static void *archiver_func(void *x);
+static int recursive_compress(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);

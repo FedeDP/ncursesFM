@@ -41,7 +41,7 @@ int isArchive(char *filename)
 int file_isCopied(void)
 {
     char full_path_current_position[PATH_MAX];
-    copied_file_list *tmp = copied_files;
+    file_list *tmp = selected_files;
     get_full_path(full_path_current_position, ps[active].current_position, active);
     while (tmp) {
         if (strcmp(tmp->copied_file, full_path_current_position) == 0) {

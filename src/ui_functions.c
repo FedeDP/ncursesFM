@@ -246,10 +246,8 @@ void clear_info(int i)
 {
     wmove(info_win, i, 1);
     wclrtoeol(info_win);
-    if ((copied_files) && (pasted == 0))
-        mvwprintw(info_win, INFO_LINE, COLS - strlen("File added to copy list."), "File added to copy list.");
-    else if (pasted == -1)
-        mvwprintw(info_win, INFO_LINE, COLS - strlen("Pasting files..."), "Pasting_files...");
+    if ((selected_files) && (pasted == 0))
+        mvwprintw(info_win, INFO_LINE, COLS - strlen("There are selected files."), "There are selected files.");
     wrefresh(info_win);
 }
 

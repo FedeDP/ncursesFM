@@ -24,7 +24,7 @@ typedef struct list {
     char copied_dir[PATH_MAX];
     int cut;
     struct list *next;
-} copied_file_list;
+} file_list;
 
 struct vars {
     int current_position;
@@ -36,7 +36,7 @@ struct vars {
     struct dirent **namelist;
 };
 
-copied_file_list *copied_files;
+file_list *selected_files;
 pthread_t th;
 struct conf config;
 struct vars ps[MAX_TABS];

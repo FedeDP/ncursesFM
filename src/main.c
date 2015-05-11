@@ -29,8 +29,8 @@ static void helper_function(int argc, char *argv[]);
 static void init_func(void);
 static void main_loop(int *quit, int *old_number_files);
 
-static const char *config_file_name = "/etc/default/ncursesFM.conf";
-//static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
+//static const char *config_file_name = "/etc/default/ncursesFM.conf";
+static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, char *argv[])
 {
@@ -67,7 +67,7 @@ static void init_func(void)
     config_t cfg;
     const char *str_editor, *str_hidden, *str_starting_dir;
     cont = 0;
-    copied_files = NULL;
+    selected_files = NULL;
     pasted = 0;
     config.editor = NULL;
     config.starting_dir = NULL;
@@ -144,7 +144,7 @@ static void main_loop(int *quit, int *old_number_files)
                 print_info("A paste job is still active. Wait for it.", INFO_LINE);
             break;
         case 'v': // paste file
-            if (copied_files)
+            if (selected_files)
                 paste_file();
             break;
         case 'l':
@@ -166,6 +166,10 @@ static void main_loop(int *quit, int *old_number_files)
         case 'p': // p to print
             if (S_ISREG(file_stat.st_mode))
                 print_support(ps[active].namelist[ps[active].current_position]->d_name);
+            break;
+        case 'b': //b to compress
+            if (selected_files)
+                create_archive();
             break;
         case 'q': /* q to exit */
             quit_func();

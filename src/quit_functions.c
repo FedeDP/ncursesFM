@@ -23,7 +23,7 @@
 
 #include "quit_functions.h"
 
-void free_copied_list(copied_file_list *h)
+void free_copied_list(file_list *h)
 {
     if (h->next)
         free_copied_list(h->next);
@@ -42,14 +42,14 @@ void free_everything(void)
     }
     free(config.editor);
     free(config.starting_dir);
-    if (copied_files)
-        free_copied_list(copied_files);
+    if (selected_files)
+        free_copied_list(selected_files);
 }
 
 
 void quit_func(void)
 {
-    char *mesg = "A paste job is still running. Do you want to wait for it?(You should!) y/n:> ";
+    char *mesg = "A thread is still running. Do you want to wait for it?(You should!) y/n:> ";
     if ((pasted == - 1) && (ask_user(mesg) == 1))
         pthread_join(th, NULL);
 }
