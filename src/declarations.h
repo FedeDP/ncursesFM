@@ -8,7 +8,7 @@
 #define INFO_LINE 0
 #define ERR_LINE 1
 #define INFO_HEIGHT 2
-#define HELPER_HEIGHT 14
+#define HELPER_HEIGHT 15
 #define STAT_COL 30
 #define MAX_FILENAME_LENGTH 25
 

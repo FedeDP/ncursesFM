@@ -248,6 +248,8 @@ void clear_info(int i)
     wclrtoeol(info_win);
     if ((selected_files) && (pasted == 0))
         mvwprintw(info_win, INFO_LINE, COLS - strlen("There are selected files."), "There are selected files.");
+    if (pasted == -1)
+        mvwprintw(info_win, INFO_LINE, COLS - strlen("Pasting files..."), "Pasting files...");
     wrefresh(info_win);
 }
 
@@ -290,8 +292,9 @@ static void helper_print(void)
     wprintw(helper_win, " * Enter will eventually mount your ISO/compressed files.\n");
     wprintw(helper_win, " * You must have archivemount installed. To unmount, simply press again enter on the same iso file.\n");
     wprintw(helper_win, " * Press h to trigger the showing of hide files. s to see stat about files in current folder.\n");
-    wprintw(helper_win, " * c to copy, p to paste, and x to cut a file/dir. p to print a file.\n");
-    wprintw(helper_win, " * You can copy as many files/dirs as you want. c again on a file/dir to remove it from copy list.\n");
+    wprintw(helper_win, " * c or x to select files. v to paste: files will be copied if selected with c, or cut if selected with x.\n");
+    wprintw(helper_win, " * p to print a file. b to compress selected files.\n");
+    wprintw(helper_win, " * You can copy as many files/dirs as you want. c again on a file/dir to remove it from file list.\n");
     wprintw(helper_win, " * o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.\n");
     wprintw(helper_win, " * t to create new tab (at most one more). w to close tab.\n");
     wprintw(helper_win, " * You can't close first tab. Use q to quit.\n");
