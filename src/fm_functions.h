@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <cups/cups.h>
 
 void change_dir(char *str);
 void switch_hidden(void);
@@ -30,3 +31,4 @@ static int search_file(char *path);
 void search(void);
 static int search_loop(int size);
 void print_support(char *str);
+void *print_file(void *filename);

@@ -276,12 +276,12 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
     int buff[8192];
     int len, fd_to, fd_from;
     char pasted_file[PATH_MAX];
-    char x[strlen(path) - strlen(strrchr(path, '/')) + 1];
+    char old_dir[strlen(path) - strlen(strrchr(path, '/')) + 1];
     if (ftwbuf->level != old_level) {
         if (ftwbuf->level > old_level) {
-            strncpy(x, path, strlen(path) - strlen(strrchr(path, '/')));
-            x[strlen(path) - strlen(strrchr(path, '/'))] = '\0';
-            strcat(pasted_dir, strrchr(x, '/'));
+            strncpy(old_dir, path, strlen(path) - strlen(strrchr(path, '/')));
+            old_dir[strlen(path) - strlen(strrchr(path, '/'))] = '\0';
+            strcat(pasted_dir, strrchr(old_dir, '/'));
         } else {
             pasted_dir[strlen(pasted_dir) - strlen(strrchr(pasted_dir, '/')) + 1]= '\0';
         }
@@ -344,7 +344,6 @@ void check_pasted(void)
     pasted = 0;
     set_nodelay(FALSE);
 }
-
 
 void rename_file_folders(void)
 {
@@ -491,15 +490,20 @@ static int search_loop(int size)
 
 void print_support(char *str)
 {
-    pid_t pid;
+    pthread_t print_thread;
     char *mesg = "Do you really want to print this file? y/n:> ";
     if (ask_user(mesg) == 1) {
-        if (access("/usr/bin/lpr", F_OK ) != -1) {
-            pid = vfork();
-            if (pid == 0)
-                execl("/usr/bin/lpr", "/usr/bin/lpr", str, NULL);
+        if (access("/usr/bin/lp", F_OK ) != -1) {
+            pthread_create(&print_thread, NULL, print_file, str);
+            pthread_detach(print_thread);
         } else {
             print_info("You must have cups installed.", ERR_LINE);
         }
     }
+}
+
+void *print_file(void *filename)
+{
+    cupsPrintFile(cupsGetDefault(), (char *)filename, "ncursesFM job", 0, NULL);
+    return NULL;
 }
