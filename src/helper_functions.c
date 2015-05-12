@@ -44,7 +44,7 @@ int file_isCopied(void)
     file_list *tmp = selected_files;
     get_full_path(full_path_current_position, ps[active].current_position, active);
     while (tmp) {
-        if (strcmp(tmp->copied_file, full_path_current_position) == 0) {
+        if (strcmp(tmp->name, full_path_current_position) == 0) {
             print_info("The file is already selected for copy. Please cancel the copy before.", ERR_LINE);
             return 1;
         }
@@ -67,7 +67,7 @@ int ask_user(char *str)
     print_info(str, INFO_LINE);
     c = wgetch(info_win);
     noecho();
-    clear_info(INFO_LINE);
+    print_info(NULL, INFO_LINE);
     if (c == 'y')
         return 1;
     return 0;

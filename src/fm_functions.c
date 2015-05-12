@@ -25,6 +25,7 @@
 
 static char *found_searched[PATH_MAX];
 static char searched_string[PATH_MAX];
+static char pasted_dir[PATH_MAX];
 static int old_level;
 static struct archive *archive = NULL;
 
@@ -33,8 +34,7 @@ void change_dir(char *str)
     chdir(str);
     getcwd(ps[active].my_cwd, PATH_MAX);
     list_everything(active, 0, dim - 2, 1, 1);
-    clear_info(INFO_LINE);
-    clear_info(ERR_LINE);
+    print_info(NULL, INFO_LINE);
 }
 
 void switch_hidden(void)
@@ -137,13 +137,18 @@ void remove_file(void)
 
 void manage_c_press(char c)
 {
-    if (remove_from_list(ps[active].namelist[ps[active].current_position]->d_name) == 0)
+    if (remove_from_list(ps[active].namelist[ps[active].current_position]->d_name) == 0) {
+        info_message = malloc(strlen("There are selected files."));
+        sprintf(info_message, "There are selected files.");
         select_file(c);
-    else {
+    } else {
         if (selected_files)
             print_info("File deleted from copy list.", INFO_LINE);
-        else
+        else {
+            free(info_message);
+            info_message = NULL;
             print_info("File deleted from copy list. Copy list empty.", INFO_LINE);
+        }
     }
 }
 
@@ -153,7 +158,7 @@ static int remove_from_list(char *name)
     char str[PATH_MAX];
     if (!selected_files)
         return 0;
-    strcpy(str, strrchr(selected_files->copied_file, '/'));
+    strcpy(str, strrchr(selected_files->name, '/'));
     memmove(str, str + 1, strlen(str));
     if (strcmp(str, name) == 0) {
         selected_files = selected_files->next;
@@ -162,7 +167,7 @@ static int remove_from_list(char *name)
     }
     memset(str, 0, strlen(str));
     while(tmp->next) {
-        strcpy(str, strrchr(tmp->next->copied_file, '/'));
+        strcpy(str, strrchr(tmp->next->name, '/'));
         memmove(str, str + 1, strlen(str));
         if (strcmp(str, name) == 0) {
             temp = tmp->next;
@@ -184,16 +189,16 @@ static void select_file(char c)
         while(tmp->next)
             tmp = tmp->next;
         tmp->next = malloc(sizeof(struct list));
-        get_full_path(tmp->next->copied_file, ps[active].current_position, active);
-        strcpy(tmp->next->copied_dir, ps[active].my_cwd);
+        get_full_path(tmp->next->name, ps[active].current_position, active);
+        strcpy(tmp->next->dir, ps[active].my_cwd);
         tmp->next->cut = 0;
         if (c == 'x')
             tmp->next->cut = 1;
         tmp->next->next = NULL;
     } else {
         selected_files = malloc(sizeof(struct list));
-        get_full_path(selected_files->copied_file, ps[active].current_position, active);
-        strcpy(selected_files->copied_dir, ps[active].my_cwd);
+        get_full_path(selected_files->name, ps[active].current_position, active);
+        strcpy(selected_files->dir, ps[active].my_cwd);
         selected_files->cut = 0;
         if (c == 'x')
             selected_files->cut = 1;
@@ -221,15 +226,15 @@ void paste_file(void)
         set_nodelay(TRUE);
         stat(pasted_dir, &file_stat_pasted);
         for(; tmp; tmp = tmp->next) {
-            if (strcmp(pasted_dir, tmp->copied_dir) == 0) {
+            if (strcmp(pasted_dir, tmp->dir) == 0) {
                 tmp->cut = -2;
             } else {
-                stat(tmp->copied_dir, &file_stat_copied);
+                stat(tmp->dir, &file_stat_copied);
                 if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
                     strcpy(pasted_file, pasted_dir);
-                    strcat(pasted_file, strrchr(tmp->copied_file, '/'));
+                    strcat(pasted_file, strrchr(tmp->name, '/'));
                     tmp->cut = -1;
-                    if (rename(tmp->copied_file, pasted_file) == - 1)
+                    if (rename(tmp->name, pasted_file) == - 1)
                         print_info(strerror(errno), ERR_LINE);
                 } else {
                     size++;
@@ -241,7 +246,7 @@ void paste_file(void)
         else
             pasted = 1;
     } else {
-        print_info("Cannot copy here. Check user permissions. Copy somewhere else please.", ERR_LINE);
+        print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
     }
 }
 
@@ -260,17 +265,18 @@ static void *cpr(void *x)
     while (tmp) {
         if ((tmp->cut != -1) && (tmp->cut != -2)) {
             old_level = 0;
-            wmove(info_win, INFO_LINE, 1);
-            wclrtoeol(info_win);
-            mvwprintw(info_win, INFO_LINE, COLS - strlen("Pasting files %d of %d"), "Pasting file %d of %d", i + 1, n);
-            wrefresh(info_win);
-            nftw(tmp->copied_file, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
+            info_message = malloc(strlen("Pasting file %d of %d"));
+            sprintf(info_message, "Pasting file %d of %d", i + 1, n);
+            print_info(NULL, INFO_LINE);
+            nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
             strcpy(pasted_dir, old_pasted_dir);
         }
         i++;
         tmp = tmp->next;
     }
     pasted = 1;
+    free(info_message);
+    info_message = NULL;
     return NULL;
 }
 
@@ -312,7 +318,7 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
  * that "i" tab was already updated.
  * Then for each file i see if we are in the same folder where it was copied, and if that's the case,
  * i update that tab too.
- * If tmp->cut == 1, i'll have to remove that copied_file.
+ * If tmp->cut == 1, i'll have to remove that name.
  */
 void check_pasted(void)
 {
@@ -328,12 +334,12 @@ void check_pasted(void)
     }
     while (tmp) {
         if (tmp->cut == 1) {
-            if (rmrf(tmp->copied_file) == -1)
+            if (rmrf(tmp->name) == -1)
                 print_info("Could not cut. Check user permissions.", ERR_LINE);
         }
         if ((tmp->cut == 1) || (tmp->cut == -1)) {
             for (i = 0; i < cont; i++) {
-                if ((printed[i] == 0) && (strcmp(tmp->copied_dir, ps[i].my_cwd) == 0))
+                if ((printed[i] == 0) && (strcmp(tmp->dir, ps[i].my_cwd) == 0))
                     list_everything(i, 0, dim - 2, 1, 1);
             }
         }
@@ -424,7 +430,7 @@ void search(void)
     wgetstr(info_win, searched_string);
     noecho();
     if (strlen(searched_string) < 3) {
-        clear_info(INFO_LINE);
+        print_info(NULL, INFO_LINE);
         return;
     }
     search_file(ps[active].my_cwd);
@@ -445,7 +451,7 @@ void search(void)
         ps[active].number_of_files = old_size;
         list_everything(active, 0, dim - 2, 1, 1);
     }
-    clear_info(INFO_LINE);
+    print_info(NULL, INFO_LINE);
     for (i = 0; found_searched[i]; i++) {
         found_searched[i] = realloc(found_searched[i], 0);
         free(found_searched[i]);
@@ -527,7 +533,6 @@ void create_archive(void)
         noecho();
         archive_write_open_filename(archive, archive_path);
         pthread_create(&th, NULL, archiver_func, (void *)archive_path);
-        pasted = -1;
     }
 }
 
@@ -537,7 +542,7 @@ static void *archiver_func(void *archive_path)
     char str[PATH_MAX];
     int i;
     while (tmp) {
-        nftw(tmp->copied_file, recursive_compress, 64, FTW_MOUNT | FTW_PHYS);
+        nftw(tmp->name, recursive_compress, 64, FTW_MOUNT | FTW_PHYS);
         tmp = tmp->next;
     }
     archive_write_free(archive);
@@ -552,7 +557,6 @@ static void *archiver_func(void *archive_path)
     print_info("The archive is ready.", INFO_LINE);
     free_copied_list(selected_files);
     selected_files = NULL;
-    pasted = 0;
     return NULL;
 }
 

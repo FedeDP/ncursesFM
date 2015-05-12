@@ -237,19 +237,11 @@ static void colored_folders(int i, int win)
 
 void print_info(char *str, int i)
 {
-    clear_info(i);
-    mvwprintw(info_win, i, 1, str);
-    wrefresh(info_win);
-}
-
-void clear_info(int i)
-{
-    wmove(info_win, i, 1);
-    wclrtoeol(info_win);
-    if ((selected_files) && (pasted == 0))
-        mvwprintw(info_win, INFO_LINE, COLS - strlen("There are selected files."), "There are selected files.");
-    if (pasted == -1)
-        mvwprintw(info_win, INFO_LINE, COLS - strlen("Pasting files..."), "Pasting files...");
+    wclear(info_win);
+    if (str)
+        mvwprintw(info_win, i, 1, str);
+    if (info_message)
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
     wrefresh(info_win);
 }
 

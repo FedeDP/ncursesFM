@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <signal.h>
 #include "helper_functions.h"
 
 void free_copied_list(file_list *h);

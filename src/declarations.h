@@ -20,8 +20,8 @@ struct conf {
 };
 
 typedef struct list {
-    char copied_file[PATH_MAX];
-    char copied_dir[PATH_MAX];
+    char name[PATH_MAX];
+    char dir[PATH_MAX];
     int cut;
     struct list *next;
 } file_list;
@@ -42,4 +42,4 @@ struct conf config;
 struct vars ps[MAX_TABS];
 WINDOW *info_win;
 int dim, pasted, active, cont;
-char pasted_dir[PATH_MAX];
+char *info_message;
