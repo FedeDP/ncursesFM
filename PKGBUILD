@@ -9,9 +9,10 @@ arch=('i686' 'x86_64')
 url="https://github.com/FedeDP/${_gitname}"
 license=('GPL')
 depends=('ncurses' 'libconfig')
-optdepends=('cups: for printing support'
-            'archivemount: for fuse archive/iso mounting support')
-makedepends=('git')
+optdepends=('libcups: for printing support'
+            'archivemount: for fuse archive/iso mounting support'
+            'libarchive: for files/folders compression support')
+makedepends=('git' 'libarchive' 'libcups')
 source=("git://github.com/FedeDP/${_gitname}.git")
 backup=('etc/default/ncursesFM.conf')
 install=ncursesFM.install
