@@ -41,5 +41,5 @@ pthread_t th;
 struct conf config;
 struct vars ps[MAX_TABS];
 WINDOW *info_win;
-int dim, pasted, active, cont;
+int dim, active, cont;
 char *info_message;

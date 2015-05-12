@@ -29,8 +29,8 @@ static void helper_function(int argc, char *argv[]);
 static void init_func(void);
 static void main_loop(int *quit, int *old_number_files);
 
-//static const char *config_file_name = "/etc/default/ncursesFM.conf";
-static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
+static const char *config_file_name = "/etc/default/ncursesFM.conf";
+//static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, char *argv[])
 {
@@ -68,7 +68,6 @@ static void init_func(void)
     const char *str_editor, *str_hidden, *str_starting_dir;
     cont = 0;
     selected_files = NULL;
-    pasted = 0;
     config.editor = NULL;
     config.starting_dir = NULL;
     config_init(&cfg);
@@ -97,8 +96,6 @@ static void main_loop(int *quit, int *old_number_files)
     int c;
     struct stat file_stat;
     stat(ps[active].namelist[ps[active].current_position]->d_name, &file_stat);
-    if (pasted == 1)
-        check_pasted();
     c = wgetch(ps[active].file_manager);
     switch (c) {
         case KEY_UP:
@@ -138,10 +135,8 @@ static void main_loop(int *quit, int *old_number_files)
                 remove_file();
             break;
         case 'c': case 'x': // copy/cut file
-            if ((strcmp(ps[active].namelist[ps[active].current_position]->d_name, "..") != 0) && (pasted != -1))
+            if (strcmp(ps[active].namelist[ps[active].current_position]->d_name, "..") != 0)
                 manage_c_press(c);
-            else if (pasted == -1)
-                print_info("A paste job is still active. Wait for it.", INFO_LINE);
             break;
         case 'v': // paste file
             if (selected_files)

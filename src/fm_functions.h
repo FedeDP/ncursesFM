@@ -1,7 +1,6 @@
 #define _GNU_SOURCE
 #include <ftw.h>
 #include "quit_functions.h"
-#include <pthread.h>
 #include <sys/wait.h>
 #include <errno.h>
 #include <unistd.h>
@@ -31,7 +30,7 @@ static int rmrf(char *path);
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int search_file(char *path);
 void search(void);
-static int search_loop(int size);
+static void search_loop(int size);
 void print_support(char *str);
 static void *print_file(void *filename);
 void create_archive(void);

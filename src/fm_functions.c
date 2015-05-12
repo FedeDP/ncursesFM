@@ -26,7 +26,7 @@
 static char *found_searched[PATH_MAX];
 static char searched_string[PATH_MAX];
 static char pasted_dir[PATH_MAX];
-static int old_level;
+static int old_level, search_mode = 0;
 static struct archive *archive = NULL;
 
 void change_dir(char *str)
@@ -137,9 +137,13 @@ void remove_file(void)
 
 void manage_c_press(char c)
 {
+    if ((th) && (pthread_kill(th, 0) != ESRCH)) {
+        print_info("A thread is still running. Wait for it.", INFO_LINE);
+        return;
+    }
     if (remove_from_list(ps[active].namelist[ps[active].current_position]->d_name) == 0) {
         info_message = malloc(strlen("There are selected files."));
-        sprintf(info_message, "There are selected files.");
+        strcpy(info_message, "There are selected files.");
         select_file(c);
     } else {
         if (selected_files)
@@ -223,7 +227,8 @@ void paste_file(void)
     file_list *tmp = selected_files, *temp = NULL;
     strcpy(pasted_dir, ps[active].my_cwd);
     if (access(pasted_dir, W_OK) == 0) {
-        set_nodelay(TRUE);
+        free(info_message);
+        info_message = NULL;
         stat(pasted_dir, &file_stat_pasted);
         for(; tmp; tmp = tmp->next) {
             if (strcmp(pasted_dir, tmp->dir) == 0) {
@@ -244,7 +249,7 @@ void paste_file(void)
         if (size > 0)
             pthread_create(&th, NULL, cpr, NULL);
         else
-            pasted = 1;
+            check_pasted();
     } else {
         print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
     }
@@ -256,7 +261,6 @@ static void *cpr(void *x)
     char old_pasted_dir[PATH_MAX];
     int i = 0, n = 0;
     strcpy(old_pasted_dir, pasted_dir);
-    pasted = -1;
     for (; tmp; tmp = tmp->next) {
         if ((tmp->cut != -1) && (tmp->cut != -2))
             n++;
@@ -274,9 +278,9 @@ static void *cpr(void *x)
         i++;
         tmp = tmp->next;
     }
-    pasted = 1;
     free(info_message);
     info_message = NULL;
+    check_pasted();
     return NULL;
 }
 
@@ -314,44 +318,44 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
 }
 
 /*
- * First i check if ps.cont paths are in the same folder as pasted_dir, and if yes, printed[i] will sign
+ * First i check if ps.cont paths are in the same folder as pasted_dir, and if yes, printed[i] will mark
  * that "i" tab was already updated.
  * Then for each file i see if we are in the same folder where it was copied, and if that's the case,
  * i update that tab too.
- * If tmp->cut == 1, i'll have to remove that name.
+ * If tmp->cut == 1, i'll have to remove that file.
  */
 void check_pasted(void)
 {
     int i, printed[cont];
     file_list *tmp = selected_files;
-    for (i = 0; i < cont; i++) {
-        if (strcmp(pasted_dir, ps[i].my_cwd) == 0) {
-            list_everything(i, 0, dim - 2, 1, 1);
-            printed[i] = 1;
-        } else {
-            printed[i] = 0;
-        }
-    }
-    while (tmp) {
-        if (tmp->cut == 1) {
-            if (rmrf(tmp->name) == -1)
-                print_info("Could not cut. Check user permissions.", ERR_LINE);
-        }
-        if ((tmp->cut == 1) || (tmp->cut == -1)) {
-            for (i = 0; i < cont; i++) {
-                if ((printed[i] == 0) && (strcmp(tmp->dir, ps[i].my_cwd) == 0))
-                    list_everything(i, 0, dim - 2, 1, 1);
+    if (search_mode == 0) {
+        for (i = 0; i < cont; i++) {
+            if (strcmp(pasted_dir, ps[i].my_cwd) == 0) {
+                list_everything(i, 0, dim - 2, 1, 1);
+                printed[i] = 1;
+            } else {
+                printed[i] = 0;
             }
         }
-        tmp = tmp->next;
+        while (tmp) {
+            if (tmp->cut == 1) {
+                if (rmrf(tmp->name) == -1)
+                    print_info("Could not cut. Check user permissions.", ERR_LINE);
+            }
+        if ((tmp->cut == 1) || (tmp->cut == -1)) {
+                for (i = 0; i < cont; i++) {
+                    if ((printed[i] == 0) && (strcmp(tmp->dir, ps[i].my_cwd) == 0))
+                        list_everything(i, 0, dim - 2, 1, 1);
+                }
+            }
+            tmp = tmp->next;
+        }
+        chdir(ps[active].my_cwd);
     }
-    chdir(ps[active].my_cwd);
     print_info("Every files has been copied/moved.", INFO_LINE);
     free_copied_list(selected_files);
     selected_files = NULL;
     memset(pasted_dir, 0, strlen(pasted_dir));
-    pasted = 0;
-    set_nodelay(FALSE);
 }
 
 void rename_file_folders(void)
@@ -424,7 +428,7 @@ static int search_file(char *path)
 void search(void)
 {
     char *mesg = "Insert filename to be found, at least 3 chars:> ";
-    int i = 0, old_size = ps[active].number_of_files;
+    int i = 0;
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, searched_string);
@@ -447,29 +451,27 @@ void search(void)
     wattroff(ps[active].file_manager, A_BOLD);
     while (found_searched[i])
         i++;
-    if (search_loop(i) == 'q') {
-        ps[active].number_of_files = old_size;
-        list_everything(active, 0, dim - 2, 1, 1);
-    }
-    print_info(NULL, INFO_LINE);
+    search_loop(i);
     for (i = 0; found_searched[i]; i++) {
         found_searched[i] = realloc(found_searched[i], 0);
         free(found_searched[i]);
     }
 }
 
-static int search_loop(int size)
+static void search_loop(int size)
 {
     char *str = NULL, *mesg = "Open file? y to open, n to switch to the folder";
-    int c, old_size = ps[active].number_of_files;
+    int c;
+    search_mode = 1;
     ps[active].delta = 0;
     ps[active].current_position = 0;
     ps[active].number_of_files = size;
     print_info("q to leave search win", INFO_LINE);
     mvwprintw(ps[active].file_manager, INITIAL_POSITION, 1, "->");
+    wattron(ps[active].file_manager, A_BOLD);
     do {
         c = wgetch(ps[active].file_manager);
-        wattron(ps[active].file_manager, A_BOLD);
+
         switch (c) {
             case KEY_UP:
                 scroll_up(found_searched[ps[active].current_position]);
@@ -479,22 +481,19 @@ static int search_loop(int size)
                 break;
             case 10:
                 str = strrchr(found_searched[ps[active].current_position], '/');
-                if ((strlen(str) != 1) && (ask_user(mesg) == 1))
+                if ((strlen(str) != 1) && (ask_user(mesg) == 1)) {
                     manage_file(found_searched[ps[active].current_position]);
-                else {
+                } else {
                     found_searched[ps[active].current_position][strlen(found_searched[ps[active].current_position]) - strlen(str)] = '\0';
-                    ps[active].number_of_files = old_size;
-                    change_dir(found_searched[ps[active].current_position]);
+                    c = 'q';
+                    strcpy(ps[active].my_cwd, found_searched[ps[active].current_position]);
                 }
                 break;
         }
-        wattroff(ps[active].file_manager, A_BOLD);
-        if ((c == KEY_UP) || (c == KEY_DOWN)) {
-            wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-            mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %s: ", searched_string);
-        }
-    } while ((c != 'q') && (ps[active].number_of_files == size));
-    return c;
+    } while (c != 'q');
+    wattroff(ps[active].file_manager, A_BOLD);
+    search_mode = 0;
+    change_dir(ps[active].my_cwd);
 }
 
 void print_support(char *str)
@@ -547,13 +546,15 @@ static void *archiver_func(void *archive_path)
     }
     archive_write_free(archive);
     archive = NULL;
-    strcpy(str, archive_path);
-    str[strlen(str) - strlen(strrchr(str, '/'))] = '\0';
-    for (i = 0; i < cont; i++) {
-        if (strcmp(str, ps[i].my_cwd) == 0)
-            list_everything(i, 0, dim - 2, 1, 1);
+    if (search_mode == 0) {
+        strcpy(str, archive_path);
+        str[strlen(str) - strlen(strrchr(str, '/'))] = '\0';
+        for (i = 0; i < cont; i++) {
+            if (strcmp(str, ps[i].my_cwd) == 0)
+                list_everything(i, 0, dim - 2, 1, 1);
+        }
+        chdir(ps[active].my_cwd);
     }
-    chdir(ps[active].my_cwd);
     print_info("The archive is ready.", INFO_LINE);
     free_copied_list(selected_files);
     selected_files = NULL;

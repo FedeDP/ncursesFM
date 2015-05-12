@@ -238,10 +238,10 @@ static void colored_folders(int i, int win)
 void print_info(char *str, int i)
 {
     wclear(info_win);
-    if (str)
-        mvwprintw(info_win, i, 1, str);
     if (info_message)
         mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
+    if (str)
+        mvwprintw(info_win, i, 1, str);
     wrefresh(info_win);
 }
 
