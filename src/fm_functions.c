@@ -211,71 +211,57 @@ static void select_file(char c)
     print_info("File added to copy list.", INFO_LINE);
 }
 
-/*
- * Quite hard to understand.
- * Fist I check if we have write permissions in pasted_dir. Otherwise we'll print an error message.
- * Then for each copied file I check if pasted_dir is the same dir in which we're copying. If it's the same, i'll mark it (tmp->cut = -2).
- * Then I check if files are on the same fs and the action is "cut" (and not paste). If that's the case, i'll just "rename" the file
- * and set tmp->cut = -1 (needed in check_pasted).
- * For remaining selected_files, a paste thread will be executed.
- */
 void paste_file(void)
 {
     char pasted_file[PATH_MAX];
-    int size = 0;
+    int cont = 0;
     struct stat file_stat_copied, file_stat_pasted;
-    file_list *tmp = selected_files, *temp = NULL;
+    file_list *tmp = NULL, *temp = NULL;
     strcpy(pasted_dir, ps[active].my_cwd);
-    if (access(pasted_dir, W_OK) == 0) {
-        free(info_message);
-        info_message = NULL;
-        stat(pasted_dir, &file_stat_pasted);
-        for(; tmp; tmp = tmp->next) {
-            if (strcmp(pasted_dir, tmp->dir) == 0) {
-                tmp->cut = -2;
+    if (access(pasted_dir, W_OK) != 0) {
+        print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
+        return;
+    }
+    free(info_message);
+    info_message = NULL;
+    stat(pasted_dir, &file_stat_pasted);
+    for(tmp = selected_files; tmp; tmp = tmp->next) {
+        if (strcmp(pasted_dir, tmp->dir) == 0) {
+            tmp->cut = -2;
+        } else {
+            stat(tmp->dir, &file_stat_copied);
+            if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
+                strcpy(pasted_file, pasted_dir);
+                strcat(pasted_file, strrchr(tmp->name, '/'));
+                tmp->cut = -1;
+                if (rename(tmp->name, pasted_file) == - 1)
+                    print_info(strerror(errno), ERR_LINE);
             } else {
-                stat(tmp->dir, &file_stat_copied);
-                if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
-                    strcpy(pasted_file, pasted_dir);
-                    strcat(pasted_file, strrchr(tmp->name, '/'));
-                    tmp->cut = -1;
-                    if (rename(tmp->name, pasted_file) == - 1)
-                        print_info(strerror(errno), ERR_LINE);
-                } else {
-                    size++;
-                }
+                cont++;
             }
         }
-        if (size > 0)
-            pthread_create(&th, NULL, cpr, NULL);
-        else
-            check_pasted();
-    } else {
-        print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
     }
+    if (cont > 0)
+        pthread_create(&th, NULL, cpr, &cont);
+    else
+        check_pasted();
 }
 
-static void *cpr(void *x)
+static void *cpr(void *n)
 {
     file_list *tmp = selected_files;
     char old_pasted_dir[PATH_MAX];
-    int i = 0, n = 0;
+    int i = 0;
     strcpy(old_pasted_dir, pasted_dir);
-    for (; tmp; tmp = tmp->next) {
-        if ((tmp->cut != -1) && (tmp->cut != -2))
-            n++;
-    }
-    tmp = selected_files;
     while (tmp) {
         if ((tmp->cut != -1) && (tmp->cut != -2)) {
             old_level = 0;
             info_message = malloc(strlen("Pasting file %d of %d"));
-            sprintf(info_message, "Pasting file %d of %d", i + 1, n);
+            sprintf(info_message, "Pasting file %d of %d", ++i, *((int *)n));
             print_info(NULL, INFO_LINE);
             nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
             strcpy(pasted_dir, old_pasted_dir);
         }
-        i++;
         tmp = tmp->next;
     }
     free(info_message);
@@ -317,14 +303,7 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
     }
 }
 
-/*
- * First i check if ps.cont paths are in the same folder as pasted_dir, and if yes, printed[i] will mark
- * that "i" tab was already updated.
- * Then for each file i see if we are in the same folder where it was copied, and if that's the case,
- * i update that tab too.
- * If tmp->cut == 1, i'll have to remove that file.
- */
-void check_pasted(void)
+static void check_pasted(void)
 {
     int i, printed[cont];
     file_list *tmp = selected_files;
@@ -342,7 +321,7 @@ void check_pasted(void)
                 if (rmrf(tmp->name) == -1)
                     print_info("Could not cut. Check user permissions.", ERR_LINE);
             }
-        if ((tmp->cut == 1) || (tmp->cut == -1)) {
+            if ((tmp->cut == 1) || (tmp->cut == -1)) {
                 for (i = 0; i < cont; i++) {
                     if ((printed[i] == 0) && (strcmp(tmp->dir, ps[i].my_cwd) == 0))
                         list_everything(i, 0, dim - 2, 1, 1);
@@ -471,24 +450,23 @@ static void search_loop(int size)
     wattron(ps[active].file_manager, A_BOLD);
     do {
         c = wgetch(ps[active].file_manager);
-
         switch (c) {
-            case KEY_UP:
-                scroll_up(found_searched[ps[active].current_position]);
-                break;
-            case KEY_DOWN:
-                scroll_down(found_searched[ps[active].current_position]);
-                break;
-            case 10:
-                str = strrchr(found_searched[ps[active].current_position], '/');
-                if ((strlen(str) != 1) && (ask_user(mesg) == 1)) {
-                    manage_file(found_searched[ps[active].current_position]);
-                } else {
-                    found_searched[ps[active].current_position][strlen(found_searched[ps[active].current_position]) - strlen(str)] = '\0';
-                    c = 'q';
-                    strcpy(ps[active].my_cwd, found_searched[ps[active].current_position]);
-                }
-                break;
+        case KEY_UP:
+            scroll_up(found_searched[ps[active].current_position]);
+            break;
+        case KEY_DOWN:
+            scroll_down(found_searched[ps[active].current_position]);
+            break;
+        case 10:
+            str = strrchr(found_searched[ps[active].current_position], '/');
+            if ((strlen(str) != 1) && (ask_user(mesg) == 1)) {
+                manage_file(found_searched[ps[active].current_position]);
+            } else {
+                found_searched[ps[active].current_position][strlen(found_searched[ps[active].current_position]) - strlen(str)] = '\0';
+                c = 'q';
+                strcpy(ps[active].my_cwd, found_searched[ps[active].current_position]);
+            }
+            break;
         }
     } while (c != 'q');
     wattroff(ps[active].file_manager, A_BOLD);
@@ -501,11 +479,11 @@ void print_support(char *str)
     pthread_t print_thread;
     char *mesg = "Do you really want to print this file? y/n:> ";
     if (ask_user(mesg) == 1) {
-        if (access("/usr/bin/lp", F_OK ) != -1) {
+        if (access("/usr/include/cups/cups.h", F_OK ) != -1) {
             pthread_create(&print_thread, NULL, print_file, str);
             pthread_detach(print_thread);
         } else {
-            print_info("You must have cups installed.", ERR_LINE);
+            print_info("You must have libcups installed.", ERR_LINE);
         }
     }
 }

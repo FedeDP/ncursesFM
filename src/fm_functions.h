@@ -22,7 +22,7 @@ static void select_file(char c);
 void paste_file(void);
 static void *cpr(void *x);
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-void check_pasted(void);
+static void check_pasted(void);
 void rename_file_folders(void);
 void create_dir(void);
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
