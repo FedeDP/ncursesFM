@@ -80,25 +80,25 @@ static void mount_service(char *str, int dim)
 {
     pid_t pid;
     char mount_point[strlen(str) - dim + 1];
-    if (access("/usr/bin/archivemount", F_OK) != -1) {
-        strncpy(mount_point, str, strlen(str) - dim); //check
-        mount_point[strlen(str) - dim] = '\0';
-        pid = vfork();
-        if (pid == 0) {
-            if (mkdir(mount_point, ACCESSPERMS) == -1)
-                execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
-            else
-                execl("/usr/bin/archivemount", "/usr/bin/archivemount", str, mount_point, NULL);
-        } else {
-            waitpid(pid, NULL, 0);
-            if (rmdir(mount_point) == 0)
-                print_info("Succesfully unmounted.", INFO_LINE);
-            else
-                print_info("Succesfully mounted.", INFO_LINE);
-            sync_changes();
-        }
-    } else {
+    if (access("/usr/bin/archivemount", F_OK) == -1) {
         print_info("You need archivemount for mounting support.", ERR_LINE);
+        return;
+    }
+    strncpy(mount_point, str, strlen(str) - dim);
+    mount_point[strlen(str) - dim] = '\0';
+    pid = vfork();
+    if (pid == 0) {
+        if (mkdir(mount_point, ACCESSPERMS) == -1)
+            execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
+        else
+            execl("/usr/bin/archivemount", "/usr/bin/archivemount", str, mount_point, NULL);
+    } else {
+        waitpid(pid, NULL, 0);
+        if (rmdir(mount_point) == 0)
+            print_info("Succesfully unmounted.", INFO_LINE);
+        else
+            print_info("Succesfully mounted.", INFO_LINE);
+        sync_changes();
     }
 }
 
@@ -465,13 +465,13 @@ void print_support(char *str)
 {
     pthread_t print_thread;
     char *mesg = "Do you really want to print this file? y/n:> ";
+    if (access("/usr/include/cups/cups.h", F_OK ) == -1) {
+        print_info("You must have libcups installed.", ERR_LINE);
+        return;
+    }
     if (ask_user(mesg) == 1) {
-        if (access("/usr/include/cups/cups.h", F_OK ) != -1) {
-            pthread_create(&print_thread, NULL, print_file, str);
-            pthread_detach(print_thread);
-        } else {
-            print_info("You must have libcups installed.", ERR_LINE);
-        }
+        pthread_create(&print_thread, NULL, print_file, str);
+        pthread_detach(print_thread);
     }
 }
 
@@ -484,6 +484,10 @@ static void *print_file(void *filename)
 void create_archive(void)
 {
     char *mesg = "Insert new file name:> ", archive_path[PATH_MAX], str[PATH_MAX];
+    if (access("/usr/include/archive.h", F_OK) == -1) {
+        print_info("You must have libarchive installed.", ERR_LINE);
+        return;
+    }
     if ((selected_files) && (ask_user("Do you really want to compress these files?") == 1)) {
         archive = archive_write_new();
         archive_write_add_filter_gzip(archive);
