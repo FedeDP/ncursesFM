@@ -489,9 +489,17 @@ void create_archive(void)
         return;
     }
     if ((selected_files) && (ask_user("Do you really want to compress these files?") == 1)) {
+        if (access(ps[active].my_cwd, W_OK) != 0) {
+            print_info("No write perms here.", ERR_LINE);
+            return;
+        }
         archive = archive_write_new();
-        archive_write_add_filter_gzip(archive);
-        archive_write_set_format_pax_restricted(archive);
+        if ((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) {
+            print_info(strerror(archive_errno(archive)), ERR_LINE);
+            archive_write_free(archive);
+            archive = NULL;
+            return;
+        }
         echo();
         print_info(mesg, INFO_LINE);
         wgetstr(info_win, str);
@@ -499,7 +507,12 @@ void create_archive(void)
         strcat(archive_path, "/");
         strcat(archive_path, str);
         noecho();
-        archive_write_open_filename(archive, archive_path);
+        if (archive_write_open_filename(archive, archive_path) == ARCHIVE_FATAL) {
+            print_info(strerror(archive_errno(archive)), ERR_LINE);
+            archive_write_free(archive);
+            archive = NULL;
+            return;
+        }
         pthread_create(&th, NULL, archiver_func, (void *)archive_path);
     }
 }
