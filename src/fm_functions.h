@@ -35,4 +35,4 @@ void print_support(char *str);
 static void *print_file(void *filename);
 void create_archive(void);
 static void *archiver_func(void *x);
-static int recursive_compress(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);

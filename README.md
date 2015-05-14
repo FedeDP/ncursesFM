@@ -16,7 +16,7 @@ It has following features:
 * Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to open it, if it was a file, or to move in your searched location.
 * Basic print support: you need "cups" for this to work.
 * Compressed files mount support through fuse filesystem. -> it requires archivemount.
-* Compress files/folders through libarchive (archive.h) -> still alpha stage, i have to fix some issues. To select files, use c/x.
+* Archive files/folders through libarchive (archive.h) -> to select files/folders, use c/x (same as copy/cut)
 
 It reads following variables from ncursesFM.conf (using libconfig)...remember to set them!
 * editor -> editor used to open files

@@ -494,7 +494,7 @@ void create_archive(void)
             return;
         }
         archive = archive_write_new();
-        if ((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) {
+        if (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL) {
             print_info(strerror(archive_errno(archive)), ERR_LINE);
             archive_write_free(archive);
             archive = NULL;
@@ -524,7 +524,7 @@ static void *archiver_func(void *archive_path)
     int i;
     while (tmp) {
         strcpy(root_dir, strrchr(tmp->name, '/'));
-        nftw(tmp->name, recursive_compress, 64, FTW_MOUNT | FTW_PHYS);
+        nftw(tmp->name, recursive_archive, 64, FTW_MOUNT | FTW_PHYS);
         tmp = tmp->next;
     }
     archive_write_free(archive);
@@ -544,7 +544,7 @@ static void *archiver_func(void *archive_path)
     return NULL;
 }
 
-static int recursive_compress(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
     char buff[8192], entry_name[PATH_MAX];
     int len, fd;
