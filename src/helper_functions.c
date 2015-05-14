@@ -23,9 +23,9 @@
 
 #include "helper_functions.h"
 
-static const char *archive_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf", ".tar", ".zip", ".tar.gz"}; //add other extensions...
+static const char *archive_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
 
-int isArchive(char *filename)
+int isIso(char *filename)
 {
     int i = 0;
     char *str;

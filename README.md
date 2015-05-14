@@ -4,7 +4,7 @@ Ncurses File Manager for linux
 It has following features:
 * file/dir functions support: copy/paste/cut, new/remove, rename. Copy/cut: to remove a file previously selected for copy just press c/x again on it.
 * 2 tabs support.
-* iso mount support -> you must have archivemount installed.
+* iso mount support -> you must have fuseiso installed.
 * open files with $editor (settings defined) var.
 * show hidden files.
 * stats support (permissions and sizes).
@@ -15,8 +15,8 @@ It has following features:
 * Paste is executed in a different thread. If you try to quit while paste thread is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
 * Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to open it, if it was a file, or to move in your searched location.
 * Basic print support: you need "cups" for this to work.
-* Compressed files mount support through fuse filesystem. -> it requires archivemount.
-* Archive files/folders through libarchive (archive.h) -> to select files/folders, use c/x (same as copy/cut)
+* Extract (compressed) archive through libarchive (archive.h)
+* Compress files/folders through libarchive (archive.h) -> to select files/folders, use c/x (same as copy/cut)
 
 It reads following variables from ncursesFM.conf (using libconfig)...remember to set them!
 * editor -> editor used to open files
@@ -28,6 +28,6 @@ IT DOES NOT SUPPORT TERMINAL RESIZE. It is meant to be used maximized, or from a
 
 Archlinux users can now install ncursesFM from aur: https://aur.archlinux.org/packages/ncursesfm-git/
 
-It requires ncurses, libconfig and (optionally) {archivemount, cups}
+It requires ncurses, libconfig and (optionally) {fuseiso, cups}
 
 ![Alt text](ncursesfm.png?raw=true)

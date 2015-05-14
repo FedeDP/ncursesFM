@@ -53,14 +53,16 @@ void manage_file(char *str)
     int dim;
     if (file_isCopied())
         return;
-    dim = isArchive(str);
+    dim = isIso(str);
     if (dim) {
-        mount_service(str, dim);
+        iso_mount_service(str, dim);
     } else {
-        if ((config.editor) && (access(config.editor, X_OK) != -1))
-            open_file(str);
-        else
-            print_info("You have to specify a valid editor in config file.", ERR_LINE);
+        if (try_extractor(str) == 0) {
+            if ((config.editor) && (access(config.editor, X_OK) != -1))
+                open_file(str);
+            else
+                print_info("You have to specify a valid editor in config file.", ERR_LINE);
+        }
     }
 }
 
@@ -76,12 +78,12 @@ static void open_file(char *str)
     refresh();
 }
 
-static void mount_service(char *str, int dim)
+static void iso_mount_service(char *str, int dim)
 {
     pid_t pid;
     char mount_point[strlen(str) - dim + 1];
-    if (access("/usr/bin/archivemount", F_OK) == -1) {
-        print_info("You need archivemount for mounting support.", ERR_LINE);
+    if (access("/usr/bin/fuseiso", F_OK) == -1) {
+        print_info("You need fuseiso for iso mounting support.", ERR_LINE);
         return;
     }
     strncpy(mount_point, str, strlen(str) - dim);
@@ -91,7 +93,7 @@ static void mount_service(char *str, int dim)
         if (mkdir(mount_point, ACCESSPERMS) == -1)
             execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
         else
-            execl("/usr/bin/archivemount", "/usr/bin/archivemount", str, mount_point, NULL);
+            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", str, mount_point, NULL);
     } else {
         waitpid(pid, NULL, 0);
         if (rmdir(mount_point) == 0)
@@ -265,7 +267,6 @@ static void *cpr(void *n)
     free(info_message);
     info_message = NULL;
     check_pasted();
-    return NULL;
 }
 
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -478,7 +479,6 @@ void print_support(char *str)
 static void *print_file(void *filename)
 {
     cupsPrintFile(cupsGetDefault(), (char *)filename, "ncursesFM job", 0, NULL);
-    return NULL;
 }
 
 void create_archive(void)
@@ -494,7 +494,7 @@ void create_archive(void)
             return;
         }
         archive = archive_write_new();
-        if (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL) {
+        if ((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) {
             print_info(strerror(archive_errno(archive)), ERR_LINE);
             archive_write_free(archive);
             archive = NULL;
@@ -506,6 +506,7 @@ void create_archive(void)
         strcpy(archive_path, ps[active].my_cwd);
         strcat(archive_path, "/");
         strcat(archive_path, str);
+        strcat(archive_path, ".tgz");
         noecho();
         if (archive_write_open_filename(archive, archive_path) == ARCHIVE_FATAL) {
             print_info(strerror(archive_errno(archive)), ERR_LINE);
@@ -524,6 +525,7 @@ static void *archiver_func(void *archive_path)
     int i;
     while (tmp) {
         strcpy(root_dir, strrchr(tmp->name, '/'));
+        memmove(root_dir, root_dir + 1, strlen(root_dir));
         nftw(tmp->name, recursive_archive, 64, FTW_MOUNT | FTW_PHYS);
         tmp = tmp->next;
     }
@@ -541,7 +543,6 @@ static void *archiver_func(void *archive_path)
     print_info("The archive is ready.", INFO_LINE);
     free_copied_list(selected_files);
     selected_files = NULL;
-    return NULL;
 }
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -561,4 +562,63 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
         len = read(fd, buff, sizeof(buff));
     }
     close(fd);
+}
+
+static int try_extractor(char *path)
+{
+    struct archive *a = archive_read_new();
+    pthread_t extractor_th;
+    if (access("/usr/include/archive.h", F_OK) == -1) {
+        print_info("You must have libarchive installed.", ERR_LINE);
+        return 1;
+    }
+    archive_read_support_filter_all(a);
+    archive_read_support_format_all(a);
+    if (archive_read_open_filename(a, path, 8192) != ARCHIVE_OK) {
+        archive_read_free(a);
+        return 0;
+    }
+    if (ask_user("Do you really want to extract this archive?") == 1) {
+        if (access(ps[active].my_cwd, W_OK) != 0) {
+            print_info("No write perms here.", ERR_LINE);
+            return 1;
+        }
+        pthread_create(&extractor_th, NULL, extractor_thread, a);
+        pthread_detach(extractor_th);
+    }
+    return 1;
+}
+
+static void *extractor_thread(void *a)
+{
+    struct archive *ext;
+    struct archive_entry *entry;
+    int flags, len, i;
+    char buff[8192], current_dir[PATH_MAX];
+    strcpy(current_dir, ps[active].my_cwd);
+    ext = archive_write_disk_new();
+    flags = ARCHIVE_EXTRACT_TIME;
+    flags |= ARCHIVE_EXTRACT_PERM;
+    flags |= ARCHIVE_EXTRACT_ACL;
+    flags |= ARCHIVE_EXTRACT_FFLAGS;
+    archive_write_disk_set_options(ext, flags);
+    archive_write_disk_set_standard_lookup(ext);
+    while (archive_read_next_header(a, &entry) != ARCHIVE_EOF) {
+        archive_write_header(ext, entry);
+        len = archive_read_data(a, buff, sizeof(buff));
+        while (len > 0) {
+            archive_write_data(ext, buff, len);
+            len = archive_read_data(a, buff, sizeof(buff));
+        }
+    }
+    archive_read_free(a);
+    archive_write_free(ext);
+    if (search_mode == 0) {
+        for (i = 0; i < cont; i++) {
+            if (strcmp(ps[i].my_cwd, current_dir) == 0)
+                list_everything(i, 0, dim - 2, 1, 1);
+        }
+        chdir(ps[active].my_cwd);
+    }
+    print_info("Succesfully extracted.", INFO_LINE);
 }

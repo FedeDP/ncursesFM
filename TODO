@@ -1,6 +1,4 @@
 /* TODO:
- * add other supported compress extensions (search about libarchive supported ext) -> very easy
- * use libarchive directly... -> hard ->  struct archive archive_read_support_format_all(); archive_read_support_filter_all();
- * "file" like utility to understand mimetypes
+ * use archive_write_disk to unify copy/archive functions
  * extend search functions to inside archive https://github.com/libarchive/libarchive/wiki/Examples#List_contents_of_Archive_stored_in_File -> ask to extract the archive
  */

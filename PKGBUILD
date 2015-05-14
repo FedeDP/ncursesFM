@@ -10,8 +10,8 @@ url="https://github.com/FedeDP/${_gitname}"
 license=('GPL')
 depends=('ncurses' 'libconfig')
 optdepends=('libcups: for printing support'
-            'archivemount: for fuse archive/iso mounting support'
-            'libarchive: for files/folders compression support')
+            'fuseiso: for fuse archive/iso mounting support'
+            'libarchive: for files/folders (de)compression support')
 makedepends=('git' 'libarchive' 'libcups')
 source=("git://github.com/FedeDP/${_gitname}.git")
 backup=('etc/default/ncursesFM.conf')
