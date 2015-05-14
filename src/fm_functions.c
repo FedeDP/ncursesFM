@@ -82,12 +82,16 @@ static void iso_mount_service(char *str, int dim)
 {
     pid_t pid;
     char mount_point[strlen(str) - dim + 1];
+    strncpy(mount_point, str, strlen(str) - dim);
+    mount_point[strlen(str) - dim] = '\0';
+    if (access(ps[active].my_cwd, W_OK) != 0) {
+        print_info("You do not have write permissions here.", ERR_LINE);
+        return;
+    }
     if (access("/usr/bin/fuseiso", F_OK) == -1) {
         print_info("You need fuseiso for iso mounting support.", ERR_LINE);
         return;
     }
-    strncpy(mount_point, str, strlen(str) - dim);
-    mount_point[strlen(str) - dim] = '\0';
     pid = vfork();
     if (pid == 0) {
         if (mkdir(mount_point, ACCESSPERMS) == -1)

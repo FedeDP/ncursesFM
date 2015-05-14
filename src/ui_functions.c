@@ -281,7 +281,7 @@ static void helper_print(void)
 {
     wprintw(helper_win, "\n HELPER MESSAGE:\n * n and r to create/remove a file.\n");
     wprintw(helper_win, " * Enter to surf between folders or to open files with $editor var.\n");
-    wprintw(helper_win, " * Enter will eventually mount your ISO/compressed files.\n");
+    wprintw(helper_win, " * Enter will eventually ask to extract archives, or mount your ISO files.\n");
     wprintw(helper_win, " * You must have archivemount installed. To unmount, simply press again enter on the same iso file.\n");
     wprintw(helper_win, " * Press h to trigger the showing of hide files. s to see stat about files in current folder.\n");
     wprintw(helper_win, " * c or x to select files. v to paste: files will be copied if selected with c, or cut if selected with x.\n");

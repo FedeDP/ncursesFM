@@ -1,4 +1,4 @@
 /* TODO:
  * use archive_write_disk to unify copy/archive functions
- * extend search functions to inside archive https://github.com/libarchive/libarchive/wiki/Examples#List_contents_of_Archive_stored_in_File -> ask to extract the archive
+ * extend search functions to look inside archive https://github.com/libarchive/libarchive/wiki/Examples#List_contents_of_Archive_stored_in_File -> ask to extract the archive
  */
