@@ -1,4 +1,4 @@
 /* TODO:
- * segfaults when too many strings are found while searching...
+ * segfaults after searching??
  * semplify (if possible) search_loop function
  */

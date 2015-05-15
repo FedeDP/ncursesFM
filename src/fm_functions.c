@@ -384,6 +384,10 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     while (found_searched[i]) {
         i++;
     }
+    if (i == 100) {
+        free_found();
+        return 1;
+    }
     if ((search_mode == 2) && (isArchive(path))) {
         search_inside_archive(path, i);
     } else {
@@ -426,7 +430,7 @@ static int search_file(char *path)
 void search(void)
 {
     const char *mesg = "Insert filename to be found, at least 5 chars:> ";
-    int i = 0;
+    int i = 0, ret;
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, searched_string);
@@ -438,22 +442,30 @@ void search(void)
     search_mode = 1;
     if (ask_user("Do you want to search in archives too? Search can result slower. y/n") == 1)
         search_mode++;
-    search_file(ps[active].my_cwd);
+    ret = search_file(ps[active].my_cwd);
     if (!found_searched[i]) {
-        print_info("No files found.", INFO_LINE);
+        if (ret == 1)
+            print_info("Too many files found; try with a longer string", INFO_LINE);
+        else
+            print_info("No files found.", INFO_LINE);
         search_mode = 0;
         return;
     }
     wclear(ps[active].file_manager);
     wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %s: ", searched_string);
     wattron(ps[active].file_manager, A_BOLD);
+    mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %s: ", searched_string);
     for (i = 0; (i < dim - 2) && (found_searched[i]); i++)
         mvwprintw(ps[active].file_manager, INITIAL_POSITION + i, 4, "%s", found_searched[i]);
-    wattroff(ps[active].file_manager, A_BOLD);
     while (found_searched[i])
         i++;
     search_loop(i);
+    free_found();
+}
+
+static void free_found(void)
+{
+    int i;
     for (i = 0; found_searched[i]; i++) {
         found_searched[i] = realloc(found_searched[i], 0);
         free(found_searched[i]);
@@ -471,7 +483,6 @@ static void search_loop(int size)
     ps[active].number_of_files = size;
     print_info("q to leave search win", INFO_LINE);
     mvwprintw(ps[active].file_manager, INITIAL_POSITION, 1, "->");
-    wattron(ps[active].file_manager, A_BOLD);
     do {
         c = wgetch(ps[active].file_manager);
         switch (c) {
@@ -501,6 +512,11 @@ static void search_loop(int size)
                 strcpy(ps[active].my_cwd, found_searched[ps[active].current_position]);
             }
             break;
+        }
+        // this is needed because i don't call list_everything function, that normally will border current win when delta > 0 (here)
+        if (((c == KEY_UP) || (c == KEY_DOWN)) && (ps[active].delta >= 0))  {
+            wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
+            mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %s: ", searched_string);
         }
     } while (c != 'q');
     wattroff(ps[active].file_manager, A_BOLD);

@@ -31,6 +31,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 static void search_inside_archive(const char *path, int i);
 static int search_file(char *path);
 void search(void);
+static void free_found(void);
 static void search_loop(int size);
 void print_support(char *str);
 static void *print_file(void *filename);
