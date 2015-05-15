@@ -36,26 +36,19 @@ int is_extension(const char *filename, const char **extensions)
     return 0;
 }
 
-int file_isCopied(void)
+int file_isCopied(char *str)
 {
-    char full_path_current_position[PATH_MAX];
+    char *name;
     file_list *tmp = selected_files;
-    get_full_path(full_path_current_position, ps[active].current_position, active);
     while (tmp) {
-        if (strcmp(tmp->name, full_path_current_position) == 0) {
+        name = strstr(tmp->name, str);
+        if ((name) && (strlen(str) == strlen(name))) {
             print_info("The file is already selected for copy. Please cancel the copy before.", ERR_LINE);
             return 1;
         }
         tmp = tmp->next;
     }
     return 0;
-}
-
-void get_full_path(char *full_path_current_position, int i, int win)
-{
-    strcpy(full_path_current_position, ps[win].my_cwd);
-    strcat(full_path_current_position, "/");
-    strcat(full_path_current_position, ps[win].namelist[i]->d_name);
 }
 
 int ask_user(const char *str)

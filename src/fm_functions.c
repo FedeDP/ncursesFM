@@ -24,7 +24,7 @@
 #include "fm_functions.h"
 
 static const char *iso_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
-static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar"}; // add other supported extensions
+static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"}; // add other supported extensions
 static char *found_searched[PATH_MAX];
 static char searched_string[PATH_MAX];
 static char root_dir[PATH_MAX];
@@ -53,7 +53,7 @@ void switch_hidden(void)
 void manage_file(char *str)
 {
     int dim;
-    if ((search_mode == 0) && (file_isCopied()))
+    if ((search_mode == 0) && (file_isCopied(str)))
         return;
     dim = is_extension(str, iso_extensions);
     if (dim) {
@@ -134,7 +134,7 @@ void new_file(void)
 void remove_file(void)
 {
     const char *mesg = "Are you serious? y/n:> ";
-    if (file_isCopied())
+    if (file_isCopied(ps[active].namelist[ps[active].current_position]->d_name))
         return;
     if (ask_user(mesg) == 1) {
         if (rmrf(ps[active].namelist[ps[active].current_position]->d_name) == -1)
@@ -173,17 +173,19 @@ static int remove_from_list(char *name)
     char str[PATH_MAX];
     if (!selected_files)
         return 0;
-    strcpy(str, strrchr(selected_files->name, '/'));
-    memmove(str, str + 1, strlen(str));
-    if (strcmp(str, name) == 0) {
+    strcpy(str, ps[active].my_cwd);
+    strcat(str, "/");
+    strcat(str, name);
+    if (strcmp(str, selected_files->name) == 0) {
         selected_files = selected_files->next;
         free(tmp);
         return 1;
     }
     while(tmp->next) {
-        strcpy(str, strrchr(tmp->next->name, '/'));
-        memmove(str, str + 1, strlen(str));
-        if (strcmp(str, name) == 0) {
+        strcpy(str, ps[active].my_cwd);
+        strcat(str, "/");
+        strcat(str, name);
+        if (strcmp(str, tmp->next->name) == 0) {
             temp = tmp->next;
             tmp->next = tmp->next->next;
             free(temp);
@@ -196,13 +198,14 @@ static int remove_from_list(char *name)
 
 static void select_file(char c)
 {
-    file_list *tmp;
+    file_list *tmp = selected_files;
     if (selected_files) {
-        tmp = selected_files;
         while(tmp->next)
             tmp = tmp->next;
         tmp->next = malloc(sizeof(struct list));
-        get_full_path(tmp->next->name, ps[active].current_position, active);
+        strcpy(tmp->next->name, ps[active].my_cwd);
+        strcat(tmp->next->name, "/");
+        strcat(tmp->next->name, ps[active].namelist[ps[active].current_position]->d_name);
         strcpy(tmp->next->dir, ps[active].my_cwd);
         tmp->next->cut = 0;
         if (c == 'x')
@@ -210,7 +213,9 @@ static void select_file(char c)
         tmp->next->next = NULL;
     } else {
         selected_files = malloc(sizeof(struct list));
-        get_full_path(selected_files->name, ps[active].current_position, active);
+        strcpy(selected_files->name, ps[active].my_cwd);
+        strcat(selected_files->name, "/");
+        strcat(selected_files->name, ps[active].namelist[ps[active].current_position]->d_name);
         strcpy(selected_files->dir, ps[active].my_cwd);
         selected_files->cut = 0;
         if (c == 'x')
@@ -338,7 +343,7 @@ void rename_file_folders(void)
 {
     const char *mesg = "Insert new name:> ";
     char str[PATH_MAX];
-    if (file_isCopied())
+    if (file_isCopied(ps[active].namelist[ps[active].current_position]->d_name))
         return;
     echo();
     print_info(mesg, INFO_LINE);
