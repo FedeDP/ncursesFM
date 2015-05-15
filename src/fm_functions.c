@@ -234,13 +234,13 @@ void paste_file(void)
     stat(root_dir, &file_stat_pasted);
     for(tmp = selected_files; tmp; tmp = tmp->next) {
         if (strcmp(root_dir, tmp->dir) == 0) {
-            tmp->cut = -2;
+            tmp->cut = CANNOT_PASTE_SAME_DIR;
         } else {
             stat(tmp->dir, &file_stat_copied);
             if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
                 strcpy(pasted_file, root_dir);
                 strcat(pasted_file, strrchr(tmp->name, '/'));
-                tmp->cut = -1;
+                tmp->cut = MOVED_FILE;
                 if (rename(tmp->name, pasted_file) == - 1)
                     print_info(strerror(errno), ERR_LINE);
             } else {
@@ -261,7 +261,7 @@ static void *cpr(void *n)
     int i = 0;
     strcpy(old_root_dir, root_dir);
     while (tmp) {
-        if ((tmp->cut != -1) && (tmp->cut != -2)) {
+        if ((tmp->cut != MOVED_FILE) && (tmp->cut != CANNOT_PASTE_SAME_DIR)) {
             info_message = malloc(strlen("Pasting file %d of %d"));
             sprintf(info_message, "Pasting file %d of %d", ++i, *((int *)n));
             print_info(NULL, INFO_LINE);
@@ -278,7 +278,7 @@ static void *cpr(void *n)
 
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
-    int buff[8192];
+    int buff[BUFF_SIZE];
     int len, fd_to, fd_from;
     char pasted_file[PATH_MAX];
     strcpy(pasted_file, root_dir);
@@ -317,7 +317,7 @@ static void check_pasted(void)
                 if (rmrf(tmp->name) == -1)
                     print_info("Could not cut. Check user permissions.", ERR_LINE);
             }
-            if ((tmp->cut == 1) || (tmp->cut == -1)) {
+            if ((tmp->cut == 1) || (tmp->cut == MOVED_FILE)) {
                 for (i = 0; i < cont; i++) {
                     if ((printed[i] == 0) && (strcmp(tmp->dir, ps[i].my_cwd) == 0))
                         list_everything(i, 0, dim - 2, 1, 1);
@@ -384,7 +384,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     while (found_searched[i]) {
         i++;
     }
-    if (i == 100) {
+    if (i == MAX_NUMBER_OF_FOUND) {
         free_found();
         return 1;
     }
@@ -407,7 +407,7 @@ static void search_inside_archive(const char *path, int i)
     struct archive_entry *entry;
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
-    if (archive_read_open_filename(a, path, 8192) == ARCHIVE_OK) {
+    if (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK) {
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
             if (strstr(archive_entry_pathname(entry), searched_string)) {
                 found_searched[i] = malloc(sizeof(char) * PATH_MAX);
@@ -610,7 +610,7 @@ static void *archiver_func(void *archive_path)
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
-    char buff[8192], entry_name[PATH_MAX];
+    char buff[BUFF_SIZE], entry_name[PATH_MAX];
     int len, fd;
     struct archive_entry *entry = archive_entry_new();
     strcpy(entry_name, strstr(path, root_dir));
@@ -633,7 +633,7 @@ static void try_extractor(char *path)
     pthread_t extractor_th;
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
-    if (archive_read_open_filename(a, path, 8192) != ARCHIVE_OK) {
+    if (archive_read_open_filename(a, path, BUFF_SIZE) != ARCHIVE_OK) {
         archive_read_free(a);
         return;
     }
@@ -656,7 +656,7 @@ static void *extractor_thread(void *a)
     struct archive *ext;
     struct archive_entry *entry;
     int flags, len, i;
-    char buff[8192], current_dir[PATH_MAX];
+    char buff[BUFF_SIZE], current_dir[PATH_MAX];
     strcpy(current_dir, ps[active].my_cwd);
     ext = archive_write_disk_new();
     flags = ARCHIVE_EXTRACT_TIME;

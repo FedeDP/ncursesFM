@@ -4,6 +4,11 @@
 #include <errno.h>
 #include <unistd.h>
 
+#define INFO_HEIGHT 2
+#define HELPER_HEIGHT 15
+#define STAT_COL 30
+#define MAX_FILENAME_LENGTH 25
+
 void screen_init(void);
 void screen_end(void);
 void list_everything(int win, int old_dim, int end, int erase, int reset);
