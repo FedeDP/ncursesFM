@@ -23,6 +23,8 @@
 
 #include "fm_functions.h"
 
+static const char *iso_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
+static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar"}; // add other supported extensions
 static char *found_searched[PATH_MAX];
 static char searched_string[PATH_MAX];
 static char root_dir[PATH_MAX];
@@ -53,11 +55,11 @@ void manage_file(char *str)
     int dim;
     if ((search_mode == 0) && (file_isCopied()))
         return;
-    dim = isIso(str);
+    dim = is_extension(str, iso_extensions);
     if (dim) {
         iso_mount_service(str, dim);
     } else {
-        if (isArchive(str)) {
+        if (is_extension(str, archive_extensions)) {
             try_extractor(str);
         } else {
             if ((config.editor) && (access(config.editor, X_OK) != -1))
@@ -388,7 +390,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         free_found();
         return 1;
     }
-    if ((search_mode == 2) && (isArchive(path))) {
+    if ((search_mode == 2) && (is_extension(path, archive_extensions))) {
         search_inside_archive(path, i);
     } else {
         if ((strstr(path, searched_string)) && !(strstr(path, ".git"))) { // avoid .git folders
@@ -494,7 +496,7 @@ static void search_loop(int size)
             break;
         case 10:
             strcpy(arch_str, found_searched[ps[active].current_position]);
-            while ((strlen(arch_str)) && (!isArchive(arch_str)))
+            while ((strlen(arch_str)) && (!is_extension(arch_str, archive_extensions)))
                 arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
             len = strlen(strrchr(found_searched[ps[active].current_position], '/'));
             if ((!strlen(arch_str)) && (len != 1) && (ask_user(mesg) == 1)) {  // is a file

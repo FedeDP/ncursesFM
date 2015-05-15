@@ -23,29 +23,13 @@
 
 #include "helper_functions.h"
 
-static const char *iso_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
-static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar"}; // add other supported extensions
-
-int isIso(const char *filename)
+int is_extension(const char *filename, const char **extensions)
 {
     int i = 0;
     char *str;
-    while (*(iso_extensions + i)) {
-        str = strstr(filename, *(iso_extensions + i));
-        if ((str) && (strlen(str) == strlen(*(iso_extensions + i))))
-            return strlen(str);
-        i++;
-    }
-    return 0;
-}
-
-int isArchive(const char *filename)
-{
-    int i = 0;
-    char *str;
-    while (*(archive_extensions + i)) {
-        str = strstr(filename, *(archive_extensions + i));
-        if ((str) && (strlen(str) == strlen(*(archive_extensions + i))))
+    while (*(extensions + i)) {
+        str = strstr(filename, *(extensions + i));
+        if ((str) && (strlen(str) == strlen(*(extensions + i))))
             return strlen(str);
         i++;
     }

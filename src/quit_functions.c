@@ -46,7 +46,6 @@ void free_everything(void)
         free_copied_list(selected_files);
 }
 
-
 void quit_func(void)
 {
     char *mesg = "A thread is still running. Do you want to wait for it?(You should!) y/n:> ";
