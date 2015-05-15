@@ -51,7 +51,7 @@ void switch_hidden(void)
 void manage_file(char *str)
 {
     int dim;
-    if (file_isCopied())
+    if ((search_mode == 0) && (file_isCopied()))
         return;
     dim = isIso(str);
     if (dim) {
@@ -445,15 +445,15 @@ void search(void)
     ret = search_file(ps[active].my_cwd);
     if (!found_searched[i]) {
         if (ret == 1)
-            print_info("Too many files found; try with a longer string", INFO_LINE);
+            print_info("Too many files found; try with a longer string.", INFO_LINE);
         else
             print_info("No files found.", INFO_LINE);
         search_mode = 0;
         return;
     }
     wclear(ps[active].file_manager);
-    wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
     wattron(ps[active].file_manager, A_BOLD);
+    wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %s: ", searched_string);
     for (i = 0; (i < dim - 2) && (found_searched[i]); i++)
         mvwprintw(ps[active].file_manager, INITIAL_POSITION + i, 4, "%s", found_searched[i]);
@@ -474,14 +474,14 @@ static void free_found(void)
 
 static void search_loop(int size)
 {
-    char *str = NULL, arch_str[PATH_MAX];
+    char arch_str[PATH_MAX];
     const char *mesg = "Open file? y to open, n to switch to the folder";
     const char *arch_mesg = "This file is inside an archive; do you want to switch to its directory? y/n.";
-    int c, len;
+    int c, len, old_size = ps[active].number_of_files;
     ps[active].delta = 0;
     ps[active].current_position = 0;
     ps[active].number_of_files = size;
-    print_info("q to leave search win", INFO_LINE);
+    print_info("q to leave search win", ERR_LINE);
     mvwprintw(ps[active].file_manager, INITIAL_POSITION, 1, "->");
     do {
         c = wgetch(ps[active].file_manager);
@@ -496,11 +496,11 @@ static void search_loop(int size)
             strcpy(arch_str, found_searched[ps[active].current_position]);
             while ((strlen(arch_str)) && (!isArchive(arch_str)))
                 arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
-            str = strrchr(found_searched[ps[active].current_position], '/');
-            if ((!strlen(arch_str)) && (strlen(str) != 1) && (ask_user(mesg) == 1)) {  // is a file
+            len = strlen(strrchr(found_searched[ps[active].current_position], '/'));
+            if ((!strlen(arch_str)) && (len != 1) && (ask_user(mesg) == 1)) {  // is a file
                 manage_file(found_searched[ps[active].current_position]);
             } else {    // is a dir or an archive
-                len = strlen(found_searched[ps[active].current_position]) - strlen(str);
+                len = strlen(found_searched[ps[active].current_position]) - len;
                 if (strlen(arch_str)) {
                     if (ask_user(arch_mesg) == 1) // is archive
                         len = strlen(arch_str) - strlen(strrchr(arch_str, '/'));
@@ -509,19 +509,19 @@ static void search_loop(int size)
                 }
                 found_searched[ps[active].current_position][len] = '\0';
                 c = 'q';
-                strcpy(ps[active].my_cwd, found_searched[ps[active].current_position]);
             }
             break;
         }
-        // this is needed because i don't call list_everything function, that normally will border current win when delta > 0 (here)
-        if (((c == KEY_UP) || (c == KEY_DOWN)) && (ps[active].delta >= 0))  {
+        // this is needed because i don't call list_everything function, that normally would border current win when delta > 0 (here)
+        if ((ps[active].delta >= 0) && ((c == KEY_UP) || (c == KEY_DOWN)))  {
             wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
             mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %s: ", searched_string);
         }
     } while (c != 'q');
     wattroff(ps[active].file_manager, A_BOLD);
     search_mode = 0;
-    change_dir(ps[active].my_cwd);
+    ps[active].number_of_files = old_size;  // restore previous size
+    change_dir(found_searched[ps[active].current_position]);
 }
 
 void print_support(char *str)
