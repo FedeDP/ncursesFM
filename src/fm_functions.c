@@ -57,7 +57,9 @@ void manage_file(char *str)
     if (dim) {
         iso_mount_service(str, dim);
     } else {
-        if (try_extractor(str) == 0) {
+        if (isArchive(str)) {
+            try_extractor(str);
+        } else {
             if ((config.editor) && (access(config.editor, X_OK) != -1))
                 open_file(str);
             else
@@ -111,7 +113,8 @@ static void iso_mount_service(char *str, int dim)
 void new_file(void)
 {
     FILE *f;
-    char *mesg = "Insert new file name:> ", str[PATH_MAX];
+    const char *mesg = "Insert new file name:> ";
+    char str[PATH_MAX];
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
@@ -128,7 +131,7 @@ void new_file(void)
 
 void remove_file(void)
 {
-    char *mesg = "Are you serious? y/n:> ";
+    const char *mesg = "Are you serious? y/n:> ";
     if (file_isCopied())
         return;
     if (ask_user(mesg) == 1) {
@@ -331,7 +334,8 @@ static void check_pasted(void)
 
 void rename_file_folders(void)
 {
-    char *mesg = "Insert new name:> ", str[PATH_MAX];
+    const char *mesg = "Insert new name:> ";
+    char str[PATH_MAX];
     if (file_isCopied())
         return;
     echo();
@@ -348,7 +352,8 @@ void rename_file_folders(void)
 
 void create_dir(void)
 {
-    char *mesg = "Insert new folder name:> ", str[80];
+    const char *mesg = "Insert new folder name:> ";
+    char str[PATH_MAX];
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
@@ -376,19 +381,41 @@ static int rmrf(char *path)
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
     int i = 0;
-    char str[PATH_MAX];
     while (found_searched[i]) {
         i++;
     }
-    strcpy(str, strrchr(path, '/'));
-    memmove(str, str + 1, strlen(str));
-    if (strncmp(str, searched_string, strlen(searched_string)) == 0) {
-        found_searched[i] = malloc(sizeof(char) * PATH_MAX);
-        strcpy(found_searched[i], path);
-        if (typeflag == FTW_D)
-            strcat(found_searched[i], "/");
+    if ((search_mode == 2) && (isArchive(path))) {
+        search_inside_archive(path, i);
+    } else {
+        if ((strstr(path, searched_string)) && !(strstr(path, ".git"))) { // avoid .git folders
+            found_searched[i] = malloc(sizeof(char) * PATH_MAX);
+            strcpy(found_searched[i], path);
+            if (typeflag == FTW_D)
+                strcat(found_searched[i], "/");
+        }
     }
     return 0;
+}
+
+static void search_inside_archive(const char *path, int i)
+{
+    struct archive *a = archive_read_new();
+    struct archive_entry *entry;
+    archive_read_support_filter_all(a);
+    archive_read_support_format_all(a);
+    if (archive_read_open_filename(a, path, 8192) == ARCHIVE_OK) {
+        while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
+            if (strstr(archive_entry_pathname(entry), searched_string)) {
+                found_searched[i] = malloc(sizeof(char) * PATH_MAX);
+                strcpy(found_searched[i], path);
+                strcat(found_searched[i], "/");
+                strcat(found_searched[i], archive_entry_pathname(entry));
+                i++;
+            }
+            archive_read_data_skip(a);
+        }
+    }
+    archive_read_free(a);
 }
 
 static int search_file(char *path)
@@ -398,19 +425,23 @@ static int search_file(char *path)
 
 void search(void)
 {
-    char *mesg = "Insert filename to be found, at least 3 chars:> ";
+    const char *mesg = "Insert filename to be found, at least 5 chars:> ";
     int i = 0;
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, searched_string);
     noecho();
-    if (strlen(searched_string) < 3) {
-        print_info(NULL, INFO_LINE);
+    if (strlen(searched_string) < 5) {
+        print_info("At least 5 chars...", INFO_LINE);
         return;
     }
+    search_mode = 1;
+    if (ask_user("Do you want to search in archives too? Search can result slower. y/n") == 1)
+        search_mode++;
     search_file(ps[active].my_cwd);
     if (!found_searched[i]) {
         print_info("No files found.", INFO_LINE);
+        search_mode = 0;
         return;
     }
     wclear(ps[active].file_manager);
@@ -431,9 +462,10 @@ void search(void)
 
 static void search_loop(int size)
 {
-    char *str = NULL, *mesg = "Open file? y to open, n to switch to the folder";
-    int c;
-    search_mode = 1;
+    char *str = NULL, arch_str[PATH_MAX];
+    const char *mesg = "Open file? y to open, n to switch to the folder";
+    const char *arch_mesg = "This file is inside an archive; do you want to switch to its directory? y/n.";
+    int c, len;
     ps[active].delta = 0;
     ps[active].current_position = 0;
     ps[active].number_of_files = size;
@@ -450,11 +482,21 @@ static void search_loop(int size)
             scroll_down(found_searched[ps[active].current_position]);
             break;
         case 10:
+            strcpy(arch_str, found_searched[ps[active].current_position]);
+            while ((strlen(arch_str)) && (!isArchive(arch_str)))
+                arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
             str = strrchr(found_searched[ps[active].current_position], '/');
-            if ((strlen(str) != 1) && (ask_user(mesg) == 1)) {
+            if ((!strlen(arch_str)) && (strlen(str) != 1) && (ask_user(mesg) == 1)) {  // is a file
                 manage_file(found_searched[ps[active].current_position]);
-            } else {
-                found_searched[ps[active].current_position][strlen(found_searched[ps[active].current_position]) - strlen(str)] = '\0';
+            } else {    // is a dir or an archive
+                len = strlen(found_searched[ps[active].current_position]) - strlen(str);
+                if (strlen(arch_str)) {
+                    if (ask_user(arch_mesg) == 1) // is archive
+                        len = strlen(arch_str) - strlen(strrchr(arch_str, '/'));
+                    else
+                        break;
+                }
+                found_searched[ps[active].current_position][len] = '\0';
                 c = 'q';
                 strcpy(ps[active].my_cwd, found_searched[ps[active].current_position]);
             }
@@ -469,7 +511,7 @@ static void search_loop(int size)
 void print_support(char *str)
 {
     pthread_t print_thread;
-    char *mesg = "Do you really want to print this file? y/n:> ";
+    const char *mesg = "Do you really want to print this file? y/n:> ";
     if (access("/usr/include/cups/cups.h", F_OK ) == -1) {
         print_info("You must have libcups installed.", ERR_LINE);
         return;
@@ -487,7 +529,8 @@ static void *print_file(void *filename)
 
 void create_archive(void)
 {
-    char *mesg = "Insert new file name:> ", archive_path[PATH_MAX], str[PATH_MAX];
+    const char *mesg = "Insert new file name:> ";
+    char archive_path[PATH_MAX], str[PATH_MAX];
     if (access("/usr/include/archive.h", F_OK) == -1) {
         print_info("You must have libarchive installed.", ERR_LINE);
         return;
@@ -568,29 +611,28 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     close(fd);
 }
 
-static int try_extractor(char *path)
+static void try_extractor(char *path)
 {
     struct archive *a = archive_read_new();
     pthread_t extractor_th;
-    if (access("/usr/include/archive.h", F_OK) == -1) {
-        print_info("You must have libarchive installed.", ERR_LINE);
-        return 1;
-    }
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
     if (archive_read_open_filename(a, path, 8192) != ARCHIVE_OK) {
         archive_read_free(a);
-        return 0;
+        return;
     }
     if (ask_user("Do you really want to extract this archive?") == 1) {
         if (access(ps[active].my_cwd, W_OK) != 0) {
             print_info("No write perms here.", ERR_LINE);
-            return 1;
+            return;
+        }
+        if (access("/usr/include/archive.h", F_OK) == -1) {
+            print_info("You must have libarchive installed.", ERR_LINE);
+            return;
         }
         pthread_create(&extractor_th, NULL, extractor_thread, a);
         pthread_detach(extractor_th);
     }
-    return 1;
 }
 
 static void *extractor_thread(void *a)

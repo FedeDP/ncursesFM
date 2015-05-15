@@ -23,9 +23,23 @@
 
 #include "helper_functions.h"
 
-static const char *archive_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
+static const char *iso_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
+static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar"}; // add other supported extensions
 
-int isIso(char *filename)
+int isIso(const char *filename)
+{
+    int i = 0;
+    char *str;
+    while (*(iso_extensions + i)) {
+        str = strstr(filename, *(iso_extensions + i));
+        if ((str) && (strlen(str) == strlen(*(iso_extensions + i))))
+            return strlen(str);
+        i++;
+    }
+    return 0;
+}
+
+int isArchive(const char *filename)
 {
     int i = 0;
     char *str;
@@ -60,7 +74,7 @@ void get_full_path(char *full_path_current_position, int i, int win)
     strcat(full_path_current_position, ps[win].namelist[i]->d_name);
 }
 
-int ask_user(char *str)
+int ask_user(const char *str)
 {
     char c;
     echo();

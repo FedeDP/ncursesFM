@@ -235,7 +235,7 @@ static void colored_folders(int i, int win)
         wattron(ps[win].file_manager, COLOR_PAIR(2));
 }
 
-void print_info(char *str, int i)
+void print_info(const char *str, int i)
 {
     wclear(info_win);
     if (info_message)
