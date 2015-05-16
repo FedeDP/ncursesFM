@@ -149,13 +149,13 @@ void remove_file(void)
 void manage_c_press(char c)
 {
     char str[PATH_MAX];
-    strcpy(str, ps[active].my_cwd);
-    strcat(str, "/");
-    strcat(str, ps[active].namelist[ps[active].current_position]->d_name);
     if ((th) && (pthread_kill(th, 0) != ESRCH)) {
         print_info("A thread is still running. Wait for it.", INFO_LINE);
         return;
     }
+    strcpy(str, ps[active].my_cwd);
+    strcat(str, "/");
+    strcat(str, ps[active].namelist[ps[active].current_position]->d_name);
     if ((!selected_files) || (remove_from_list(str) == 0)) {
         info_message = malloc(strlen("There are selected files."));
         strcpy(info_message, "There are selected files.");
@@ -193,9 +193,9 @@ static int remove_from_list(char *name)
 
 static file_list *select_file(char c, file_list *h)
 {
-    if (h)
+    if (h) {
         h->next = select_file(c, h->next);
-    else {
+    } else {
         h = malloc(sizeof(struct list));
         strcpy(h->name, ps[active].my_cwd);
         strcat(h->name, "/");
@@ -532,7 +532,14 @@ void print_support(char *str)
 
 static void *print_file(void *filename)
 {
-    cupsPrintFile(cupsGetDefault(), (char *)filename, "ncursesFM job", 0, NULL);
+    cups_dest_t *dests, *default_dest;
+    int num_dests = cupsGetDests(&dests);
+    if (num_dests > 0) {
+        default_dest = cupsGetDest(NULL, NULL, num_dests, dests);
+        cupsPrintFile(default_dest->name, (char *)filename, "ncursesFM job", default_dest->num_options, default_dest->options);
+    } else {
+        print_info("No printers available.", ERR_LINE);
+    }
 }
 
 void create_archive(void)
