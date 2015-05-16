@@ -376,6 +376,7 @@ static int rmrf(char *path)
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
+    char fixed_str[PATH_MAX];
     int i = 0;
     if (ftwbuf->level == 0)
         return 0;
@@ -389,7 +390,9 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     if ((search_mode == 2) && (is_extension(path, archive_extensions))) {
         search_inside_archive(path, i);
     } else {
-        if ((strstr(path, searched_string)) && !(strstr(path, ".git"))) { // avoid .git folders
+        strcpy(fixed_str, strrchr(path, '/'));
+        memmove(fixed_str, fixed_str + 1, strlen(fixed_str));
+        if (strncmp(fixed_str, searched_string, strlen(searched_string)) == 0) {
             found_searched[i] = malloc(sizeof(char) * PATH_MAX);
             strcpy(found_searched[i], path);
             if (typeflag == FTW_D)
@@ -401,13 +404,20 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 
 static void search_inside_archive(const char *path, int i)
 {
+    char fixed_str[PATH_MAX];
     struct archive *a = archive_read_new();
     struct archive_entry *entry;
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
     if (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK) {
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
-            if (strstr(archive_entry_pathname(entry), searched_string)) {
+            if (strrchr(archive_entry_pathname(entry), '/')) {
+                strcpy(fixed_str, strrchr(archive_entry_pathname(entry), '/'));
+                memmove(fixed_str, fixed_str + 1, strlen(fixed_str));
+            } else {
+                strcpy(fixed_str, archive_entry_pathname(entry));
+            }
+            if (strncmp(fixed_str, searched_string, strlen(searched_string)) == 0) {
                 found_searched[i] = malloc(sizeof(char) * PATH_MAX);
                 strcpy(found_searched[i], path);
                 strcat(found_searched[i], "/");
@@ -443,7 +453,7 @@ void search(void)
     ret = search_file(ps[active].my_cwd);
     if (!found_searched[i]) {
         if (ret == 1)
-            print_info("Too many files found; try with a longer string.", INFO_LINE);
+            print_info("Too many files found; try with a larger string.", INFO_LINE);
         else
             print_info("No files found.", INFO_LINE);
         search_mode = 0;
@@ -452,9 +462,9 @@ void search(void)
     wclear(ps[active].file_manager);
     wattron(ps[active].file_manager, A_BOLD);
     wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %s: ", searched_string);
+    mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %.*s: ", COLS / cont - 1 - strlen("Found file searching "), searched_string);
     for (i = 0; (i < dim - 2) && (found_searched[i]); i++)
-        mvwprintw(ps[active].file_manager, INITIAL_POSITION + i, 4, "%s", found_searched[i]);
+        mvwprintw(ps[active].file_manager, INITIAL_POSITION + i, 4, "%.*s", COLS / cont - 1, found_searched[i]);
     while (found_searched[i])
         i++;
     search_loop(i);
@@ -479,7 +489,7 @@ static void search_loop(int size)
     ps[active].delta = 0;
     ps[active].current_position = 0;
     ps[active].number_of_files = size;
-    print_info("q to leave search win", ERR_LINE);
+    print_info("q to leave search win", INFO_LINE);
     mvwprintw(ps[active].file_manager, INITIAL_POSITION, 1, "->");
     do {
         c = wgetch(ps[active].file_manager);
@@ -516,7 +526,7 @@ static void search_loop(int size)
         // this is needed because i don't call list_everything function, that normally would border current win when delta > 0 (here)
         if ((ps[active].delta >= 0) && ((c == KEY_UP) || (c == KEY_DOWN)))  {
             wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-            mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %s: ", searched_string);
+            mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %.*s: ", COLS / cont - 1 - strlen("Found file searching "), searched_string);
         }
     } while (c != 'q');
     wattroff(ps[active].file_manager, A_BOLD);
