@@ -17,7 +17,6 @@ struct conf {
 
 typedef struct list {
     char name[PATH_MAX];
-    char dir[PATH_MAX];
     int cut;
     struct list *next;
 } file_list;

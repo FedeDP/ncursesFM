@@ -200,7 +200,6 @@ static file_list *select_file(char c, file_list *h)
         strcpy(h->name, ps[active].my_cwd);
         strcat(h->name, "/");
         strcat(h->name, ps[active].namelist[ps[active].current_position]->d_name);
-        strcpy(h->dir, ps[active].my_cwd);
         h->cut = 0;
         if (c == 'x')
             h->cut = 1;
@@ -212,7 +211,7 @@ static file_list *select_file(char c, file_list *h)
 
 void paste_file(void)
 {
-    char pasted_file[PATH_MAX];
+    char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX];
     int cont = 0;
     struct stat file_stat_copied, file_stat_pasted;
     file_list *tmp = NULL, *temp = NULL;
@@ -225,10 +224,12 @@ void paste_file(void)
     info_message = NULL;
     stat(root_dir, &file_stat_pasted);
     for(tmp = selected_files; tmp; tmp = tmp->next) {
-        if (strcmp(root_dir, tmp->dir) == 0) {
+        strcpy(copied_file_dir, tmp->name);
+        copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
+        if (strcmp(root_dir, copied_file_dir) == 0) {
             tmp->cut = CANNOT_PASTE_SAME_DIR;
         } else {
-            stat(tmp->dir, &file_stat_copied);
+            stat(copied_file_dir, &file_stat_copied);
             if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
                 strcpy(pasted_file, root_dir);
                 strcat(pasted_file, strrchr(tmp->name, '/'));
@@ -274,8 +275,8 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
     int len, fd_to, fd_from;
     char pasted_file[PATH_MAX];
     strcpy(pasted_file, root_dir);
-    pasted_file[strlen(pasted_file) - strlen(strrchr(root_dir, '/'))] = '\0';
-    strcat(pasted_file, strstr(path, strrchr(root_dir, '/')));
+    pasted_file[strlen(pasted_file) - strlen(strrchr(pasted_file, '/'))] = '\0';
+    strcat(pasted_file, strrstr(path, strrchr(root_dir, '/')));
     if (typeflag == FTW_D) {
         mkdir(pasted_file, sb->st_mode);
     } else {
@@ -295,6 +296,7 @@ static void check_pasted(void)
 {
     int i, printed[cont];
     file_list *tmp = selected_files;
+    char copied_file_dir[PATH_MAX];
     if (search_mode == 0) {
         for (i = 0; i < cont; i++) {
             if (strcmp(root_dir, ps[i].my_cwd) == 0) {
@@ -310,8 +312,10 @@ static void check_pasted(void)
                     print_info("Could not cut. Check user permissions.", ERR_LINE);
             }
             if ((tmp->cut == 1) || (tmp->cut == MOVED_FILE)) {
+                strcpy(copied_file_dir, tmp->name);
+                copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
                 for (i = 0; i < cont; i++) {
-                    if ((printed[i] == 0) && (strcmp(tmp->dir, ps[i].my_cwd) == 0))
+                    if ((printed[i] == 0) && (strcmp(copied_file_dir, ps[i].my_cwd) == 0))
                         list_everything(i, 0, dim - 2, 1, 1);
                 }
             }
@@ -612,7 +616,7 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     char buff[BUFF_SIZE], entry_name[PATH_MAX];
     int len, fd;
     struct archive_entry *entry = archive_entry_new();
-    strcpy(entry_name, strstr(path, root_dir));
+    strcpy(entry_name, strrstr(path, root_dir));
     archive_entry_set_pathname(entry, entry_name);
     archive_entry_copy_stat(entry, sb);
     archive_write_header(archive, entry);
