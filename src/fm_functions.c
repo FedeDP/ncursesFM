@@ -148,14 +148,18 @@ void remove_file(void)
 
 void manage_c_press(char c)
 {
+    char str[PATH_MAX];
+    strcpy(str, ps[active].my_cwd);
+    strcat(str, "/");
+    strcat(str, ps[active].namelist[ps[active].current_position]->d_name);
     if ((th) && (pthread_kill(th, 0) != ESRCH)) {
         print_info("A thread is still running. Wait for it.", INFO_LINE);
         return;
     }
-    if (remove_from_list(ps[active].namelist[ps[active].current_position]->d_name) == 0) {
+    if ((!selected_files) || (remove_from_list(str) == 0)) {
         info_message = malloc(strlen("There are selected files."));
         strcpy(info_message, "There are selected files.");
-        select_file(c);
+        selected_files = select_file(c, selected_files);
     } else {
         if (selected_files)
             print_info("File deleted from copy list.", INFO_LINE);
@@ -170,22 +174,13 @@ void manage_c_press(char c)
 static int remove_from_list(char *name)
 {
     file_list *tmp = selected_files, *temp = NULL;
-    char str[PATH_MAX];
-    if (!selected_files)
-        return 0;
-    strcpy(str, ps[active].my_cwd);
-    strcat(str, "/");
-    strcat(str, name);
-    if (strcmp(str, selected_files->name) == 0) {
+    if (strcmp(name, selected_files->name) == 0) {
         selected_files = selected_files->next;
         free(tmp);
         return 1;
     }
     while(tmp->next) {
-        strcpy(str, ps[active].my_cwd);
-        strcat(str, "/");
-        strcat(str, name);
-        if (strcmp(str, tmp->next->name) == 0) {
+        if (strcmp(name, tmp->next->name) == 0) {
             temp = tmp->next;
             tmp->next = tmp->next->next;
             free(temp);
@@ -196,33 +191,23 @@ static int remove_from_list(char *name)
     return 0;
 }
 
-static void select_file(char c)
+static file_list *select_file(char c, file_list *h)
 {
-    file_list *tmp = selected_files;
-    if (selected_files) {
-        while(tmp->next)
-            tmp = tmp->next;
-        tmp->next = malloc(sizeof(struct list));
-        strcpy(tmp->next->name, ps[active].my_cwd);
-        strcat(tmp->next->name, "/");
-        strcat(tmp->next->name, ps[active].namelist[ps[active].current_position]->d_name);
-        strcpy(tmp->next->dir, ps[active].my_cwd);
-        tmp->next->cut = 0;
+    if (h)
+        h->next = select_file(c, h->next);
+    else {
+        h = malloc(sizeof(struct list));
+        strcpy(h->name, ps[active].my_cwd);
+        strcat(h->name, "/");
+        strcat(h->name, ps[active].namelist[ps[active].current_position]->d_name);
+        strcpy(h->dir, ps[active].my_cwd);
+        h->cut = 0;
         if (c == 'x')
-            tmp->next->cut = 1;
-        tmp->next->next = NULL;
-    } else {
-        selected_files = malloc(sizeof(struct list));
-        strcpy(selected_files->name, ps[active].my_cwd);
-        strcat(selected_files->name, "/");
-        strcat(selected_files->name, ps[active].namelist[ps[active].current_position]->d_name);
-        strcpy(selected_files->dir, ps[active].my_cwd);
-        selected_files->cut = 0;
-        if (c == 'x')
-            selected_files->cut = 1;
-        selected_files->next = NULL;
+            h->cut = 1;
+        h->next = NULL;
+        print_info("File added to copy list.", INFO_LINE);
     }
-    print_info("File added to copy list.", INFO_LINE);
+    return h;
 }
 
 void paste_file(void)
