@@ -28,7 +28,7 @@ int is_extension(const char *filename, const char **extensions)
     int i = 0;
     char *str;
     while (*(extensions + i)) {
-        str = strstr(filename, *(extensions + i));
+        str = strrstr(filename, *(extensions + i));
         if ((str) && (strlen(str) == strlen(*(extensions + i))))
             return strlen(str);
         i++;
@@ -41,7 +41,7 @@ int file_isCopied(char *str)
     char *name;
     file_list *tmp = selected_files;
     while (tmp) {
-        name = strstr(tmp->name, str);
+        name = strrstr(tmp->name, str);
         if ((name) && (strlen(str) == strlen(name))) {
             print_info("The file is already selected for copy. Please cancel the copy before.", ERR_LINE);
             return 1;

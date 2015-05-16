@@ -377,6 +377,8 @@ static int rmrf(char *path)
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
     int i = 0;
+    if (ftwbuf->level == 0)
+        return 0;
     while (found_searched[i]) {
         i++;
     }
@@ -493,7 +495,7 @@ static void search_loop(int size)
             while ((strlen(arch_str)) && (!is_extension(arch_str, archive_extensions)))
                 arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
             len = strlen(strrchr(found_searched[ps[active].current_position], '/'));
-            if ((!strlen(arch_str)) && (len != 1) && (ask_user(mesg) == 1)) {  // is a file
+            if ((!strlen(arch_str)) && (len != 1) && (ask_user(mesg) == 1)) {  // is a file and user wants to open it
                 manage_file(found_searched[ps[active].current_position]);
             } else {    // is a dir or an archive
                 len = strlen(found_searched[ps[active].current_position]) - len;
@@ -506,6 +508,9 @@ static void search_loop(int size)
                 found_searched[ps[active].current_position][len] = '\0';
                 c = 'q';
             }
+            break;
+        case 'q':
+            strcpy(found_searched[ps[active].current_position], ps[active].my_cwd);
             break;
         }
         // this is needed because i don't call list_everything function, that normally would border current win when delta > 0 (here)
