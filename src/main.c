@@ -67,6 +67,7 @@ static void init_func(void)
     config_t cfg;
     const char *str_editor, *str_hidden, *str_starting_dir;
     cont = 0;
+    search_mode = 0;
     selected_files = NULL;
     config.editor = NULL;
     config.starting_dir = NULL;

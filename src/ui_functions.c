@@ -237,11 +237,14 @@ static void colored_folders(int i, int win)
 
 void print_info(const char *str, int i)
 {
+    const char *search_mess = "q to leave search win";
     wclear(info_win);
-    if (info_message)
+    if ((info_message) && (!search_mode))
         mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
     if (str)
         mvwprintw(info_win, i, 1, str);
+    if (search_mode)
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(search_mess), search_mess);
     wrefresh(info_win);
 }
 

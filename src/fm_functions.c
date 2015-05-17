@@ -28,7 +28,6 @@ static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar", ".
 static char *found_searched[PATH_MAX];
 static char searched_string[PATH_MAX];
 static char root_dir[PATH_MAX];
-static int search_mode = 0;
 static struct archive *archive = NULL;
 
 void change_dir(char *str)
@@ -438,6 +437,7 @@ static int search_file(char *path)
 void search(void)
 {
     const char *mesg = "Insert filename to be found, at least 5 chars:> ";
+    char str[20];
     int i = 0, ret;
     echo();
     print_info(mesg, INFO_LINE);
@@ -447,7 +447,6 @@ void search(void)
         print_info("At least 5 chars...", INFO_LINE);
         return;
     }
-    search_mode = 1;
     if (ask_user("Do you want to search in archives too? Search can result slower. y/n") == 1)
         search_mode++;
     ret = search_file(ps[active].my_cwd);
@@ -456,15 +455,17 @@ void search(void)
             print_info("Too many files found; try with a larger string.", INFO_LINE);
         else
             print_info("No files found.", INFO_LINE);
-        search_mode = 0;
         return;
     }
+    search_mode = 1;
     wclear(ps[active].file_manager);
     wattron(ps[active].file_manager, A_BOLD);
     wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %.*s: ", COLS / cont - 1 - strlen("Found file searching "), searched_string);
     for (i = 0; (i < dim - 2) && (found_searched[i]); i++)
         mvwprintw(ps[active].file_manager, INITIAL_POSITION + i, 4, "%.*s", COLS / cont - 1, found_searched[i]);
+    sprintf(str, "%d files found.", i);
+    print_info(str, INFO_LINE);
     while (found_searched[i])
         i++;
     search_loop(i);
@@ -489,7 +490,6 @@ static void search_loop(int size)
     ps[active].delta = 0;
     ps[active].current_position = 0;
     ps[active].number_of_files = size;
-    print_info("q to leave search win", INFO_LINE);
     mvwprintw(ps[active].file_manager, INITIAL_POSITION, 1, "->");
     do {
         c = wgetch(ps[active].file_manager);
