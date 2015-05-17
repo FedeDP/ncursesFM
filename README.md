@@ -29,6 +29,7 @@ IT DOES NOT SUPPORT TERMINAL RESIZE. It is meant to be used maximized, or from a
 
 Archlinux users can now install ncursesFM from aur: https://aur.archlinux.org/packages/ncursesfm-git/
 
-It requires ncurses, libconfig and (optionally) {fuseiso, libcups, libarchive}
+Build requires ncurses, libconfig, libcups and libarchive.
+At runtime it requires ncurses, libconfig and (optionally) {fuseiso, libcups, libarchive}
 
 ![Alt text](ncursesfm.png?raw=true)
