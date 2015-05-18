@@ -42,6 +42,7 @@ void free_everything(void)
     }
     free(config.editor);
     free(config.starting_dir);
+    free(info_message);
     if (selected_files)
         free_copied_list(selected_files);
 }

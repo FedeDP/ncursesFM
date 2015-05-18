@@ -461,7 +461,7 @@ void search(void)
     wclear(ps[active].file_manager);
     wattron(ps[active].file_manager, A_BOLD);
     wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching "), searched_string);
+    mvwprintw(ps[active].file_manager, 0, 0, "Found files searching: %.*s: ", width[active] - 1 - strlen("Found files searching: "), searched_string);
     for (i = 0; (i < dim - 2) && (found_searched[i]); i++)
         mvwprintw(ps[active].file_manager, INITIAL_POSITION + i, 4, "%.*s", width[active] - 5, found_searched[i]);
     sprintf(str, "%d files found.", i);
