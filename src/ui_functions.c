@@ -165,7 +165,7 @@ void delete_tab(void)
     wborder(ps[active].file_manager, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wresize(ps[active].file_manager, dim, width[active]);
     wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(ps[active].file_manager, 0, 0, "Current:%.*s", width[active] / cont - 1 - strlen("Current:"), ps[active].my_cwd);
+    mvwprintw(ps[active].file_manager, 0, 0, "Current:%.*s", width[active] - 1 - strlen("Current:"), ps[active].my_cwd);
 }
 
 void scroll_down(char *str)
