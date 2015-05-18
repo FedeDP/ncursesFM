@@ -179,7 +179,7 @@ void scroll_down(char *str)
             if (!str)
                 list_everything(active, ps[active].current_position, 1, 0, 0);
             else {
-                mvwprintw(ps[active].file_manager, real_height, 4, str);
+                mvwprintw(ps[active].file_manager, real_height, 4, "%.*s", width[active] - 5, str);
                 mvwprintw(ps[active].file_manager, INITIAL_POSITION + ps[active].current_position - ps[active].delta, 1, "->");
             }
         } else {
@@ -199,7 +199,7 @@ void scroll_up(char *str)
             if (!str)
                 list_everything(active, ps[active].delta, 1, 0, 0);
             else {
-                mvwprintw(ps[active].file_manager, INITIAL_POSITION, 4, str);
+                mvwprintw(ps[active].file_manager, INITIAL_POSITION, 4, "%.*s", width[active] - 5, str);
                 mvwprintw(ps[active].file_manager, INITIAL_POSITION + ps[active].current_position - ps[active].delta, 1, "->");
             }
         } else {

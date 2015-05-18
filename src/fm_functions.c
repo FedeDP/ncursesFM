@@ -483,7 +483,7 @@ static void free_found(void)
 
 static void search_loop(int size)
 {
-    char arch_str[PATH_MAX], str[width[active] - 5];
+    char arch_str[PATH_MAX];
     const char *mesg = "Open file? y to open, n to switch to the folder";
     const char *arch_mesg = "This file is inside an archive; do you want to switch to its directory? y/n.";
     int c, len, old_size = ps[active].number_of_files;
@@ -495,12 +495,10 @@ static void search_loop(int size)
         c = wgetch(ps[active].file_manager);
         switch (c) {
         case KEY_UP:
-            sprintf(str, "%.*s", width[active] - 5, found_searched[ps[active].current_position]);
-            scroll_up(str);
+            scroll_up(found_searched[ps[active].current_position]);
             break;
         case KEY_DOWN:
-            sprintf(str, "%.*s", width[active] - 5, found_searched[ps[active].current_position]);
-            scroll_down(str);
+            scroll_down(found_searched[ps[active].current_position]);
             break;
         case 10:
             strcpy(arch_str, found_searched[ps[active].current_position]);
