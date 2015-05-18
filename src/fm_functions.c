@@ -461,9 +461,9 @@ void search(void)
     wclear(ps[active].file_manager);
     wattron(ps[active].file_manager, A_BOLD);
     wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %.*s: ", COLS / cont - 1 - strlen("Found file searching "), searched_string);
+    mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching "), searched_string);
     for (i = 0; (i < dim - 2) && (found_searched[i]); i++)
-        mvwprintw(ps[active].file_manager, INITIAL_POSITION + i, 4, "%.*s", COLS / cont - 1, found_searched[i]);
+        mvwprintw(ps[active].file_manager, INITIAL_POSITION + i, 4, "%.*s", width[active] - 5, found_searched[i]);
     sprintf(str, "%d files found.", i);
     print_info(str, INFO_LINE);
     while (found_searched[i])
@@ -483,7 +483,7 @@ static void free_found(void)
 
 static void search_loop(int size)
 {
-    char arch_str[PATH_MAX];
+    char arch_str[PATH_MAX], str[width[active] - 5];
     const char *mesg = "Open file? y to open, n to switch to the folder";
     const char *arch_mesg = "This file is inside an archive; do you want to switch to its directory? y/n.";
     int c, len, old_size = ps[active].number_of_files;
@@ -495,10 +495,12 @@ static void search_loop(int size)
         c = wgetch(ps[active].file_manager);
         switch (c) {
         case KEY_UP:
-            scroll_up(found_searched[ps[active].current_position]);
+            sprintf(str, "%.*s", width[active] - 5, found_searched[ps[active].current_position]);
+            scroll_up(str);
             break;
         case KEY_DOWN:
-            scroll_down(found_searched[ps[active].current_position]);
+            sprintf(str, "%.*s", width[active] - 5, found_searched[ps[active].current_position]);
+            scroll_down(str);
             break;
         case 10:
             strcpy(arch_str, found_searched[ps[active].current_position]);
@@ -526,7 +528,7 @@ static void search_loop(int size)
         // this is needed because i don't call list_everything function, that normally would border current win when delta > 0 (here)
         if ((ps[active].delta >= 0) && ((c == KEY_UP) || (c == KEY_DOWN)))  {
             wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-            mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %.*s: ", COLS / cont - 1 - strlen("Found file searching "), searched_string);
+            mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching "), searched_string);
         }
     } while (c != 'q');
     wattroff(ps[active].file_manager, A_BOLD);

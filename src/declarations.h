@@ -36,5 +36,5 @@ pthread_t th;
 struct conf config;
 struct vars ps[MAX_TABS];
 WINDOW *info_win;
-int dim, active, cont, search_mode;
+int dim, active, cont, search_mode, width[MAX_TABS];
 char *info_message;
