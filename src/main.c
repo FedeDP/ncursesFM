@@ -159,18 +159,14 @@ static void main_loop(int *quit, int *old_number_files)
         case 'f': // f to search
             search();
             break;
-        #ifdef LIBCUPS_PRESENT
         case 'p': // p to print
             if (S_ISREG(file_stat.st_mode))
                 print_support(ps[active].namelist[ps[active].current_position]->d_name);
             break;
-        #endif
-        #ifdef LIBARCHIVE_PRESENT
         case 'b': //b to compress
             if (selected_files)
                 create_archive();
             break;
-        #endif
         case 'q': /* q to exit */
             quit_func();
             *quit = 1;
