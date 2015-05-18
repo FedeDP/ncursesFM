@@ -22,15 +22,11 @@
  * END_COMMON_COPYRIGHT_HEADER */
 
 #include "fm_functions.h"
-#ifdef LIBCONFIG_PRESENT
-    #include <libconfig.h>
-#endif
+#include <libconfig.h>
 #include <unistd.h>
 
 static void helper_function(int argc, char *argv[]);
-#ifdef LIBCONFIG_PRESENT
 static void init_func(void);
-#endif
 static void main_loop(int *quit, int *old_number_files);
 
 static const char *config_file_name = "/etc/default/ncursesFM.conf";
@@ -40,12 +36,6 @@ int main(int argc, char *argv[])
 {
     int quit = 0, old_number_files;
     helper_function(argc, argv);
-    cont = 0;
-    search_mode = 0;
-    selected_files = NULL;
-    config.editor = NULL;
-    config.starting_dir = NULL;
-    config.second_tab_starting_dir = 0;
     init_func();
     screen_init();
     while (!quit)
@@ -72,11 +62,16 @@ static void helper_function(int argc, char *argv[])
     }
 }
 
-#ifdef LIBCONFIG_PRESENT
 static void init_func(void)
 {
     const char *str_editor, *str_hidden, *str_starting_dir;
     config_t cfg;
+    cont = 0;
+    search_mode = 0;
+    selected_files = NULL;
+    config.editor = NULL;
+    config.starting_dir = NULL;
+    config.second_tab_starting_dir = 0;
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
         if (config_lookup_string(&cfg, "editor", &str_editor)) {
@@ -96,7 +91,6 @@ static void init_func(void)
     }
     config_destroy(&cfg);
 }
-#endif
 
 static void main_loop(int *quit, int *old_number_files)
 {

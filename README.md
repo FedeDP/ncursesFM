@@ -19,7 +19,7 @@ It has following features:
 * Extract (compressed) archive through libarchive.
 * Compress files/folders through libarchive -> to select files/folders, use c/x (same as copy/cut)
 
-It reads following variables from ncursesFM.conf (using libconfig)...remember to set them!
+It reads following variables from /etc/default/ncursesFM.conf (using libconfig)...remember to set them!
 * editor -> editor used to open files
 * show_hidden -> whether to show hidden files by default or not.
 * starting_directory -> default starting directory.

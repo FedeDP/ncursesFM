@@ -58,7 +58,7 @@ void manage_file(char *str)
     if (dim) {
         iso_mount_service(str, dim);
     } else {
-        if ((USE_LIBARCHIVE) && (is_extension(str, archive_extensions))) {
+        if (is_extension(str, archive_extensions)) {
             try_extractor(str);
         } else {
             if ((config.editor) && (access(config.editor, X_OK) != -1))
@@ -386,7 +386,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         free_found();
         return 1;
     }
-    if ((USE_LIBARCHIVE) && (search_mode == 2) && (is_extension(path, archive_extensions))) {
+    if ((search_mode == 2) && (is_extension(path, archive_extensions))) {
         search_inside_archive(path, i);
     } else {
         strcpy(fixed_str, strrchr(path, '/'));
@@ -401,7 +401,6 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     return 0;
 }
 
-#ifdef LIBARCHIVE_PRESENT
 static void search_inside_archive(const char *path, int i)
 {
     char fixed_str[PATH_MAX];
@@ -429,7 +428,6 @@ static void search_inside_archive(const char *path, int i)
     }
     archive_read_free(a);
 }
-#endif
 
 static int search_file(char *path)
 {
@@ -536,11 +534,15 @@ static void search_loop(int size)
     ps[active].number_of_files = old_size;  // restore previous size
     change_dir(found_searched[ps[active].current_position]);
 }
-#ifdef LIBCUPS_PRESENT
+
 void print_support(char *str)
 {
     pthread_t print_thread;
     const char *mesg = "Do you really want to print this file? y/n:> ";
+    if (access("/usr/include/cups/cups.h", F_OK ) == -1) {
+        print_info("You must have libcups installed.", ERR_LINE);
+        return;
+    }
     if (ask_user(mesg) == 1) {
         pthread_create(&print_thread, NULL, print_file, str);
         pthread_detach(print_thread);
@@ -558,13 +560,15 @@ static void *print_file(void *filename)
         print_info("No printers available.", ERR_LINE);
     }
 }
-#endif
 
-#ifdef LIBARCHIVE_PRESENT
 void create_archive(void)
 {
     const char *mesg = "Insert new file name:> ";
     char archive_path[PATH_MAX], str[PATH_MAX];
+    if (access("/usr/include/archive.h", F_OK) == -1) {
+        print_info("You must have libarchive installed.", ERR_LINE);
+        return;
+    }
     if ((selected_files) && (ask_user("Do you really want to compress these files?") == 1)) {
         if (access(ps[active].my_cwd, W_OK) != 0) {
             print_info("No write perms here.", ERR_LINE);
@@ -572,7 +576,7 @@ void create_archive(void)
         }
         archive = archive_write_new();
         if ((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) {
-            print_info(strerror(archive_errno(archive)), ERR_LINE);
+            print_info(archive_error_string(archive), ERR_LINE);
             archive_write_free(archive);
             archive = NULL;
             return;
@@ -643,17 +647,23 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 
 static void try_extractor(char *path)
 {
-    struct archive *a = archive_read_new();
+    struct archive *a;
     pthread_t extractor_th;
-    archive_read_support_filter_all(a);
-    archive_read_support_format_all(a);
-    if (archive_read_open_filename(a, path, BUFF_SIZE) != ARCHIVE_OK) {
-        archive_read_free(a);
-        return;
-    }
     if (ask_user("Do you really want to extract this archive?") == 1) {
         if (access(ps[active].my_cwd, W_OK) != 0) {
             print_info("No write perms here.", ERR_LINE);
+            return;
+        }
+        if (access("/usr/include/archive.h", F_OK) == -1) {
+            print_info("You must have libarchive installed.", ERR_LINE);
+            return;
+        }
+        a = archive_read_new();
+        archive_read_support_filter_all(a);
+        archive_read_support_format_all(a);
+        if (archive_read_open_filename(a, path, BUFF_SIZE) != ARCHIVE_OK) {
+            print_info(archive_error_string(a), ERR_LINE);
+            archive_read_free(a);
             return;
         }
         pthread_create(&extractor_th, NULL, extractor_thread, a);
@@ -694,4 +704,3 @@ static void *extractor_thread(void *a)
     }
     print_info("Succesfully extracted.", INFO_LINE);
 }
-#endif

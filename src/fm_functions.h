@@ -5,19 +5,9 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
-
-#ifdef LIBCUPS_PRESENT
-    #include <cups/cups.h>
-#endif
-
-#ifdef LIBARCHIVE_PRESENT
-    #define USE_LIBARCHIVE 1
-    #include <archive.h>
-    #include <archive_entry.h>
-#else
-    #define USE_LIBARCHIVE 0
-#endif
-
+#include <cups/cups.h>
+#include <archive.h>
+#include <archive_entry.h>
 #define MAX_NUMBER_OF_FOUND 100
 #define BUFF_SIZE 8192
 #define CANNOT_PASTE_SAME_DIR -2
@@ -42,21 +32,15 @@ void create_dir(void);
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int rmrf(char *path);
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-#ifdef LIBARCHIVE_PRESENT
 static void search_inside_archive(const char *path, int i);
-#endif
 static int search_file(char *path);
 void search(void);
 static void free_found(void);
 static void search_loop(int size);
-#ifdef LIBCUPS_PRESENT
 void print_support(char *str);
 static void *print_file(void *filename);
-#endif
-#ifdef LIBARCHIVE_PRESENT
 void create_archive(void);
 static void *archiver_func(void *x);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void try_extractor(char *path);
 static void *extractor_thread(void *a);
-#endif
