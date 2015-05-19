@@ -96,23 +96,23 @@ static void main_loop(int *quit, int *old_number_files)
 {
     int c;
     struct stat file_stat;
-    stat(ps[active].namelist[ps[active].current_position]->d_name, &file_stat);
-    c = wgetch(ps[active].file_manager);
+    stat(ps[active].nl[ps[active].curr_pos], &file_stat);
+    c = wgetch(ps[active].fm);
     switch (c) {
         case KEY_UP:
-            scroll_up(NULL);
+            scroll_up(ps[active].nl);
             break;
         case KEY_DOWN:
-            scroll_down(NULL);
+            scroll_down(ps[active].nl);
             break;
         case 'h': // h to show hidden files
             switch_hidden();
             break;
         case 10: // enter to change dir or open a file.
             if ((S_ISDIR(file_stat.st_mode)) || (S_ISLNK(file_stat.st_mode)))
-                change_dir(ps[active].namelist[ps[active].current_position]->d_name);
+                change_dir(ps[active].nl[ps[active].curr_pos]);
             else
-                manage_file(ps[active].namelist[ps[active].current_position]->d_name);
+                manage_file(ps[active].nl[ps[active].curr_pos]);
             break;
         case 't': // t to open second tab
             if (cont < MAX_TABS)
@@ -132,11 +132,11 @@ static void main_loop(int *quit, int *old_number_files)
             new_file();
             break;
         case 'r': //remove file
-            if (strcmp(ps[active].namelist[ps[active].current_position]->d_name, "..") != 0)
+            if (strcmp(ps[active].nl[ps[active].curr_pos], "..") != 0)
                 remove_file();
             break;
         case 'c': case 'x': // copy/cut file
-            if (strcmp(ps[active].namelist[ps[active].current_position]->d_name, "..") != 0)
+            if (strcmp(ps[active].nl[ps[active].curr_pos], "..") != 0)
                 manage_c_press(c);
             break;
         case 'v': // paste file
@@ -148,7 +148,7 @@ static void main_loop(int *quit, int *old_number_files)
             break;
         case 's': // show stat about files (size and perms)
             ps[active].stat_active = 1 - ps[active].stat_active;
-            list_everything(active, ps[active].delta, dim - 2, 1, 0);
+            list_everything(active, ps[active].delta, dim - 2, ps[active].nl);
             break;
         case 'o': // o to rename
             rename_file_folders();
@@ -161,7 +161,7 @@ static void main_loop(int *quit, int *old_number_files)
             break;
         case 'p': // p to print
             if (S_ISREG(file_stat.st_mode))
-                print_support(ps[active].namelist[ps[active].current_position]->d_name);
+                print_support(ps[active].nl[ps[active].curr_pos]);
             break;
         case 'b': //b to compress
             if (selected_files)

@@ -22,13 +22,13 @@ typedef struct list {
 } file_list;
 
 struct vars {
-    int current_position;
+    int curr_pos;
     int number_of_files;
     int delta;
     int stat_active;
     char my_cwd[PATH_MAX];
-    WINDOW *file_manager;
-    struct dirent **namelist;
+    WINDOW *fm;
+    char **nl;
 };
 
 file_list *selected_files;
@@ -37,4 +37,4 @@ struct conf config;
 struct vars ps[MAX_TABS];
 WINDOW *info_win;
 int dim, active, cont, search_mode, width[MAX_TABS];
-char *info_message;
+char info_message[30], searched_string[PATH_MAX];

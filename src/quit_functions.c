@@ -34,15 +34,14 @@ void free_everything(void)
 {
     int i, j;
     for (j = 0; j < cont; j++) {
-        if (ps[j].namelist != NULL) {
+        if (ps[j].nl != NULL) {
             for (i = ps[j].number_of_files - 1; i >= 0; i--)
-                free(ps[j].namelist[i]);
-            free(ps[j].namelist);
+                free(ps[j].nl[i]);
+            free(ps[j].nl);
         }
     }
     free(config.editor);
     free(config.starting_dir);
-    free(info_message);
     if (selected_files)
         free_copied_list(selected_files);
 }

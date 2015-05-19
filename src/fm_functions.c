@@ -26,7 +26,6 @@
 static const char *iso_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
 static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"}; // add other supported extensions
 static char *found_searched[PATH_MAX];
-static char searched_string[PATH_MAX];
 static char root_dir[PATH_MAX];
 static struct archive *archive = NULL;
 
@@ -34,7 +33,7 @@ void change_dir(char *str)
 {
     chdir(str);
     getcwd(ps[active].my_cwd, PATH_MAX);
-    list_everything(active, 0, dim - 2, 1, 1);
+    generate_list(active);
     print_info(NULL, INFO_LINE);
 }
 
@@ -46,7 +45,7 @@ void switch_hidden(void)
     else
         config.show_hidden = 0;
     for (i = 0; i < cont; i++)
-        list_everything(i, 0, dim - 2, 1, 1);
+        generate_list(i);
 }
 
 void manage_file(char *str)
@@ -133,10 +132,10 @@ void new_file(void)
 void remove_file(void)
 {
     const char *mesg = "Are you serious? y/n:> ";
-    if (file_isCopied(ps[active].namelist[ps[active].current_position]->d_name))
+    if (file_isCopied(ps[active].nl[ps[active].curr_pos]))
         return;
     if (ask_user(mesg) == 1) {
-        if (rmrf(ps[active].namelist[ps[active].current_position]->d_name) == -1)
+        if (rmrf(ps[active].nl[ps[active].curr_pos]) == -1)
             print_info("Could not remove. Check user permissions.", ERR_LINE);
         else {
             sync_changes();
@@ -154,17 +153,15 @@ void manage_c_press(char c)
     }
     strcpy(str, ps[active].my_cwd);
     strcat(str, "/");
-    strcat(str, ps[active].namelist[ps[active].current_position]->d_name);
+    strcat(str, ps[active].nl[ps[active].curr_pos]);
     if ((!selected_files) || (remove_from_list(str) == 0)) {
-        info_message = malloc(strlen("There are selected files."));
         strcpy(info_message, "There are selected files.");
         selected_files = select_file(c, selected_files);
     } else {
         if (selected_files)
             print_info("File deleted from copy list.", INFO_LINE);
         else {
-            free(info_message);
-            info_message = NULL;
+            memset(info_message, 0, strlen(info_message));
             print_info("File deleted from copy list. Copy list empty.", INFO_LINE);
         }
     }
@@ -173,7 +170,7 @@ void manage_c_press(char c)
 static int remove_from_list(char *name)
 {
     file_list *tmp = selected_files, *temp = NULL;
-    if (strcmp(name, selected_files->name) == 0) {
+    if (strcmp(name, tmp->name) == 0) {
         selected_files = selected_files->next;
         free(tmp);
         return 1;
@@ -198,7 +195,7 @@ static file_list *select_file(char c, file_list *h)
         h = malloc(sizeof(struct list));
         strcpy(h->name, ps[active].my_cwd);
         strcat(h->name, "/");
-        strcat(h->name, ps[active].namelist[ps[active].current_position]->d_name);
+        strcat(h->name, ps[active].nl[ps[active].curr_pos]);
         h->cut = 0;
         if (c == 'x')
             h->cut = 1;
@@ -219,8 +216,7 @@ void paste_file(void)
         print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
         return;
     }
-    free(info_message);
-    info_message = NULL;
+    memset(info_message, 0, strlen(info_message));
     stat(root_dir, &file_stat_pasted);
     for(tmp = selected_files; tmp; tmp = tmp->next) {
         strcpy(copied_file_dir, tmp->name);
@@ -254,7 +250,6 @@ static void *cpr(void *n)
     strcpy(old_root_dir, root_dir);
     while (tmp) {
         if ((tmp->cut != MOVED_FILE) && (tmp->cut != CANNOT_PASTE_SAME_DIR)) {
-            info_message = malloc(strlen("Pasting file %d of %d"));
             sprintf(info_message, "Pasting file %d of %d", ++i, *((int *)n));
             print_info(NULL, INFO_LINE);
             strcat(root_dir, strrchr(tmp->name, '/'));
@@ -263,8 +258,7 @@ static void *cpr(void *n)
         }
         tmp = tmp->next;
     }
-    free(info_message);
-    info_message = NULL;
+    memset(info_message, 0, strlen(info_message));
     check_pasted();
 }
 
@@ -299,7 +293,7 @@ static void check_pasted(void)
     if (search_mode == 0) {
         for (i = 0; i < cont; i++) {
             if (strcmp(root_dir, ps[i].my_cwd) == 0) {
-                list_everything(i, 0, dim - 2, 1, 1);
+                generate_list(i);
                 printed[i] = 1;
             } else {
                 printed[i] = 0;
@@ -315,7 +309,7 @@ static void check_pasted(void)
                 copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
                 for (i = 0; i < cont; i++) {
                     if ((printed[i] == 0) && (strcmp(copied_file_dir, ps[i].my_cwd) == 0))
-                        list_everything(i, 0, dim - 2, 1, 1);
+                        generate_list(i);
                 }
             }
             tmp = tmp->next;
@@ -331,13 +325,13 @@ void rename_file_folders(void)
 {
     const char *mesg = "Insert new name:> ";
     char str[PATH_MAX];
-    if (file_isCopied(ps[active].namelist[ps[active].current_position]->d_name))
+    if (file_isCopied(ps[active].nl[ps[active].curr_pos]))
         return;
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
     noecho();
-    if (rename(ps[active].namelist[ps[active].current_position]->d_name, str) == - 1) {
+    if (rename(ps[active].nl[ps[active].curr_pos], str) == - 1) {
         print_info(strerror(errno), ERR_LINE);
     } else {
         sync_changes();
@@ -403,18 +397,22 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 
 static void search_inside_archive(const char *path, int i)
 {
-    char fixed_str[PATH_MAX];
+    char fixed_str[PATH_MAX], str[PATH_MAX], *str_ptr = NULL;
     struct archive *a = archive_read_new();
     struct archive_entry *entry;
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
     if (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK) {
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
-            if (strrchr(archive_entry_pathname(entry), '/')) {
-                strcpy(fixed_str, strrchr(archive_entry_pathname(entry), '/'));
+            strcpy(str, archive_entry_pathname(entry));
+            str_ptr = strrchr(archive_entry_pathname(entry), '/');
+            if ((str_ptr) && (strlen(str_ptr) == 1))
+                str[strlen(str) - 1] = '\0';
+            if (strrchr(str, '/')) {
+                strcpy(fixed_str, strrchr(str, '/'));
                 memmove(fixed_str, fixed_str + 1, strlen(fixed_str));
             } else {
-                strcpy(fixed_str, archive_entry_pathname(entry));
+                strcpy(fixed_str, str);
             }
             if (strncmp(fixed_str, searched_string, strlen(searched_string)) == 0) {
                 found_searched[i] = malloc(sizeof(char) * PATH_MAX);
@@ -438,7 +436,7 @@ void search(void)
 {
     const char *mesg = "Insert filename to be found, at least 5 chars:> ";
     char str[20];
-    int i = 0, ret;
+    int i = 0, ret, old_size = ps[active].number_of_files;
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, searched_string);
@@ -447,6 +445,7 @@ void search(void)
         print_info("At least 5 chars...", INFO_LINE);
         return;
     }
+    search_mode = 1;
     if (ask_user("Do you want to search in archives too? Search can result slower. y/n") == 1)
         search_mode++;
     ret = search_file(ps[active].my_cwd);
@@ -455,20 +454,22 @@ void search(void)
             print_info("Too many files found; try with a larger string.", INFO_LINE);
         else
             print_info("No files found.", INFO_LINE);
+        search_mode = 0;
         return;
     }
-    search_mode = 1;
-    wclear(ps[active].file_manager);
-    wattron(ps[active].file_manager, A_BOLD);
-    wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(ps[active].file_manager, 0, 0, "Found files searching: %.*s: ", width[active] - 1 - strlen("Found files searching: "), searched_string);
-    for (i = 0; (i < dim - 2) && (found_searched[i]); i++)
-        mvwprintw(ps[active].file_manager, INITIAL_POSITION + i, 4, "%.*s", width[active] - 5, found_searched[i]);
-    sprintf(str, "%d files found.", i);
-    print_info(str, INFO_LINE);
     while (found_searched[i])
         i++;
-    search_loop(i);
+    ps[active].number_of_files = i;
+    ps[active].delta = 0;
+    ps[active].curr_pos = 0;
+    wclear(ps[active].fm);
+    list_everything(active, 0, dim - 2, found_searched);
+    sprintf(str, "%d files found.", i);
+    print_info(str, INFO_LINE);
+    search_loop();
+    search_mode = 0;
+    ps[active].number_of_files = old_size;
+    change_dir(found_searched[ps[active].curr_pos]);
     free_found();
 }
 
@@ -481,58 +482,45 @@ static void free_found(void)
     }
 }
 
-static void search_loop(int size)
+static void search_loop(void)
 {
     char arch_str[PATH_MAX];
     const char *mesg = "Open file? y to open, n to switch to the folder";
     const char *arch_mesg = "This file is inside an archive; do you want to switch to its directory? y/n.";
-    int c, len, old_size = ps[active].number_of_files;
-    ps[active].delta = 0;
-    ps[active].current_position = 0;
-    ps[active].number_of_files = size;
-    mvwprintw(ps[active].file_manager, INITIAL_POSITION, 1, "->");
+    int c, len;
     do {
-        c = wgetch(ps[active].file_manager);
+        c = wgetch(ps[active].fm);
         switch (c) {
         case KEY_UP:
-            scroll_up(found_searched[ps[active].current_position]);
+            scroll_up(found_searched);
             break;
         case KEY_DOWN:
-            scroll_down(found_searched[ps[active].current_position]);
+            scroll_down(found_searched);
             break;
         case 10:
-            strcpy(arch_str, found_searched[ps[active].current_position]);
+            strcpy(arch_str, found_searched[ps[active].curr_pos]);
             while ((strlen(arch_str)) && (!is_extension(arch_str, archive_extensions)))
                 arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
-            len = strlen(strrchr(found_searched[ps[active].current_position], '/'));
+            len = strlen(strrchr(found_searched[ps[active].curr_pos], '/'));
             if ((!strlen(arch_str)) && (len != 1) && (ask_user(mesg) == 1)) {  // is a file and user wants to open it
-                manage_file(found_searched[ps[active].current_position]);
-            } else {    // is a dir or an archive
-                len = strlen(found_searched[ps[active].current_position]) - len;
+                manage_file(found_searched[ps[active].curr_pos]);
+            } else {    // is a dir or an archive or a file but user wanted to switch to its dir
+                len = strlen(found_searched[ps[active].curr_pos]) - len;
                 if (strlen(arch_str)) {
                     if (ask_user(arch_mesg) == 1) // is archive
                         len = strlen(arch_str) - strlen(strrchr(arch_str, '/'));
                     else
                         break;
                 }
-                found_searched[ps[active].current_position][len] = '\0';
+                found_searched[ps[active].curr_pos][len] = '\0';
                 c = 'q';
             }
             break;
         case 'q':
-            strcpy(found_searched[ps[active].current_position], ps[active].my_cwd);
+            strcpy(found_searched[ps[active].curr_pos], ps[active].my_cwd);
             break;
         }
-        // this is needed because i don't call list_everything function, that normally would border current win when delta > 0 (here)
-        if ((ps[active].delta >= 0) && ((c == KEY_UP) || (c == KEY_DOWN)))  {
-            wborder(ps[active].file_manager, '|', '|', '-', '-', '+', '+', '+', '+');
-            mvwprintw(ps[active].file_manager, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching "), searched_string);
-        }
     } while (c != 'q');
-    wattroff(ps[active].file_manager, A_BOLD);
-    search_mode = 0;
-    ps[active].number_of_files = old_size;  // restore previous size
-    change_dir(found_searched[ps[active].current_position]);
 }
 
 void print_support(char *str)
@@ -617,7 +605,7 @@ static void *archiver_func(void *archive_path)
         str[strlen(str) - strlen(strrchr(str, '/'))] = '\0';
         for (i = 0; i < cont; i++) {
             if (strcmp(str, ps[i].my_cwd) == 0)
-                list_everything(i, 0, dim - 2, 1, 1);
+                generate_list(i);
         }
         chdir(ps[active].my_cwd);
     }
@@ -698,7 +686,7 @@ static void *extractor_thread(void *a)
     if (search_mode == 0) {
         for (i = 0; i < cont; i++) {
             if (strcmp(ps[i].my_cwd, current_dir) == 0)
-                list_everything(i, 0, dim - 2, 1, 1);
+                generate_list(i);
         }
         chdir(ps[active].my_cwd);
     }

@@ -36,7 +36,7 @@ static void search_inside_archive(const char *path, int i);
 static int search_file(char *path);
 void search(void);
 static void free_found(void);
-static void search_loop(int size);
+static void search_loop(void);
 void print_support(char *str);
 static void *print_file(void *filename);
 void create_archive(void);
