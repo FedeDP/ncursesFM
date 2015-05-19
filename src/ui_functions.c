@@ -62,6 +62,7 @@ void generate_list(int win)
 {
     int i;
     struct dirent **files;
+    chdir(ps[win].my_cwd);
     for (i = 0; i < ps[win].number_of_files; i++)
         free(ps[win].nl[i]);
     free(ps[win].nl);
@@ -80,6 +81,7 @@ void generate_list(int win)
     ps[win].delta = 0;
     ps[win].curr_pos = 0;
     list_everything(win, 0, dim - 2, ps[win].nl);
+    chdir(ps[active].my_cwd);
 }
 
 void list_everything(int win, int old_dim, int end, char **files)
@@ -97,9 +99,9 @@ void list_everything(int win, int old_dim, int end, char **files)
     mvwprintw(ps[win].fm, 0, 0, str);
     wattron(ps[win].fm, A_BOLD);
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
-        colored_folders(i, win, files[i]);
+        colored_folders(win, files[i]);
         mvwprintw(ps[win].fm, INITIAL_POSITION + i - ps[win].delta, 4, "%.*s", max_length, files[i]);
-        wattroff(ps[win].fm, COLOR_PAIR(1));
+        wattroff(ps[win].fm, COLOR_PAIR);
     }
     wattroff(ps[win].fm, A_BOLD);
     mvwprintw(ps[win].fm, INITIAL_POSITION + ps[win].curr_pos - ps[win].delta, 1, "->");
@@ -237,10 +239,9 @@ void sync_changes(void)
     generate_list(active);
 }
 
-static void colored_folders(int i, int win, char *name)
+static void colored_folders(int win, char *name)
 {
     struct stat file_stat;
-
     if (lstat(name, &file_stat) == 0) {
         if (S_ISDIR(file_stat.st_mode))
             wattron(ps[win].fm, COLOR_PAIR(1));

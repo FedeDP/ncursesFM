@@ -314,7 +314,6 @@ static void check_pasted(void)
             }
             tmp = tmp->next;
         }
-        chdir(ps[active].my_cwd);
     }
     print_info("Every files has been copied/moved.", INFO_LINE);
     free_copied_list(selected_files);
@@ -607,7 +606,6 @@ static void *archiver_func(void *archive_path)
             if (strcmp(str, ps[i].my_cwd) == 0)
                 generate_list(i);
         }
-        chdir(ps[active].my_cwd);
     }
     print_info("The archive is ready.", INFO_LINE);
     free_copied_list(selected_files);
@@ -688,7 +686,6 @@ static void *extractor_thread(void *a)
             if (strcmp(ps[i].my_cwd, current_dir) == 0)
                 generate_list(i);
         }
-        chdir(ps[active].my_cwd);
     }
     print_info("Succesfully extracted.", INFO_LINE);
 }
