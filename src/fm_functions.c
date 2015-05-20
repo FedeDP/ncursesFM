@@ -420,7 +420,6 @@ static void search_inside_archive(const char *path, int i)
                 strcat(found_searched[i], archive_entry_pathname(entry));
                 i++;
             }
-            archive_read_data_skip(a);
         }
     }
     archive_read_free(a);
@@ -445,7 +444,7 @@ void search(void)
         return;
     }
     search_mode = 1;
-    if (ask_user("Do you want to search in archives too? Search can result slower. y/n") == 1)
+    if (ask_user("Do you want to search in archives too? Search can result slower and has higher memory usage. y/n") == 1)
         search_mode++;
     ret = search_file(ps[active].my_cwd);
     if (!found_searched[i]) {
