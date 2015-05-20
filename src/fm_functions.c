@@ -84,16 +84,16 @@ static void iso_mount_service(char *str, int dim)
 {
     pid_t pid;
     char mount_point[strlen(str) - dim + 1];
-    strncpy(mount_point, str, strlen(str) - dim);
-    mount_point[strlen(str) - dim] = '\0';
-    if (access(ps[active].my_cwd, W_OK) != 0) {
-        print_info("You do not have write permissions here.", ERR_LINE);
-        return;
-    }
     if (access("/usr/bin/fuseiso", F_OK) == -1) {
         print_info("You need fuseiso for iso mounting support.", ERR_LINE);
         return;
     }
+    if (access(ps[active].my_cwd, W_OK) != 0) {
+        print_info("You do not have write permissions here.", ERR_LINE);
+        return;
+    }
+    strncpy(mount_point, str, strlen(str) - dim);
+    mount_point[strlen(str) - dim] = '\0';
     pid = vfork();
     if (pid == 0) {
         if (mkdir(mount_point, ACCESSPERMS) == -1)
@@ -118,13 +118,13 @@ void new_file(void)
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, str);
-    f = fopen(str, "w");
-    if (!f) {
-        print_info(strerror(errno), ERR_LINE);
-    } else {
+    if (access(str, F_OK) == -1) {
+        f = fopen(str, "w");
         fclose(f);
         sync_changes();
         print_info("File created.", INFO_LINE);
+    } else {
+        print_info("A file with this name already exists in this folder.", ERR_LINE);
     }
     noecho();
 }
@@ -551,11 +551,11 @@ void create_archive(void)
 {
     const char *mesg = "Insert new file name:> ";
     char archive_path[PATH_MAX], str[PATH_MAX];
-    if (access("/usr/include/archive.h", F_OK) == -1) {
-        print_info("You must have libarchive installed.", ERR_LINE);
-        return;
-    }
-    if ((selected_files) && (ask_user("Do you really want to compress these files?") == 1)) {
+    if (ask_user("Do you really want to compress these files?") == 1) {
+        if (access("/usr/include/archive.h", F_OK) == -1) {
+            print_info("You must have libarchive installed.", ERR_LINE);
+            return;
+        }
         if (access(ps[active].my_cwd, W_OK) != 0) {
             print_info("No write perms here.", ERR_LINE);
             return;
@@ -635,12 +635,12 @@ static void try_extractor(char *path)
     struct archive *a;
     pthread_t extractor_th;
     if (ask_user("Do you really want to extract this archive?") == 1) {
-        if (access(ps[active].my_cwd, W_OK) != 0) {
-            print_info("No write perms here.", ERR_LINE);
-            return;
-        }
         if (access("/usr/include/archive.h", F_OK) == -1) {
             print_info("You must have libarchive installed.", ERR_LINE);
+            return;
+        }
+        if (access(ps[active].my_cwd, W_OK) != 0) {
+            print_info("No write perms here.", ERR_LINE);
             return;
         }
         a = archive_read_new();
