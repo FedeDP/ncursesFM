@@ -39,6 +39,7 @@ void screen_init(void)
     dim = LINES - INFO_HEIGHT;
     new_tab();
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
+    print_info(NULL, INFO_LINE);
 }
 
 void screen_end(void)
@@ -258,10 +259,16 @@ void print_info(const char *str, int i)
 {
     const char *search_mess = "q to leave search win";
     wclear(info_win);
+    mvwprintw(info_win, INFO_LINE, 1, "INFO: ");
+    mvwprintw(info_win, ERR_LINE, 1, "ERR: ");
     if ((strlen(info_message)) && (!search_mode))
         mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
-    if (str)
-        mvwprintw(info_win, i, 1, str);
+    if (str) {
+        if (i == INFO_LINE)
+            mvwprintw(info_win, i, strlen("INFO: ") + 1, str);
+        else
+            mvwprintw(info_win, i, strlen("ERR: ") + 1, str);
+    }
     if (search_mode)
         mvwprintw(info_win, INFO_LINE, COLS - strlen(search_mess), search_mess);
     wrefresh(info_win);
