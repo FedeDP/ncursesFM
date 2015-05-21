@@ -69,14 +69,14 @@ char *strrstr(const char* str1, const char* str2)
     char *strp;
     int len1, len2 = strlen(str2);
     if (len2 == 0)
-        return (char*)str1;
+        return (char *)str1;
     len1 = strlen(str1);
     if(len2 >= len1)
         return NULL;
-    strp = (char*)(str1 + len1 - len2);
-    while(strp != str1) {
-        if(*strp == *str2) {
-            if(strncmp(strp,str2,len2)==0)
+    strp = (char *)(str1 + len1 - len2);
+    while (strp != str1) {
+        if (*strp == *str2) {
+            if (strncmp(strp, str2, len2) == 0)
                 return strp;
         }
         strp--;

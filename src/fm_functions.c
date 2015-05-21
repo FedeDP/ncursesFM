@@ -375,7 +375,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     while (found_searched[i]) {
         i++;
     }
-    if (i == MAX_NUMBER_OF_FOUND) {
+    if (i >= MAX_NUMBER_OF_FOUND) {
         free_found();
         return 1;
     }
@@ -396,7 +396,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 
 static void search_inside_archive(const char *path, int i)
 {
-    char fixed_str[PATH_MAX], str[PATH_MAX], *str_ptr = NULL;
+    char str[PATH_MAX], *str_ptr = NULL;
     struct archive *a = archive_read_new();
     struct archive_entry *entry;
     archive_read_support_filter_all(a);
@@ -404,16 +404,14 @@ static void search_inside_archive(const char *path, int i)
     if (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK) {
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
             strcpy(str, archive_entry_pathname(entry));
-            str_ptr = strrchr(archive_entry_pathname(entry), '/');
-            if ((str_ptr) && (strlen(str_ptr) == 1))
+            str_ptr = strrchr(str, '/');
+            if ((str_ptr) && (strlen(str_ptr) == 1)) // check if we're on a dir
                 str[strlen(str) - 1] = '\0';
             if (strrchr(str, '/')) {
-                strcpy(fixed_str, strrchr(str, '/'));
-                memmove(fixed_str, fixed_str + 1, strlen(fixed_str));
-            } else {
-                strcpy(fixed_str, str);
+                strcpy(str, strrchr(str, '/'));
+                memmove(str, str + 1, strlen(str));
             }
-            if (strncmp(fixed_str, searched_string, strlen(searched_string)) == 0) {
+            if (strncmp(str, searched_string, strlen(searched_string)) == 0) {
                 found_searched[i] = malloc(sizeof(char) * PATH_MAX);
                 strcpy(found_searched[i], path);
                 strcat(found_searched[i], "/");
