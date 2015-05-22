@@ -257,20 +257,27 @@ static void colored_folders(int win, char *name)
 
 void print_info(const char *str, int i)
 {
-    const char *search_mess = "q to leave search win";
+    const char *search_mess = "q to leave search win", *extracting_mess = "Extracting...";
+    int extracting_mess_line = INFO_LINE;
     wclear(info_win);
     mvwprintw(info_win, INFO_LINE, 1, "INFO: ");
     mvwprintw(info_win, ERR_LINE, 1, "ERR: ");
-    if ((strlen(info_message)) && (!search_mode))
-        mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
+    if (!search_mode) {
+        if (strlen(info_message)) {
+            mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
+            extracting_mess_line = ERR_LINE;
+        }
+        if (extracting == 1)
+            mvwprintw(info_win, extracting_mess_line, COLS - strlen(extracting_mess), extracting_mess);
+    } else {
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(search_mess), search_mess);
+    }
     if (str) {
         if (i == INFO_LINE)
             mvwprintw(info_win, i, strlen("INFO: ") + 1, str);
         else
             mvwprintw(info_win, i, strlen("ERR: ") + 1, str);
     }
-    if (search_mode)
-        mvwprintw(info_win, INFO_LINE, COLS - strlen(search_mess), search_mess);
     wrefresh(info_win);
 }
 

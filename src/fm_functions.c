@@ -540,6 +540,7 @@ static void *print_file(void *filename)
     if (num_dests > 0) {
         default_dest = cupsGetDest(NULL, NULL, num_dests, dests);
         cupsPrintFile(default_dest->name, (char *)filename, "ncursesFM job", default_dest->num_options, default_dest->options);
+        print_info("Print job done.", INFO_LINE);
     } else {
         print_info("No printers available.", ERR_LINE);
     }
@@ -589,6 +590,8 @@ static void *archiver_func(void *archive_path)
     char str[PATH_MAX];
     int i;
     while (tmp) {
+        strcpy(info_message, "Archiving...");
+        print_info(NULL, INFO_LINE);
         strcpy(root_dir, strrchr(tmp->name, '/'));
         memmove(root_dir, root_dir + 1, strlen(root_dir));
         nftw(tmp->name, recursive_archive, 64, FTW_MOUNT | FTW_PHYS);
@@ -604,6 +607,7 @@ static void *archiver_func(void *archive_path)
                 generate_list(i);
         }
     }
+    memset(info_message, 0, strlen(info_message));
     print_info("The archive is ready.", INFO_LINE);
     free_copied_list(selected_files);
     selected_files = NULL;
@@ -631,7 +635,6 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 static void try_extractor(char *path)
 {
     struct archive *a;
-    pthread_t extractor_th;
     if (ask_user("Do you really want to extract this archive?") == 1) {
         if (access("/usr/include/archive.h", F_OK) == -1) {
             print_info("You must have libarchive installed.", ERR_LINE);
@@ -649,8 +652,9 @@ static void try_extractor(char *path)
             archive_read_free(a);
             return;
         }
+        extracting = 1;
+        print_info(NULL, INFO_LINE);
         pthread_create(&extractor_th, NULL, extractor_thread, a);
-        pthread_detach(extractor_th);
     }
 }
 
@@ -684,5 +688,6 @@ static void *extractor_thread(void *a)
                 generate_list(i);
         }
     }
+    extracting = 0;
     print_info("Succesfully extracted.", INFO_LINE);
 }

@@ -51,4 +51,6 @@ void quit_func(void)
     char *mesg = "A thread is still running. Do you want to wait for it?(You should!) y/n:> ";
     if ((th) && (pthread_kill(th, 0) != ESRCH) && (ask_user(mesg) == 1))
         pthread_join(th, NULL);
+    if ((extractor_th) && (pthread_kill(extractor_th, 0) != ESRCH) && (ask_user(mesg) == 1))
+        pthread_join(extractor_th, NULL);
 }
