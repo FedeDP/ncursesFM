@@ -88,16 +88,16 @@ void generate_list(int win)
 void list_everything(int win, int old_dim, int end, char **files)
 {
     int i, max_length;
-    char str[PATH_MAX];
-    if (search_mode == 0) {
-        sprintf(str, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
+    const char *search_mess = "q to leave search win";
+    wborder(ps[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
+    if (!search_mode) {
+        mvwprintw(ps[win].fm, 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
         max_length = MAX_FILENAME_LENGTH;
     } else {
-        sprintf(str, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : "), searched_string);
+        mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_mess), searched_string);
+        mvwprintw(ps[win].fm, 0, width[win] - strlen(search_mess), search_mess);
         max_length = width[win] - 5;
     }
-    wborder(ps[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(ps[win].fm, 0, 0, str);
     wattron(ps[win].fm, A_BOLD);
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
         colored_folders(win, files[i]);
@@ -106,7 +106,7 @@ void list_everything(int win, int old_dim, int end, char **files)
     }
     wattroff(ps[win].fm, A_BOLD);
     mvwprintw(ps[win].fm, INITIAL_POSITION + ps[win].curr_pos - ps[win].delta, 1, "->");
-    if ((search_mode == 0) && (ps[win].stat_active == 1))
+    if ((!search_mode) && (ps[win].stat_active == 1))
         show_stat(old_dim, end, win);
     wrefresh(ps[win].fm);
 }
@@ -257,21 +257,17 @@ static void colored_folders(int win, char *name)
 
 void print_info(const char *str, int i)
 {
-    const char *search_mess = "q to leave search win", *extracting_mess = "Extracting...";
+    const char *extracting_mess = "Extracting...";
     int extracting_mess_line = INFO_LINE;
     wclear(info_win);
     mvwprintw(info_win, INFO_LINE, 1, "INFO: ");
     mvwprintw(info_win, ERR_LINE, 1, "ERR: ");
-    if (!search_mode) {
-        if (strlen(info_message)) {
-            mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
-            extracting_mess_line = ERR_LINE;
-        }
-        if (extracting == 1)
-            mvwprintw(info_win, extracting_mess_line, COLS - strlen(extracting_mess), extracting_mess);
-    } else {
-        mvwprintw(info_win, INFO_LINE, COLS - strlen(search_mess), search_mess);
+    if (strlen(info_message)) {
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
+        extracting_mess_line = ERR_LINE;
     }
+    if (extracting == 1)
+        mvwprintw(info_win, extracting_mess_line, COLS - strlen(extracting_mess), extracting_mess);
     if (str) {
         if (i == INFO_LINE)
             mvwprintw(info_win, i, strlen("INFO: ") + 1, str);
