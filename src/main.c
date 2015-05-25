@@ -68,6 +68,7 @@ static void init_func(void)
     config_t cfg;
     cont = 0;
     search_mode = 0;
+    searching = 0;
     selected_files = NULL;
     config.editor = NULL;
     config.starting_dir = NULL;
@@ -148,7 +149,10 @@ static void main_loop(int *quit, int *old_number_files)
             break;
         case 's': // show stat about files (size and perms)
             ps[active].stat_active = 1 - ps[active].stat_active;
-            list_everything(active, ps[active].delta, dim - 2, ps[active].nl);
+            if (ps[active].stat_active == 1)
+                list_everything(active, ps[active].delta, dim - 2, ps[active].nl);
+            else
+                erase_stat();
             break;
         case 'o': // o to rename
             rename_file_folders();
@@ -157,7 +161,12 @@ static void main_loop(int *quit, int *old_number_files)
             create_dir();
             break;
         case 'f': // f to search
-            search();
+            if (searching == 0)
+                search();
+            else {
+                if (searching == 2)
+                    list_found();
+            }
             break;
         case 'p': // p to print
             if (S_ISREG(file_stat.st_mode))
@@ -168,7 +177,7 @@ static void main_loop(int *quit, int *old_number_files)
                 create_archive();
             break;
         case 'q': /* q to exit */
-            quit_func();
+            quit_thread_func();
             *quit = 1;
             break;
     }

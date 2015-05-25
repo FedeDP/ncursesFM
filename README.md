@@ -18,8 +18,8 @@ It has following features:
 * Extract (compressed) archive through libarchive.
 * Compress files/folders through libarchive -> to select files/folders, use c/x (same as copy/cut)
 
-* Pasting, compressing, extracting and printing are executed in another thread. You'll get a notification when the job is done.
-* If you try to quit while a thread is still running, you'll be asked if ncursesFM must wait for the thread to finish its work. (Except for printing thread because it is just a small and short thread)
+* Pasting, compressing, extracting, printing and searching are executed in other threads. You'll get a notification when the job is done.
+* If you try to quit while a {pasting, compressing, extracting} thread is still running, you'll be asked if ncursesFM must wait for the thread to finish its work. (Printing thread and search thread are safer, no data corruption is possible)
 
 It reads following variables from /etc/default/ncursesFM.conf (using libconfig)...remember to set them!
 * editor -> editor used to open files

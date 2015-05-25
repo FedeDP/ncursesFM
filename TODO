@@ -2,4 +2,5 @@
  * clean up code
  * fix stats max length
  * check max length in list_everything
+ * fix "searching..." , "extracting..." permanent print mess.
  */

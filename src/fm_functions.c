@@ -28,6 +28,7 @@ static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar", ".
 static char *found_searched[PATH_MAX];
 static char root_dir[PATH_MAX];
 static struct archive *archive = NULL;
+static int search_archive = 0;
 
 void change_dir(char *str)
 {
@@ -379,7 +380,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         free_found();
         return 1;
     }
-    if ((search_mode == 2) && (is_extension(path, archive_extensions))) {
+    if ((search_archive) && (is_extension(path, archive_extensions))) {
         search_inside_archive(path, i);
     } else {
         strcpy(fixed_str, strrchr(path, '/'));
@@ -430,9 +431,8 @@ static int search_file(char *path)
 
 void search(void)
 {
+    pthread_t search_th;
     const char *mesg = "Insert filename to be found, at least 5 chars:> ";
-    char str[20];
-    int i = 0, ret, old_size = ps[active].number_of_files;
     echo();
     print_info(mesg, INFO_LINE);
     wgetstr(info_win, searched_string);
@@ -441,20 +441,36 @@ void search(void)
         print_info("At least 5 chars...", INFO_LINE);
         return;
     }
-    search_mode = 1;
     if (ask_user("Do you want to search in archives too? Search can result slower and has higher memory usage. y/n") == 1)
-        search_mode++;
+        search_archive = 1;
+    searching = 1;
+    print_info(NULL, INFO_LINE);
+    pthread_create(&search_th, NULL, search_thread, NULL);
+    pthread_detach(search_th);
+}
+
+static void *search_thread(void *x)
+{
+    int ret;
     ret = search_file(ps[active].my_cwd);
-    if (!found_searched[i]) {
+    if (!found_searched[0]) {
         if (ret == 1)
             print_info("Too many files found; try with a larger string.", INFO_LINE);
         else
             print_info("No files found.", INFO_LINE);
-        search_mode = 0;
-        return;
+        return NULL;
     }
+    searching = 2;
+    print_info(NULL, INFO_LINE);
+}
+
+void list_found(void)
+{
+    int i = 0, old_size = ps[active].number_of_files;
+    char str[20];
     while (found_searched[i])
         i++;
+    search_mode = 1;
     ps[active].number_of_files = i;
     ps[active].delta = 0;
     ps[active].curr_pos = 0;
@@ -467,6 +483,7 @@ void search(void)
     ps[active].number_of_files = old_size;
     change_dir(found_searched[ps[active].curr_pos]);
     free_found();
+    searching = 0;
 }
 
 static void free_found(void)

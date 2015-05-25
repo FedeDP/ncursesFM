@@ -26,4 +26,5 @@ void print_info(const char *str, int i);
 void trigger_show_helper_message(void);
 static void helper_print(void);
 void show_stat(int init, int end, int win);
+void erase_stat(void);
 void set_nodelay(bool x);

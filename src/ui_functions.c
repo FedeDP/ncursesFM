@@ -258,16 +258,22 @@ static void colored_folders(int win, char *name)
 void print_info(const char *str, int i)
 {
     const char *extracting_mess = "Extracting...";
-    int extracting_mess_line = INFO_LINE;
+    const char *searching_mess = "Searching...";
+    const char *found_searched_mess = "Search finished. Press f anytime to view the result.";
+    int mess_line = INFO_LINE;
     wclear(info_win);
     mvwprintw(info_win, INFO_LINE, 1, "INFO: ");
     mvwprintw(info_win, ERR_LINE, 1, "ERR: ");
     if (strlen(info_message)) {
         mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
-        extracting_mess_line = ERR_LINE;
+        mess_line = ERR_LINE;
     }
     if (extracting == 1)
-        mvwprintw(info_win, extracting_mess_line, COLS - strlen(extracting_mess), extracting_mess);
+        mvwprintw(info_win, mess_line, COLS - strlen(extracting_mess), extracting_mess);
+    if (searching == 1)
+        mvwprintw(info_win, mess_line, COLS - strlen(searching_mess), searching_mess);
+    if ((searching == 2) && (!search_mode))
+        mvwprintw(info_win, mess_line, COLS - strlen(found_searched_mess), found_searched_mess);
     if (str) {
         if (i == INFO_LINE)
             mvwprintw(info_win, i, strlen("INFO: ") + 1, str);
@@ -354,6 +360,17 @@ void show_stat(int init, int end, int win)
         wprintw(ps[win].fm, (file_stat.st_mode & S_IWOTH) ? "w" : "-");
         wprintw(ps[win].fm, (file_stat.st_mode & S_IXOTH) ? "x" : "-");
     }
+}
+
+void erase_stat(void)
+{
+    int i;
+    for (i = 0; i < ps[active].number_of_files && i < dim - 2; i++) {
+        wmove(ps[active].fm, i + 1, STAT_COL);
+        wclrtoeol(ps[active].fm);
+    }
+    wborder(ps[active].fm, '|', '|', '-', '-', '+', '+', '+', '+');
+    mvwprintw(ps[active].fm, 0, 0, "Current:%.*s", width[active] - 1 - strlen("Current:"), ps[active].my_cwd);
 }
 
 void set_nodelay(bool x)
