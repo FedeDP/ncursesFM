@@ -262,21 +262,28 @@ void print_info(const char *str, int i)
     const char *extracting_mess = "Extracting...";
     const char *searching_mess = "Searching...";
     const char *found_searched_mess = "Search finished. Press f anytime to view the results.";
-    int mess_line = INFO_LINE, j;
+    int mess_line = INFO_LINE, j, search_mess_col = COLS - strlen(searching_mess);
     for (j = INFO_LINE; j < 2; j++) {
         wmove(info_win, j, strlen("INFO: ") + 1);
         wclrtoeol(info_win);
     }
     if (strlen(info_message)) {
-        mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
-        mess_line = ERR_LINE;
+        mvwprintw(info_win, mess_line, COLS - strlen(info_message), info_message);
+        mess_line++;
     }
-    if (extracting == 1)
+    if (extracting == 1) {
         mvwprintw(info_win, mess_line, COLS - strlen(extracting_mess), extracting_mess);
-    if (searching == 1)
-        mvwprintw(info_win, mess_line, COLS - strlen(searching_mess), searching_mess);
-    if ((searching == 2) && (!search_mode))
-        mvwprintw(info_win, mess_line, COLS - strlen(found_searched_mess), found_searched_mess);
+        if (mess_line == INFO_LINE)
+            mess_line++;
+        else
+            search_mess_col = search_mess_col - (strlen(extracting_mess) + 1);
+    }
+    if (searching == 1) {
+        mvwprintw(info_win, mess_line, search_mess_col, searching_mess);
+    } else {
+        if ((searching == 2) && (!search_mode))
+            mvwprintw(info_win, mess_line, COLS - strlen(found_searched_mess), found_searched_mess);
+    }
     if (str) {
         if (i == INFO_LINE)
             mvwprintw(info_win, i, strlen("INFO: ") + 1, str);
