@@ -52,7 +52,7 @@ void switch_hidden(void)
 void manage_file(char *str)
 {
     int dim;
-    if ((search_mode == 0) && (file_isCopied(str)))
+    if ((searching != 3) && (file_isCopied(str)))
         return;
     dim = is_extension(str, iso_extensions);
     if (dim) {
@@ -291,7 +291,7 @@ static void check_pasted(void)
     int i, printed[cont];
     file_list *tmp = selected_files;
     char copied_file_dir[PATH_MAX];
-    if (search_mode == 0) {
+    if (searching != 3) {
         for (i = 0; i < cont; i++) {
             if (strcmp(root_dir, ps[i].my_cwd) == 0) {
                 generate_list(i);
@@ -468,9 +468,9 @@ void list_found(void)
 {
     int i = 0, old_size = ps[active].number_of_files;
     char str[20];
+    searching = 3;
     while (found_searched[i])
         i++;
-    search_mode = 1;
     ps[active].number_of_files = i;
     ps[active].delta = 0;
     ps[active].curr_pos = 0;
@@ -479,7 +479,6 @@ void list_found(void)
     sprintf(str, "%d files found.", i);
     print_info(str, INFO_LINE);
     search_loop();
-    search_mode = 0;
     searching = 0;
     ps[active].number_of_files = old_size;
     change_dir(found_searched[ps[active].curr_pos]);
@@ -616,7 +615,7 @@ static void *archiver_func(void *archive_path)
     }
     archive_write_free(archive);
     archive = NULL;
-    if (search_mode == 0) {
+    if (searching != 3) {
         strcpy(str, archive_path);
         str[strlen(str) - strlen(strrchr(str, '/'))] = '\0';
         for (i = 0; i < cont; i++) {
@@ -699,7 +698,7 @@ static void *extractor_thread(void *a)
     }
     archive_read_free(a);
     archive_write_free(ext);
-    if (search_mode == 0) {
+    if (searching != 3) {
         for (i = 0; i < cont; i++) {
             if (strcmp(ps[i].my_cwd, current_dir) == 0)
                 generate_list(i);

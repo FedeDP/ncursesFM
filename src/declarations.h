@@ -36,5 +36,5 @@ pthread_t th, extractor_th;
 struct conf config;
 struct vars ps[MAX_TABS];
 WINDOW *info_win;
-int dim, active, cont, search_mode, searching, extracting, width[MAX_TABS];
+int dim, active, cont, searching, extracting, width[MAX_TABS];
 char info_message[30], searched_string[PATH_MAX];
