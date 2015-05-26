@@ -39,7 +39,9 @@ void screen_init(void)
     dim = LINES - INFO_HEIGHT;
     new_tab();
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
-    print_info(NULL, INFO_LINE);
+    mvwprintw(info_win, INFO_LINE, 1, "INFO: ");
+    mvwprintw(info_win, ERR_LINE, 1, "ERR: ");
+    wrefresh(info_win);
 }
 
 void screen_end(void)
@@ -259,11 +261,12 @@ void print_info(const char *str, int i)
 {
     const char *extracting_mess = "Extracting...";
     const char *searching_mess = "Searching...";
-    const char *found_searched_mess = "Search finished. Press f anytime to view the result.";
-    int mess_line = INFO_LINE;
-    wclear(info_win);
-    mvwprintw(info_win, INFO_LINE, 1, "INFO: ");
-    mvwprintw(info_win, ERR_LINE, 1, "ERR: ");
+    const char *found_searched_mess = "Search finished. Press f anytime to view the results.";
+    int mess_line = INFO_LINE, j;
+    for (j = INFO_LINE; j < 2; j++) {
+        wmove(info_win, j, strlen("INFO: ") + 1);
+        wclrtoeol(info_win);
+    }
     if (strlen(info_message)) {
         mvwprintw(info_win, INFO_LINE, COLS - strlen(info_message), info_message);
         mess_line = ERR_LINE;

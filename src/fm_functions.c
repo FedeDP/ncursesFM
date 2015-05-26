@@ -451,9 +451,9 @@ void search(void)
 
 static void *search_thread(void *x)
 {
-    int ret;
-    ret = search_file(ps[active].my_cwd);
+    int ret = search_file(ps[active].my_cwd);
     if (!found_searched[0]) {
+        searching = 0;
         if (ret == 1)
             print_info("Too many files found; try with a larger string.", INFO_LINE);
         else
@@ -480,10 +480,10 @@ void list_found(void)
     print_info(str, INFO_LINE);
     search_loop();
     search_mode = 0;
+    searching = 0;
     ps[active].number_of_files = old_size;
     change_dir(found_searched[ps[active].curr_pos]);
     free_found();
-    searching = 0;
 }
 
 static void free_found(void)
