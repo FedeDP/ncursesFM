@@ -352,15 +352,13 @@ void show_stat(int init, int end, int win)
             stat(ps[win].nl[i], &file_stat);
             total_size = total_size + file_stat.st_size;
         }
-        mvwprintw(ps[win].fm, INITIAL_POSITION, STAT_COL, "Total size: %lu KB", total_size / 1024);
+        mvwprintw(ps[win].fm, INITIAL_POSITION, STAT_COL, "Total size: %luKB", total_size / 1024);
         i = 1;
     }
     for (; ((i < init + end) && (i < ps[win].number_of_files)); i++) {
         stat(ps[win].nl[i], &file_stat);
-        mvwprintw(ps[win].fm, i + INITIAL_POSITION - ps[win].delta, STAT_COL, "Size: %d KB", file_stat.st_size / 1024);
-        wprintw(ps[win].fm, "\tPerm: ");
-        wprintw(ps[win].fm, (S_ISDIR(file_stat.st_mode)) ? "d" : "-");
-        wprintw(ps[win].fm, (file_stat.st_mode & S_IRUSR) ? "r" : "-");
+        mvwprintw(ps[win].fm, i + INITIAL_POSITION - ps[win].delta, STAT_COL, "%dKB", file_stat.st_size / 1024);
+        wprintw(ps[win].fm, (file_stat.st_mode & S_IRUSR) ? "\tr" : "\t-");
         wprintw(ps[win].fm, (file_stat.st_mode & S_IWUSR) ? "w" : "-");
         wprintw(ps[win].fm, (file_stat.st_mode & S_IXUSR) ? "x" : "-");
         wprintw(ps[win].fm, (file_stat.st_mode & S_IRGRP) ? "r" : "-");
