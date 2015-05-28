@@ -1,8 +1,4 @@
-#include <stdbool.h>
-#include "declarations.h"
-#include <sys/stat.h>
-#include <errno.h>
-#include <unistd.h>
+#include "quit_functions.h"
 
 #define INFO_HEIGHT 2
 #define HELPER_HEIGHT 15
@@ -22,9 +18,7 @@ void scroll_up(char **str);
 static void scroll_helper_func(int x, int direction);
 void sync_changes(void);
 static void colored_folders(int win, char *name);
-void print_info(const char *str, int i);
 void trigger_show_helper_message(void);
 static void helper_print(void);
 void show_stat(int init, int end, int win);
 void erase_stat(void);
-void set_nodelay(bool x);

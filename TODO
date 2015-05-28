@@ -2,5 +2,5 @@
  * clean up code
  * remove some global var
  * add passphrase support to libarchive
- * add check for every malloc
+ * git support (add, commit, push, pull) -> https://libgit2.github.com/docs/guides/101-samples/ libgit2
  */

@@ -1,9 +1,7 @@
 #define _GNU_SOURCE
 #include <ftw.h>
-#include "quit_functions.h"
+#include "ui_functions.h"
 #include <sys/wait.h>
-#include <errno.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <cups/cups.h>
 #include <archive.h>

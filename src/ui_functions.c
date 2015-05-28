@@ -71,9 +71,19 @@ void generate_list(int win)
     free(ps[win].nl);
     ps[win].nl = NULL;
     ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
-    ps[win].nl = malloc(sizeof(char *) * ps[win].number_of_files);
+    if (!(ps[win].nl = safe_malloc(sizeof(char *) * ps[win].number_of_files, "No more memory available. Program will exit."))) {
+        quit_thread_func();
+        free_everything();
+        screen_end();
+        exit(1);
+    }
     for (i = 0; i < ps[win].number_of_files; i++) {
-        ps[win].nl[i] = malloc(sizeof(char) * PATH_MAX);
+        if (!(ps[win].nl[i] = safe_malloc(sizeof(char) * PATH_MAX, "No more memory available. Program will exit."))) {
+            quit_thread_func();
+            free_everything();
+            screen_end();
+            exit(1);
+        }
         strcpy(ps[win].nl[i], files[i]->d_name);
     }
     my_sort(win);
@@ -257,42 +267,6 @@ static void colored_folders(int win, char *name)
     }
 }
 
-void print_info(const char *str, int i)
-{
-    const char *extracting_mess = "Extracting...";
-    const char *searching_mess = "Searching...";
-    const char *found_searched_mess = "Search finished. Press f anytime to view the results.";
-    int mess_line = INFO_LINE, j, search_mess_col = COLS - strlen(searching_mess);
-    for (j = INFO_LINE; j < 2; j++) {
-        wmove(info_win, j, strlen("INFO: ") + 1);
-        wclrtoeol(info_win);
-    }
-    if (strlen(info_message)) {
-        mvwprintw(info_win, mess_line, COLS - strlen(info_message), info_message);
-        mess_line++;
-    }
-    if (extracting == 1) {
-        mvwprintw(info_win, mess_line, COLS - strlen(extracting_mess), extracting_mess);
-        if (mess_line == INFO_LINE)
-            mess_line++;
-        else
-            search_mess_col = search_mess_col - (strlen(extracting_mess) + 1);
-    }
-    if (searching == 1) {
-        mvwprintw(info_win, mess_line, search_mess_col, searching_mess);
-    } else {
-        if (searching == 2)
-            mvwprintw(info_win, mess_line, COLS - strlen(found_searched_mess), found_searched_mess);
-    }
-    if (str) {
-        if (i == INFO_LINE)
-            mvwprintw(info_win, i, strlen("INFO: ") + 1, str);
-        else
-            mvwprintw(info_win, i, strlen("ERR: ") + 1, str);
-    }
-    wrefresh(info_win);
-}
-
 void trigger_show_helper_message(void)
 {
     int i;
@@ -379,11 +353,4 @@ void erase_stat(void)
     }
     wborder(ps[active].fm, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(ps[active].fm, 0, 0, "Current:%.*s", width[active] - 1 - strlen("Current:"), ps[active].my_cwd);
-}
-
-void set_nodelay(bool x)
-{
-    int i;
-    for (i = 0; i < cont; i++)
-        nodelay(ps[i].fm, x);
 }

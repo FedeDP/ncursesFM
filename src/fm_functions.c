@@ -193,7 +193,8 @@ static file_list *select_file(char c, file_list *h)
     if (h) {
         h->next = select_file(c, h->next);
     } else {
-        h = malloc(sizeof(struct list));
+        if (!(h = safe_malloc(sizeof(struct list), "Memory allocation failed.")))
+            return NULL;
         strcpy(h->name, ps[active].my_cwd);
         strcat(h->name, "/");
         strcat(h->name, ps[active].nl[ps[active].curr_pos]);
@@ -386,7 +387,8 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         strcpy(fixed_str, strrchr(path, '/'));
         memmove(fixed_str, fixed_str + 1, strlen(fixed_str));
         if (strncmp(fixed_str, searched_string, strlen(searched_string)) == 0) {
-            found_searched[i] = malloc(sizeof(char) * PATH_MAX);
+            if (!(found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, "Stopping search as no more memory can be allocated")))
+                return 1;
             strcpy(found_searched[i], path);
             if (typeflag == FTW_D)
                 strcat(found_searched[i], "/");
@@ -413,7 +415,8 @@ static void search_inside_archive(const char *path, int i)
                 memmove(str, str + 1, strlen(str));
             }
             if (strncmp(str, searched_string, strlen(searched_string)) == 0) {
-                found_searched[i] = malloc(sizeof(char) * PATH_MAX);
+                if (!(found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, "Memory allocation failed.")))
+                    return;
                 strcpy(found_searched[i], path);
                 strcat(found_searched[i], "/");
                 strcat(found_searched[i], archive_entry_pathname(entry));
@@ -737,39 +740,36 @@ void shasum_func(const char *str)
     fseek(fp, 0L, SEEK_END);
     size = ftell(fp);
     rewind(fp);
-    if(!(buffer = malloc(size))) {
-        fclose(fp);
-        print_info("Memory allocation failed.", ERR_LINE);
-        return;
-    }
-    if (fread(buffer, size, 1, fp) != 1) {
-        fclose(fp);
+    if (buffer = safe_malloc(size, "Memory allocation failed.")) {
+        if (fread(buffer, size, 1, fp) != 1) {
+            fclose(fp);
+            free(buffer);
+            print_info("File read failed.", ERR_LINE);
+            return;
+        }
+        switch(i) {
+        case 224:
+            SHA224(buffer, size, hash);
+            break;
+        case 256:
+            SHA256(buffer, size, hash);
+            break;
+        case 384:
+            SHA384(buffer, size, hash);
+            break;
+        case 512:
+            SHA512(buffer, size, hash);
+            break;
+        default:
+            SHA1(buffer, size, hash);
+            break;
+        }
+        for(i = 0; i < length; i++) {
+            sprintf(temp, "%02x", hash[i]);
+            strcat(s, temp);
+        }
+        print_info(s, INFO_LINE);
         free(buffer);
-        print_info("File read failed.", ERR_LINE);
-        return;
     }
     fclose(fp);
-    switch(i) {
-    case 224:
-        SHA224(buffer, size, hash);
-        break;
-    case 256:
-        SHA256(buffer, size, hash);
-        break;
-    case 384:
-        SHA384(buffer, size, hash);
-        break;
-    case 512:
-        SHA512(buffer, size, hash);
-        break;
-    default:
-        SHA1(buffer, size, hash);
-        break;
-    }
-    for(i = 0; i < length; i++) {
-        sprintf(temp, "%02x", hash[i]);
-        strcat(s, temp);
-    }
-    print_info(s, INFO_LINE);
-    free(buffer);
 }

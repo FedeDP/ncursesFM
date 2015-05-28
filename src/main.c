@@ -23,7 +23,6 @@
 
 #include "fm_functions.h"
 #include <libconfig.h>
-#include <unistd.h>
 
 static void helper_function(int argc, char *argv[]);
 static void init_func(void);
@@ -75,14 +74,14 @@ static void init_func(void)
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
         if (config_lookup_string(&cfg, "editor", &str_editor)) {
-            config.editor = malloc(strlen(str_editor) * sizeof(char) + 1);
-            strcpy(config.editor, str_editor);
+            if (config.editor = safe_malloc(strlen(str_editor) * sizeof(char) + 1, "Memory allocation failed."))
+                strcpy(config.editor, str_editor);
         }
         if (!(config_lookup_int(&cfg, "show_hidden", &config.show_hidden)))
             config.show_hidden = 0;
         if ((config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) && (access(str_starting_dir, F_OK) != -1)) {
-            config.starting_dir = malloc(strlen(str_starting_dir) * sizeof(char) + 1);
-            strcpy(config.starting_dir, str_starting_dir);
+            if (config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, "Memory allocation failed."))
+                strcpy(config.starting_dir, str_starting_dir);
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
     } else {
