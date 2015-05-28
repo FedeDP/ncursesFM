@@ -2,7 +2,7 @@
 
 pkgname=ncursesfm-git
 _gitname=ncursesFM
-pkgver=109
+pkgver=155
 pkgrel=1
 pkgdesc="A FileManager written in c and ncurses library."
 arch=('i686' 'x86_64')
@@ -13,7 +13,7 @@ optdepends=('libcups: for printing support'
             'fuseiso: for fuse archive/iso mounting support'
             'libarchive: for files/folders (de)compression support'
             'openssl: for shasum viewing support')
-makedepends=('git' 'libarchive' 'libcups', 'openssl')
+makedepends=('git' 'libarchive' 'libcups' 'openssl')
 source=("git://github.com/FedeDP/${_gitname}.git")
 backup=('etc/default/ncursesFM.conf')
 install=ncursesFM.install
