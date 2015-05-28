@@ -8,6 +8,8 @@
 #include <cups/cups.h>
 #include <archive.h>
 #include <archive_entry.h>
+#include <openssl/sha.h>
+
 #define MAX_NUMBER_OF_FOUND 100
 #define BUFF_SIZE 8192
 #define CANNOT_PASTE_SAME_DIR -2
@@ -46,3 +48,4 @@ static void *archiver_func(void *x);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void try_extractor(char *path);
 static void *extractor_thread(void *a);
+void shasum_func(const char *str);

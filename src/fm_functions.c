@@ -707,3 +707,69 @@ static void *extractor_thread(void *a)
     extracting = 0;
     print_info("Succesfully extracted.", INFO_LINE);
 }
+
+void shasum_func(const char *str)
+{
+    int i, length = SHA_DIGEST_LENGTH;
+    FILE *fp;
+    long size;
+    char *buffer, temp[2], input[4];
+    if (access("/usr/include/openssl/sha.h", F_OK ) == -1) {
+        print_info("You must have openssl installed.", ERR_LINE);
+        return;
+    }
+    const char *question = "Which shasum do you want? Choose between 1, 224, 256, 384, 512. Defaults to 1. > ";
+    echo();
+    print_info(question, INFO_LINE);
+    wgetstr(info_win, input);
+    noecho();
+    print_info(NULL, INFO_LINE);
+    i = atoi(input);
+    if ((i == 224) || (i == 256) || (i == 384) || (i == 512))
+        length = i / 8;
+    unsigned char hash[length];
+    char s[2 * length];
+    s[0] = '\0';
+    if(!(fp = fopen(str, "rb"))) {
+        print_info("Could not open this file.", ERR_LINE);
+        return;
+    }
+    fseek(fp, 0L, SEEK_END);
+    size = ftell(fp);
+    rewind(fp);
+    if(!(buffer = malloc(size))) {
+        fclose(fp);
+        print_info("Memory allocation failed.", ERR_LINE);
+        return;
+    }
+    if (fread(buffer, size, 1, fp) != 1) {
+        fclose(fp);
+        free(buffer);
+        print_info("File read failed.", ERR_LINE);
+        return;
+    }
+    fclose(fp);
+    switch(i) {
+    case 224:
+        SHA224(buffer, size, hash);
+        break;
+    case 256:
+        SHA256(buffer, size, hash);
+        break;
+    case 384:
+        SHA384(buffer, size, hash);
+        break;
+    case 512:
+        SHA512(buffer, size, hash);
+        break;
+    default:
+        SHA1(buffer, size, hash);
+        break;
+    }
+    for(i = 0; i < length; i++) {
+        sprintf(temp, "%02x", hash[i]);
+        strcat(s, temp);
+    }
+    print_info(s, INFO_LINE);
+    free(buffer);
+}

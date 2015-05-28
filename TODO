@@ -2,4 +2,5 @@
  * clean up code
  * remove some global var
  * add passphrase support to libarchive
+ * add check for every malloc
  */

@@ -11,8 +11,9 @@ license=('GPL')
 depends=('ncurses' 'libconfig')
 optdepends=('libcups: for printing support'
             'fuseiso: for fuse archive/iso mounting support'
-            'libarchive: for files/folders (de)compression support')
-makedepends=('git' 'libarchive' 'libcups')
+            'libarchive: for files/folders (de)compression support'
+            'openssl: for shasum viewing support')
+makedepends=('git' 'libarchive' 'libcups', 'openssl')
 source=("git://github.com/FedeDP/${_gitname}.git")
 backup=('etc/default/ncursesFM.conf')
 install=ncursesFM.install

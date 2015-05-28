@@ -175,6 +175,10 @@ static void main_loop(int *quit, int *old_number_files)
             if (selected_files)
                 create_archive();
             break;
+        case 'a': // a to view sha1sum
+            if (S_ISREG(file_stat.st_mode))
+                shasum_func(ps[active].nl[ps[active].curr_pos]);
+            break;
         case 'q': /* q to exit */
             quit_thread_func();
             *quit = 1;

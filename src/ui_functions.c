@@ -333,7 +333,7 @@ static void helper_print(void)
     wprintw(helper_win, " * You must have isomount installed. To unmount, simply press again enter on the same iso file.\n");
     wprintw(helper_win, " * Press h to trigger the showing of hide files. s to see stat about files in current folder.\n");
     wprintw(helper_win, " * c or x to select files. v to paste: files will be copied if selected with c, or cut if selected with x.\n");
-    wprintw(helper_win, " * p to print a file. b to compress selected files.\n");
+    wprintw(helper_win, " * p to print a file. b to compress selected files. a to view shasum of highlighted file.\n");
     wprintw(helper_win, " * You can copy as many files/dirs as you want. c again on a file/dir to remove it from file list.\n");
     wprintw(helper_win, " * o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.\n");
     wprintw(helper_win, " * t to create new tab (at most one more). w to close tab.\n");
