@@ -17,7 +17,6 @@ It has following features:
 * It can search your string inside archives too. Then, if found, you can go to the folder of the archive, to extract it.
 * Basic print support: you need "libcups" for this to work.
 * Extract (compressed) archive through libarchive.
-
 * Compress files/folders through libarchive -> to select files/folders, use c/x (same as copy/cut)
 * Pasting, compressing, extracting, printing and searching are executed in other threads. You'll get a notification when the job is done.
 * If you try to quit while a {pasting, compressing, extracting} thread is still running, you'll be asked if ncursesFM must wait for the thread to finish its work. (Printing thread and search thread are safer, no data corruption is possible)
