@@ -129,3 +129,12 @@ void *safe_malloc(ssize_t size, char *str)
     }
     return ptr;
 }
+
+void free_found(void)
+{
+    int i;
+    for (i = 0; found_searched[i]; i++) {
+        found_searched[i] = realloc(found_searched[i], 0);
+        free(found_searched[i]);
+    }
+}

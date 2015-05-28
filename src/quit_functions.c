@@ -44,6 +44,7 @@ void free_everything(void)
     free(config.starting_dir);
     if (selected_files)
         free_copied_list(selected_files);
+    free_found();
 }
 
 void quit_thread_func(void)

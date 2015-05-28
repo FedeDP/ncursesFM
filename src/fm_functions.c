@@ -25,7 +25,6 @@
 
 static const char *iso_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
 static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"}; // add other supported extensions
-static char *found_searched[PATH_MAX];
 static char root_dir[PATH_MAX];
 static struct archive *archive = NULL;
 static int search_archive = 0;
@@ -486,15 +485,6 @@ void list_found(void)
     ps[active].number_of_files = old_size;
     change_dir(found_searched[ps[active].curr_pos]);
     free_found();
-}
-
-static void free_found(void)
-{
-    int i;
-    for (i = 0; found_searched[i]; i++) {
-        found_searched[i] = realloc(found_searched[i], 0);
-        free(found_searched[i]);
-    }
 }
 
 static void search_loop(void)
