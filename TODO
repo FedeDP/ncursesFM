@@ -1,5 +1,5 @@
 /* TODO:
  * clean up code
- * fix stats max length
- * check max length in list_everything
+ * remove some global var
+ * add passphrase support to libarchive
  */
