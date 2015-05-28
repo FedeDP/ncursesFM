@@ -2,7 +2,7 @@
 
 pkgname=ncursesfm-git
 _gitname=ncursesFM
-pkgver=155
+pkgver=160
 pkgrel=1
 pkgdesc="A FileManager written in c and ncurses library."
 arch=('i686' 'x86_64')
@@ -20,8 +20,8 @@ install=ncursesFM.install
 sha256sums=("SKIP")
 
 pkgver() {
-  cd "$pkgname"
-  git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+  cd $_gitname
+  printf "0.r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 build()
