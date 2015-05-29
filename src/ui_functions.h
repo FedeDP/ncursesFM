@@ -10,7 +10,6 @@ void screen_end(void);
 void generate_list(int win);
 void list_everything(int win, int old_dim, int end, char **files);
 static int is_hidden(const struct dirent *current_file);
-static void my_sort(int win);
 void new_tab(void);
 void delete_tab(void);
 void scroll_down(char **str);

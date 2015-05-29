@@ -86,7 +86,6 @@ void generate_list(int win)
         }
         strcpy(ps[win].nl[i], files[i]->d_name);
     }
-    my_sort(win);
     for (i = ps[win].number_of_files - 1; i >= 0; i--)
         free(files[i]);
     free(files);
@@ -133,27 +132,6 @@ static int is_hidden(const struct dirent *current_file)
         return (TRUE);
     }
     return (TRUE);
-}
-
-static void my_sort(int win)
-{
-    char temp[PATH_MAX];
-    struct stat file_stat[2];
-    int i, j;
-    for (i = 0; i < ps[win].number_of_files - 1; i++) {
-        lstat(ps[win].nl[i], &file_stat[0]);
-        if (!S_ISDIR(file_stat[0].st_mode)) {
-            for (j = i + 1; j < ps[win].number_of_files; j++) {
-                lstat(ps[win].nl[j], &file_stat[1]);
-                if (S_ISDIR(file_stat[1].st_mode)) {
-                    strcpy(temp, ps[win].nl[j]);
-                    strcpy(ps[win].nl[j], ps[win].nl[i]);
-                    strcpy(ps[win].nl[i], temp);
-                    break;
-                }
-            }
-        }
-    }
 }
 
 void new_tab(void)
