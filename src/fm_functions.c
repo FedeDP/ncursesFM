@@ -50,12 +50,12 @@ void switch_hidden(void)
 
 void manage_file(char *str)
 {
-    int dim;
+    int length;
     if ((searching != 3) && (file_isCopied(str)))
         return;
-    dim = is_extension(str, iso_extensions);
-    if (dim) {
-        iso_mount_service(str, dim);
+    length = is_extension(str, iso_extensions);
+    if (length) {
+        iso_mount_service(str, length);
     } else {
         if (is_extension(str, archive_extensions)) {
             try_extractor(str);
@@ -80,10 +80,10 @@ static void open_file(char *str)
     refresh();
 }
 
-static void iso_mount_service(char *str, int dim)
+static void iso_mount_service(char *str, int length)
 {
     pid_t pid;
-    char mount_point[strlen(str) - dim + 1];
+    char mount_point[strlen(str) - length + 1];
     if (access("/usr/bin/fuseiso", F_OK) == -1) {
         print_info("You need fuseiso for iso mounting support.", ERR_LINE);
         return;
@@ -92,8 +92,8 @@ static void iso_mount_service(char *str, int dim)
         print_info("You do not have write permissions here.", ERR_LINE);
         return;
     }
-    strncpy(mount_point, str, strlen(str) - dim);
-    mount_point[strlen(str) - dim] = '\0';
+    strncpy(mount_point, str, strlen(str) - length);
+    mount_point[strlen(str) - length] = '\0';
     pid = vfork();
     if (pid == 0) {
         if (mkdir(mount_point, ACCESSPERMS) == -1)
@@ -209,7 +209,7 @@ static file_list *select_file(char c, file_list *h)
 void paste_file(void)
 {
     char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX];
-    int cont = 0;
+    int i = 0;
     struct stat file_stat_copied, file_stat_pasted;
     file_list *tmp = NULL, *temp = NULL;
     strcpy(root_dir, ps[active].my_cwd);
@@ -233,12 +233,12 @@ void paste_file(void)
                 if (rename(tmp->name, pasted_file) == - 1)
                     print_info(strerror(errno), ERR_LINE);
             } else {
-                cont++;
+                i++;
             }
         }
     }
-    if (cont > 0)
-        pthread_create(&th, NULL, cpr, &cont);
+    if (i > 0)
+        pthread_create(&th, NULL, cpr, &i);
     else
         check_pasted();
 }
@@ -477,7 +477,7 @@ void list_found(void)
     ps[active].delta = 0;
     ps[active].curr_pos = 0;
     wclear(ps[active].fm);
-    list_everything(active, 0, dim - 2, found_searched);
+    list_everything(active, 0, 0, found_searched);
     sprintf(str, "%d files found.", i);
     print_info(str, INFO_LINE);
     search_loop();

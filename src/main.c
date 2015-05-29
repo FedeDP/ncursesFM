@@ -148,7 +148,7 @@ static void main_loop(int *quit, int *old_number_files)
         case 's': // show stat about files (size and perms)
             ps[active].stat_active = 1 - ps[active].stat_active;
             if (ps[active].stat_active == 1)
-                list_everything(active, ps[active].delta, dim - 2, ps[active].nl);
+                list_everything(active, ps[active].delta, 0, ps[active].nl);
             else
                 erase_stat();
             break;

@@ -24,6 +24,7 @@
 #include "ui_functions.h"
 
 WINDOW *helper_win = NULL;
+static int dim, width[MAX_TABS];
 
 void screen_init(void)
 {
@@ -109,6 +110,8 @@ void list_everything(int win, int old_dim, int end, char **files)
         mvwprintw(ps[win].fm, 0, width[win] - strlen(search_mess), search_mess);
         max_length = width[win] - 5;
     }
+    if (end == 0)
+        end = dim - 2;
     wattron(ps[win].fm, A_BOLD);
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
         colored_folders(win, files[i]);
@@ -184,11 +187,10 @@ void delete_tab(void)
 
 void scroll_down(char **str)
 {
-    int real_height = dim - 2;
     if (ps[active].curr_pos < ps[active].number_of_files - 1) {
         ps[active].curr_pos++;
-        if (ps[active].curr_pos - real_height == ps[active].delta) {
-            scroll_helper_func(real_height, 1);
+        if (ps[active].curr_pos >= dim - 2) {
+            scroll_helper_func(dim - 2, 1);
             ps[active].delta++;
             list_everything(active, ps[active].curr_pos, 1, str);
         } else {
@@ -325,7 +327,7 @@ void show_stat(int init, int end, int win)
 void erase_stat(void)
 {
     int i;
-    for (i = 0; i < ps[active].number_of_files && i < dim - 2; i++) {
+    for (i = 0; (i < ps[active].number_of_files) && (i < dim - 2); i++) {
         wmove(ps[active].fm, i + 1, STAT_COL);
         wclrtoeol(ps[active].fm);
     }

@@ -17,7 +17,7 @@ void change_dir(char *str);
 void switch_hidden(void);
 void manage_file(char *str);
 static void open_file(char *str);
-static void iso_mount_service(char *str, int dim);
+static void iso_mount_service(char *str, int length);
 void new_file(void);
 void remove_file(void);
 void manage_c_press(char c);
