@@ -298,30 +298,40 @@ static void helper_print(void)
 
 void show_stat(int init, int end, int win)
 {
-    int i = init;
-    unsigned long total_size = 0;
+    int i = init, j;
+    int perm_bit[9] = {S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, S_IROTH, S_IWOTH, S_IXOTH};
+    char perm_sign[3] = {'r', 'w', 'x'}, str[20];
+    float total_size = 0;
     struct stat file_stat;
     if (init == 0) {
         for (i = 1; i < ps[win].number_of_files; i++) {
             stat(ps[win].nl[i], &file_stat);
-            total_size = total_size + file_stat.st_size;
+            total_size += file_stat.st_size;
         }
-        mvwprintw(ps[win].fm, INITIAL_POSITION, STAT_COL, "Total size: %luKB", total_size / 1024);
+        change_unit(total_size, str);
+        mvwprintw(ps[win].fm, INITIAL_POSITION, STAT_COL, "Total size: %s", str);
         i = 1;
     }
     for (; ((i < init + end) && (i < ps[win].number_of_files)); i++) {
         stat(ps[win].nl[i], &file_stat);
-        mvwprintw(ps[win].fm, i + INITIAL_POSITION - ps[win].delta, STAT_COL, "%dKB", file_stat.st_size / 1024);
-        wprintw(ps[win].fm, (file_stat.st_mode & S_IRUSR) ? "\tr" : "\t-");
-        wprintw(ps[win].fm, (file_stat.st_mode & S_IWUSR) ? "w" : "-");
-        wprintw(ps[win].fm, (file_stat.st_mode & S_IXUSR) ? "x" : "-");
-        wprintw(ps[win].fm, (file_stat.st_mode & S_IRGRP) ? "r" : "-");
-        wprintw(ps[win].fm, (file_stat.st_mode & S_IWGRP) ? "w" : "-");
-        wprintw(ps[win].fm, (file_stat.st_mode & S_IXGRP) ? "x" : "-");
-        wprintw(ps[win].fm, (file_stat.st_mode & S_IROTH) ? "r" : "-");
-        wprintw(ps[win].fm, (file_stat.st_mode & S_IWOTH) ? "w" : "-");
-        wprintw(ps[win].fm, (file_stat.st_mode & S_IXOTH) ? "x" : "-");
+        change_unit(file_stat.st_size, str);
+        mvwprintw(ps[win].fm, i + INITIAL_POSITION - ps[win].delta, STAT_COL, "%s", str);
+        wprintw(ps[win].fm, "\t");
+        for (j = 0; j < 9; j++)
+            wprintw(ps[win].fm, (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
     }
+}
+
+static void change_unit(float size, char *str)
+{
+    char *unit[3] = {"KB", "MB", "GB"};
+    int i = 0;
+    size /= 1024;
+    while ((size > 1024) && (i < 3)) {
+        size /= 1024;
+        i++;
+    }
+    sprintf(str, "%.2f%s", size, unit[i]);
 }
 
 void erase_stat(void)

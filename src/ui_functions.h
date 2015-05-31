@@ -20,4 +20,5 @@ static void colored_folders(int win, char *name);
 void trigger_show_helper_message(void);
 static void helper_print(void);
 void show_stat(int init, int end, int win);
+static void change_unit(float size, char *str);
 void erase_stat(void);
