@@ -115,10 +115,7 @@ void new_file(void)
     FILE *f;
     const char *mesg = "Insert new file name:> ";
     char str[PATH_MAX];
-    echo();
-    print_info(mesg, INFO_LINE);
-    wgetstr(info_win, str);
-    if (access(str, F_OK) == -1) {
+    if (access(ask_user(mesg, str), F_OK) == -1) {
         f = fopen(str, "w");
         fclose(f);
         sync_changes();
@@ -126,15 +123,15 @@ void new_file(void)
     } else {
         print_info("A file with this name already exists in this folder.", ERR_LINE);
     }
-    noecho();
 }
 
 void remove_file(void)
 {
     const char *mesg = "Are you serious? y/n:> ";
+    char c;
     if (file_isCopied(ps[active].nl[ps[active].curr_pos]))
         return;
-    if (ask_user(mesg) == 1) {
+    if (*(ask_user(mesg, &c)) == 'y') {
         if (rmrf(ps[active].nl[ps[active].curr_pos]) == -1)
             print_info("Could not remove. Check user permissions.", ERR_LINE);
         else {
@@ -327,11 +324,7 @@ void rename_file_folders(void)
     char str[PATH_MAX];
     if (file_isCopied(ps[active].nl[ps[active].curr_pos]))
         return;
-    echo();
-    print_info(mesg, INFO_LINE);
-    wgetstr(info_win, str);
-    noecho();
-    if (rename(ps[active].nl[ps[active].curr_pos], str) == - 1) {
+    if (rename(ps[active].nl[ps[active].curr_pos], ask_user(mesg, str)) == - 1) {
         print_info(strerror(errno), ERR_LINE);
     } else {
         sync_changes();
@@ -343,11 +336,7 @@ void create_dir(void)
 {
     const char *mesg = "Insert new folder name:> ";
     char str[PATH_MAX];
-    echo();
-    print_info(mesg, INFO_LINE);
-    wgetstr(info_win, str);
-    noecho();
-    if (mkdir(str, 0700) == - 1) {
+    if (mkdir(ask_user(mesg, str), 0700) == - 1) {
         print_info(strerror(errno), ERR_LINE);
     } else {
         sync_changes();
@@ -435,15 +424,13 @@ void search(void)
 {
     pthread_t search_th;
     const char *mesg = "Insert filename to be found, at least 5 chars:> ";
-    echo();
-    print_info(mesg, INFO_LINE);
-    wgetstr(info_win, searched_string);
-    noecho();
-    if (strlen(searched_string) < 5) {
+    const char *s = "Do you want to search in archives too? Search can result slower and has higher memory usage. y/n:> ";
+    char c;
+    if (strlen(ask_user(mesg, searched_string)) < 5) {
         print_info("At least 5 chars...", INFO_LINE);
         return;
     }
-    if (ask_user("Do you want to search in archives too? Search can result slower and has higher memory usage. y/n") == 1)
+    if (*(ask_user(s, &c)) == 'y')
         search_archive = 1;
     searching = 1;
     print_info(NULL, INFO_LINE);
@@ -460,10 +447,10 @@ static void *search_thread(void *x)
             print_info("Too many files found; try with a larger string.", INFO_LINE);
         else
             print_info("No files found.", INFO_LINE);
-        return NULL;
+    } else {
+        searching = 2;
+        print_info(NULL, INFO_LINE);
     }
-    searching = 2;
-    print_info(NULL, INFO_LINE);
 }
 
 void list_found(void)
@@ -482,6 +469,7 @@ void list_found(void)
     print_info(str, INFO_LINE);
     search_loop();
     searching = 0;
+    search_archive = 0;
     ps[active].number_of_files = old_size;
     change_dir(found_searched[ps[active].curr_pos]);
     free_found();
@@ -489,9 +477,10 @@ void list_found(void)
 
 static void search_loop(void)
 {
-    char arch_str[PATH_MAX];
-    const char *mesg = "Open file? y to open, n to switch to the folder";
-    const char *arch_mesg = "This file is inside an archive; do you want to switch to its directory? y/n.";
+    static char arch_str[PATH_MAX];
+    char input;
+    const char *mesg = "Open file? y to open, n to switch to the folder:> ";
+    const char *arch_mesg = "This file is inside an archive; do you want to switch to its directory? y/n:> ";
     int c, len;
     do {
         c = wgetch(ps[active].fm);
@@ -503,16 +492,18 @@ static void search_loop(void)
             scroll_down(found_searched);
             break;
         case 10:
-            strcpy(arch_str, found_searched[ps[active].curr_pos]);
-            while ((strlen(arch_str)) && (!is_extension(arch_str, archive_extensions)))
-                arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
+            if (search_archive) {
+                strcpy(arch_str, found_searched[ps[active].curr_pos]);
+                while ((strlen(arch_str)) && (!is_extension(arch_str, archive_extensions)))
+                    arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
+            }
             len = strlen(strrchr(found_searched[ps[active].curr_pos], '/'));
-            if ((!strlen(arch_str)) && (len != 1) && (ask_user(mesg) == 1)) {  // is a file and user wants to open it
+            if ((!strlen(arch_str)) && (len != 1) && (*(ask_user(mesg, &input)) == 'y')) { // is a file and user wants to open it
                 manage_file(found_searched[ps[active].curr_pos]);
-            } else {    // is a dir or an archive or a file but user wanted to switch to its dir
+            } else {    // is a dir or an archive or a file but user wants to switch to its dir
                 len = strlen(found_searched[ps[active].curr_pos]) - len;
-                if (strlen(arch_str)) {
-                    if (ask_user(arch_mesg) == 1) // is archive
+                if (strlen(arch_str)) { // is an archive
+                    if (*(ask_user(arch_mesg, &input)) == 'y')
                         len = strlen(arch_str) - strlen(strrchr(arch_str, '/'));
                     else
                         break;
@@ -532,11 +523,12 @@ void print_support(char *str)
 {
     pthread_t print_thread;
     const char *mesg = "Do you really want to print this file? y/n:> ";
+    char c;
     if (access("/usr/include/cups/cups.h", F_OK ) == -1) {
         print_info("You must have libcups installed.", ERR_LINE);
         return;
     }
-    if (ask_user(mesg) == 1) {
+    if (*(ask_user(mesg, &c)) == 'y') {
         pthread_create(&print_thread, NULL, print_file, str);
         pthread_detach(print_thread);
     }
@@ -558,8 +550,9 @@ static void *print_file(void *filename)
 void create_archive(void)
 {
     const char *mesg = "Insert new file name:> ";
-    char archive_path[PATH_MAX], str[PATH_MAX];
-    if (ask_user("Do you really want to compress these files?") == 1) {
+    const char *question = "Do you really want to compress these files? y/n:> ";
+    char archive_path[PATH_MAX], str[PATH_MAX], c;
+    if (*(ask_user(question, &c)) == 'y') {
         if (access("/usr/include/archive.h", F_OK) == -1) {
             print_info("You must have libarchive installed.", ERR_LINE);
             return;
@@ -575,14 +568,10 @@ void create_archive(void)
             archive = NULL;
             return;
         }
-        echo();
-        print_info(mesg, INFO_LINE);
-        wgetstr(info_win, str);
         strcpy(archive_path, ps[active].my_cwd);
         strcat(archive_path, "/");
-        strcat(archive_path, str);
+        strcat(archive_path, ask_user(mesg, str));
         strcat(archive_path, ".tgz");
-        noecho();
         if (archive_write_open_filename(archive, archive_path) == ARCHIVE_FATAL) {
             print_info(strerror(archive_errno(archive)), ERR_LINE);
             archive_write_free(archive);
@@ -644,7 +633,9 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 static void try_extractor(char *path)
 {
     struct archive *a;
-    if (ask_user("Do you really want to extract this archive?") == 1) {
+    const char *question = "Do you really want to extract this archive? y/n:> ";
+    char c;
+    if (*(ask_user(question, &c)) == 'y') {
         if (access("/usr/include/archive.h", F_OK) == -1) {
             print_info("You must have libarchive installed.", ERR_LINE);
             return;
@@ -711,13 +702,8 @@ void shasum_func(const char *str)
         print_info("You must have openssl installed.", ERR_LINE);
         return;
     }
-    const char *question = "Which shasum do you want? Choose between 1, 224, 256, 384, 512. Defaults to 1. > ";
-    echo();
-    print_info(question, INFO_LINE);
-    wgetstr(info_win, input);
-    noecho();
-    print_info(NULL, INFO_LINE);
-    i = atoi(input);
+    const char *question = "Which shasum do you want? Choose between 1, 224, 256, 384, 512. Defaults to 1.> ";
+    i = atoi(ask_user(question, input));
     if ((i == 224) || (i == 256) || (i == 384) || (i == 512))
         length = i / 8;
     unsigned char hash[length];

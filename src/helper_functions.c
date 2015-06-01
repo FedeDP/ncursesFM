@@ -51,17 +51,18 @@ int file_isCopied(char *str)
     return 0;
 }
 
-int ask_user(const char *str)
+char *ask_user(const char *str, char *input)
 {
     char c;
     echo();
     print_info(str, INFO_LINE);
-    c = wgetch(info_win);
+    if (sizeof(input) == sizeof(char))
+        *input = wgetch(info_win);
+    else
+        wgetstr(info_win, input);
     noecho();
     print_info(NULL, INFO_LINE);
-    if (c == 'y')
-        return 1;
-    return 0;
+    return input;
 }
 
 char *strrstr(const char* str1, const char* str2)
@@ -91,7 +92,7 @@ void print_info(const char *str, int i)
     const char *found_searched_mess = "Search finished. Press f anytime to view the results.";
     int mess_line = INFO_LINE, j, search_mess_col = COLS - strlen(searching_mess);
     for (j = INFO_LINE; j < 2; j++) {
-        wmove(info_win, j, strlen("INFO: ") + 1);
+        wmove(info_win, j, strlen("INFO:") + 1);
         wclrtoeol(info_win);
     }
     if (strlen(info_message)) {
