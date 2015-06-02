@@ -36,7 +36,7 @@ int is_extension(const char *filename, const char **extensions)
     return 0;
 }
 
-int file_isCopied(char *str)
+int file_isCopied(const char *str)
 {
     char *name;
     file_list *tmp = selected_files;
@@ -87,8 +87,7 @@ char *strrstr(const char* str1, const char* str2)
 
 void print_info(const char *str, int i)
 {
-    const char *extracting_mess = "Extracting...";
-    const char *searching_mess = "Searching...";
+    const char *extracting_mess = "Extracting...", *searching_mess = "Searching...";
     const char *found_searched_mess = "Search finished. Press f anytime to view the results.";
     int mess_line = INFO_LINE, j, search_mess_col = COLS - strlen(searching_mess);
     for (j = INFO_LINE; j < 2; j++) {
@@ -121,7 +120,7 @@ void print_info(const char *str, int i)
     wrefresh(info_win);
 }
 
-void *safe_malloc(ssize_t size, char *str)
+void *safe_malloc(ssize_t size, const char *str)
 {
     void *ptr = NULL;
     if (!(ptr = malloc(size))) {

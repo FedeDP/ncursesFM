@@ -24,27 +24,27 @@
 #include "fm_functions.h"
 #include <libconfig.h>
 
-static void helper_function(int argc, char *argv[]);
+static void helper_function(int argc, const char *argv[]);
 static void init_func(void);
-static void main_loop(int *quit, int *old_number_files);
+static void main_loop(int *quit);
 
 static const char *config_file_name = "/etc/default/ncursesFM.conf";
 //static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
-int main(int argc, char *argv[])
+int main(int argc, const char *argv[])
 {
-    int quit = 0, old_number_files;
+    int quit = 0;
     helper_function(argc, argv);
     init_func();
     screen_init();
     while (!quit)
-        main_loop(&quit, &old_number_files);
+        main_loop(&quit);
     free_everything();
     screen_end();
     return 0;
 }
 
-static void helper_function(int argc, char *argv[])
+static void helper_function(int argc, const char *argv[])
 {
     if (argc != 1) {
         if (strcmp(argv[1], "-h") != 0)
@@ -54,6 +54,7 @@ static void helper_function(int argc, char *argv[])
             printf("\tThis program comes with ABSOLUTELY NO WARRANTY;\n");
             printf("\tThis is free software, and you are welcome to redistribute it under certain conditions;\n");
             printf("\tIt is GPL licensed. Have a look at COPYING file.\n");
+            printf("\t\t* Have a look at the config file /etc/default/ncursesFM.conf.\n");
             printf("\t\t* Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
             printf("\t\t* Press 'l' while in program to view a more detailed helper message.\n");
         }
@@ -85,15 +86,15 @@ static void init_func(void)
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
     } else {
-        printf("Config file not found. Check /etc/default/ncursesFM.conf. Using default values.\n");
+        printf("Config file (/etc/default/ncursesFM.conf) not found. Using default values.\n");
         sleep(1);
     }
     config_destroy(&cfg);
 }
 
-static void main_loop(int *quit, int *old_number_files)
+static void main_loop(int *quit)
 {
-    int c;
+    int c, search_active_win;
     struct stat file_stat;
     stat(ps[active].nl[ps[active].curr_pos], &file_stat);
     c = wgetch(ps[active].fm);
@@ -159,11 +160,14 @@ static void main_loop(int *quit, int *old_number_files)
             create_dir();
             break;
         case 'f': // f to search
-            if (searching == 0)
+            if (searching == 0) {
+                search_active_win = active;
                 search();
-            else {
-                if (searching == 2)
-                    list_found();
+            } else if (searching == 1) {
+                print_info("There's already a search in progress. Wait for it.", INFO_LINE);
+            } else if (searching == 2) {
+                active = search_active_win;
+                list_found();
             }
             break;
         case 'p': // p to print
@@ -176,7 +180,7 @@ static void main_loop(int *quit, int *old_number_files)
             break;
         case 'a': // a to view sha1sum
             if (S_ISREG(file_stat.st_mode))
-                shasum_func(ps[active].nl[ps[active].curr_pos]);
+                integrity_check(ps[active].nl[ps[active].curr_pos]);
             break;
         case 'q': /* q to exit */
             quit_thread_func();

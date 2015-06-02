@@ -16,7 +16,7 @@ void scroll_down(char **str);
 void scroll_up(char **str);
 static void scroll_helper_func(int x, int direction);
 void sync_changes(void);
-static void colored_folders(int win, char *name);
+static void colored_folders(int win, const char *name);
 void trigger_show_helper_message(void);
 static void helper_print(void);
 void show_stat(int init, int end, int win);

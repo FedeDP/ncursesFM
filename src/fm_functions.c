@@ -29,12 +29,15 @@ static char root_dir[PATH_MAX];
 static struct archive *archive = NULL;
 static int search_archive = 0;
 
-void change_dir(char *str)
+void change_dir(const char *str)
 {
-    chdir(str);
-    getcwd(ps[active].my_cwd, PATH_MAX);
-    generate_list(active);
-    print_info(NULL, INFO_LINE);
+    if (chdir(str) != -1) {
+        getcwd(ps[active].my_cwd, PATH_MAX);
+        generate_list(active);
+        print_info(NULL, INFO_LINE);
+    } else {
+        print_info(strerror(errno), ERR_LINE);
+    }
 }
 
 void switch_hidden(void)
@@ -48,7 +51,7 @@ void switch_hidden(void)
         generate_list(i);
 }
 
-void manage_file(char *str)
+void manage_file(const char *str)
 {
     int length;
     if ((searching != 3) && (file_isCopied(str)))
@@ -68,7 +71,7 @@ void manage_file(char *str)
     }
 }
 
-static void open_file(char *str)
+static void open_file(const char *str)
 {
     pid_t pid;
     endwin();
@@ -80,7 +83,7 @@ static void open_file(char *str)
     refresh();
 }
 
-static void iso_mount_service(char *str, int length)
+static void iso_mount_service(const char *str, int length)
 {
     pid_t pid;
     char mount_point[strlen(str) - length + 1];
@@ -164,7 +167,7 @@ void manage_c_press(char c)
     }
 }
 
-static int remove_from_list(char *name)
+static int remove_from_list(const char *name)
 {
     file_list *tmp = selected_files, *temp = NULL;
     if (strcmp(name, tmp->name) == 0) {
@@ -349,7 +352,7 @@ static int recursive_remove(const char *path, const struct stat *sb, int typefla
     return remove(path);
 }
 
-static int rmrf(char *path)
+static int rmrf(const char *path)
 {
     if (access(path, W_OK) == 0)
         return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS | FTW_MOUNT);
@@ -415,7 +418,7 @@ static void search_inside_archive(const char *path, int i)
     archive_read_free(a);
 }
 
-static int search_file(char *path)
+static int search_file(const char *path)
 {
     return nftw(path, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
 }
@@ -443,6 +446,7 @@ static void *search_thread(void *x)
     int ret = search_file(ps[active].my_cwd);
     if (!found_searched[0]) {
         searching = 0;
+        search_archive = 0;
         if (ret == 1)
             print_info("Too many files found; try with a larger string.", INFO_LINE);
         else
@@ -480,7 +484,7 @@ static void search_loop(void)
     static char arch_str[PATH_MAX];
     char input;
     const char *mesg = "Open file? y to open, n to switch to the folder:> ";
-    const char *arch_mesg = "This file is inside an archive; do you want to switch to its directory? y/n:> ";
+    const char *arch_mesg = "This file is inside an archive. Switch to its directory? y/n:> ";
     int c, len;
     do {
         c = wgetch(ps[active].fm);
@@ -630,7 +634,7 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     close(fd);
 }
 
-static void try_extractor(char *path)
+static void try_extractor(const char *path)
 {
     struct archive *a;
     const char *question = "Do you really want to extract this archive? y/n:> ";
@@ -692,60 +696,98 @@ static void *extractor_thread(void *a)
     print_info("Succesfully extracted.", INFO_LINE);
 }
 
-void shasum_func(const char *str)
+void integrity_check(const char *str)
 {
-    int i, length = SHA_DIGEST_LENGTH;
+    const char *question = "Shasum (1) or md5sum (2)?> ";
+    char c, temp[2];
+    unsigned char *hash;
+    int length, i;
+    ask_user(question, &c);
+    if (c == '1')
+        length = shasum_func(str, &hash);
+    else if (c == '2')
+        length = md5sum_func(str, &hash);
+    char s[2 * length];
+    s[0] = '\0';
+    for(i = 0; i < length; i++) {
+        sprintf(temp, "%02x", hash[i]);
+        strcat(s, temp);
+    }
+    print_info(s, INFO_LINE);
+    free(hash);
+}
+
+static int shasum_func(const char *str, unsigned char **hash)
+{
+    int i, length = SHA_DIGEST_LENGTH;;
     FILE *fp;
     long size;
-    char *buffer, temp[2], input[4];
+    char *buffer, input[4];
     if (access("/usr/include/openssl/sha.h", F_OK ) == -1) {
         print_info("You must have openssl installed.", ERR_LINE);
-        return;
+        return 0;
     }
     const char *question = "Which shasum do you want? Choose between 1, 224, 256, 384, 512. Defaults to 1.> ";
     i = atoi(ask_user(question, input));
     if ((i == 224) || (i == 256) || (i == 384) || (i == 512))
         length = i / 8;
-    unsigned char hash[length];
-    char s[2 * length];
-    s[0] = '\0';
+    if (!(*hash = safe_malloc(sizeof(unsigned char) * length, "Memory allocation failed.")))
+        return 0;
     if(!(fp = fopen(str, "rb"))) {
         print_info("Could not open this file.", ERR_LINE);
-        return;
+        return 0;
     }
     fseek(fp, 0L, SEEK_END);
     size = ftell(fp);
     rewind(fp);
-    if (buffer = safe_malloc(size, "Memory allocation failed.")) {
-        if (fread(buffer, size, 1, fp) != 1) {
-            fclose(fp);
-            free(buffer);
-            print_info("File read failed.", ERR_LINE);
-            return;
-        }
-        switch(i) {
-        case 224:
-            SHA224(buffer, size, hash);
-            break;
-        case 256:
-            SHA256(buffer, size, hash);
-            break;
-        case 384:
-            SHA384(buffer, size, hash);
-            break;
-        case 512:
-            SHA512(buffer, size, hash);
-            break;
-        default:
-            SHA1(buffer, size, hash);
-            break;
-        }
-        for(i = 0; i < length; i++) {
-            sprintf(temp, "%02x", hash[i]);
-            strcat(s, temp);
-        }
-        print_info(s, INFO_LINE);
-        free(buffer);
+    if (!(buffer = safe_malloc(size, "Memory allocation failed."))) {
+        fclose(fp);
+        return 0;
     }
+    fread(buffer, size, 1, fp);
+    switch(i) {
+    case 224:
+        SHA224(buffer, size, *hash);
+        break;
+    case 256:
+        SHA256(buffer, size, *hash);
+        break;
+    case 384:
+        SHA384(buffer, size, *hash);
+        break;
+    case 512:
+        SHA512(buffer, size, *hash);
+        break;
+    default:
+        SHA1(buffer, size, *hash);
+        break;
+    }
+    free(buffer);
     fclose(fp);
+    return length;
+}
+
+static int md5sum_func(const char *str, unsigned char **hash)
+{
+    int i, fd;
+    MD5_CTX c;
+    char buf[512];
+    ssize_t bytes;
+    if (access("/usr/include/openssl/md5.h", F_OK ) == -1) {
+        print_info("You must have openssl installed.", ERR_LINE);
+        return 0;
+    }
+    if (!(*hash = safe_malloc(sizeof(unsigned char) * MD5_DIGEST_LENGTH, "Memory allocation failed.")))
+        return 0;
+    MD5_Init(&c);
+    fd = open(str, O_RDONLY);
+    bytes = read(fd, buf, 512);
+    while(bytes > 0)
+    {
+        MD5_Update(&c, buf, bytes);
+        bytes = read(fd, buf, 512);
+    }
+    close(fd);
+    MD5_Final(*hash, &c);
+    return MD5_DIGEST_LENGTH;
 }

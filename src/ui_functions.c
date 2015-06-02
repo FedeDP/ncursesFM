@@ -232,7 +232,7 @@ void sync_changes(void)
     generate_list(active);
 }
 
-static void colored_folders(int win, char *name)
+static void colored_folders(int win, const char *name)
 {
     struct stat file_stat;
     if (lstat(name, &file_stat) == 0) {
