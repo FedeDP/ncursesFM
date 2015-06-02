@@ -1,4 +1,7 @@
 /* TODO:
- * clean up code
  * add passphrase support to libarchive
+ * check open, fopen errors
+ * extend to N extracting/pasting/compressing thread
+ * extend searching to one for tab; add ability to change tab even when in search mode
+ * using dynamic second tab allocation to get rid of "cont" variable
  */
