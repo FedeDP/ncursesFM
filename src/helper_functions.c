@@ -105,10 +105,10 @@ void print_info(const char *str, int i)
         else
             search_mess_col = search_mess_col - (strlen(extracting_mess) + 1);
     }
-    if (searching == 1) {
+    if (sv.searching == 1) {
         mvwprintw(info_win, mess_line, search_mess_col, searching_mess);
     } else {
-        if (searching == 2)
+        if (sv.searching == 2)
             mvwprintw(info_win, mess_line, COLS - strlen(found_searched_mess), found_searched_mess);
     }
     if (str) {
@@ -133,8 +133,8 @@ void *safe_malloc(ssize_t size, const char *str)
 void free_found(void)
 {
     int i;
-    for (i = 0; found_searched[i]; i++) {
-        found_searched[i] = realloc(found_searched[i], 0);
-        free(found_searched[i]);
+    for (i = 0; sv.found_searched[i]; i++) {
+        sv.found_searched[i] = realloc(sv.found_searched[i], 0);
+        free(sv.found_searched[i]);
     }
 }

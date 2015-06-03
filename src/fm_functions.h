@@ -38,7 +38,7 @@ static int search_file(const char *path);
 void search(void);
 static void *search_thread(void *x);
 void list_found(void);
-static void search_loop(void);
+void search_loop(void);
 void print_support(char *str);
 static void *print_file(void *filename);
 void create_archive(void);

@@ -31,10 +31,20 @@ struct vars {
     char **nl;
 };
 
+struct search_vars {
+    char searched_string[20];
+    char *found_searched[PATH_MAX];
+    int searching;
+    int search_archive;
+    int search_active_win;
+    int old_size;
+};
+
 file_list *selected_files;
 pthread_t th, extractor_th;
 struct conf config;
 struct vars ps[MAX_TABS];
+struct search_vars sv;
 WINDOW *info_win;
-int active, cont, searching, extracting;
-char info_message[30], searched_string[PATH_MAX], *found_searched[PATH_MAX];
+int active, cont, extracting;
+char info_message[30];

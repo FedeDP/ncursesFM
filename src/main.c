@@ -67,7 +67,9 @@ static void init_func(void)
     const char *str_editor, *str_hidden, *str_starting_dir;
     config_t cfg;
     cont = 0;
-    searching = 0;
+    sv.searching = 0;
+    sv.search_archive = 0;
+    sv.search_active_win = -1;
     selected_files = NULL;
     config.editor = NULL;
     config.starting_dir = NULL;
@@ -94,7 +96,7 @@ static void init_func(void)
 
 static void main_loop(int *quit)
 {
-    int c, search_active_win;
+    int c;
     struct stat file_stat;
     stat(ps[active].nl[ps[active].curr_pos], &file_stat);
     c = wgetch(ps[active].fm);
@@ -121,7 +123,10 @@ static void main_loop(int *quit)
         case 9: // tab to change tab
             if (cont == MAX_TABS) {
                 active = 1 - active;
-                chdir(ps[active].my_cwd);
+                if (sv.searching != 3)
+                    chdir(ps[active].my_cwd);
+                 else
+                    search_loop();
             }
             break;
         case 'w': //close ps.active new_tab
@@ -160,13 +165,12 @@ static void main_loop(int *quit)
             create_dir();
             break;
         case 'f': // f to search
-            if (searching == 0) {
-                search_active_win = active;
+            if (sv.searching == 0) {
                 search();
-            } else if (searching == 1) {
+            } else if (sv.searching == 1) {
                 print_info("There's already a search in progress. Wait for it.", INFO_LINE);
-            } else if (searching == 2) {
-                active = search_active_win;
+            } else if (sv.searching == 2) {
+                active = sv.search_active_win;
                 list_found();
             }
             break;

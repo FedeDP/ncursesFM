@@ -66,6 +66,8 @@ void generate_list(int win)
 {
     int i;
     struct dirent **files;
+    if ((sv.searching == 3) && (win == sv.search_active_win))
+        return;
     chdir(ps[win].my_cwd);
     for (i = 0; i < ps[win].number_of_files; i++)
         free(ps[win].nl[i]);
@@ -102,11 +104,11 @@ void list_everything(int win, int old_dim, int end, char **files)
     int i, max_length;
     const char *search_mess = "q to leave search win";
     wborder(ps[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
-    if (searching != 3) {
+    if ((sv.searching != 3) || (win != sv.search_active_win)) {
         mvwprintw(ps[win].fm, 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
         max_length = MAX_FILENAME_LENGTH;
     } else {
-        mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_mess), searched_string);
+        mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_mess), sv.searched_string);
         mvwprintw(ps[win].fm, 0, width[win] - strlen(search_mess), search_mess);
         max_length = width[win] - 5;
     }
@@ -120,7 +122,7 @@ void list_everything(int win, int old_dim, int end, char **files)
     }
     wattroff(ps[win].fm, A_BOLD);
     mvwprintw(ps[win].fm, INITIAL_POSITION + ps[win].curr_pos - ps[win].delta, 1, "->");
-    if ((searching != 3) && (ps[win].stat_active == 1))
+    if (((sv.searching != 3) || (win != sv.search_active_win)) && (ps[win].stat_active == 1))
         show_stat(old_dim, end, win);
     wrefresh(ps[win].fm);
 }

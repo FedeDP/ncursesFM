@@ -2,7 +2,7 @@
 
 pkgname=ncursesfm-git
 _gitname=ncursesFM
-pkgver=r163.6a97e6b
+pkgver=0.r171.8e33443
 pkgrel=1
 pkgdesc="A FileManager written in c and ncurses library."
 arch=('i686' 'x86_64')
