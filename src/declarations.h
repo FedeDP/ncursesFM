@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ncurses.h>
+#include <pthread.h>
+#include <errno.h>
+#include <signal.h>
 
 #define INITIAL_POSITION 1
 #define MAX_TABS 2
@@ -23,12 +26,11 @@ typedef struct list {
 
 struct vars {
     int curr_pos;
-    int number_of_files;
     int delta;
     int stat_active;
     char my_cwd[PATH_MAX];
     WINDOW *fm;
-    char **nl;
+    char *nl[PATH_MAX];
 };
 
 struct search_vars {
@@ -37,7 +39,6 @@ struct search_vars {
     int searching;
     int search_archive;
     int search_active_win;
-    int old_size;
 };
 
 file_list *selected_files;
@@ -46,5 +47,5 @@ struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
 WINDOW *info_win;
-int active, cont, extracting;
+int active, cont;
 char info_message[30];

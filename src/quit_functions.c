@@ -32,15 +32,10 @@ void free_copied_list(file_list *h)
 
 void free_everything(void)
 {
-    int i, j;
-    free_found();
-    if (sv.searching == 3)
-        ps[sv.search_active_win].number_of_files = sv.old_size;
-    for (j = 0; j < cont; j++) {
-        for (i = ps[j].number_of_files - 1; i >= 0; i--)
-            free(ps[j].nl[i]);
-        free(ps[j].nl);
-    }
+    int j;
+    free_str(sv.found_searched);
+    for (j = 0; j < cont; j++)
+        free_str(ps[j].nl);
     free(config.editor);
     free(config.starting_dir);
     if (selected_files)

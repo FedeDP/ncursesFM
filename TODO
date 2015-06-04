@@ -1,5 +1,7 @@
 /* TODO:
- * check open, fopen errors
- * extend to N extracting/pasting/compressing thread
- * extend searching to one for tab;
+ * check open, fopen errors; EASY
+ * extend to N extracting/pasting/compressing thread; HARD
+ * extend searching to one for tab; HARD
+ * make ask_user defaults to y *
+ * get rid of info_message *
  */

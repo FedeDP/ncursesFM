@@ -23,6 +23,12 @@
 
 #include "ui_functions.h"
 
+static int is_hidden(const struct dirent *current_file);
+static void scroll_helper_func(int x, int direction);
+static void colored_folders(int win, const char *name);
+static void helper_print(void);
+static void change_unit(float size, char *str);
+
 WINDOW *helper_win = NULL;
 static int dim, width[MAX_TABS];
 
@@ -64,23 +70,13 @@ void screen_end(void)
 
 void generate_list(int win)
 {
-    int i;
+    int i, number_of_files;
     struct dirent **files;
     if ((sv.searching == 3) && (win == sv.search_active_win))
         return;
-    chdir(ps[win].my_cwd);
-    for (i = 0; i < ps[win].number_of_files; i++)
-        free(ps[win].nl[i]);
-    free(ps[win].nl);
-    ps[win].nl = NULL;
-    ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
-    if (!(ps[win].nl = safe_malloc(sizeof(char *) * ps[win].number_of_files, "No more memory available. Program will exit."))) {
-        quit_thread_func();
-        free_everything();
-        screen_end();
-        exit(1);
-    }
-    for (i = 0; i < ps[win].number_of_files; i++) {
+    free_str(ps[win].nl);
+    number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
+    for (i = 0; i < number_of_files; i++) {
         if (!(ps[win].nl[i] = safe_malloc(sizeof(char) * PATH_MAX, "No more memory available. Program will exit."))) {
             quit_thread_func();
             free_everything();
@@ -89,33 +85,33 @@ void generate_list(int win)
         }
         strcpy(ps[win].nl[i], files[i]->d_name);
     }
-    for (i = ps[win].number_of_files - 1; i >= 0; i--)
+    for (i = number_of_files - 1; i >= 0; i--)
         free(files[i]);
     free(files);
     wclear(ps[win].fm);
     ps[win].delta = 0;
     ps[win].curr_pos = 0;
     list_everything(win, 0, dim - 2, ps[win].nl);
-    chdir(ps[active].my_cwd);
 }
 
 void list_everything(int win, int old_dim, int end, char **files)
 {
     int i, max_length;
     const char *search_mess = "q to leave search win";
+    chdir(ps[win].my_cwd);
     wborder(ps[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
     if ((sv.searching != 3) || (win != sv.search_active_win)) {
         mvwprintw(ps[win].fm, 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
         max_length = MAX_FILENAME_LENGTH;
     } else {
         mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_mess), sv.searched_string);
-        mvwprintw(ps[win].fm, 0, width[win] - strlen(search_mess), search_mess);
+        mvwprintw(ps[win].fm, 0, width[win] - (strlen(search_mess) + 1), search_mess);
         max_length = width[win] - 5;
     }
     if (end == 0)
         end = dim - 2;
     wattron(ps[win].fm, A_BOLD);
-    for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
+    for (i = old_dim; (files[i]) && (i  < old_dim + end); i++) {
         colored_folders(win, files[i]);
         mvwprintw(ps[win].fm, INITIAL_POSITION + i - ps[win].delta, 4, "%.*s", max_length, files[i]);
         wattroff(ps[win].fm, COLOR_PAIR);
@@ -125,6 +121,7 @@ void list_everything(int win, int old_dim, int end, char **files)
     if (((sv.searching != 3) || (win != sv.search_active_win)) && (ps[win].stat_active == 1))
         show_stat(old_dim, end, win);
     wrefresh(ps[win].fm);
+    chdir(ps[active].my_cwd);
 }
 
 static int is_hidden(const struct dirent *current_file)
@@ -167,16 +164,11 @@ void new_tab(void)
 
 void delete_tab(void)
 {
-    int i;
     cont--;
     wclear(ps[active].fm);
     delwin(ps[active].fm);
     ps[active].fm = NULL;
-    for (i = ps[active].number_of_files - 1; i >= 0; i--)
-        free(ps[active].nl[i]);
-    free(ps[active].nl);
-    ps[active].nl = NULL;
-    ps[active].number_of_files = 0;
+    free_str(ps[active].nl);
     ps[active].stat_active = 0;
     memset(ps[active].my_cwd, 0, sizeof(ps[active].my_cwd));
     active = cont - 1;
@@ -189,7 +181,7 @@ void delete_tab(void)
 
 void scroll_down(char **str)
 {
-    if (ps[active].curr_pos < ps[active].number_of_files - 1) {
+    if (str[ps[active].curr_pos + 1]) {
         ps[active].curr_pos++;
         if (ps[active].curr_pos >= dim - 2) {
             scroll_helper_func(dim - 2, 1);
@@ -207,7 +199,7 @@ void scroll_up(char **str)
     if (ps[active].curr_pos > 0) {
         ps[active].curr_pos--;
         if (ps[active].curr_pos < ps[active].delta) {
-            scroll_helper_func(INITIAL_POSITION, - 1);
+            scroll_helper_func(INITIAL_POSITION, -1);
             ps[active].delta--;
             list_everything(active, ps[active].delta, 1, str);
         } else {
@@ -283,7 +275,7 @@ void trigger_show_helper_message(void)
 
 static void helper_print(void)
 {
-    wprintw(helper_win, "\n HELPER MESSAGE:\n * n and r to create/remove a file.\n");
+    wprintw(helper_win, "\n * n and r to create/remove a file.\n");
     wprintw(helper_win, " * Enter to surf between folders or to open files with $editor var.\n");
     wprintw(helper_win, " * Enter will eventually ask to extract archives, or mount your ISO files.\n");
     wprintw(helper_win, " * To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.\n");
@@ -306,7 +298,7 @@ void show_stat(int init, int end, int win)
     float total_size = 0;
     struct stat file_stat;
     if (init == 0) {
-        for (i = 1; i < ps[win].number_of_files; i++) {
+        for (i = 1; ps[win].nl[i]; i++) {
             stat(ps[win].nl[i], &file_stat);
             total_size += file_stat.st_size;
         }
@@ -314,7 +306,7 @@ void show_stat(int init, int end, int win)
         mvwprintw(ps[win].fm, INITIAL_POSITION, STAT_COL, "Total size: %s", str);
         i = 1;
     }
-    for (; ((i < init + end) && (i < ps[win].number_of_files)); i++) {
+    for (; ((i < init + end) && (ps[win].nl[i])); i++) {
         stat(ps[win].nl[i], &file_stat);
         change_unit(file_stat.st_size, str);
         mvwprintw(ps[win].fm, i + INITIAL_POSITION - ps[win].delta, STAT_COL, "%s", str);
@@ -339,7 +331,7 @@ static void change_unit(float size, char *str)
 void erase_stat(void)
 {
     int i;
-    for (i = 0; (i < ps[active].number_of_files) && (i < dim - 2); i++) {
+    for (i = 0; (ps[active].nl[i]) && (i < dim - 2); i++) {
         wmove(ps[active].fm, i + 1, STAT_COL);
         wclrtoeol(ps[active].fm);
     }

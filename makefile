@@ -4,7 +4,7 @@ LIBS=-lncurses -lpthread -lcups -larchive -lconfig -lcrypto
 all: ncursesFM clean
 
 objects:
-	cd src/; $(CC) -c *.c
+	cd src/; $(CC) -c *.c -Wall
 
 ncursesFM: objects
 	cd src/; $(CC) -o ../ncursesFM *.o $(LIBS)

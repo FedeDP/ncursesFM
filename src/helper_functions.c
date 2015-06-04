@@ -23,6 +23,8 @@
 
 #include "helper_functions.h"
 
+static char *strrstr(const char* str1, const char* str2);
+
 int is_extension(const char *filename, const char **extensions)
 {
     int i = 0;
@@ -53,7 +55,6 @@ int file_isCopied(const char *str)
 
 char *ask_user(const char *str, char *input)
 {
-    char c;
     echo();
     print_info(str, INFO_LINE);
     if (sizeof(input) == sizeof(char))
@@ -65,7 +66,7 @@ char *ask_user(const char *str, char *input)
     return input;
 }
 
-char *strrstr(const char* str1, const char* str2)
+static char *strrstr(const char* str1, const char* str2)
 {
     char *strp;
     int len1, len2 = strlen(str2);
@@ -98,7 +99,7 @@ void print_info(const char *str, int i)
         mvwprintw(info_win, mess_line, COLS - strlen(info_message), info_message);
         mess_line++;
     }
-    if (extracting == 1) {
+    if ((extractor_th) && (pthread_kill(extractor_th, 0) != ESRCH)) {
         mvwprintw(info_win, mess_line, COLS - strlen(extracting_mess), extracting_mess);
         if (mess_line == INFO_LINE)
             mess_line++;
@@ -130,11 +131,11 @@ void *safe_malloc(ssize_t size, const char *str)
     return ptr;
 }
 
-void free_found(void)
+void free_str(char *str[PATH_MAX])
 {
     int i;
-    for (i = 0; sv.found_searched[i]; i++) {
-        sv.found_searched[i] = realloc(sv.found_searched[i], 0);
-        free(sv.found_searched[i]);
+    for (i = 0; str[i]; i++) {
+        str[i] = realloc(str[i], 0);
+        free(str[i]);
     }
 }

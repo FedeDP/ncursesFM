@@ -23,10 +23,32 @@
 
 #include "fm_functions.h"
 
+static void open_file(const char *str);
+static void iso_mount_service(const char *str, int length);
+static int remove_from_list(const char *name);
+static file_list *select_file(char c, file_list *h);
+static void *cpr(void *x);
+static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+static void check_pasted(void);
+static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+static int rmrf(const char *path);
+static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+static void search_inside_archive(const char *path, int i);
+static int search_file(const char *path);
+static void *search_thread(void *x);
+static void *print_file(void *filename);
+static void *archiver_func(void *x);
+static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+static void try_extractor(const char *path);
+static void *extractor_thread(void *a);
+static int shasum_func(const char *str, unsigned char **hash);
+static int md5sum_func(const char *str, unsigned char **hash);
+
 static const char *iso_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
 static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"}; // add other supported extensions
-static char root_dir[PATH_MAX];
+static char root_pasted_dir[PATH_MAX];
 static struct archive *archive = NULL;
+static int distance_from_root;
 
 void change_dir(const char *str)
 {
@@ -150,9 +172,7 @@ void manage_c_press(char c)
         print_info("A thread is still running. Wait for it.", INFO_LINE);
         return;
     }
-    strcpy(str, ps[active].my_cwd);
-    strcat(str, "/");
-    strcat(str, ps[active].nl[ps[active].curr_pos]);
+    sprintf(str, "%s/%s", ps[active].my_cwd, ps[active].nl[ps[active].curr_pos]);
     if ((!selected_files) || (remove_from_list(str) == 0)) {
         strcpy(info_message, "There are selected files.");
         selected_files = select_file(c, selected_files);
@@ -193,12 +213,11 @@ static file_list *select_file(char c, file_list *h)
     } else {
         if (!(h = safe_malloc(sizeof(struct list), "Memory allocation failed.")))
             return NULL;
-        strcpy(h->name, ps[active].my_cwd);
-        strcat(h->name, "/");
-        strcat(h->name, ps[active].nl[ps[active].curr_pos]);
-        h->cut = 0;
+        sprintf(h->name, "%s/%s", ps[active].my_cwd, ps[active].nl[ps[active].curr_pos]);
         if (c == 'x')
             h->cut = 1;
+        else
+            h->cut = 0;
         h->next = NULL;
         print_info("File added to copy list.", INFO_LINE);
     }
@@ -210,24 +229,21 @@ void paste_file(void)
     char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX];
     int i = 0;
     struct stat file_stat_copied, file_stat_pasted;
-    file_list *tmp = NULL, *temp = NULL;
-    strcpy(root_dir, ps[active].my_cwd);
-    if (access(root_dir, W_OK) != 0) {
+    file_list *tmp = NULL;
+    strcpy(root_pasted_dir, ps[active].my_cwd);
+    if (access(root_pasted_dir, W_OK) != 0) {
         print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
         return;
     }
-    memset(info_message, 0, strlen(info_message));
-    stat(root_dir, &file_stat_pasted);
+    stat(root_pasted_dir, &file_stat_pasted);
     for(tmp = selected_files; tmp; tmp = tmp->next) {
-        strcpy(copied_file_dir, tmp->name);
-        copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
-        if (strcmp(root_dir, copied_file_dir) == 0) {
+        strncpy(copied_file_dir, tmp->name, strlen(tmp->name) - strlen(strrchr(tmp->name, '/')));
+        if (strcmp(root_pasted_dir, copied_file_dir) == 0) {
             tmp->cut = CANNOT_PASTE_SAME_DIR;
         } else {
             stat(copied_file_dir, &file_stat_copied);
             if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
-                strcpy(pasted_file, root_dir);
-                strcat(pasted_file, strrchr(tmp->name, '/'));
+                sprintf(pasted_file, "%s/", root_pasted_dir);
                 tmp->cut = MOVED_FILE;
                 if (rename(tmp->name, pasted_file) == - 1)
                     print_info(strerror(errno), ERR_LINE);
@@ -236,30 +252,27 @@ void paste_file(void)
             }
         }
     }
-    if (i > 0)
-        pthread_create(&th, NULL, cpr, &i);
-    else
-        check_pasted();
+    pthread_create(&th, NULL, cpr, &i);
 }
 
 static void *cpr(void *n)
 {
     file_list *tmp = selected_files;
-    char old_root_dir[PATH_MAX];
     int i = 0;
-    strcpy(old_root_dir, root_dir);
-    while (tmp) {
-        if ((tmp->cut != MOVED_FILE) && (tmp->cut != CANNOT_PASTE_SAME_DIR)) {
-            sprintf(info_message, "Pasting file %d of %d", ++i, *((int *)n));
-            print_info(NULL, INFO_LINE);
-            strcat(root_dir, strrchr(tmp->name, '/'));
-            nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
-            strcpy(root_dir, old_root_dir);
+    if (*((int *)n) > 0) {
+        while (tmp) {
+            if ((tmp->cut != MOVED_FILE) && (tmp->cut != CANNOT_PASTE_SAME_DIR)) {
+                sprintf(info_message, "Pasting file %d of %d", ++i, *((int *)n));
+                print_info(NULL, INFO_LINE);
+                distance_from_root = strlen(tmp->name) - strlen(strrchr(tmp->name, '/'));
+                nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
+            }
+            tmp = tmp->next;
         }
-        tmp = tmp->next;
     }
     memset(info_message, 0, strlen(info_message));
     check_pasted();
+    return NULL;
 }
 
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -267,9 +280,7 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
     int buff[BUFF_SIZE];
     int len, fd_to, fd_from;
     char pasted_file[PATH_MAX];
-    strcpy(pasted_file, root_dir);
-    pasted_file[strlen(pasted_file) - strlen(strrchr(pasted_file, '/'))] = '\0';
-    strcat(pasted_file, strrstr(path, strrchr(root_dir, '/')));
+    sprintf(pasted_file, "%s%s", root_pasted_dir, path + distance_from_root);
     if (typeflag == FTW_D) {
         mkdir(pasted_file, sb->st_mode);
     } else {
@@ -283,6 +294,7 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
         close(fd_to);
         close(fd_from);
     }
+    return 0;
 }
 
 static void check_pasted(void)
@@ -291,7 +303,7 @@ static void check_pasted(void)
     file_list *tmp = selected_files;
     char copied_file_dir[PATH_MAX];
     for (i = 0; i < cont; i++) {
-        if (strcmp(root_dir, ps[i].my_cwd) == 0) {
+        if (strcmp(root_pasted_dir, ps[i].my_cwd) == 0) {
             generate_list(i);
             printed[i] = 1;
         } else {
@@ -304,8 +316,7 @@ static void check_pasted(void)
                 print_info("Could not cut. Check user permissions.", ERR_LINE);
         }
         if ((tmp->cut == 1) || (tmp->cut == MOVED_FILE)) {
-            strcpy(copied_file_dir, tmp->name);
-            copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
+            strncpy(copied_file_dir, tmp->name, strlen(tmp->name) - strlen(strrchr(tmp->name, '/')));
             for (i = 0; i < cont; i++) {
                 if ((printed[i] == 0) && (strcmp(copied_file_dir, ps[i].my_cwd) == 0))
                     generate_list(i);
@@ -366,7 +377,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         i++;
     }
     if (i >= MAX_NUMBER_OF_FOUND) {
-        free_found();
+        free_str(sv.found_searched);
         return 1;
     }
     if ((sv.search_archive) && (is_extension(path, archive_extensions))) {
@@ -387,7 +398,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 
 static void search_inside_archive(const char *path, int i)
 {
-    char str[PATH_MAX], *str_ptr = NULL;
+    char str[PATH_MAX];
     struct archive *a = archive_read_new();
     struct archive_entry *entry;
     archive_read_support_filter_all(a);
@@ -395,8 +406,7 @@ static void search_inside_archive(const char *path, int i)
     if (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK) {
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
             strcpy(str, archive_entry_pathname(entry));
-            str_ptr = strrchr(str, '/');
-            if ((str_ptr) && (strlen(str_ptr) == 1)) // check if we're on a dir
+            if (str[strlen(str) - 1] == '/') // check if we're on a dir
                 str[strlen(str) - 1] = '\0';
             if (strrchr(str, '/')) {
                 strcpy(str, strrchr(str, '/'));
@@ -405,9 +415,7 @@ static void search_inside_archive(const char *path, int i)
             if (strncmp(str, sv.searched_string, strlen(sv.searched_string)) == 0) {
                 if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, "Memory allocation failed.")))
                     return;
-                strcpy(sv.found_searched[i], path);
-                strcat(sv.found_searched[i], "/");
-                strcat(sv.found_searched[i], archive_entry_pathname(entry));
+                sprintf(sv.found_searched[i], "%s/%s", path, archive_entry_pathname(entry));
                 i++;
             }
         }
@@ -445,7 +453,6 @@ static void *search_thread(void *x)
     if (!sv.found_searched[0]) {
         sv.searching = 0;
         sv.search_archive = 0;
-        sv.search_active_win = -1;
         if (ret == 1)
             print_info("Too many files found; try with a larger string.", INFO_LINE);
         else
@@ -454,17 +461,16 @@ static void *search_thread(void *x)
         sv.searching = 2;
         print_info(NULL, INFO_LINE);
     }
+    return NULL;
 }
 
 void list_found(void)
 {
     int i = 0;
     char str[20];
-    sv.old_size = ps[active].number_of_files;
     sv.searching = 3;
     while (sv.found_searched[i])
         i++;
-    ps[active].number_of_files = i;
     ps[active].delta = 0;
     ps[active].curr_pos = 0;
     wclear(ps[active].fm);
@@ -525,10 +531,8 @@ void search_loop(void)
     } while (c != 'q');
     sv.searching = 0;
     sv.search_archive = 0;
-    sv.search_active_win = -1;
-    ps[active].number_of_files = sv.old_size;
     change_dir(sv.found_searched[ps[active].curr_pos]);
-    free_found();
+    free_str(sv.found_searched);
 }
 
 void print_support(char *str)
@@ -557,6 +561,7 @@ static void *print_file(void *filename)
     } else {
         print_info("No printers available.", ERR_LINE);
     }
+    return NULL;
 }
 
 void create_archive(void)
@@ -580,10 +585,7 @@ void create_archive(void)
             archive = NULL;
             return;
         }
-        strcpy(archive_path, ps[active].my_cwd);
-        strcat(archive_path, "/");
-        strcat(archive_path, ask_user(mesg, str));
-        strcat(archive_path, ".tgz");
+        sprintf(archive_path, "%s/%s.tgz", ps[active].my_cwd, ask_user(mesg, str));
         if (archive_write_open_filename(archive, archive_path) == ARCHIVE_FATAL) {
             print_info(strerror(archive_errno(archive)), ERR_LINE);
             archive_write_free(archive);
@@ -602,15 +604,13 @@ static void *archiver_func(void *archive_path)
     while (tmp) {
         strcpy(info_message, "Archiving...");
         print_info(NULL, INFO_LINE);
-        strcpy(root_dir, strrchr(tmp->name, '/'));
-        memmove(root_dir, root_dir + 1, strlen(root_dir));
+        distance_from_root = strlen(tmp->name) - strlen(strrchr(tmp->name, '/'));
         nftw(tmp->name, recursive_archive, 64, FTW_MOUNT | FTW_PHYS);
         tmp = tmp->next;
     }
     archive_write_free(archive);
     archive = NULL;
-    strcpy(str, archive_path);
-    str[strlen(str) - strlen(strrchr(str, '/'))] = '\0';
+    strncpy(str, archive_path, strlen(archive_path) - strlen(strrchr(archive_path, '/')));
     for (i = 0; i < cont; i++) {
         if (strcmp(str, ps[i].my_cwd) == 0)
             generate_list(i);
@@ -619,6 +619,7 @@ static void *archiver_func(void *archive_path)
     print_info("The archive is ready.", INFO_LINE);
     free_copied_list(selected_files);
     selected_files = NULL;
+    return NULL;
 }
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -626,7 +627,7 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     char buff[BUFF_SIZE], entry_name[PATH_MAX];
     int len, fd;
     struct archive_entry *entry = archive_entry_new();
-    strcpy(entry_name, strrstr(path, root_dir));
+    strcpy(entry_name, path + distance_from_root + 1);
     archive_entry_set_pathname(entry, entry_name);
     archive_entry_copy_stat(entry, sb);
     archive_write_header(archive, entry);
@@ -638,6 +639,7 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
         len = read(fd, buff, sizeof(buff));
     }
     close(fd);
+    return 0;
 }
 
 static void try_extractor(const char *path)
@@ -662,7 +664,6 @@ static void try_extractor(const char *path)
             archive_read_free(a);
             return;
         }
-        extracting = 1;
         print_info(NULL, INFO_LINE);
         pthread_create(&extractor_th, NULL, extractor_thread, a);
     }
@@ -696,14 +697,14 @@ static void *extractor_thread(void *a)
         if (strcmp(ps[i].my_cwd, current_dir) == 0)
             generate_list(i);
     }
-    extracting = 0;
     print_info("Succesfully extracted.", INFO_LINE);
+    return NULL;
 }
 
 void integrity_check(const char *str)
 {
     const char *question = "Shasum (1) or md5sum (2)?> ";
-    char c, temp[2];
+    char c;
     unsigned char *hash;
     int length, i;
     ask_user(question, &c);
@@ -713,10 +714,8 @@ void integrity_check(const char *str)
         length = md5sum_func(str, &hash);
     char s[2 * length];
     s[0] = '\0';
-    for(i = 0; i < length; i++) {
-        sprintf(temp, "%02x", hash[i]);
-        strcat(s, temp);
-    }
+    for(i = 0; i < length; i++)
+        sprintf(s + strlen(s), "%02x", hash[i]);
     print_info(s, INFO_LINE);
     free(hash);
 }
@@ -726,7 +725,8 @@ static int shasum_func(const char *str, unsigned char **hash)
     int i, length = SHA_DIGEST_LENGTH;;
     FILE *fp;
     long size;
-    char *buffer, input[4];
+    char input[4];
+    unsigned char *buffer;
     if (access("/usr/include/openssl/sha.h", F_OK ) == -1) {
         print_info("You must have openssl installed.", ERR_LINE);
         return 0;
@@ -773,7 +773,7 @@ static int shasum_func(const char *str, unsigned char **hash)
 
 static int md5sum_func(const char *str, unsigned char **hash)
 {
-    int i, fd;
+    int fd;
     MD5_CTX c;
     char buf[512];
     ssize_t bytes;

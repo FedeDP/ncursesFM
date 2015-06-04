@@ -64,12 +64,11 @@ static void helper_function(int argc, const char *argv[])
 
 static void init_func(void)
 {
-    const char *str_editor, *str_hidden, *str_starting_dir;
+    const char *str_editor, *str_starting_dir;
     config_t cfg;
     cont = 0;
     sv.searching = 0;
     sv.search_archive = 0;
-    sv.search_active_win = -1;
     selected_files = NULL;
     config.editor = NULL;
     config.starting_dir = NULL;
@@ -77,13 +76,13 @@ static void init_func(void)
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
         if (config_lookup_string(&cfg, "editor", &str_editor)) {
-            if (config.editor = safe_malloc(strlen(str_editor) * sizeof(char) + 1, "Memory allocation failed."))
+            if ((config.editor = safe_malloc(strlen(str_editor) * sizeof(char) + 1, "Memory allocation failed.")))
                 strcpy(config.editor, str_editor);
         }
         if (!(config_lookup_int(&cfg, "show_hidden", &config.show_hidden)))
             config.show_hidden = 0;
         if ((config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) && (access(str_starting_dir, F_OK) != -1)) {
-            if (config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, "Memory allocation failed."))
+            if ((config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, "Memory allocation failed.")))
                 strcpy(config.starting_dir, str_starting_dir);
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
