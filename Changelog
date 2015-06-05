@@ -1,0 +1,11 @@
+5 / 5 / 2015
+* removed info_message global var
+* splitted th in paste_th and archiver_th
+* reverted strncpy use (no null-terminated strings...); back to strcpy.
+* ask_user is back to "void"
+* added default action (if enter is pressed) in ask_user. So user can just press enter when asked for y/n, and default action will be done.
+* defaults to first entry name in create_archive function, if no name is entered.
+* fixed a bug in scroll_down func
+* fixed bug in is_extension; removed strrstr function
+* Now using libmagic and get_mimetype function to understand whether it is a plain/text file (to open it), or an iso image (to mount).
+* added "u" to view current file mimetype

@@ -2,6 +2,5 @@
  * check open, fopen errors; EASY
  * extend to N extracting/pasting/compressing thread; HARD
  * extend searching to one for tab; HARD
- * make ask_user defaults to y *
- * get rid of info_message *
+ * use get_mimetype for archives too -> MAGIC_NONE -> search for "archive" or "compressed"...only problem is in search_loop...
  */

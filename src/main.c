@@ -185,6 +185,9 @@ static void main_loop(int *quit)
             if (S_ISREG(file_stat.st_mode))
                 integrity_check(ps[active].nl[ps[active].curr_pos]);
             break;
+        case 'u': // u to view mimetype
+            get_mimetype(ps[active].nl[ps[active].curr_pos], NULL);
+            break;
         case 'q': /* q to exit */
             quit_thread_func();
             *quit = 1;

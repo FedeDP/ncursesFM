@@ -24,7 +24,7 @@
 #include "fm_functions.h"
 
 static void open_file(const char *str);
-static void iso_mount_service(const char *str, int length);
+static void iso_mount_service(const char *str);
 static int remove_from_list(const char *name);
 static file_list *select_file(char c, file_list *h);
 static void *cpr(void *x);
@@ -44,8 +44,6 @@ static void *extractor_thread(void *a);
 static int shasum_func(const char *str, unsigned char **hash);
 static int md5sum_func(const char *str, unsigned char **hash);
 
-static const char *iso_extensions[] = {".iso", ".bin", ".nrg", ".img", ".mdf"};
-static const char *archive_extensions[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"}; // add other supported extensions
 static char root_pasted_dir[PATH_MAX];
 static struct archive *archive = NULL;
 static int distance_from_root;
@@ -74,14 +72,12 @@ void switch_hidden(void)
 
 void manage_file(const char *str)
 {
-    int length;
     if (file_isCopied(str))
         return;
-    length = is_extension(str, iso_extensions);
-    if (length) {
-        iso_mount_service(str, length);
+    if (get_mimetype(str, "iso")) {
+        iso_mount_service(str);
     } else {
-        if (is_extension(str, archive_extensions)) {
+        if (is_archive(str)) {
             try_extractor(str);
         } else {
             if ((config.editor) && (access(config.editor, X_OK) != -1))
@@ -95,19 +91,21 @@ void manage_file(const char *str)
 static void open_file(const char *str)
 {
     pid_t pid;
-    endwin();
-    pid = vfork();
-    if (pid == 0)
-        execl(config.editor, config.editor, str, NULL);
-    else
-        waitpid(pid, NULL, 0);
-    refresh();
+    if (get_mimetype(str, "text")) {
+        endwin();
+        pid = vfork();
+        if (pid == 0)
+            execl(config.editor, config.editor, str, NULL);
+        else
+            waitpid(pid, NULL, 0);
+        refresh();
+    }
 }
 
-static void iso_mount_service(const char *str, int length)
+static void iso_mount_service(const char *str)
 {
     pid_t pid;
-    char mount_point[strlen(str) - length + 1];
+    char mount_point[strlen(str)];
     if (access("/usr/bin/fuseiso", F_OK) == -1) {
         print_info("You need fuseiso for iso mounting support.", ERR_LINE);
         return;
@@ -116,8 +114,8 @@ static void iso_mount_service(const char *str, int length)
         print_info("You do not have write permissions here.", ERR_LINE);
         return;
     }
-    strncpy(mount_point, str, strlen(str) - length);
-    mount_point[strlen(str) - length] = '\0';
+    strcpy(mount_point, str);
+    mount_point[strlen(str) - strlen(strrchr(str, '.'))] = '\0';
     pid = vfork();
     if (pid == 0) {
         if (mkdir(mount_point, ACCESSPERMS) == -1)
@@ -139,23 +137,25 @@ void new_file(void)
     FILE *f;
     const char *mesg = "Insert new file name:> ";
     char str[PATH_MAX];
-    if (access(ask_user(mesg, str), F_OK) == -1) {
+    ask_user(mesg, str, PATH_MAX, 0);
+    if ((strlen(str)) && (access(str, F_OK) == -1)) {
         f = fopen(str, "w");
         fclose(f);
         sync_changes();
         print_info("File created.", INFO_LINE);
     } else {
-        print_info("A file with this name already exists in this folder.", ERR_LINE);
+        print_info("Could not create the file.", ERR_LINE);
     }
 }
 
 void remove_file(void)
 {
-    const char *mesg = "Are you serious? y/n:> ";
+    const char *mesg = "Are you serious? y/N:> ";
     char c;
     if (file_isCopied(ps[active].nl[ps[active].curr_pos]))
         return;
-    if (*(ask_user(mesg, &c)) == 'y') {
+    ask_user(mesg, &c, 1, 'n');
+    if (c == 'y') {
         if (rmrf(ps[active].nl[ps[active].curr_pos]) == -1)
             print_info("Could not remove. Check user permissions.", ERR_LINE);
         else {
@@ -168,21 +168,19 @@ void remove_file(void)
 void manage_c_press(char c)
 {
     char str[PATH_MAX];
-    if ((th) && (pthread_kill(th, 0) != ESRCH)) {
+    if (((paste_th) && (pthread_kill(paste_th, 0) != ESRCH)) || ((archiver_th) && (pthread_kill(archiver_th, 0) != ESRCH))) {
         print_info("A thread is still running. Wait for it.", INFO_LINE);
         return;
     }
     sprintf(str, "%s/%s", ps[active].my_cwd, ps[active].nl[ps[active].curr_pos]);
     if ((!selected_files) || (remove_from_list(str) == 0)) {
-        strcpy(info_message, "There are selected files.");
         selected_files = select_file(c, selected_files);
+        print_info("File added to copy list.", INFO_LINE);
     } else {
         if (selected_files)
             print_info("File deleted from copy list.", INFO_LINE);
-        else {
-            memset(info_message, 0, strlen(info_message));
+        else
             print_info("File deleted from copy list. Copy list empty.", INFO_LINE);
-        }
     }
 }
 
@@ -219,7 +217,6 @@ static file_list *select_file(char c, file_list *h)
         else
             h->cut = 0;
         h->next = NULL;
-        print_info("File added to copy list.", INFO_LINE);
     }
     return h;
 }
@@ -235,15 +232,16 @@ void paste_file(void)
         print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
         return;
     }
-    stat(root_pasted_dir, &file_stat_pasted);
+    lstat(root_pasted_dir, &file_stat_pasted);
     for(tmp = selected_files; tmp; tmp = tmp->next) {
-        strncpy(copied_file_dir, tmp->name, strlen(tmp->name) - strlen(strrchr(tmp->name, '/')));
+        strcpy(copied_file_dir, tmp->name);
+        copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
         if (strcmp(root_pasted_dir, copied_file_dir) == 0) {
             tmp->cut = CANNOT_PASTE_SAME_DIR;
         } else {
-            stat(copied_file_dir, &file_stat_copied);
+            lstat(copied_file_dir, &file_stat_copied);
             if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
-                sprintf(pasted_file, "%s/", root_pasted_dir);
+                sprintf(pasted_file, "%s%s", root_pasted_dir, strrchr(tmp->name, '/'));
                 tmp->cut = MOVED_FILE;
                 if (rename(tmp->name, pasted_file) == - 1)
                     print_info(strerror(errno), ERR_LINE);
@@ -252,25 +250,22 @@ void paste_file(void)
             }
         }
     }
-    pthread_create(&th, NULL, cpr, &i);
+    pthread_create(&paste_th, NULL, cpr, &i);
 }
 
 static void *cpr(void *n)
 {
     file_list *tmp = selected_files;
-    int i = 0;
     if (*((int *)n) > 0) {
+        print_info(NULL, INFO_LINE);
         while (tmp) {
             if ((tmp->cut != MOVED_FILE) && (tmp->cut != CANNOT_PASTE_SAME_DIR)) {
-                sprintf(info_message, "Pasting file %d of %d", ++i, *((int *)n));
-                print_info(NULL, INFO_LINE);
                 distance_from_root = strlen(tmp->name) - strlen(strrchr(tmp->name, '/'));
                 nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
             }
             tmp = tmp->next;
         }
     }
-    memset(info_message, 0, strlen(info_message));
     check_pasted();
     return NULL;
 }
@@ -316,7 +311,8 @@ static void check_pasted(void)
                 print_info("Could not cut. Check user permissions.", ERR_LINE);
         }
         if ((tmp->cut == 1) || (tmp->cut == MOVED_FILE)) {
-            strncpy(copied_file_dir, tmp->name, strlen(tmp->name) - strlen(strrchr(tmp->name, '/')));
+            strcpy(copied_file_dir, tmp->name);
+            copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
             for (i = 0; i < cont; i++) {
                 if ((printed[i] == 0) && (strcmp(copied_file_dir, ps[i].my_cwd) == 0))
                     generate_list(i);
@@ -324,9 +320,9 @@ static void check_pasted(void)
         }
         tmp = tmp->next;
     }
-    print_info("Every files has been copied/moved.", INFO_LINE);
     free_copied_list(selected_files);
     selected_files = NULL;
+    print_info("Every files has been copied/moved.", INFO_LINE);
 }
 
 void rename_file_folders(void)
@@ -335,7 +331,8 @@ void rename_file_folders(void)
     char str[PATH_MAX];
     if (file_isCopied(ps[active].nl[ps[active].curr_pos]))
         return;
-    if (rename(ps[active].nl[ps[active].curr_pos], ask_user(mesg, str)) == - 1) {
+    ask_user(mesg, str, PATH_MAX, 0);
+    if (!(strlen(str)) || (rename(ps[active].nl[ps[active].curr_pos], str) == - 1)) {
         print_info(strerror(errno), ERR_LINE);
     } else {
         sync_changes();
@@ -347,7 +344,8 @@ void create_dir(void)
 {
     const char *mesg = "Insert new folder name:> ";
     char str[PATH_MAX];
-    if (mkdir(ask_user(mesg, str), 0700) == - 1) {
+    ask_user(mesg, str, PATH_MAX, 0);
+    if (!(strlen(str)) || (mkdir(str, 0700) == - 1)) {
         print_info(strerror(errno), ERR_LINE);
     } else {
         sync_changes();
@@ -380,7 +378,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         free_str(sv.found_searched);
         return 1;
     }
-    if ((sv.search_archive) && (is_extension(path, archive_extensions))) {
+    if ((sv.search_archive) && (is_archive(strrchr(path, '/')))) {
         search_inside_archive(path, i);
     } else {
         strcpy(fixed_str, strrchr(path, '/'));
@@ -432,13 +430,15 @@ void search(void)
 {
     pthread_t search_th;
     const char *mesg = "Insert filename to be found, at least 5 chars:> ";
-    const char *s = "Do you want to search in archives too? Search can result slower and has higher memory usage. y/n:> ";
+    const char *s = "Do you want to search in archives too? Search can result slower and has higher memory usage. y/N:> ";
     char c;
-    if (strlen(ask_user(mesg, sv.searched_string)) < 5) {
+    ask_user(mesg, sv.searched_string, 20, 0);
+    if (strlen(sv.searched_string) < 5) {
         print_info("At least 5 chars...", INFO_LINE);
         return;
     }
-    if (*(ask_user(s, &c)) == 'y')
+    ask_user(s, &c, 1, 'n');
+    if (c == 'y')
         sv.search_archive = 1;
     sv.searching = 1;
     sv.search_active_win = active;
@@ -482,11 +482,12 @@ void list_found(void)
 
 void search_loop(void)
 {
-    static char arch_str[PATH_MAX];
+    char arch_str[PATH_MAX];
     char input;
-    const char *mesg = "Open file? y to open, n to switch to the folder:> ";
-    const char *arch_mesg = "This file is inside an archive. Switch to its directory? y/n:> ";
+    const char *mesg = "Open file? Y to open, n to switch to the folder:> ";
+    const char *arch_mesg = "This file is inside an archive. Switch to its directory? Y/n:> ";
     int c, len;
+    arch_str[0] = '\0';
     do {
         c = wgetch(ps[active].fm);
         switch (c) {
@@ -499,23 +500,28 @@ void search_loop(void)
         case 10:
             if (sv.search_archive) {
                 strcpy(arch_str, sv.found_searched[ps[active].curr_pos]);
-                while ((strlen(arch_str)) && (!is_extension(arch_str, archive_extensions)))
+                while ((strlen(arch_str)) && (!is_archive(strrchr(arch_str, '/'))))
                     arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
             }
             len = strlen(strrchr(sv.found_searched[ps[active].curr_pos], '/'));
-            if ((!strlen(arch_str)) && (len != 1) && (*(ask_user(mesg, &input)) == 'y')) { // is a file and user wants to open it
-                manage_file(sv.found_searched[ps[active].curr_pos]);
-            } else {    // is a dir or an archive or a file but user wants to switch to its dir
-                len = strlen(sv.found_searched[ps[active].curr_pos]) - len;
-                if (strlen(arch_str)) { // is an archive
-                    if (*(ask_user(arch_mesg, &input)) == 'y')
-                        len = strlen(arch_str) - strlen(strrchr(arch_str, '/'));
-                    else
-                        break;
+            if ((!strlen(arch_str)) && (len != 1)) { // is a file
+                ask_user(mesg, &input, 1, 'y');
+                if (input != 'n') {
+                    if (input == 'y') // is a file and user wants to open it
+                        manage_file(sv.found_searched[ps[active].curr_pos]);
+                    break;
                 }
-                sv.found_searched[ps[active].curr_pos][len] = '\0';
-                c = 'q';
+            } // is a dir or an archive or a file but user wants to switch to its dir
+            len = strlen(sv.found_searched[ps[active].curr_pos]) - len;
+            if (strlen(arch_str)) { // is an archive
+                ask_user(arch_mesg, &input, 1, 'y');
+                if (input == 'y')
+                    len = strlen(arch_str) - strlen(strrchr(arch_str, '/'));
+                else
+                    break;
             }
+            sv.found_searched[ps[active].curr_pos][len] = '\0';
+            c = 'q';
             break;
         case 9: // tab to change tab
             if (cont == MAX_TABS) {
@@ -538,13 +544,14 @@ void search_loop(void)
 void print_support(char *str)
 {
     pthread_t print_thread;
-    const char *mesg = "Do you really want to print this file? y/n:> ";
+    const char *mesg = "Do you really want to print this file? Y/n:> ";
     char c;
     if (access("/usr/include/cups/cups.h", F_OK ) == -1) {
         print_info("You must have libcups installed.", ERR_LINE);
         return;
     }
-    if (*(ask_user(mesg, &c)) == 'y') {
+    ask_user(mesg, &c, 1, 'y');
+    if (c == 'y') {
         pthread_create(&print_thread, NULL, print_file, str);
         pthread_detach(print_thread);
     }
@@ -566,10 +573,11 @@ static void *print_file(void *filename)
 
 void create_archive(void)
 {
-    const char *mesg = "Insert new file name:> ";
-    const char *question = "Do you really want to compress these files? y/n:> ";
+    const char *mesg = "Insert new file name (defaults to first entry name):> ";
+    const char *question = "Do you really want to compress these files? Y/n:> ";
     char archive_path[PATH_MAX], str[PATH_MAX], c;
-    if (*(ask_user(question, &c)) == 'y') {
+    ask_user(question, &c, 1, 'y');
+    if (c == 'y') {
         if (access("/usr/include/archive.h", F_OK) == -1) {
             print_info("You must have libarchive installed.", ERR_LINE);
             return;
@@ -585,14 +593,19 @@ void create_archive(void)
             archive = NULL;
             return;
         }
-        sprintf(archive_path, "%s/%s.tgz", ps[active].my_cwd, ask_user(mesg, str));
+        ask_user(mesg, str, PATH_MAX, 0);
+        if (!strlen(str)) {
+            strcpy(str, strrchr(selected_files->name, '/'));
+            memmove(str, str + 1, strlen(str));
+        }
+        sprintf(archive_path, "%s/%s.tgz", ps[active].my_cwd, str);
         if (archive_write_open_filename(archive, archive_path) == ARCHIVE_FATAL) {
             print_info(strerror(archive_errno(archive)), ERR_LINE);
             archive_write_free(archive);
             archive = NULL;
             return;
         }
-        pthread_create(&th, NULL, archiver_func, (void *)archive_path);
+        pthread_create(&archiver_th, NULL, archiver_func, (void *)archive_path);
     }
 }
 
@@ -601,21 +614,20 @@ static void *archiver_func(void *archive_path)
     file_list *tmp = selected_files;
     char str[PATH_MAX];
     int i;
+    print_info(NULL, INFO_LINE);
     while (tmp) {
-        strcpy(info_message, "Archiving...");
-        print_info(NULL, INFO_LINE);
         distance_from_root = strlen(tmp->name) - strlen(strrchr(tmp->name, '/'));
         nftw(tmp->name, recursive_archive, 64, FTW_MOUNT | FTW_PHYS);
         tmp = tmp->next;
     }
     archive_write_free(archive);
     archive = NULL;
-    strncpy(str, archive_path, strlen(archive_path) - strlen(strrchr(archive_path, '/')));
+    strcpy(str, archive_path);
+    str[strlen(archive_path) - strlen(strrchr(archive_path, '/'))] = '\0';
     for (i = 0; i < cont; i++) {
         if (strcmp(str, ps[i].my_cwd) == 0)
             generate_list(i);
     }
-    memset(info_message, 0, strlen(info_message));
     print_info("The archive is ready.", INFO_LINE);
     free_copied_list(selected_files);
     selected_files = NULL;
@@ -645,9 +657,10 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 static void try_extractor(const char *path)
 {
     struct archive *a;
-    const char *question = "Do you really want to extract this archive? y/n:> ";
+    const char *question = "Do you really want to extract this archive? Y/n:> ";
     char c;
-    if (*(ask_user(question, &c)) == 'y') {
+    ask_user(question, &c, 1, 'y');
+    if (c == 'y') {
         if (access("/usr/include/archive.h", F_OK) == -1) {
             print_info("You must have libarchive installed.", ERR_LINE);
             return;
@@ -703,11 +716,11 @@ static void *extractor_thread(void *a)
 
 void integrity_check(const char *str)
 {
-    const char *question = "Shasum (1) or md5sum (2)?> ";
+    const char *question = "Shasum (1, default) or md5sum (2)?> ";
     char c;
     unsigned char *hash;
     int length, i;
-    ask_user(question, &c);
+    ask_user(question, &c, 1, '1');
     if (c == '1')
         length = shasum_func(str, &hash);
     else if (c == '2')
@@ -722,7 +735,7 @@ void integrity_check(const char *str)
 
 static int shasum_func(const char *str, unsigned char **hash)
 {
-    int i, length = SHA_DIGEST_LENGTH;;
+    int i = 1, length = SHA_DIGEST_LENGTH;;
     FILE *fp;
     long size;
     char input[4];
@@ -732,7 +745,9 @@ static int shasum_func(const char *str, unsigned char **hash)
         return 0;
     }
     const char *question = "Which shasum do you want? Choose between 1, 224, 256, 384, 512. Defaults to 1.> ";
-    i = atoi(ask_user(question, input));
+    ask_user(question, input, 4, 0);
+    if (strlen(input))
+        i = atoi(input);
     if ((i == 224) || (i == 256) || (i == 384) || (i == 512))
         length = i / 8;
     if (!(*hash = safe_malloc(sizeof(unsigned char) * length, "Memory allocation failed.")))

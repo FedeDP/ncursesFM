@@ -42,10 +42,9 @@ struct search_vars {
 };
 
 file_list *selected_files;
-pthread_t th, extractor_th;
+pthread_t paste_th, archiver_th, extractor_th;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
 WINDOW *info_win;
 int active, cont;
-char info_message[30];

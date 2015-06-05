@@ -46,8 +46,8 @@ void screen_init(void)
     dim = LINES - INFO_HEIGHT;
     new_tab();
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
-    mvwprintw(info_win, INFO_LINE, 1, "INFO: ");
-    mvwprintw(info_win, ERR_LINE, 1, "ERR: ");
+    mvwprintw(info_win, INFO_LINE, 1, "I: ");
+    mvwprintw(info_win, ERR_LINE, 1, "E: ");
     wrefresh(info_win);
 }
 
@@ -183,7 +183,7 @@ void scroll_down(char **str)
 {
     if (str[ps[active].curr_pos + 1]) {
         ps[active].curr_pos++;
-        if (ps[active].curr_pos >= dim - 2) {
+        if (ps[active].curr_pos - (dim - 2) == ps[active].delta) {
             scroll_helper_func(dim - 2, 1);
             ps[active].delta++;
             list_everything(active, ps[active].curr_pos, 1, str);
@@ -276,7 +276,7 @@ void trigger_show_helper_message(void)
 static void helper_print(void)
 {
     wprintw(helper_win, "\n * n and r to create/remove a file.\n");
-    wprintw(helper_win, " * Enter to surf between folders or to open files with $editor var.\n");
+    wprintw(helper_win, " * Enter to surf between folders or to open text files with $editor var.\n");
     wprintw(helper_win, " * Enter will eventually ask to extract archives, or mount your ISO files.\n");
     wprintw(helper_win, " * To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.\n");
     wprintw(helper_win, " * Press h to trigger the showing of hide files. s to see stat about files in current folder.\n");
@@ -284,7 +284,7 @@ static void helper_print(void)
     wprintw(helper_win, " * p to print a file. b to compress selected files. a to view shasum of highlighted file.\n");
     wprintw(helper_win, " * You can copy as many files/dirs as you want. c/x again on a file/dir to remove it from file list.\n");
     wprintw(helper_win, " * o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.\n");
-    wprintw(helper_win, " * t to create new tab (at most one more). w to close tab.\n");
+    wprintw(helper_win, " * t to create new tab (at most one more). w to close tab. u to view current file's mimetype.\n");
     wprintw(helper_win, " * You can't close first tab. Use q to quit.\n");
     wprintw(helper_win, " * Take a look to /etc/default/ncursesFM.conf file to change some settings.");
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');

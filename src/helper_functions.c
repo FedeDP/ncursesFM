@@ -23,15 +23,14 @@
 
 #include "helper_functions.h"
 
-static char *strrstr(const char* str1, const char* str2);
-
-int is_extension(const char *filename, const char **extensions)
+int is_archive(const char *filename)
 {
+    const char *ext[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
     int i = 0;
     char *str;
-    while (*(extensions + i)) {
-        str = strrstr(filename, *(extensions + i));
-        if ((str) && (strlen(str) == strlen(*(extensions + i))))
+    while (*(ext + i)) {
+        str = strstr(filename, *(ext + i));
+        if ((str) && (strlen(str) == strlen(*(ext + i))))
             return strlen(str);
         i++;
     }
@@ -40,11 +39,11 @@ int is_extension(const char *filename, const char **extensions)
 
 int file_isCopied(const char *str)
 {
-    char *name;
+    char name[PATH_MAX];
     file_list *tmp = selected_files;
+    sprintf(name, "%s/%s", ps[active].my_cwd, str);
     while (tmp) {
-        name = strrstr(tmp->name, str);
-        if ((name) && (strlen(str) == strlen(name))) {
+        if (strcmp(name, tmp->name) == 0) {
             print_info("The file is already selected for copy. Please cancel the copy before.", ERR_LINE);
             return 1;
         }
@@ -53,50 +52,41 @@ int file_isCopied(const char *str)
     return 0;
 }
 
-char *ask_user(const char *str, char *input)
+void ask_user(const char *str, char *input, int dim, char c)
 {
     echo();
     print_info(str, INFO_LINE);
-    if (sizeof(input) == sizeof(char))
+    if (dim == 1) {
         *input = wgetch(info_win);
-    else
+        if (*input == 10)
+            *input = c;
+    } else {
         wgetstr(info_win, input);
+    }
     noecho();
     print_info(NULL, INFO_LINE);
-    return input;
-}
-
-static char *strrstr(const char* str1, const char* str2)
-{
-    char *strp;
-    int len1, len2 = strlen(str2);
-    if (len2 == 0)
-        return (char *)str1;
-    len1 = strlen(str1);
-    if(len2 >= len1)
-        return NULL;
-    strp = (char *)(str1 + len1 - len2);
-    while (strp != str1) {
-        if (*strp == *str2) {
-            if (strncmp(strp, str2, len2) == 0)
-                return strp;
-        }
-        strp--;
-    }
-    return NULL;
 }
 
 void print_info(const char *str, int i)
 {
     const char *extracting_mess = "Extracting...", *searching_mess = "Searching...";
+    const char *pasting_mess = "Pasting...", *archiving_mess = "Archiving...";
     const char *found_searched_mess = "Search finished. Press f anytime to view the results.";
+    const char *selected_mess = "There are selected files.";
     int mess_line = INFO_LINE, j, search_mess_col = COLS - strlen(searching_mess);
     for (j = INFO_LINE; j < 2; j++) {
-        wmove(info_win, j, strlen("INFO:") + 1);
+        wmove(info_win, j, strlen("I:") + 1);
         wclrtoeol(info_win);
     }
-    if (strlen(info_message)) {
-        mvwprintw(info_win, mess_line, COLS - strlen(info_message), info_message);
+    if (selected_files) {
+        if ((paste_th) && (pthread_kill(paste_th, 0) != ESRCH)) {
+            mvwprintw(info_win, mess_line, COLS - strlen(pasting_mess), pasting_mess);;
+        } else {
+            if ((archiver_th) && (pthread_kill(archiver_th, 0) != ESRCH))
+                mvwprintw(info_win, mess_line, COLS - strlen(archiving_mess), archiving_mess);
+            else
+                mvwprintw(info_win, mess_line, COLS - strlen(selected_mess), selected_mess);
+        }
         mess_line++;
     }
     if ((extractor_th) && (pthread_kill(extractor_th, 0) != ESRCH)) {
@@ -112,12 +102,8 @@ void print_info(const char *str, int i)
         if (sv.searching == 2)
             mvwprintw(info_win, mess_line, COLS - strlen(found_searched_mess), found_searched_mess);
     }
-    if (str) {
-        if (i == INFO_LINE)
-            mvwprintw(info_win, i, strlen("INFO: ") + 1, str);
-        else
-            mvwprintw(info_win, i, strlen("ERR: ") + 1, str);
-    }
+    if (str)
+        mvwprintw(info_win, i, strlen("I: ") + 1, str);
     wrefresh(info_win);
 }
 
@@ -138,4 +124,22 @@ void free_str(char *str[PATH_MAX])
         str[i] = realloc(str[i], 0);
         free(str[i]);
     }
+}
+
+int get_mimetype(const char *path, const char *test)
+{
+    int ret = 0;
+    const char *mimetype;
+    magic_t magic_cookie;
+    magic_cookie = magic_open(MAGIC_MIME_TYPE);
+    magic_load(magic_cookie, NULL);
+    mimetype = magic_file(magic_cookie, path);
+    if (test) {
+        if (strstr(mimetype, test))
+            ret = 1;
+    } else {
+        print_info(mimetype, INFO_LINE);
+    }
+    magic_close(magic_cookie);
+    return ret;
 }

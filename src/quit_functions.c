@@ -44,10 +44,21 @@ void free_everything(void)
 
 void quit_thread_func(void)
 {
-    char *mesg = "A thread is still running. Do you want to wait for it?(You should!) y/n:> ";
+    char *mesg = "A thread is still running. Do you want to wait for it?(You should!) Y/n:> ";
     char c;
-    if ((th) && (pthread_kill(th, 0) != ESRCH) && (*(ask_user(mesg, &c)) == 'y'))
-        pthread_join(th, NULL);
-    if ((extractor_th) && (pthread_kill(extractor_th, 0) != ESRCH) && (*(ask_user(mesg, &c)) == 'y'))
-        pthread_join(extractor_th, NULL);
+    if ((paste_th) && (pthread_kill(paste_th, 0) != ESRCH)) {
+        ask_user(mesg, &c, 1, 'y');
+        if (c == 'y')
+            pthread_join(paste_th, NULL);
+    }
+    if ((archiver_th) && (pthread_kill(archiver_th, 0) != ESRCH)) {
+        ask_user(mesg, &c, 1, 'y');
+        if (c == 'y')
+            pthread_join(archiver_th, NULL);
+    }
+    if ((extractor_th) && (pthread_kill(extractor_th, 0) != ESRCH)) {
+        ask_user(mesg, &c, 1, 'y');
+        if (c == 'y')
+            pthread_join(extractor_th, NULL);
+    }
 }

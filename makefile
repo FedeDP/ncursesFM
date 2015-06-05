@@ -1,5 +1,5 @@
 CC=gcc
-LIBS=-lncurses -lpthread -lcups -larchive -lconfig -lcrypto
+LIBS=-lncurses -lpthread -lcups -larchive -lconfig -lcrypto -lmagic
 
 all: ncursesFM clean
 
