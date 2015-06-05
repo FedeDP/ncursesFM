@@ -33,7 +33,9 @@ IT DOES NOT SUPPORT TERMINAL RESIZE. It is meant to be used maximized, or from a
 Archlinux users can now install ncursesFM from aur: https://aur.archlinux.org/packages/ncursesfm-git/
 
 Build requires ncurses, libconfig, libcups, libarchive, openssl and libmagic.
-At runtime it requires ncurses, libconfig, libmagic and (optionally) {fuseiso, libcups, libarchive, openssl}
+
+At runtime it requires ncurses, libconfig, libmagic and (optionally) {fuseiso, libcups, libarchive, openssl}.
+
 In Archlinux libmagic is provided by "file" package, that is part of base-devel group. So it is not listed inside PKGBUILD.
 
 ![Alt text](ncursesfm.png?raw=true)
