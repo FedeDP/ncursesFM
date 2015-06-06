@@ -26,13 +26,13 @@
 int is_archive(const char *filename)
 {
     const char *ext[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
-    int i = 0;
-    char *str;
-    while (*(ext + i)) {
-        str = strstr(filename, *(ext + i));
-        if ((str) && (strlen(str) == strlen(*(ext + i))))
-            return strlen(str);
-        i++;
+    int i = 0, len = strlen(filename);
+    if (strrchr(filename, '.')) {
+        while (i < 6) {
+            if (strcmp(filename + len - strlen(ext[i]), ext[i]) == 0)
+                return 1;
+            i++;
+        }
     }
     return 0;
 }
@@ -44,7 +44,7 @@ int file_isCopied(const char *str)
     sprintf(name, "%s/%s", ps[active].my_cwd, str);
     while (tmp) {
         if (strcmp(name, tmp->name) == 0) {
-            print_info("The file is already selected for copy. Please cancel the copy before.", ERR_LINE);
+            print_info("This file is already selected for copy.", INFO_LINE);
             return 1;
         }
         tmp = tmp->next;

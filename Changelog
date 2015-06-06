@@ -9,3 +9,6 @@
 * fixed bug in is_extension; removed strrstr function
 * Now using libmagic and get_mimetype function to understand whether it is a plain/text file (to open it), or an iso image (to mount).
 * added "u" to view current file mimetype
+
+5 / 6 / 2015
+* better is_archive function. It is now faster than before, and search through archives use less memory and time.
