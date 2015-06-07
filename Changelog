@@ -12,3 +12,10 @@
 
 5 / 6 / 2015
 * better is_archive function. It is now faster than before, and search through archives use less memory and time.
+
+5 / 7 / 2015
+* Better integration between shasum_func and md5_func
+* Added a warn message about md5sum being very slow if file size is larger than 100MB.
+* added "is_thread_running" function.
+* Better checks in manage_file, and in create_archive/try_extractor/paste_file.
+* libarchive is not an optdep...

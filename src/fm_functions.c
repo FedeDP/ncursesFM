@@ -41,8 +41,8 @@ static void *archiver_func(void *x);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void try_extractor(const char *path);
 static void *extractor_thread(void *a);
-static int shasum_func(const char *str, unsigned char **hash);
-static int md5sum_func(const char *str, unsigned char **hash);
+static int shasum_func(unsigned char **hash, long size, unsigned char *buffer);
+static int md5sum_func(const char *str, unsigned char **hash, long size, unsigned char *buffer);
 
 static char root_pasted_dir[PATH_MAX];
 static struct archive *archive = NULL;
@@ -72,26 +72,24 @@ void switch_hidden(void)
 
 void manage_file(const char *str)
 {
-    if (file_isCopied(str))
+    if ((file_isCopied(str)) && ((is_thread_running(paste_th)) || (is_thread_running(archiver_th)))) {
+        print_info("This file is being pasted/archived. Cannot open.", ERR_LINE);
         return;
-    if (get_mimetype(str, "iso")) {
-        iso_mount_service(str);
-    } else {
-        if (is_archive(str)) {
-            try_extractor(str);
-        } else {
-            if ((config.editor) && (access(config.editor, X_OK) != -1))
-                open_file(str);
-            else
-                print_info("You have to specify a valid editor in config file.", ERR_LINE);
-        }
     }
+    if (get_mimetype(str, "iso"))
+        return iso_mount_service(str);
+    if (is_archive(str))
+         return try_extractor(str);
+    if ((config.editor) && (access(config.editor, X_OK) != -1))
+        return open_file(str);
+    else
+        print_info("You have to specify a valid editor in config file.", ERR_LINE);
 }
 
 static void open_file(const char *str)
 {
     pid_t pid;
-    if (get_mimetype(str, "text")) {
+    if (get_mimetype(str, "text/")) {
         endwin();
         pid = vfork();
         if (pid == 0)
@@ -168,7 +166,7 @@ void remove_file(void)
 void manage_c_press(char c)
 {
     char str[PATH_MAX];
-    if (((paste_th) && (pthread_kill(paste_th, 0) != ESRCH)) || ((archiver_th) && (pthread_kill(archiver_th, 0) != ESRCH))) {
+    if ((is_thread_running(paste_th)) || (is_thread_running(archiver_th))) {
         print_info("A thread is still running. Wait for it.", INFO_LINE);
         return;
     }
@@ -223,10 +221,15 @@ static file_list *select_file(char c, file_list *h)
 
 void paste_file(void)
 {
+    const char *thread_running = "There's already a thread working on this file list. Please wait.";
     char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX];
     int i = 0;
     struct stat file_stat_copied, file_stat_pasted;
     file_list *tmp = NULL;
+    if ((is_thread_running(paste_th)) || (is_thread_running(archiver_th))) {
+        print_info(thread_running, INFO_LINE);
+        return;
+    }
     strcpy(root_pasted_dir, ps[active].my_cwd);
     if (access(root_pasted_dir, W_OK) != 0) {
         print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
@@ -543,13 +546,13 @@ void search_loop(void)
 
 void print_support(char *str)
 {
-    pthread_t print_thread;
-    const char *mesg = "Do you really want to print this file? Y/n:> ";
-    char c;
     if (access("/usr/include/cups/cups.h", F_OK ) == -1) {
         print_info("You must have libcups installed.", ERR_LINE);
         return;
     }
+    pthread_t print_thread;
+    const char *mesg = "Do you really want to print this file? Y/n:> ";
+    char c;
     ask_user(mesg, &c, 1, 'y');
     if (c == 'y') {
         pthread_create(&print_thread, NULL, print_file, str);
@@ -573,15 +576,16 @@ static void *print_file(void *filename)
 
 void create_archive(void)
 {
+    const char *thread_running = "There's already a thread working on this file list. Please wait.";
     const char *mesg = "Insert new file name (defaults to first entry name):> ";
     const char *question = "Do you really want to compress these files? Y/n:> ";
     char archive_path[PATH_MAX], str[PATH_MAX], c;
+    if ((is_thread_running(paste_th)) || (is_thread_running(archiver_th))) {
+        print_info(thread_running, INFO_LINE);
+        return;
+    }
     ask_user(question, &c, 1, 'y');
     if (c == 'y') {
-        if (access("/usr/include/archive.h", F_OK) == -1) {
-            print_info("You must have libarchive installed.", ERR_LINE);
-            return;
-        }
         if (access(ps[active].my_cwd, W_OK) != 0) {
             print_info("No write perms here.", ERR_LINE);
             return;
@@ -658,13 +662,14 @@ static void try_extractor(const char *path)
 {
     struct archive *a;
     const char *question = "Do you really want to extract this archive? Y/n:> ";
+    const char *extr_thread_running = "There's already an extractig operation. Currently only one is supported. Please wait.";
     char c;
+    if (is_thread_running(extractor_th)) {
+        print_info(extr_thread_running, INFO_LINE);
+        return;
+    }
     ask_user(question, &c, 1, 'y');
     if (c == 'y') {
-        if (access("/usr/include/archive.h", F_OK) == -1) {
-            print_info("You must have libarchive installed.", ERR_LINE);
-            return;
-        }
         if (access(ps[active].my_cwd, W_OK) != 0) {
             print_info("No write perms here.", ERR_LINE);
             return;
@@ -717,33 +722,52 @@ static void *extractor_thread(void *a)
 void integrity_check(const char *str)
 {
     const char *question = "Shasum (1, default) or md5sum (2)?> ";
-    char c;
-    unsigned char *hash;
+    unsigned char *hash = NULL, *buffer = NULL;
     int length, i;
-    ask_user(question, &c, 1, '1');
-    if (c == '1')
-        length = shasum_func(str, &hash);
-    else if (c == '2')
-        length = md5sum_func(str, &hash);
-    char s[2 * length];
-    s[0] = '\0';
-    for(i = 0; i < length; i++)
-        sprintf(s + strlen(s), "%02x", hash[i]);
-    print_info(s, INFO_LINE);
-    free(hash);
-}
-
-static int shasum_func(const char *str, unsigned char **hash)
-{
-    int i = 1, length = SHA_DIGEST_LENGTH;;
     FILE *fp;
     long size;
-    char input[4];
-    unsigned char *buffer;
-    if (access("/usr/include/openssl/sha.h", F_OK ) == -1) {
-        print_info("You must have openssl installed.", ERR_LINE);
-        return 0;
+    char c;
+    ask_user(question, &c, 1, '1');
+    if ((c == '1') || (c == '2')) {
+        if ((c == '1') && (access("/usr/include/openssl/sha.h", F_OK ) == -1)) {
+            print_info("You must have openssl installed.", ERR_LINE);
+            return;
+        }
+        if ((c == '2') && (access("/usr/include/openssl/md5.h", F_OK ) == -1)) {
+            print_info("You must have openssl installed.", ERR_LINE);
+            return;
+        }
+        if(!(fp = fopen(str, "rb"))) {
+            print_info("Could not open this file.", ERR_LINE);
+            return;
+        }
+        fseek(fp, 0L, SEEK_END);
+        size = ftell(fp);
+        rewind(fp);
+        if (!(buffer = safe_malloc(size, "Memory allocation failed."))) {
+            fclose(fp);
+            return;
+        }
+        fread(buffer, size, 1, fp);
+        fclose(fp);
+        if (c == '1')
+            length = shasum_func(&hash, size, buffer);
+        else if (c == '2')
+            length = md5sum_func(str, &hash, size, buffer);
+        free(buffer);
+        char s[2 * length];
+        s[0] = '\0';
+        for(i = 0; i < length; i++)
+            sprintf(s + strlen(s), "%02x", hash[i]);
+        print_info(s, INFO_LINE);
+        free(hash);
     }
+}
+
+static int shasum_func(unsigned char **hash, long size, unsigned char *buffer)
+{
+    int i = 1, length = SHA_DIGEST_LENGTH;
+    char input[4];
     const char *question = "Which shasum do you want? Choose between 1, 224, 256, 384, 512. Defaults to 1.> ";
     ask_user(question, input, 4, 0);
     if (strlen(input))
@@ -752,18 +776,6 @@ static int shasum_func(const char *str, unsigned char **hash)
         length = i / 8;
     if (!(*hash = safe_malloc(sizeof(unsigned char) * length, "Memory allocation failed.")))
         return 0;
-    if(!(fp = fopen(str, "rb"))) {
-        print_info("Could not open this file.", ERR_LINE);
-        return 0;
-    }
-    fseek(fp, 0L, SEEK_END);
-    size = ftell(fp);
-    rewind(fp);
-    if (!(buffer = safe_malloc(size, "Memory allocation failed."))) {
-        fclose(fp);
-        return 0;
-    }
-    fread(buffer, size, 1, fp);
     switch(i) {
     case 224:
         SHA224(buffer, size, *hash);
@@ -781,32 +793,23 @@ static int shasum_func(const char *str, unsigned char **hash)
         SHA1(buffer, size, *hash);
         break;
     }
-    free(buffer);
-    fclose(fp);
     return length;
 }
 
-static int md5sum_func(const char *str, unsigned char **hash)
+static int md5sum_func(const char *str, unsigned char **hash, long size, unsigned char *buffer)
 {
-    int fd;
-    MD5_CTX c;
-    char buf[512];
-    ssize_t bytes;
-    if (access("/usr/include/openssl/md5.h", F_OK ) == -1) {
-        print_info("You must have openssl installed.", ERR_LINE);
-        return 0;
+    struct stat file_stat;
+    const char *question = "This file is quite large. Md5 sum can take very long time (up to some minutes). Continue? Y/n";
+    char c = 'y';
+    int ret = 0;
+    lstat(str, &file_stat);
+    if (file_stat.st_size > 100 * 1024 * 1024) // 100 MB
+        ask_user(question, &c, 1, 'y');
+    if (c == 'y') {
+        if (!(*hash = safe_malloc(sizeof(unsigned char) * MD5_DIGEST_LENGTH, "Memory allocation failed.")))
+            return ret;
+        MD5(buffer, size, *hash);
+        ret = MD5_DIGEST_LENGTH;
     }
-    if (!(*hash = safe_malloc(sizeof(unsigned char) * MD5_DIGEST_LENGTH, "Memory allocation failed.")))
-        return 0;
-    MD5_Init(&c);
-    fd = open(str, O_RDONLY);
-    bytes = read(fd, buf, 512);
-    while(bytes > 0)
-    {
-        MD5_Update(&c, buf, bytes);
-        bytes = read(fd, buf, 512);
-    }
-    close(fd);
-    MD5_Final(*hash, &c);
-    return MD5_DIGEST_LENGTH;
+    return ret;
 }

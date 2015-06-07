@@ -79,17 +79,17 @@ void print_info(const char *str, int i)
         wclrtoeol(info_win);
     }
     if (selected_files) {
-        if ((paste_th) && (pthread_kill(paste_th, 0) != ESRCH)) {
+        if (is_thread_running(paste_th)) {
             mvwprintw(info_win, mess_line, COLS - strlen(pasting_mess), pasting_mess);;
         } else {
-            if ((archiver_th) && (pthread_kill(archiver_th, 0) != ESRCH))
+            if (is_thread_running(archiver_th))
                 mvwprintw(info_win, mess_line, COLS - strlen(archiving_mess), archiving_mess);
             else
                 mvwprintw(info_win, mess_line, COLS - strlen(selected_mess), selected_mess);
         }
         mess_line++;
     }
-    if ((extractor_th) && (pthread_kill(extractor_th, 0) != ESRCH)) {
+    if (is_thread_running(extractor_th)) {
         mvwprintw(info_win, mess_line, COLS - strlen(extracting_mess), extracting_mess);
         if (mess_line == INFO_LINE)
             mess_line++;
@@ -142,4 +142,11 @@ int get_mimetype(const char *path, const char *test)
     }
     magic_close(magic_cookie);
     return ret;
+}
+
+int is_thread_running(pthread_t th)
+{
+    if ((th) && (pthread_kill(th, 0) != ESRCH))
+        return 1;
+    return 0;
 }

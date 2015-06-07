@@ -4,7 +4,6 @@
 #include <ncurses.h>
 #include <pthread.h>
 #include <errno.h>
-#include <signal.h>
 
 #define INITIAL_POSITION 1
 #define MAX_TABS 2

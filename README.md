@@ -34,7 +34,7 @@ Archlinux users can now install ncursesFM from aur: https://aur.archlinux.org/pa
 
 Build requires ncurses, libconfig, libcups, libarchive, openssl and libmagic.
 
-At runtime it requires ncurses, libconfig, libmagic and (optionally) {fuseiso, libcups, libarchive, openssl}.
+At runtime it requires ncurses, libconfig, libmagic, libarchive and (optionally) {fuseiso, libcups, openssl}.
 
 In Archlinux libmagic is provided by "file" package, that is part of base-devel group. So it is not listed inside PKGBUILD.
 

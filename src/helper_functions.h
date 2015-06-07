@@ -1,5 +1,6 @@
 #include "declarations.h"
 #include <magic.h>
+#include <signal.h>
 
 int is_archive(const char *filename);
 int file_isCopied(const char *str);
@@ -8,3 +9,4 @@ void print_info(const char *str, int i);
 void *safe_malloc(ssize_t size, const char *str);
 void free_str(char *str[PATH_MAX]);
 int get_mimetype(const char *path, const char *test);
+int is_thread_running(pthread_t th);
