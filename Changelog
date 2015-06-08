@@ -19,3 +19,8 @@
 * added "is_thread_running" function.
 * Better checks in manage_file, and in create_archive/try_extractor/paste_file.
 * libarchive is not an optdep...
+
+5 / 8 / 2015
+* get rid of memmove; now copying with 'strcpy(dest, src + 1)' to remove starting "/"
+* fixed little memleak
+* moved every "access" check to first lines of functions

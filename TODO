@@ -2,4 +2,5 @@
  * check open, fopen errors; EASY
  * extend to N extracting/pasting/compressing thread; HARD
  * extend searching to one for tab; HARD
+ * fixes in new_file/create_dir : check if new file/dir is being added in a "being-pasted" folder;
  */

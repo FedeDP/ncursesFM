@@ -33,7 +33,7 @@ static void check_pasted(void);
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int rmrf(const char *path);
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-static void search_inside_archive(const char *path, int i);
+static int search_inside_archive(const char *path, int i);
 static int search_file(const char *path);
 static void *search_thread(void *x);
 static void *print_file(void *filename);
@@ -82,8 +82,7 @@ void manage_file(const char *str)
          return try_extractor(str);
     if ((config.editor) && (access(config.editor, X_OK) != -1))
         return open_file(str);
-    else
-        print_info("You have to specify a valid editor in config file.", ERR_LINE);
+    print_info("You have to specify a valid editor in config file.", ERR_LINE);
 }
 
 static void open_file(const char *str)
@@ -102,8 +101,6 @@ static void open_file(const char *str)
 
 static void iso_mount_service(const char *str)
 {
-    pid_t pid;
-    char mount_point[strlen(str)];
     if (access("/usr/bin/fuseiso", F_OK) == -1) {
         print_info("You need fuseiso for iso mounting support.", ERR_LINE);
         return;
@@ -112,6 +109,8 @@ static void iso_mount_service(const char *str)
         print_info("You do not have write permissions here.", ERR_LINE);
         return;
     }
+    pid_t pid;
+    char mount_point[strlen(str)];
     strcpy(mount_point, str);
     mount_point[strlen(str) - strlen(strrchr(str, '.'))] = '\0';
     pid = vfork();
@@ -148,10 +147,10 @@ void new_file(void)
 
 void remove_file(void)
 {
-    const char *mesg = "Are you serious? y/N:> ";
-    char c;
     if (file_isCopied(ps[active].nl[ps[active].curr_pos]))
         return;
+    const char *mesg = "Are you serious? y/N:> ";
+    char c;
     ask_user(mesg, &c, 1, 'n');
     if (c == 'y') {
         if (rmrf(ps[active].nl[ps[active].curr_pos]) == -1)
@@ -165,11 +164,11 @@ void remove_file(void)
 
 void manage_c_press(char c)
 {
-    char str[PATH_MAX];
     if ((is_thread_running(paste_th)) || (is_thread_running(archiver_th))) {
         print_info("A thread is still running. Wait for it.", INFO_LINE);
         return;
     }
+    char str[PATH_MAX];
     sprintf(str, "%s/%s", ps[active].my_cwd, ps[active].nl[ps[active].curr_pos]);
     if ((!selected_files) || (remove_from_list(str) == 0)) {
         selected_files = select_file(c, selected_files);
@@ -222,19 +221,19 @@ static file_list *select_file(char c, file_list *h)
 void paste_file(void)
 {
     const char *thread_running = "There's already a thread working on this file list. Please wait.";
-    char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX];
-    int i = 0;
-    struct stat file_stat_copied, file_stat_pasted;
-    file_list *tmp = NULL;
     if ((is_thread_running(paste_th)) || (is_thread_running(archiver_th))) {
         print_info(thread_running, INFO_LINE);
         return;
     }
-    strcpy(root_pasted_dir, ps[active].my_cwd);
-    if (access(root_pasted_dir, W_OK) != 0) {
+    if (access(ps[active].my_cwd, W_OK) != 0) {
         print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
         return;
     }
+    char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX];
+    int i = 0;
+    struct stat file_stat_copied, file_stat_pasted;
+    file_list *tmp = NULL;
+    strcpy(root_pasted_dir, ps[active].my_cwd);
     lstat(root_pasted_dir, &file_stat_pasted);
     for(tmp = selected_files; tmp; tmp = tmp->next) {
         strcpy(copied_file_dir, tmp->name);
@@ -330,10 +329,10 @@ static void check_pasted(void)
 
 void rename_file_folders(void)
 {
-    const char *mesg = "Insert new name:> ";
-    char str[PATH_MAX];
     if (file_isCopied(ps[active].nl[ps[active].curr_pos]))
         return;
+    const char *mesg = "Insert new name:> ";
+    char str[PATH_MAX];
     ask_user(mesg, str, PATH_MAX, 0);
     if (!(strlen(str)) || (rename(ps[active].nl[ps[active].curr_pos], str) == - 1)) {
         print_info(strerror(errno), ERR_LINE);
@@ -370,24 +369,24 @@ static int rmrf(const char *path)
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
+    const char *memfail = "Stopping search as no more memory can be allocated.";
     char fixed_str[PATH_MAX];
     int i = 0;
     if (ftwbuf->level == 0)
         return 0;
-    while (sv.found_searched[i]) {
+    while ((sv.found_searched[i]) && (i < MAX_NUMBER_OF_FOUND)) {
         i++;
     }
-    if (i >= MAX_NUMBER_OF_FOUND) {
+    if (i == MAX_NUMBER_OF_FOUND) {
         free_str(sv.found_searched);
         return 1;
     }
     if ((sv.search_archive) && (is_archive(strrchr(path, '/')))) {
-        search_inside_archive(path, i);
+        return search_inside_archive(path, i);
     } else {
-        strcpy(fixed_str, strrchr(path, '/'));
-        memmove(fixed_str, fixed_str + 1, strlen(fixed_str));
+        strcpy(fixed_str, strrchr(path, '/') + 1);
         if (strncmp(fixed_str, sv.searched_string, strlen(sv.searched_string)) == 0) {
-            if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, "Stopping search as no more memory can be allocated")))
+            if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, memfail)))
                 return 1;
             strcpy(sv.found_searched[i], path);
             if (typeflag == FTW_D)
@@ -397,8 +396,9 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     return 0;
 }
 
-static void search_inside_archive(const char *path, int i)
+static int search_inside_archive(const char *path, int i)
 {
+    const char *memfail = "Stopping search as no more memory can be allocated.";
     char str[PATH_MAX];
     struct archive *a = archive_read_new();
     struct archive_entry *entry;
@@ -409,19 +409,20 @@ static void search_inside_archive(const char *path, int i)
             strcpy(str, archive_entry_pathname(entry));
             if (str[strlen(str) - 1] == '/') // check if we're on a dir
                 str[strlen(str) - 1] = '\0';
-            if (strrchr(str, '/')) {
-                strcpy(str, strrchr(str, '/'));
-                memmove(str, str + 1, strlen(str));
-            }
+            if (strrchr(str, '/'))
+                strcpy(str, strrchr(str, '/') + 1);
             if (strncmp(str, sv.searched_string, strlen(sv.searched_string)) == 0) {
-                if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, "Memory allocation failed.")))
-                    return;
+                if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, memfail))) {
+                    archive_read_free(a);
+                    return 1;
+                }
                 sprintf(sv.found_searched[i], "%s/%s", path, archive_entry_pathname(entry));
                 i++;
             }
         }
     }
     archive_read_free(a);
+    return 0;
 }
 
 static int search_file(const char *path)
@@ -577,13 +578,13 @@ static void *print_file(void *filename)
 void create_archive(void)
 {
     const char *thread_running = "There's already a thread working on this file list. Please wait.";
-    const char *mesg = "Insert new file name (defaults to first entry name):> ";
-    const char *question = "Do you really want to compress these files? Y/n:> ";
-    char archive_path[PATH_MAX], str[PATH_MAX], c;
     if ((is_thread_running(paste_th)) || (is_thread_running(archiver_th))) {
         print_info(thread_running, INFO_LINE);
         return;
     }
+    const char *mesg = "Insert new file name (defaults to first entry name):> ";
+    const char *question = "Do you really want to compress these files? Y/n:> ";
+    char archive_path[PATH_MAX], str[PATH_MAX], c;
     ask_user(question, &c, 1, 'y');
     if (c == 'y') {
         if (access(ps[active].my_cwd, W_OK) != 0) {
@@ -598,10 +599,8 @@ void create_archive(void)
             return;
         }
         ask_user(mesg, str, PATH_MAX, 0);
-        if (!strlen(str)) {
-            strcpy(str, strrchr(selected_files->name, '/'));
-            memmove(str, str + 1, strlen(str));
-        }
+        if (!strlen(str))
+            strcpy(str, strrchr(selected_files->name, '/') + 1);
         sprintf(archive_path, "%s/%s.tgz", ps[active].my_cwd, str);
         if (archive_write_open_filename(archive, archive_path) == ARCHIVE_FATAL) {
             print_info(strerror(archive_errno(archive)), ERR_LINE);
@@ -660,14 +659,14 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 
 static void try_extractor(const char *path)
 {
-    struct archive *a;
-    const char *question = "Do you really want to extract this archive? Y/n:> ";
     const char *extr_thread_running = "There's already an extractig operation. Currently only one is supported. Please wait.";
-    char c;
     if (is_thread_running(extractor_th)) {
         print_info(extr_thread_running, INFO_LINE);
         return;
     }
+    struct archive *a;
+    const char *question = "Do you really want to extract this archive? Y/n:> ";
+    char c;
     ask_user(question, &c, 1, 'y');
     if (c == 'y') {
         if (access(ps[active].my_cwd, W_OK) != 0) {
