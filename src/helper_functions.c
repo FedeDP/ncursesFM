@@ -41,9 +41,11 @@ int file_isCopied(const char *str)
 {
     char name[PATH_MAX];
     file_list *tmp = selected_files;
-    sprintf(name, "%s/%s", ps[active].my_cwd, str);
+    strcpy(name, ps[active].my_cwd);
+    if (str)
+        sprintf(name + strlen(name), "/%s", str);
     while (tmp) {
-        if (strcmp(name, tmp->name) == 0) {
+        if (strncmp(name, tmp->name, strlen(tmp->name)) == 0) {
             print_info("This file is already selected for copy.", INFO_LINE);
             return 1;
         }

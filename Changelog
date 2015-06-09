@@ -24,3 +24,6 @@
 * get rid of memmove; now copying with 'strcpy(dest, src + 1)' to remove starting "/"
 * fixed little memleak
 * moved every "access" check to first lines of functions
+
+5 / 9 / 2015
+* fixed new_file / create_dir bugs: if cwd is being pasted/archived, i can't create a file/dir there. Now gracefully managing this possibility.

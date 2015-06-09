@@ -2,5 +2,4 @@
  * check open, fopen errors; EASY
  * extend to N extracting/pasting/compressing thread; HARD
  * extend searching to one for tab; HARD
- * fix file_isCopied function : i have to check if my current path is *inside* a pasted folder too (eg: copying Script/ and my cwd is Script/linux/);
  */
