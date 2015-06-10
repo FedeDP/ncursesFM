@@ -69,6 +69,7 @@ static void init_func(void)
     cont = 0;
     sv.searching = 0;
     sv.search_archive = 0;
+    extracting = 0;
     selected_files = NULL;
     config.editor = NULL;
     config.starting_dir = NULL;

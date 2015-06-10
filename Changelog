@@ -27,3 +27,8 @@
 
 5 / 9 / 2015
 * fixed new_file / create_dir bugs: if cwd is being pasted/archived, i can't create a file/dir there. Now gracefully managing this possibility.
+
+5 / 10 / 2015
+* check fopen/open errors
+* fixed a bug in open_file
+* fixed a bug in print_info/extractor_thread: i still need extracting glob var

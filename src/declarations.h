@@ -46,4 +46,4 @@ struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
 WINDOW *info_win;
-int active, cont;
+int active, cont, extracting;

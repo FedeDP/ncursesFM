@@ -75,14 +75,15 @@ void print_info(const char *str, int i)
     const char *pasting_mess = "Pasting...", *archiving_mess = "Archiving...";
     const char *found_searched_mess = "Search finished. Press f anytime to view the results.";
     const char *selected_mess = "There are selected files.";
-    int mess_line = INFO_LINE, j, search_mess_col = COLS - strlen(searching_mess);
-    for (j = INFO_LINE; j < 2; j++) {
-        wmove(info_win, j, strlen("I:") + 1);
+    int mess_line, search_mess_col = COLS - strlen(searching_mess);
+    for (mess_line = INFO_LINE; mess_line != ERR_LINE; mess_line++) {
+        wmove(info_win, mess_line, strlen("I:") + 1);
         wclrtoeol(info_win);
     }
+    mess_line = INFO_LINE;
     if (selected_files) {
         if (is_thread_running(paste_th)) {
-            mvwprintw(info_win, mess_line, COLS - strlen(pasting_mess), pasting_mess);;
+            mvwprintw(info_win, mess_line, COLS - strlen(pasting_mess), pasting_mess);
         } else {
             if (is_thread_running(archiver_th))
                 mvwprintw(info_win, mess_line, COLS - strlen(archiving_mess), archiving_mess);
@@ -91,19 +92,17 @@ void print_info(const char *str, int i)
         }
         mess_line++;
     }
-    if (is_thread_running(extractor_th)) {
+    if (extracting == 1) {
         mvwprintw(info_win, mess_line, COLS - strlen(extracting_mess), extracting_mess);
         if (mess_line == INFO_LINE)
             mess_line++;
         else
             search_mess_col = search_mess_col - (strlen(extracting_mess) + 1);
     }
-    if (sv.searching == 1) {
+    if (sv.searching == 1)
         mvwprintw(info_win, mess_line, search_mess_col, searching_mess);
-    } else {
-        if (sv.searching == 2)
+    else if (sv.searching == 2)
             mvwprintw(info_win, mess_line, COLS - strlen(found_searched_mess), found_searched_mess);
-    }
     if (str)
         mvwprintw(info_win, i, strlen("I: ") + 1, str);
     wrefresh(info_win);

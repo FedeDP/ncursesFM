@@ -88,7 +88,7 @@ void manage_file(const char *str)
 static void open_file(const char *str)
 {
     pid_t pid;
-    if (get_mimetype(str, "text/")) {
+    if ((get_mimetype(str, "text/")) || (get_mimetype(str, "x-empty"))) {
         endwin();
         pid = vfork();
         if (pid == 0)
@@ -287,13 +287,15 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
     } else {
         fd_to = open(pasted_file, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, sb->st_mode);
         fd_from = open(path, O_RDONLY);
-        len = read(fd_from, buff, sizeof(buff));
-        while (len > 0) {
-            write(fd_to, buff, len);
+        if ((fd_to != -1) && (fd_from != -1)) {
             len = read(fd_from, buff, sizeof(buff));
+            while (len > 0) {
+                write(fd_to, buff, len);
+                len = read(fd_from, buff, sizeof(buff));
+            }
+            close(fd_to);
+            close(fd_from);
         }
-        close(fd_to);
-        close(fd_from);
     }
     return 0;
 }
@@ -656,12 +658,14 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     archive_write_header(archive, entry);
     archive_entry_free(entry);
     fd = open(path, O_RDONLY);
-    len = read(fd, buff, sizeof(buff));
-    while (len > 0) {
-        archive_write_data(archive, buff, len);
+    if (fd != -1) {
         len = read(fd, buff, sizeof(buff));
+        while (len > 0) {
+            archive_write_data(archive, buff, len);
+            len = read(fd, buff, sizeof(buff));
+        }
+        close(fd);
     }
-    close(fd);
     return 0;
 }
 
@@ -684,13 +688,12 @@ static void try_extractor(const char *path)
         a = archive_read_new();
         archive_read_support_filter_all(a);
         archive_read_support_format_all(a);
-        if (archive_read_open_filename(a, path, BUFF_SIZE) != ARCHIVE_OK) {
+        if (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK) {
+            pthread_create(&extractor_th, NULL, extractor_thread, a);
+        } else {
             print_info(archive_error_string(a), ERR_LINE);
             archive_read_free(a);
-            return;
         }
-        print_info(NULL, INFO_LINE);
-        pthread_create(&extractor_th, NULL, extractor_thread, a);
     }
 }
 
@@ -700,6 +703,8 @@ static void *extractor_thread(void *a)
     struct archive_entry *entry;
     int flags, len, i;
     char buff[BUFF_SIZE], current_dir[PATH_MAX];
+    extracting = 1;
+    print_info(NULL, INFO_LINE);
     strcpy(current_dir, ps[active].my_cwd);
     ext = archive_write_disk_new();
     flags = ARCHIVE_EXTRACT_TIME;
@@ -722,6 +727,7 @@ static void *extractor_thread(void *a)
         if (strcmp(ps[i].my_cwd, current_dir) == 0)
             generate_list(i);
     }
+    extracting = 0;
     print_info("Succesfully extracted.", INFO_LINE);
     return NULL;
 }
@@ -745,7 +751,7 @@ void integrity_check(const char *str)
             return;
         }
         if(!(fp = fopen(str, "rb"))) {
-            print_info("Could not open this file.", ERR_LINE);
+            print_info(strerror(errno), ERR_LINE);
             return;
         }
         fseek(fp, 0L, SEEK_END);

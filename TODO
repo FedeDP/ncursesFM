@@ -1,5 +1,4 @@
 /* TODO:
- * check open, fopen errors; EASY
  * extend to N extracting/pasting/compressing thread; HARD
  * extend searching to one for tab; HARD
  */
