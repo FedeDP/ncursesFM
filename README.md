@@ -32,11 +32,11 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 IT DOES NOT SUPPORT TERMINAL RESIZE. It is meant to be used maximized, or from a tty.
 
 Archlinux users can now install ncursesFM from aur: https://aur.archlinux.org/packages/ncursesfm-git/
-
-Build requires ncurses, libconfig, libcups, libarchive, openssl and libmagic.
-
-At runtime it requires ncurses, libconfig, libmagic, libarchive and (optionally) {fuseiso, libcups, openssl}.
-
+Build requires ncurses, libconfig, libcups, libarchive, openssl, libx11 and libmagic.
+At runtime it requires ncurses, libconfig, libmagic, libarchive and (optionally) {fuseiso, libcups, openssl, libx11, xdg-utils}.
 In Archlinux libmagic is provided by "file" package, that is part of base-devel group. So it is not listed inside PKGBUILD.
+
+For other distro: just clone the repo, cd inside the new dir, and run "make", then "make install" (as root).
+To remove it, just run "make uninstall" (as root).
 
 ![Alt text](ncursesfm.png?raw=true)

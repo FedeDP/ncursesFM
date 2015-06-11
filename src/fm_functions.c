@@ -152,7 +152,7 @@ static void iso_mount_service(const char *str)
 void new_file(void)
 {
     if ((file_isCopied(NULL)) && ((is_thread_running(paste_th)) || (is_thread_running(archiver_th)))) {
-        print_info("Your current dir is being pasted/archived. Cannot create new file here.", ERR_LINE);
+        print_info("This dir is being pasted/archived. Cannot create new file here.", ERR_LINE);
         return;
     }
     FILE *f;
@@ -371,7 +371,7 @@ void rename_file_folders(void)
 void create_dir(void)
 {
     if ((file_isCopied(NULL)) && ((is_thread_running(paste_th)) || (is_thread_running(archiver_th)))) {
-        print_info("Your current dir is being pasted/archived. Cannot create new dir here.", ERR_LINE);
+        print_info("This dir is being pasted/archived. Cannot create new dir here.", ERR_LINE);
         return;
     }
     const char *mesg = "Insert new folder name:> ";

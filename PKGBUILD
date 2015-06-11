@@ -28,14 +28,10 @@ pkgver() {
 build()
 {
     cd $srcdir/$_gitname
-    make ncursesFM
-    make clean
+    make
 }
 
 package() {
     cd $srcdir/$_gitname
-    mkdir -p $pkgdir/usr/bin
-    install -Dm755 ncursesFM $pkgdir/usr/bin
-    mkdir -p $pkgdir/etc/default
-    install -Dm644 ncursesFM.conf $pkgdir/etc/default
+    make DESTDIR="$pkgdir" install
 }
