@@ -5,13 +5,14 @@ It has following features:
 * file/dir functions support: copy/paste/cut, new/remove, rename. Copy/cut: to remove a file previously selected for copy just press c/x again on it.
 * 2 tabs support.
 * iso mount support -> you must have fuseiso installed.
-* open files with $editor (settings defined) var.
+* if executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
+* Otherwise, it will open (text and blank)files with $editor (ncursesFM.conf defined) var.
 * show hidden files.
 * stats support (permissions and sizes).
 * in-program helper message -> press 'l'.
 * sync between tabs.
 * rename file/folders support.
-* shasum, through openssl.
+* shasum/md5sum, through openssl.
 * move file/folders support -> use cut for this. If a file is "cut" on the same filesystem, it will be moved, otherwise it will be copied.
 * Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to open it, if it was a file, or to move in your searched location.
 * It can search your string inside archives too. Then, if found, you can go to the folder of the archive, to extract it.

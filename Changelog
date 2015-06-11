@@ -32,3 +32,6 @@
 * check fopen/open errors
 * fixed a bug in open_file
 * fixed a bug in print_info/extractor_thread: i still need extracting glob var
+
+5 / 11 / 2015
+* added support for xdg_open while in X environment, otherwise old config.editor variable will be used to open (only, obviously) text files. With xdg_open user can virtually open every type of file.

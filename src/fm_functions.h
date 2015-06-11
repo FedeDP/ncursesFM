@@ -8,6 +8,7 @@
 #include <archive_entry.h>
 #include <openssl/sha.h>
 #include <openssl/md5.h>
+#include <X11/Xlib.h>
 
 #define MAX_NUMBER_OF_FOUND 100
 #define BUFF_SIZE 8192

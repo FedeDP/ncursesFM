@@ -23,6 +23,7 @@
 
 #include "fm_functions.h"
 
+static void xdg_open(const char *str);
 static void open_file(const char *str);
 static void iso_mount_service(const char *str);
 static int remove_from_list(const char *name);
@@ -80,22 +81,41 @@ void manage_file(const char *str)
         return iso_mount_service(str);
     if (is_archive(str))
          return try_extractor(str);
-    if ((config.editor) && (access(config.editor, X_OK) != -1))
+    if ((access("/usr/bin/xdg-open", X_OK) != -1) && (access("/usr/include/X11/Xlib.h", F_OK) != -1))
+        return xdg_open(str);
+    else
         return open_file(str);
-    print_info("You have to specify a valid editor in config file.", ERR_LINE);
+}
+
+static void xdg_open(const char *str)
+{
+    pid_t pid;
+    Display* display = XOpenDisplay(NULL);
+    if (display) {
+        XCloseDisplay(display);
+        pid = vfork();
+        if (pid == 0)
+            execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, NULL);
+    } else {
+        return open_file(str);
+    }
 }
 
 static void open_file(const char *str)
 {
     pid_t pid;
-    if ((get_mimetype(str, "text/")) || (get_mimetype(str, "x-empty"))) {
-        endwin();
-        pid = vfork();
-        if (pid == 0)
-            execl(config.editor, config.editor, str, NULL);
-        else
-            waitpid(pid, NULL, 0);
-        refresh();
+    if ((config.editor) && (access(config.editor, X_OK) != -1)) {
+        if ((get_mimetype(str, "text/")) || (get_mimetype(str, "x-empty"))) {
+            endwin();
+            pid = vfork();
+            if (pid == 0)
+                execl(config.editor, config.editor, str, NULL);
+            else
+                waitpid(pid, NULL, 0);
+            refresh();
+        }
+    } else {
+        print_info("You have to specify a valid editor in config file.", ERR_LINE);
     }
 }
 

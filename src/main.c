@@ -41,6 +41,7 @@ int main(int argc, const char *argv[])
         main_loop(&quit);
     free_everything();
     screen_end();
+    printf("\033c"); // to clear terminal/vt after leaving program
     return 0;
 }
 
