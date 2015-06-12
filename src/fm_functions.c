@@ -93,8 +93,13 @@ static void xdg_open(const char *str)
     if (display) {
         XCloseDisplay(display);
         pid = vfork();
-        if (pid == 0)
+        if (pid == 0) {
+            int fd = open("/dev/null",O_WRONLY);
+            dup2(fd, 1);
+            dup2(fd, 2);
+            close(fd);
             execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, NULL);
+        }
     } else {
         return open_file(str);
     }
@@ -134,6 +139,10 @@ static void iso_mount_service(const char *str)
     mount_point[strlen(str) - strlen(strrchr(str, '.'))] = '\0';
     pid = vfork();
     if (pid == 0) {
+        int fd = open("/dev/null",O_WRONLY);
+        dup2(fd, 1);
+        dup2(fd, 2);
+        close(fd);
         if (mkdir(mount_point, ACCESSPERMS) == -1)
             execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
         else

@@ -2,4 +2,5 @@
  * fix way too chaotic print_info
  * fix naming
  * use safe_malloc in thread_l
+ * fix file_isCopied: i do not have always to check for every thread_list: often i only need to check head (when there's a th around)
  */
