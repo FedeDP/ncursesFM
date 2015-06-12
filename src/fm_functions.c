@@ -45,7 +45,6 @@ static void *extractor_thread(void *a);
 static int shasum_func(unsigned char **hash, long size, unsigned char *buffer);
 static int md5sum_func(const char *str, unsigned char **hash, long size, unsigned char *buffer);
 
-static char root_pasted_dir[PATH_MAX];
 static struct archive *archive = NULL;
 static int distance_from_root;
 
@@ -73,7 +72,7 @@ void switch_hidden(void)
 
 void manage_file(const char *str)
 {
-    if ((file_isCopied(str)) && ((is_thread_running(paste_th)) || (is_thread_running(archiver_th)))) {
+    if ((file_isCopied(str)) && (is_thread_running(th))) {
         print_info("This file is being pasted/archived. Cannot open.", ERR_LINE);
         return;
     }
@@ -151,7 +150,7 @@ static void iso_mount_service(const char *str)
 
 void new_file(void)
 {
-    if ((file_isCopied(NULL)) && ((is_thread_running(paste_th)) || (is_thread_running(archiver_th)))) {
+    if ((file_isCopied(ps[active].my_cwd)) && (is_thread_running(th))) {
         print_info("This dir is being pasted/archived. Cannot create new file here.", ERR_LINE);
         return;
     }
@@ -188,17 +187,11 @@ void remove_file(void)
 
 void manage_c_press(char c)
 {
-    if ((is_thread_running(paste_th)) || (is_thread_running(archiver_th))) {
-        print_info("A thread is still running. Wait for it.", INFO_LINE);
-        return;
-    }
-    char str[PATH_MAX];
-    sprintf(str, "%s/%s", ps[active].my_cwd, ps[active].nl[ps[active].curr_pos]);
-    if ((!selected_files) || (remove_from_list(str) == 0)) {
-        selected_files = select_file(c, selected_files);
+    if ((!current_th->selected_files) || (remove_from_list(ps[active].nl[ps[active].curr_pos]) == 0)) {
+        current_th->selected_files = select_file(c, current_th->selected_files);
         print_info("File added to copy list.", INFO_LINE);
     } else {
-        if (selected_files)
+        if (current_th->selected_files)
             print_info("File deleted from copy list.", INFO_LINE);
         else
             print_info("File deleted from copy list. Copy list empty.", INFO_LINE);
@@ -207,9 +200,9 @@ void manage_c_press(char c)
 
 static int remove_from_list(const char *name)
 {
-    file_list *tmp = selected_files, *temp = NULL;
+    file_list *temp = NULL, *tmp = current_th->selected_files;
     if (strcmp(name, tmp->name) == 0) {
-        selected_files = selected_files->next;
+        current_th->selected_files = current_th->selected_files->next;
         free(tmp);
         return 1;
     }
@@ -232,7 +225,7 @@ static file_list *select_file(char c, file_list *h)
     } else {
         if (!(h = safe_malloc(sizeof(struct list), "Memory allocation failed.")))
             return NULL;
-        sprintf(h->name, "%s/%s", ps[active].my_cwd, ps[active].nl[ps[active].curr_pos]);
+        strcpy(h->name, ps[active].nl[ps[active].curr_pos]);
         if (c == 'x')
             h->cut = 1;
         else
@@ -244,30 +237,20 @@ static file_list *select_file(char c, file_list *h)
 
 void paste_file(void)
 {
-    const char *thread_running = "There's already a thread working on this file list. Please wait.";
-    if ((is_thread_running(paste_th)) || (is_thread_running(archiver_th))) {
-        print_info(thread_running, INFO_LINE);
-        return;
-    }
-    if (access(ps[active].my_cwd, W_OK) != 0) {
-        print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
-        return;
-    }
     char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX];
     int i = 0;
     struct stat file_stat_copied, file_stat_pasted;
     file_list *tmp = NULL;
-    strcpy(root_pasted_dir, ps[active].my_cwd);
-    lstat(root_pasted_dir, &file_stat_pasted);
-    for(tmp = selected_files; tmp; tmp = tmp->next) {
+    lstat(thread_h->full_path, &file_stat_pasted);
+    for(tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
         strcpy(copied_file_dir, tmp->name);
         copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
-        if (strcmp(root_pasted_dir, copied_file_dir) == 0) {
+        if (strcmp(thread_h->full_path, copied_file_dir) == 0) {
             tmp->cut = CANNOT_PASTE_SAME_DIR;
         } else {
             lstat(copied_file_dir, &file_stat_copied);
             if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
-                sprintf(pasted_file, "%s%s", root_pasted_dir, strrchr(tmp->name, '/'));
+                sprintf(pasted_file, "%s%s", thread_h->full_path, strrchr(tmp->name, '/'));
                 tmp->cut = MOVED_FILE;
                 if (rename(tmp->name, pasted_file) == - 1)
                     print_info(strerror(errno), ERR_LINE);
@@ -276,12 +259,15 @@ void paste_file(void)
             }
         }
     }
-    pthread_create(&paste_th, NULL, cpr, &i);
+    if (!is_thread_running(th))
+        pthread_create(&th, NULL, cpr, &i);
+    else
+        cpr(&i);
 }
 
 static void *cpr(void *n)
 {
-    file_list *tmp = selected_files;
+    file_list *tmp = thread_h->selected_files;
     if (*((int *)n) > 0) {
         print_info(NULL, INFO_LINE);
         while (tmp) {
@@ -293,6 +279,7 @@ static void *cpr(void *n)
         }
     }
     check_pasted();
+    change_thread_list_head();
     return NULL;
 }
 
@@ -301,7 +288,7 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
     int buff[BUFF_SIZE];
     int len, fd_to, fd_from;
     char pasted_file[PATH_MAX];
-    sprintf(pasted_file, "%s%s", root_pasted_dir, path + distance_from_root);
+    sprintf(pasted_file, "%s%s", thread_h->full_path, path + distance_from_root);
     if (typeflag == FTW_D) {
         mkdir(pasted_file, sb->st_mode);
     } else {
@@ -323,14 +310,12 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
 static void check_pasted(void)
 {
     int i, printed[cont];
-    file_list *tmp = selected_files;
+    file_list *tmp = thread_h->selected_files;
     char copied_file_dir[PATH_MAX];
     for (i = 0; i < cont; i++) {
-        if (strcmp(root_pasted_dir, ps[i].my_cwd) == 0) {
+        if (strcmp(thread_h->full_path, ps[i].my_cwd) == 0) {
             generate_list(i);
             printed[i] = 1;
-        } else {
-            printed[i] = 0;
         }
     }
     while (tmp) {
@@ -348,8 +333,6 @@ static void check_pasted(void)
         }
         tmp = tmp->next;
     }
-    free_copied_list(selected_files);
-    selected_files = NULL;
     print_info("Every files has been copied/moved.", INFO_LINE);
 }
 
@@ -370,7 +353,7 @@ void rename_file_folders(void)
 
 void create_dir(void)
 {
-    if ((file_isCopied(NULL)) && ((is_thread_running(paste_th)) || (is_thread_running(archiver_th)))) {
+    if ((file_isCopied(ps[active].my_cwd)) && (is_thread_running(th))) {
         print_info("This dir is being pasted/archived. Cannot create new dir here.", ERR_LINE);
         return;
     }
@@ -475,7 +458,6 @@ void search(void)
     if (c == 'y')
         sv.search_archive = 1;
     sv.searching = 1;
-    sv.search_active_win = active;
     print_info(NULL, INFO_LINE);
     pthread_create(&search_th, NULL, search_thread, NULL);
     pthread_detach(search_th);
@@ -502,7 +484,7 @@ void list_found(void)
 {
     int i = 0;
     char str[20];
-    sv.searching = 3;
+    sv.searching = 3 + active;
     while (sv.found_searched[i])
         i++;
     ps[active].delta = 0;
@@ -607,44 +589,32 @@ static void *print_file(void *filename)
 
 void create_archive(void)
 {
-    const char *thread_running = "There's already a thread working on this file list. Please wait.";
-    if ((is_thread_running(paste_th)) || (is_thread_running(archiver_th))) {
-        print_info(thread_running, INFO_LINE);
+    if (access(ps[active].my_cwd, W_OK) != 0) {
+        print_info("No write perms here.", ERR_LINE);
         return;
     }
-    const char *mesg = "Insert new file name (defaults to first entry name):> ";
-    const char *question = "Do you really want to compress these files? Y/n:> ";
-    char archive_path[PATH_MAX], str[PATH_MAX], c;
-    ask_user(question, &c, 1, 'y');
-    if (c == 'y') {
-        if (access(ps[active].my_cwd, W_OK) != 0) {
-            print_info("No write perms here.", ERR_LINE);
-            return;
-        }
-        archive = archive_write_new();
-        if ((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) {
-            print_info(archive_error_string(archive), ERR_LINE);
-            archive_write_free(archive);
-            archive = NULL;
-            return;
-        }
-        ask_user(mesg, str, PATH_MAX, 0);
-        if (!strlen(str))
-            strcpy(str, strrchr(selected_files->name, '/') + 1);
-        sprintf(archive_path, "%s/%s.tgz", ps[active].my_cwd, str);
-        if (archive_write_open_filename(archive, archive_path) == ARCHIVE_FATAL) {
-            print_info(strerror(archive_errno(archive)), ERR_LINE);
-            archive_write_free(archive);
-            archive = NULL;
-            return;
-        }
-        pthread_create(&archiver_th, NULL, archiver_func, (void *)archive_path);
+    archive = archive_write_new();
+    if ((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) {
+        print_info(archive_error_string(archive), ERR_LINE);
+        archive_write_free(archive);
+        archive = NULL;
+        return;
     }
+    if (archive_write_open_filename(archive, thread_h->full_path) == ARCHIVE_FATAL) {
+        print_info(strerror(archive_errno(archive)), ERR_LINE);
+        archive_write_free(archive);
+        archive = NULL;
+        return;
+    }
+    if (!is_thread_running(th))
+        pthread_create(&th, NULL, archiver_func, NULL);
+    else
+        archiver_func(NULL);
 }
 
-static void *archiver_func(void *archive_path)
+static void *archiver_func(void *x)
 {
-    file_list *tmp = selected_files;
+    file_list *tmp = thread_h->selected_files;
     char str[PATH_MAX];
     int i;
     print_info(NULL, INFO_LINE);
@@ -655,15 +625,14 @@ static void *archiver_func(void *archive_path)
     }
     archive_write_free(archive);
     archive = NULL;
-    strcpy(str, archive_path);
-    str[strlen(archive_path) - strlen(strrchr(archive_path, '/'))] = '\0';
+    strcpy(str, thread_h->full_path);
+    str[strlen(thread_h->full_path) - strlen(strrchr(thread_h->full_path, '/'))] = '\0';
     for (i = 0; i < cont; i++) {
         if (strcmp(str, ps[i].my_cwd) == 0)
             generate_list(i);
     }
     print_info("The archive is ready.", INFO_LINE);
-    free_copied_list(selected_files);
-    selected_files = NULL;
+    change_thread_list_head();
     return NULL;
 }
 

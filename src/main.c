@@ -71,7 +71,7 @@ static void init_func(void)
     sv.searching = 0;
     sv.search_archive = 0;
     extracting = 0;
-    selected_files = NULL;
+    thread_h = add_thread(thread_h);
     config.editor = NULL;
     config.starting_dir = NULL;
     config.second_tab_starting_dir = 0;
@@ -124,7 +124,7 @@ static void main_loop(int *quit)
         case 9: // tab to change tab
             if (cont == MAX_TABS) {
                 active = 1 - active;
-                if (sv.searching != 3)
+                if (sv.searching != 3 + active)
                     chdir(ps[active].my_cwd);
                  else
                     search_loop();
@@ -146,8 +146,8 @@ static void main_loop(int *quit)
                 manage_c_press(c);
             break;
         case 'v': // paste file
-            if (selected_files)
-                paste_file();
+            if (current_th->selected_files)
+                init_thread(PASTE_TH);
             break;
         case 'l':
             trigger_show_helper_message();
@@ -166,22 +166,20 @@ static void main_loop(int *quit)
             create_dir();
             break;
         case 'f': // f to search
-            if (sv.searching == 0) {
+            if (sv.searching == 0)
                 search();
-            } else if (sv.searching == 1) {
+            else if (sv.searching == 1)
                 print_info("There's already a search in progress. Wait for it.", INFO_LINE);
-            } else if (sv.searching == 2) {
-                active = sv.search_active_win;
+            else if (sv.searching == 2)
                 list_found();
-            }
             break;
         case 'p': // p to print
             if (S_ISREG(file_stat.st_mode))
                 print_support(ps[active].nl[ps[active].curr_pos]);
             break;
         case 'b': //b to compress
-            if (selected_files)
-                create_archive();
+            if (current_th->selected_files)
+                init_thread(ARCHIVER_TH);
             break;
         case 'a': // a to view sha1sum
             if (S_ISREG(file_stat.st_mode))

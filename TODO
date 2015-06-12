@@ -1,3 +1,5 @@
 /* TODO:
- * extend to N extracting/pasting/compressing thread; HARD
+ * fix way too chaotic print_info
+ * fix naming
+ * use safe_malloc in thread_l
  */

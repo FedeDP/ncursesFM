@@ -23,42 +23,42 @@
 
 #include "quit_functions.h"
 
-void free_copied_list(file_list *h)
-{
-    if (h->next)
-        free_copied_list(h->next);
-    free(h);
-}
-
 void free_everything(void)
 {
     int j;
+    thread_l *tmp = thread_h;
     free_str(sv.found_searched);
     for (j = 0; j < cont; j++)
         free_str(ps[j].nl);
     free(config.editor);
     free(config.starting_dir);
-    if (selected_files)
-        free_copied_list(selected_files);
+    while (tmp) {
+        if (tmp->selected_files)
+            free_copied_list(tmp->selected_files);
+        tmp = tmp->next;
+    }
+    free_thread_list(thread_h);
 }
 
 void quit_thread_func(void)
 {
     char *mesg = "A thread is still running. Do you want to wait for it?(You should!) Y/n:> ";
     char c;
-    if (is_thread_running(paste_th)) {
+    while (is_thread_running(th)) {
         ask_user(mesg, &c, 1, 'y');
         if (c == 'y')
-            pthread_join(paste_th, NULL);
-    }
-    if (is_thread_running(archiver_th)) {
-        ask_user(mesg, &c, 1, 'y');
-        if (c == 'y')
-            pthread_join(archiver_th, NULL);
+            pthread_join(th, NULL);
     }
     if (is_thread_running(extractor_th)) {
         ask_user(mesg, &c, 1, 'y');
         if (c == 'y')
             pthread_join(extractor_th, NULL);
     }
+}
+
+void free_thread_list(thread_l *h)
+{
+    if (h->next)
+        free_thread_list(h->next);
+    free(h);
 }

@@ -37,3 +37,8 @@
 * added support for xdg_open while in X environment, otherwise old config.editor variable will be used to open (only, obviously) text files. With xdg_open user can virtually open every type of file
 * better makefile
 * updated readme and pkgbuild with new deps
+
+5 / 12 / 2015
+* huge rework: now you can queue as many copy/archive as you want, they'll be taken into care one after the other.
+* switched to full path for namelist; solved some problems and finally removed "chdir" workardounds in list_everything
+* get rid of sv.search_active_win -> now sv.searching will be equal to "3 + its win" : 3 for first tab, 4 for second tab. 

@@ -9,6 +9,8 @@
 #define MAX_TABS 2
 #define INFO_LINE 0
 #define ERR_LINE 1
+#define PASTE_TH 1
+#define ARCHIVER_TH 2
 
 struct conf {
     char *editor;
@@ -37,11 +39,17 @@ struct search_vars {
     char *found_searched[PATH_MAX];
     int searching;
     int search_archive;
-    int search_active_win;
 };
 
-file_list *selected_files;
-pthread_t paste_th, archiver_th, extractor_th;
+typedef struct thread_list {
+    file_list *selected_files;
+    int type;
+    char full_path[PATH_MAX];
+    struct thread_list *next;
+} thread_l;
+
+thread_l *thread_h, *current_th; // current_th: ptr to latest elem in thread_l list
+pthread_t extractor_th, th;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;

@@ -72,7 +72,7 @@ void generate_list(int win)
 {
     int i, number_of_files;
     struct dirent **files;
-    if ((sv.searching == 3) && (win == sv.search_active_win))
+    if (sv.searching == 3 + win)
         return;
     free_str(ps[win].nl);
     number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
@@ -83,7 +83,7 @@ void generate_list(int win)
             screen_end();
             exit(1);
         }
-        strcpy(ps[win].nl[i], files[i]->d_name);
+        sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
     }
     for (i = number_of_files - 1; i >= 0; i--)
         free(files[i]);
@@ -96,32 +96,31 @@ void generate_list(int win)
 
 void list_everything(int win, int old_dim, int end, char **files)
 {
-    int i, max_length;
+    int i;
     const char *search_mess = "q to leave search win";
-    chdir(ps[win].my_cwd);
     wborder(ps[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
-    if ((sv.searching != 3) || (win != sv.search_active_win)) {
+    if (sv.searching != 3 + win) {
         mvwprintw(ps[win].fm, 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
-        max_length = MAX_FILENAME_LENGTH;
     } else {
         mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_mess), sv.searched_string);
         mvwprintw(ps[win].fm, 0, width[win] - (strlen(search_mess) + 1), search_mess);
-        max_length = width[win] - 5;
     }
     if (end == 0)
         end = dim - 2;
     wattron(ps[win].fm, A_BOLD);
     for (i = old_dim; (files[i]) && (i  < old_dim + end); i++) {
         colored_folders(win, files[i]);
-        mvwprintw(ps[win].fm, INITIAL_POSITION + i - ps[win].delta, 4, "%.*s", max_length, files[i]);
+        if (sv.searching == 3 + win)
+            mvwprintw(ps[win].fm, INITIAL_POSITION + i - ps[win].delta, 4, "%.*s", width[win] - 5, files[i]);
+        else
+            mvwprintw(ps[win].fm, INITIAL_POSITION + i - ps[win].delta, 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(files[i], '/') + 1);
         wattroff(ps[win].fm, COLOR_PAIR);
     }
     wattroff(ps[win].fm, A_BOLD);
     mvwprintw(ps[win].fm, INITIAL_POSITION + ps[win].curr_pos - ps[win].delta, 1, "->");
-    if (((sv.searching != 3) || (win != sv.search_active_win)) && (ps[win].stat_active == 1))
+    if ((sv.searching != 3 + win) && (ps[win].stat_active == 1))
         show_stat(old_dim, end, win);
     wrefresh(ps[win].fm);
-    chdir(ps[active].my_cwd);
 }
 
 static int is_hidden(const struct dirent *current_file)
