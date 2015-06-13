@@ -41,4 +41,8 @@
 5 / 12 / 2015
 * huge rework: now you can queue as many copy/archive as you want, they'll be taken into care one after the other.
 * switched to full path for namelist; solved some problems and finally removed "chdir" workardounds in list_everything
-* get rid of sv.search_active_win -> now sv.searching will be equal to "3 + its win" : 3 for first tab, 4 for second tab. 
+* get rid of sv.search_active_win -> now sv.searching will be equal to "3 + its win" : 3 for first tab, 4 for second tab.
+* redirect vforked stdout and stderr to /dev/null
+
+5 / 13 / 2015
+* using safe_malloc in add_thread function

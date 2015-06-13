@@ -158,7 +158,8 @@ thread_l *add_thread(thread_l *h)
     if (h) {
         h->next = add_thread(h->next);
     } else {
-        h = malloc(sizeof(struct thread_list));
+        if (!(h = safe_malloc(sizeof(struct thread_list), "No memory available")))
+            return NULL;
         h->selected_files = NULL;
         h->next = NULL;
         h->type = 0;

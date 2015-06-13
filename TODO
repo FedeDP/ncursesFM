@@ -1,6 +1,6 @@
 /* TODO:
- * fix way too chaotic print_info
- * fix naming
- * use safe_malloc in thread_l
- * fix file_isCopied: i do not have always to check for every thread_list: often i only need to check head (when there's a th around)
+ * fix way too chaotic print_info -> medium
+ * fix naming -> easy
+ * fix file_isCopied: i do not have always to check for every thread_list: often i only need to check head (when there's a th around) -> medium
+ * make it thread safe: what if file_isCopied checks for a thread_h while thread_h is being changed by change_thread_list_head? -> hard
  */
