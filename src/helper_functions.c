@@ -84,7 +84,7 @@ void print_info(const char *str, int i)
     const char *found_searched_mess = "Search finished. Press f anytime to view the results.";
     const char *selected_mess = "There are selected files.";
     int mess_line, search_mess_col = COLS - strlen(searching_mess);
-    for (mess_line = INFO_LINE; mess_line != ERR_LINE; mess_line++) {
+    for (mess_line = INFO_LINE; mess_line != ERR_LINE + 1; mess_line++) {
         wmove(info_win, mess_line, strlen("I:") + 1);
         wclrtoeol(info_win);
     }

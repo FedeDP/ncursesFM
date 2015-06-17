@@ -373,7 +373,9 @@ void create_dir(void)
     const char *mesg = "Insert new folder name:> ";
     char str[PATH_MAX];
     ask_user(mesg, str, PATH_MAX, 0);
-    if (!(strlen(str)) || (mkdir(str, 0700) == - 1)) {
+    if (!strlen(str))
+        return;
+    if (mkdir(str, 0700) == - 1) {
         print_info(strerror(errno), ERR_LINE);
     } else {
         sync_changes();
