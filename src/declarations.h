@@ -55,3 +55,4 @@ struct vars ps[MAX_TABS];
 struct search_vars sv;
 WINDOW *info_win;
 int active, cont, extracting;
+pthread_mutex_t lock;

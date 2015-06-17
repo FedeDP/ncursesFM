@@ -37,11 +37,13 @@ int is_archive(const char *filename)
     return 0;
 }
 
-int file_isCopied(const char *str)
+int file_isCopied(const char *str, int level)
 {
     file_list *tmp;
     thread_l *temp = thread_h;
-    while (temp) {
+    while ((temp) && (level != 0)) {
+        if (level == 1)
+            pthread_mutex_trylock(&lock);
         tmp = temp->selected_files;
         while (tmp) {
             if (strncmp(str, tmp->name, strlen(tmp->name)) == 0) {
@@ -50,7 +52,10 @@ int file_isCopied(const char *str)
             }
             tmp = tmp->next;
         }
+        if (level == 1)
+            pthread_mutex_unlock(&lock);
         temp = temp->next;
+        level--;
     }
     return 0;
 }
@@ -183,7 +188,9 @@ void execute_thread(void)
 void change_thread_list_head(void)
 {
     thread_l *tmp = thread_h;
+    pthread_mutex_lock(&lock);
     thread_h = thread_h->next;
+    pthread_mutex_unlock(&lock);
     free_copied_list(tmp->selected_files);
     free(tmp);
     if (thread_h->type != 0)

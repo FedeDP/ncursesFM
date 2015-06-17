@@ -72,7 +72,7 @@ void switch_hidden(void)
 
 void manage_file(const char *str)
 {
-    if ((file_isCopied(str)) && (is_thread_running(th))) {
+    if ((is_thread_running(th)) && (file_isCopied(str, 1))) {
         print_info("This file is being pasted/archived. Cannot open.", ERR_LINE);
         return;
     }
@@ -159,7 +159,7 @@ static void iso_mount_service(const char *str)
 
 void new_file(void)
 {
-    if ((file_isCopied(ps[active].my_cwd)) && (is_thread_running(th))) {
+    if ((is_thread_running(th)) && (file_isCopied(ps[active].my_cwd, 1))) {
         print_info("This dir is being pasted/archived. Cannot create new file here.", ERR_LINE);
         return;
     }
@@ -179,8 +179,10 @@ void new_file(void)
 
 void remove_file(void)
 {
-    if (file_isCopied(ps[active].nl[ps[active].curr_pos]))
+    if (file_isCopied(ps[active].nl[ps[active].curr_pos], -1)) {
+        print_info("This file is already selected. Cancel its selection before.", INFO_LINE);
         return;
+    }
     const char *mesg = "Are you serious? y/N:> ";
     char c;
     ask_user(mesg, &c, 1, 'n');
@@ -347,8 +349,10 @@ static void check_pasted(void)
 
 void rename_file_folders(void)
 {
-    if (file_isCopied(ps[active].nl[ps[active].curr_pos]))
+    if (file_isCopied(ps[active].nl[ps[active].curr_pos], -1)) {
+        print_info("This file is already selected. Cancel its selection before.", INFO_LINE);
         return;
+    }
     const char *mesg = "Insert new name:> ";
     char str[PATH_MAX];
     ask_user(mesg, str, PATH_MAX, 0);
@@ -362,7 +366,7 @@ void rename_file_folders(void)
 
 void create_dir(void)
 {
-    if ((file_isCopied(ps[active].my_cwd)) && (is_thread_running(th))) {
+    if ((is_thread_running(th)) && (file_isCopied(ps[active].my_cwd, 1))) {
         print_info("This dir is being pasted/archived. Cannot create new dir here.", ERR_LINE);
         return;
     }

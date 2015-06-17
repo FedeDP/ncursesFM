@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 int is_archive(const char *filename);
-int file_isCopied(const char *str);
+int file_isCopied(const char *str, int level);
 void ask_user(const char *str, char *input, int dim, char c);
 void print_info(const char *str, int i);
 void *safe_malloc(ssize_t size, const char *str);

@@ -37,10 +37,12 @@ int main(int argc, const char *argv[])
     helper_function(argc, argv);
     init_func();
     screen_init();
+    pthread_mutex_init(&lock, NULL);
     while (!quit)
         main_loop(&quit);
     free_everything();
     screen_end();
+    pthread_mutex_destroy(&lock);
     printf("\033c"); // to clear terminal/vt after leaving program
     return 0;
 }
