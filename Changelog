@@ -46,3 +46,7 @@
 
 5 / 13 / 2015
 * using safe_malloc in add_thread function
+
+5 / 17 / 2015
+* file_isCopied() will now check only the right depth level (ie: only head of thread_l, or everything).
+* file_isCopied() and change_thread_list_head() will now lock a mutex before checking head, to avoid possible crash: if file_isCopied() was checkin head, and in the meantime change_thread_list_head() would change my head, the program would crash. It should be now avoided.

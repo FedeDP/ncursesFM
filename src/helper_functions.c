@@ -42,8 +42,10 @@ int file_isCopied(const char *str, int level)
     file_list *tmp;
     thread_l *temp = thread_h;
     while ((temp) && (level != 0)) {
-        if (level == 1)
-            pthread_mutex_trylock(&lock);
+        if (level == 1) {
+            pthread_mutex_lock(&lock);
+            temp = thread_h;
+        }
         tmp = temp->selected_files;
         while (tmp) {
             if (strncmp(str, tmp->name, strlen(tmp->name)) == 0) {
