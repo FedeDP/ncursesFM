@@ -25,13 +25,13 @@ Ncurses File Manager for linux
 * If you try to quit while a {pasting, compressing, extracting} thread is still running, you'll be asked if ncursesFM must wait for the thread to finish its work. (Printing thread and search thread are safer, no data corruption is possible)
 * You can queue as many pasting/archiving threads as you wish, they'll be taken into care one by one.
 
+**IT DOES NOT SUPPORT TERMINAL RESIZE**. It is meant to be used maximized, or from a tty.
+
 It reads following variables from /etc/default/ncursesFM.conf (using libconfig)...remember to set them!
 * editor -> editor used to open files, in non X environment (or when xdg-open is not available)
 * show_hidden -> whether to show hidden files by default or not.
 * starting_directory -> default starting directory.
 * use_default_starting_dir_second_tab -> whether to use "starting_directory" when opening second tab. Otherwise current tab will be used.
-
-**IT DOES NOT SUPPORT TERMINAL RESIZE**. It is meant to be used maximized, or from a tty.
 
 ## Build requirements
 
@@ -47,6 +47,7 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 
 * required: ncurses, libconfig, libmagic, libarchive
 * optional: fuseiso, libcups, openssl, libx11, xdg-utils
+
 In Archlinux libmagic is provided by "file" package, that is part of base-devel group. So it is not listed inside PKGBUILD.
 
 
