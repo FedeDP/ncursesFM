@@ -1,7 +1,8 @@
 # ncursesFM
 Ncurses File Manager for linux
 
-It has following features:
+## Features:
+
 * File/dir functions support: copy/paste/cut, new/remove, rename. Copy/cut: to remove a file previously selected for copy just press c/x again on it.
 * 2 tabs support.
 * ISO mount support -> you must have fuseiso installed.
@@ -30,14 +31,33 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 * starting_directory -> default starting directory.
 * use_default_starting_dir_second_tab -> whether to use "starting_directory" when opening second tab. Otherwise current tab will be used.
 
-IT DOES NOT SUPPORT TERMINAL RESIZE. It is meant to be used maximized, or from a tty.
+**IT DOES NOT SUPPORT TERMINAL RESIZE**. It is meant to be used maximized, or from a tty.
 
-Archlinux users can now install ncursesFM from aur: https://aur.archlinux.org/packages/ncursesfm-git/
-Build requires ncurses, libconfig, libcups, libarchive, openssl, libx11 and libmagic.
-At runtime it requires ncurses, libconfig, libmagic, libarchive and (optionally) {fuseiso, libcups, openssl, libx11, xdg-utils}.
+## Build requirements
+
+* ncurses -> UI
+* libconfig -> config file parsing
+* libcups -> print support
+* libarchive -> archiving/extracting support
+* openssl -> md5/shasum support
+* libx11 -> check whether ncursesFM is started in a X environment or not.
+* libmagic -> mimetype support
+
+## Runtime dependencies
+
+* required: ncurses, libconfig, libmagic, libarchive
+* optional: fuseiso, libcups, openssl, libx11, xdg-utils
 In Archlinux libmagic is provided by "file" package, that is part of base-devel group. So it is not listed inside PKGBUILD.
 
-For other distro: just clone the repo, cd inside the new dir, and run "make", then "make install" (as root).
-To remove it, just run "make uninstall" (as root).
+
+## Install instructions:
+
+*Archlinux users can install ncursesFM from aur*: https://aur.archlinux.org/packages/ncursesfm-git/
+
+* clone the repo
+* cd inside the new dir
+* "make"
+* "make install" (as root)
+* To remove, just run "make uninstall" (as root).
 
 ![Alt text](ncursesfm.png?raw=true)
