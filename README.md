@@ -3,7 +3,7 @@ Ncurses File Manager for linux
 
 ## Features:
 
-* File/dir functions support: copy/paste/cut, new/remove, rename. Copy/cut: to remove a file previously selected for copy just press c/x again on it.
+* File/dir functions support: copy/paste/cut (cut = move, if on the same FS), new/remove, rename.
 * 2 tabs support.
 * ISO mount support -> you must have fuseiso installed.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
@@ -12,9 +12,7 @@ Ncurses File Manager for linux
 * Stats support (permissions and sizes).
 * In-program helper message -> press 'l'.
 * Sync between tabs.
-* Rename file/folders support.
 * Shasum/md5sum, through openssl.
-* Move file/folders support -> use cut for this. If a file is "cut" on the same filesystem, it will be moved, otherwise it will be copied.
 * Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to open it, if it was a file, or to move in your searched location.
 * It can search your string inside archives too. Then, if found, you can go to the folder of the archive, to extract it.
 * Basic print support: you need "libcups" for this to work.
