@@ -54,6 +54,7 @@ void screen_init(void)
 void screen_end(void)
 {
     int i;
+
     for (i = 0; i < cont; i++) {
         wclear(ps[i].fm);
         delwin(ps[i].fm);
@@ -72,21 +73,25 @@ void generate_list(int win)
 {
     int i, number_of_files;
     struct dirent **files;
-    if (sv.searching == 3 + win)
+
+    if (sv.searching == 3 + win) {
         return;
+    }
     free_str(ps[win].nl);
     number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
     for (i = 0; i < number_of_files; i++) {
         if (!(ps[win].nl[i] = safe_malloc(sizeof(char) * PATH_MAX, "No more memory available. Program will exit."))) {
-            quit_thread_func();
+            quit_thread_func(th);
+            quit_thread_func(extractor_th);
             free_everything();
             screen_end();
             exit(1);
         }
         sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
     }
-    for (i = number_of_files - 1; i >= 0; i--)
+    for (i = number_of_files - 1; i >= 0; i--) {
         free(files[i]);
+    }
     free(files);
     wclear(ps[win].fm);
     ps[win].delta = 0;
@@ -98,6 +103,7 @@ void list_everything(int win, int old_dim, int end, char **files)
 {
     int i;
     const char *search_mess = "q to leave search win";
+
     wborder(ps[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
     if (sv.searching != 3 + win) {
         mvwprintw(ps[win].fm, 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
@@ -105,31 +111,36 @@ void list_everything(int win, int old_dim, int end, char **files)
         mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_mess), sv.searched_string);
         mvwprintw(ps[win].fm, 0, width[win] - (strlen(search_mess) + 1), search_mess);
     }
-    if (end == 0)
+    if (end == 0) {
         end = dim - 2;
+    }
     wattron(ps[win].fm, A_BOLD);
     for (i = old_dim; (files[i]) && (i  < old_dim + end); i++) {
         colored_folders(win, files[i]);
-        if (sv.searching == 3 + win)
+        if (sv.searching == 3 + win) {
             mvwprintw(ps[win].fm, INITIAL_POSITION + i - ps[win].delta, 4, "%.*s", width[win] - 5, files[i]);
-        else
+        } else {
             mvwprintw(ps[win].fm, INITIAL_POSITION + i - ps[win].delta, 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(files[i], '/') + 1);
+        }
         wattroff(ps[win].fm, COLOR_PAIR);
     }
     wattroff(ps[win].fm, A_BOLD);
     mvwprintw(ps[win].fm, INITIAL_POSITION + ps[win].curr_pos - ps[win].delta, 1, "->");
-    if ((sv.searching != 3 + win) && (ps[win].stat_active == 1))
+    if ((sv.searching != 3 + win) && (ps[win].stat_active == 1)) {
         show_stat(old_dim, end, win);
+    }
     wrefresh(ps[win].fm);
 }
 
 static int is_hidden(const struct dirent *current_file)
 {
-    if ((strlen(current_file->d_name) == 1) && (current_file->d_name[0] == '.'))
+    if ((strlen(current_file->d_name) == 1) && (current_file->d_name[0] == '.')) {
         return (FALSE);
+    }
     if (config.show_hidden == 0) {
-        if ((strlen(current_file->d_name) > 1) && (current_file->d_name[0] == '.') && (current_file->d_name[1] != '.'))
+        if (strlen(current_file->d_name) > 1 && current_file->d_name[0] == '.' && current_file->d_name[1] != '.') {
             return (FALSE);
+        }
         return (TRUE);
     }
     return (TRUE);
@@ -152,11 +163,13 @@ void new_tab(void)
     scrollok(ps[active].fm, TRUE);
     idlok(ps[active].fm, TRUE);
     if (config.starting_dir) {
-        if ((cont == 1) || (config.second_tab_starting_dir != 0))
+        if ((cont == 1) || (config.second_tab_starting_dir != 0)){
             strcpy(ps[active].my_cwd, config.starting_dir);
+        }
     }
-    if (strlen(ps[active].my_cwd) == 0)
+    if (strlen(ps[active].my_cwd) == 0) {
         getcwd(ps[active].my_cwd, PATH_MAX);
+    }
     chdir(ps[active].my_cwd);
     generate_list(active);
 }
@@ -228,13 +241,15 @@ void sync_changes(void)
 static void colored_folders(int win, const char *name)
 {
     struct stat file_stat;
+
     if (lstat(name, &file_stat) == 0) {
-        if (S_ISDIR(file_stat.st_mode))
+        if (S_ISDIR(file_stat.st_mode)) {
             wattron(ps[win].fm, COLOR_PAIR(1));
-        else if (S_ISLNK(file_stat.st_mode))
+        } else if (S_ISLNK(file_stat.st_mode)) {
             wattron(ps[win].fm, COLOR_PAIR(3));
-        else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR))
+        } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
             wattron(ps[win].fm, COLOR_PAIR(2));
+        }
     } else {
         wattron(ps[win].fm, COLOR_PAIR(4));
     }
@@ -243,6 +258,7 @@ static void colored_folders(int win, const char *name)
 void trigger_show_helper_message(void)
 {
     int i;
+
     if (helper_win == NULL) {
         dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
         for (i = 0; i < cont; i++) {
@@ -296,6 +312,7 @@ void show_stat(int init, int end, int win)
     char perm_sign[3] = {'r', 'w', 'x'}, str[20];
     float total_size = 0;
     struct stat file_stat;
+
     if (init == 0) {
         for (i = 1; ps[win].nl[i]; i++) {
             stat(ps[win].nl[i], &file_stat);
@@ -310,8 +327,9 @@ void show_stat(int init, int end, int win)
         change_unit(file_stat.st_size, str);
         mvwprintw(ps[win].fm, i + INITIAL_POSITION - ps[win].delta, STAT_COL, "%s", str);
         wprintw(ps[win].fm, "\t");
-        for (j = 0; j < 9; j++)
+        for (j = 0; j < 9; j++) {
             wprintw(ps[win].fm, (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
+        }
     }
 }
 
@@ -319,6 +337,7 @@ static void change_unit(float size, char *str)
 {
     char *unit[3] = {"KB", "MB", "GB"};
     int i = 0;
+
     size /= 1024;
     while ((size > 1024) && (i < 3)) {
         size /= 1024;
@@ -330,6 +349,7 @@ static void change_unit(float size, char *str)
 void erase_stat(void)
 {
     int i;
+    
     for (i = 0; (ps[active].nl[i]) && (i < dim - 2); i++) {
         wmove(ps[active].fm, i + 1, STAT_COL);
         wclrtoeol(ps[active].fm);

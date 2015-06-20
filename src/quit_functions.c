@@ -27,38 +27,39 @@ void free_everything(void)
 {
     int j;
     thread_l *tmp = thread_h;
+
     free_str(sv.found_searched);
-    for (j = 0; j < cont; j++)
+    for (j = 0; j < cont; j++) {
         free_str(ps[j].nl);
+    }
     free(config.editor);
     free(config.starting_dir);
     while (tmp) {
-        if (tmp->selected_files)
+        if (tmp->selected_files) {
             free_copied_list(tmp->selected_files);
+        }
         tmp = tmp->next;
     }
     free_thread_list(thread_h);
 }
 
-void quit_thread_func(void)
+void quit_thread_func(pthread_t tmp)
 {
     char *mesg = "A thread is still running. Do you want to wait for it?(You should!) Y/n:> ";
     char c;
-    while (is_thread_running(th)) {
+
+    if (is_thread_running(tmp)) {
         ask_user(mesg, &c, 1, 'y');
-        if (c == 'y')
-            pthread_join(th, NULL);
-    }
-    if (is_thread_running(extractor_th)) {
-        ask_user(mesg, &c, 1, 'y');
-        if (c == 'y')
-            pthread_join(extractor_th, NULL);
+        if (c == 'y') {
+            pthread_join(tmp, NULL);
+        }
     }
 }
 
 void free_thread_list(thread_l *h)
 {
-    if (h->next)
+    if (h->next) {
         free_thread_list(h->next);
+    }
     free(h);
 }

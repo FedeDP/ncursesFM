@@ -29,17 +29,19 @@ static void init_func(void);
 static void main_loop(int *quit);
 
 static const char *config_file_name = "/etc/default/ncursesFM.conf";
-//static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
+// static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, const char *argv[])
 {
     int quit = 0;
+
     helper_function(argc, argv);
     init_func();
     screen_init();
     pthread_mutex_init(&lock, NULL);
-    while (!quit)
+    while (!quit) {
         main_loop(&quit);
+    }
     free_everything();
     screen_end();
     pthread_mutex_destroy(&lock);
@@ -69,6 +71,7 @@ static void init_func(void)
 {
     const char *str_editor, *str_starting_dir;
     config_t cfg;
+
     cont = 0;
     sv.searching = 0;
     sv.search_archive = 0;
@@ -80,14 +83,17 @@ static void init_func(void)
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
         if (config_lookup_string(&cfg, "editor", &str_editor)) {
-            if ((config.editor = safe_malloc(strlen(str_editor) * sizeof(char) + 1, "Memory allocation failed.")))
+            if ((config.editor = safe_malloc(strlen(str_editor) * sizeof(char) + 1, "Memory allocation failed."))) {
                 strcpy(config.editor, str_editor);
+            }
         }
-        if (!(config_lookup_int(&cfg, "show_hidden", &config.show_hidden)))
+        if (!config_lookup_int(&cfg, "show_hidden", &config.show_hidden)) {
             config.show_hidden = 0;
-        if ((config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) && (access(str_starting_dir, F_OK) != -1)) {
-            if ((config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, "Memory allocation failed.")))
+        }
+        if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) && access(str_starting_dir, F_OK) != -1) {
+            if ((config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, "Memory allocation failed."))) {
                 strcpy(config.starting_dir, str_starting_dir);
+            }
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
     } else {
@@ -101,98 +107,112 @@ static void main_loop(int *quit)
 {
     int c;
     struct stat file_stat;
+
     stat(ps[active].nl[ps[active].curr_pos], &file_stat);
     c = wgetch(ps[active].fm);
     switch (c) {
-        case KEY_UP:
-            scroll_up(ps[active].nl);
-            break;
-        case KEY_DOWN:
-            scroll_down(ps[active].nl);
-            break;
-        case 'h': // h to show hidden files
-            switch_hidden();
-            break;
-        case 10: // enter to change dir or open a file.
-            if ((S_ISDIR(file_stat.st_mode)) || (S_ISLNK(file_stat.st_mode)))
-                change_dir(ps[active].nl[ps[active].curr_pos]);
-            else
-                manage_file(ps[active].nl[ps[active].curr_pos]);
-            break;
-        case 't': // t to open second tab
-            if (cont < MAX_TABS)
-                new_tab();
-            break;
-        case 9: // tab to change tab
-            if (cont == MAX_TABS) {
-                active = 1 - active;
-                if (sv.searching != 3 + active)
-                    chdir(ps[active].my_cwd);
-                 else
-                    search_loop();
+    case KEY_UP:
+        scroll_up(ps[active].nl);
+        break;
+    case KEY_DOWN:
+        scroll_down(ps[active].nl);
+        break;
+    case 'h': // h to show hidden files
+        switch_hidden();
+        break;
+    case 10: // enter to change dir or open a file.
+        if (S_ISDIR(file_stat.st_mode) || S_ISLNK(file_stat.st_mode)) {
+            change_dir(ps[active].nl[ps[active].curr_pos]);
+        } else {
+            manage_file(ps[active].nl[ps[active].curr_pos]);
+        }
+        break;
+    case 't': // t to open second tab
+        if (cont < MAX_TABS) {
+            new_tab();
+        }
+        break;
+    case 9: // tab to change tab
+        if (cont == MAX_TABS) {
+            active = 1 - active;
+            if (sv.searching != 3 + active) {
+                chdir(ps[active].my_cwd);
+            } else {
+                search_loop();
             }
-            break;
-        case 'w': //close ps.active new_tab
-            if (active != 0)
-                delete_tab();
-            break;
-        case 'n': // new file
-            new_file();
-            break;
-        case 'r': //remove file
-            if (strcmp(ps[active].nl[ps[active].curr_pos], "..") != 0)
-                remove_file();
-            break;
-        case 'c': case 'x': // copy/cut file
-            if (strcmp(ps[active].nl[ps[active].curr_pos], "..") != 0)
-                manage_c_press(c);
-            break;
-        case 'v': // paste file
-            if (current_th->selected_files)
-                init_thread(PASTE_TH);
-            break;
-        case 'l':
-            trigger_show_helper_message();
-            break;
-        case 's': // show stat about files (size and perms)
-            ps[active].stat_active = 1 - ps[active].stat_active;
-            if (ps[active].stat_active == 1)
-                list_everything(active, ps[active].delta, 0, ps[active].nl);
-            else
-                erase_stat();
-            break;
-        case 'o': // o to rename
-            rename_file_folders();
-            break;
-        case 'd': // d to create folder
-            create_dir();
-            break;
-        case 'f': // f to search
-            if (sv.searching == 0)
-                search();
-            else if (sv.searching == 1)
-                print_info("There's already a search in progress. Wait for it.", INFO_LINE);
-            else if (sv.searching == 2)
-                list_found();
-            break;
-        case 'p': // p to print
-            if (S_ISREG(file_stat.st_mode))
-                print_support(ps[active].nl[ps[active].curr_pos]);
-            break;
-        case 'b': //b to compress
-            if (current_th->selected_files)
-                init_thread(ARCHIVER_TH);
-            break;
-        case 'a': // a to view sha1sum
-            if (S_ISREG(file_stat.st_mode))
-                integrity_check(ps[active].nl[ps[active].curr_pos]);
-            break;
-        case 'u': // u to view mimetype
-            get_mimetype(ps[active].nl[ps[active].curr_pos], NULL);
-            break;
-        case 'q': /* q to exit */
-            quit_thread_func();
-            *quit = 1;
-            break;
+        }
+        break;
+    case 'w': //close ps.active new_tab
+        if (active != 0) {
+            delete_tab();
+        }
+        break;
+    case 'n': // new file
+        new_file();
+        break;
+    case 'r': //remove file
+        if (strcmp(ps[active].nl[ps[active].curr_pos], "..") != 0) {
+            remove_file();
+        }
+        break;
+    case 'c': case 'x': // copy/cut file
+        if (strcmp(ps[active].nl[ps[active].curr_pos], "..") != 0) {
+            manage_c_press(c);
+        }
+        break;
+    case 'v': // paste file
+        if (current_th->selected_files) {
+            init_thread(PASTE_TH);
+        }
+        break;
+    case 'l':
+        trigger_show_helper_message();
+        break;
+    case 's': // show stat about files (size and perms)
+        ps[active].stat_active = 1 - ps[active].stat_active;
+        if (ps[active].stat_active == 1) {
+            list_everything(active, ps[active].delta, 0, ps[active].nl);
+        } else {
+            erase_stat();
+        }
+        break;
+    case 'o': // o to rename
+        rename_file_folders();
+        break;
+    case 'd': // d to create folder
+        create_dir();
+        break;
+    case 'f': // f to search
+        if (sv.searching == 0) {
+            search();
+        } else if (sv.searching == 1) {
+            print_info("There's already a search in progress. Wait for it.", INFO_LINE);
+        } else if (sv.searching == 2) {
+            list_found();
+        }
+        break;
+    case 'p': // p to print
+        if (S_ISREG(file_stat.st_mode)) {
+            print_support(ps[active].nl[ps[active].curr_pos]);
+        }
+        break;
+    case 'b': //b to compress
+        if (current_th->selected_files) {
+            init_thread(ARCHIVER_TH);
+        }
+        break;
+    case 'a': // a to view sha1sum
+        if (S_ISREG(file_stat.st_mode)) {
+            integrity_check(ps[active].nl[ps[active].curr_pos]);
+        }
+        break;
+    case 'u': // u to view mimetype
+        get_mimetype(ps[active].nl[ps[active].curr_pos], NULL);
+        break;
+    case 'q': /* q to exit */
+        quit_thread_func(th);
+        quit_thread_func(extractor_th);
+        *quit = 1;
+        break;
     }
 }
