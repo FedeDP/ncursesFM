@@ -23,6 +23,7 @@
 
 #include "fm_functions.h"
 #include <libconfig.h>
+#include <ctype.h>
 
 static void helper_function(int argc, const char *argv[]);
 static void init_func(void);
@@ -110,6 +111,9 @@ static void main_loop(int *quit)
 
     stat(ps[active].nl[ps[active].curr_pos], &file_stat);
     c = wgetch(ps[active].fm);
+    if ((c >= 'A') && (c <= 'Z')) {
+        c = tolower(c);
+    }
     switch (c) {
     case KEY_UP:
         scroll_up(ps[active].nl);

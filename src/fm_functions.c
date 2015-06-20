@@ -63,11 +63,7 @@ void switch_hidden(void)
 {
     int i;
 
-    if (config.show_hidden == 0) {
-        config.show_hidden = 1;
-    } else {
-        config.show_hidden = 0;
-    }
+    config.show_hidden = !config.show_hidden;
     for (i = 0; i < cont; i++) {
         generate_list(i);
     }
