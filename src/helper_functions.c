@@ -72,7 +72,9 @@ void ask_user(const char *str, char *input, int dim, char c)
     print_info(str, INFO_LINE);
     if (dim == 1) {
         *input = wgetch(info_win);
-        if (*input == 10) {
+        if ((*input >= 'A') && (*input <= 'Z')) {
+            *input = tolower(*input);
+        } else if (*input == 10) {
             *input = c;
         }
     } else {

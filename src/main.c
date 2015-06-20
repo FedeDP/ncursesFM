@@ -23,7 +23,6 @@
 
 #include "fm_functions.h"
 #include <libconfig.h>
-#include <ctype.h>
 
 static void helper_function(int argc, const char *argv[]);
 static void init_func(void);
