@@ -603,7 +603,7 @@ void search_loop(void)
                 return;
             }
             break;
-        case 'q':
+        case 'q': case 'Q':
             strcpy(sv.found_searched[ps[active].curr_pos], ps[active].my_cwd);
             break;
         }
