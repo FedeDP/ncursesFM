@@ -603,11 +603,12 @@ void search_loop(void)
                 return;
             }
             break;
-        case 'q': case 'Q':
+        case 'q':
+        case 'Q':
             strcpy(sv.found_searched[ps[active].curr_pos], ps[active].my_cwd);
             break;
         }
-    } while (c != 'q');
+    } while ((c != 'q') && (c != 'Q'));
     sv.searching = 0;
     sv.search_archive = 0;
     change_dir(sv.found_searched[ps[active].curr_pos]);
