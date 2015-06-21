@@ -302,6 +302,7 @@ static void helper_print(void)
         "You can't close first tab. Use q to quit.",
         "Take a look to /etc/default/ncursesFM.conf file to change some settings."};
     int i;
+    
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
     for (i = HELPER_HEIGHT - INFO_HEIGHT - 1; i >= 0; i--) {
         mvwprintw(helper_win, i + 1, 0, "| * %s", helper_string[i]);
