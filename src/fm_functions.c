@@ -78,7 +78,7 @@ void manage_file(const char *str)
     if (get_mimetype(str, "iso")) {
         return iso_mount_service(str);
     }
-    if (is_archive(str)){
+    if (is_archive(str)) {
          return try_extractor(str);
     }
     if ((access("/usr/bin/xdg-open", X_OK) != -1) && (access("/usr/include/X11/Xlib.h", F_OK) != -1)) {
@@ -884,7 +884,7 @@ static int md5sum_func(const char *str, unsigned char **hash, long size, unsigne
         ask_user(question, &c, 1, 'y');
     }
     if (c == 'y') {
-        if (!(*hash = safe_malloc(sizeof(unsigned char) * MD5_DIGEST_LENGTH, "Memory allocation failed."))){
+        if (!(*hash = safe_malloc(sizeof(unsigned char) * MD5_DIGEST_LENGTH, "Memory allocation failed."))) {
             return ret;
         }
         MD5(buffer, size, *hash);

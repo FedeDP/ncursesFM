@@ -274,7 +274,6 @@ void trigger_show_helper_message(void)
         helper_win = subwin(stdscr, HELPER_HEIGHT, COLS, LINES - INFO_HEIGHT - HELPER_HEIGHT, 0);
         wclear(helper_win);
         helper_print();
-        wrefresh(helper_win);
     } else {
         wclear(helper_win);
         delwin(helper_win);
@@ -290,19 +289,25 @@ void trigger_show_helper_message(void)
 
 static void helper_print(void)
 {
-    wprintw(helper_win, "\n * n and r to create/remove a file.\n");
-    wprintw(helper_win, " * Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.\n");
-    wprintw(helper_win, " * Enter will eventually ask to extract archives, or mount your ISO files.\n");
-    wprintw(helper_win, " * To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.\n");
-    wprintw(helper_win, " * Press h to trigger the showing of hide files. s to see stat about files in current folder.\n");
-    wprintw(helper_win, " * c or x to select files. v to paste: files will be copied if selected with c, or cut if selected with x.\n");
-    wprintw(helper_win, " * p to print a file. b to compress selected files. a to view md5/shasum of highlighted file.\n");
-    wprintw(helper_win, " * You can copy as many files/dirs as you want. c/x again on a file/dir to remove it from file list.\n");
-    wprintw(helper_win, " * o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.\n");
-    wprintw(helper_win, " * t to create new tab (at most one more). w to close tab. u to view current file's mimetype.\n");
-    wprintw(helper_win, " * You can't close first tab. Use q to quit.\n");
-    wprintw(helper_win, " * Take a look to /etc/default/ncursesFM.conf file to change some settings.");
+    const char *helper_string[HELPER_HEIGHT - INFO_HEIGHT] = { "n and r to create/remove a file.",
+        "Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.",
+        "Enter will eventually ask to extract archives, or mount your ISO files.",
+        "To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.",
+        "Press h to trigger the showing of hide files. s to see stat about files in current folder.",
+        "c or x to select files. v to paste: files will be copied if selected with c, or cut if selected with x.",
+        "p to print a file. b to compress selected files. a to view md5/shasum of highlighted file.",
+        "You can copy as many files/dirs as you want. c/x again on a file/dir to remove it from file list.",
+        "o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.",
+        "t to create new tab (at most one more). w to close tab. u to view current file's mimetype.",
+        "You can't close first tab. Use q to quit.",
+        "Take a look to /etc/default/ncursesFM.conf file to change some settings."};
+    int i;
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
+    for (i = HELPER_HEIGHT - INFO_HEIGHT - 1; i >= 0; i--) {
+        mvwprintw(helper_win, i + 1, 0, "| * %s", helper_string[i]);
+        wrefresh(helper_win);
+        usleep(30000);
+    }
 }
 
 void show_stat(int init, int end, int win)
@@ -349,7 +354,7 @@ static void change_unit(float size, char *str)
 void erase_stat(void)
 {
     int i;
-    
+
     for (i = 0; (ps[active].nl[i]) && (i < dim - 2); i++) {
         wmove(ps[active].fm, i + 1, STAT_COL);
         wclrtoeol(ps[active].fm);
