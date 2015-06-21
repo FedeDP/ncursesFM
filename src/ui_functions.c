@@ -275,6 +275,14 @@ void trigger_show_helper_message(void)
         wclear(helper_win);
         helper_print();
     } else {
+        for (i = 0; i < HELPER_HEIGHT - INFO_HEIGHT; i++) {
+            wmove(helper_win, i + 1, 0);
+            wclrtoeol(helper_win);
+            mvwvline(helper_win, 1, 0, '|', HELPER_HEIGHT - INFO_HEIGHT);
+            mvwvline(helper_win, 1, COLS - 1, '|', HELPER_HEIGHT - INFO_HEIGHT);
+            wrefresh(helper_win);
+            usleep(30000);
+        }
         wclear(helper_win);
         delwin(helper_win);
         helper_win = NULL;
@@ -302,7 +310,7 @@ static void helper_print(void)
         "You can't close first tab. Use q to quit.",
         "Take a look to /etc/default/ncursesFM.conf file to change some settings."};
     int i;
-    
+
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
     for (i = HELPER_HEIGHT - INFO_HEIGHT - 1; i >= 0; i--) {
         mvwprintw(helper_win, i + 1, 0, "| * %s", helper_string[i]);
