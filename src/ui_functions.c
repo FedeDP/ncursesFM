@@ -258,7 +258,7 @@ void trigger_show_helper_message(void)
 {
     int i;
 
-    if (helper_win == NULL) {
+     if (helper_win == NULL) {
         dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
         for (i = 0; i < cont; i++) {
             wresize(ps[i].fm, dim, width[i]);
@@ -271,23 +271,15 @@ void trigger_show_helper_message(void)
             wrefresh(ps[i].fm);
         }
         helper_win = subwin(stdscr, HELPER_HEIGHT, COLS, LINES - INFO_HEIGHT - HELPER_HEIGHT, 0);
-        scrollok(helper_win, TRUE);
-        idlok(helper_win, TRUE);
+        wclear(helper_win);
         helper_print();
     } else {
-        for (i = 0; i <= HELPER_HEIGHT - 2; i++) {
-            wscrl(helper_win, -1);
-            mvwhline(helper_win, HELPER_HEIGHT - 1, 1, '-', COLS - 2);
-//             mvwaddch(helper_win, HELPER_HEIGHT - 1, COLS - 1, 'X'); // -> ncurses bug?
-//             mvwaddch(helper_win, HELPER_HEIGHT - 1, 0, '+');
-            wrefresh(helper_win);
-            usleep(30000);
-        }
+        wclear(helper_win);
         delwin(helper_win);
         helper_win = NULL;
         dim = LINES - INFO_HEIGHT;
         for (i = 0; i < cont; i++) {
-            mvwhline(ps[i].fm, dim - HELPER_HEIGHT - 1, 0, ' ', COLS - 1);
+            mvwhline(ps[i].fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
             wresize(ps[i].fm, dim, width[i]);
             list_everything(i, dim - 2 - HELPER_HEIGHT + ps[i].delta, HELPER_HEIGHT, ps[i].nl);
         }
@@ -310,14 +302,10 @@ static void helper_print(void)
         "You can't close first tab. Use q to quit.",
         "Take a look to /etc/default/ncursesFM.conf file to change some settings."};
 
-    mvwhline(helper_win, HELPER_HEIGHT - 1, 1, ' ', COLS - 2);
-    for (i = 0; i < HELPER_HEIGHT - 2; i++) {
-        mvwprintw(helper_win, HELPER_HEIGHT - 1, 0, " * %s", helper_string[i]);
-        wscrl(helper_win, 1);
-        wrefresh(helper_win);
-        usleep(30000);
-    }
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
+    for (i = HELPER_HEIGHT - INFO_HEIGHT - 1; i >= 0; i--) {
+        mvwprintw(helper_win, i + 1, 0, "| * %s", helper_string[i]);
+    }
     wrefresh(helper_win);
 }
 
