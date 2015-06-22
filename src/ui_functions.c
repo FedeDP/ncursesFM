@@ -197,7 +197,6 @@ void scroll_down(char **str)
         ps[active].curr_pos++;
         if (ps[active].curr_pos - (dim - 2) == ps[active].delta) {
             scroll_helper_func(dim - 2, 1);
-            ps[active].delta++;
             list_everything(active, ps[active].curr_pos, 1, str);
         } else {
             mvwprintw(ps[active].fm, ps[active].curr_pos - ps[active].delta, 1, "  ");
@@ -212,7 +211,6 @@ void scroll_up(char **str)
         ps[active].curr_pos--;
         if (ps[active].curr_pos < ps[active].delta) {
             scroll_helper_func(INITIAL_POSITION, -1);
-            ps[active].delta--;
             list_everything(active, ps[active].delta, 1, str);
         } else {
             mvwprintw(ps[active].fm, ps[active].curr_pos - ps[active].delta + 2, 1, "  ");
@@ -226,6 +224,7 @@ static void scroll_helper_func(int x, int direction)
     mvwprintw(ps[active].fm, x, 1, "  ");
     wborder(ps[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wscrl(ps[active].fm, direction);
+    ps[active].delta += direction;
 }
 
 void sync_changes(void)
@@ -272,23 +271,23 @@ void trigger_show_helper_message(void)
             wrefresh(ps[i].fm);
         }
         helper_win = subwin(stdscr, HELPER_HEIGHT, COLS, LINES - INFO_HEIGHT - HELPER_HEIGHT, 0);
-        wclear(helper_win);
+        scrollok(helper_win, TRUE);
+        idlok(helper_win, TRUE);
         helper_print();
     } else {
-        for (i = 0; i < HELPER_HEIGHT - INFO_HEIGHT; i++) {
-            wmove(helper_win, i + 1, 0);
-            wclrtoeol(helper_win);
-            mvwvline(helper_win, 1, 0, '|', HELPER_HEIGHT - INFO_HEIGHT);
-            mvwvline(helper_win, 1, COLS - 1, '|', HELPER_HEIGHT - INFO_HEIGHT);
+        for (i = 0; i <= HELPER_HEIGHT - 2; i++) {
+            wscrl(helper_win, -1);
+            mvwhline(helper_win, HELPER_HEIGHT - 1, 1, '-', COLS - 2);
+//             mvwaddch(helper_win, HELPER_HEIGHT - 1, COLS - 1, 'X'); // -> ncurses bug?
+//             mvwaddch(helper_win, HELPER_HEIGHT - 1, 0, '+');
             wrefresh(helper_win);
             usleep(30000);
         }
-        wclear(helper_win);
         delwin(helper_win);
         helper_win = NULL;
         dim = LINES - INFO_HEIGHT;
         for (i = 0; i < cont; i++) {
-            wborder(ps[i].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+            mvwhline(ps[i].fm, dim - HELPER_HEIGHT - 1, 0, ' ', COLS - 1);
             wresize(ps[i].fm, dim, width[i]);
             list_everything(i, dim - 2 - HELPER_HEIGHT + ps[i].delta, HELPER_HEIGHT, ps[i].nl);
         }
@@ -297,7 +296,8 @@ void trigger_show_helper_message(void)
 
 static void helper_print(void)
 {
-    const char *helper_string[HELPER_HEIGHT - INFO_HEIGHT] = { "n and r to create/remove a file.",
+    int i;
+    const char *helper_string[HELPER_HEIGHT - 2] = { "n and r to create/remove a file.",
         "Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.",
         "Enter will eventually ask to extract archives, or mount your ISO files.",
         "To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.",
@@ -309,14 +309,16 @@ static void helper_print(void)
         "t to create new tab (at most one more). w to close tab. u to view current file's mimetype.",
         "You can't close first tab. Use q to quit.",
         "Take a look to /etc/default/ncursesFM.conf file to change some settings."};
-    int i;
 
-    wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
-    for (i = HELPER_HEIGHT - INFO_HEIGHT - 1; i >= 0; i--) {
-        mvwprintw(helper_win, i + 1, 0, "| * %s", helper_string[i]);
+    mvwhline(helper_win, HELPER_HEIGHT - 1, 1, ' ', COLS - 2);
+    for (i = 0; i < HELPER_HEIGHT - 2; i++) {
+        mvwprintw(helper_win, HELPER_HEIGHT - 1, 0, " * %s", helper_string[i]);
+        wscrl(helper_win, 1);
         wrefresh(helper_win);
         usleep(30000);
     }
+    wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
+    wrefresh(helper_win);
 }
 
 void show_stat(int init, int end, int win)
