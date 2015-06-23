@@ -892,3 +892,13 @@ static int md5sum_func(const char *str, unsigned char **hash, long size, unsigne
     }
     return ret;
 }
+
+void change_tab(void)
+{
+    active = !active;
+    if (sv.searching != 3 + active) {
+        chdir(ps[active].my_cwd);
+    } else {
+        search_loop();
+    }
+}

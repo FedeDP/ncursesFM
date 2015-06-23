@@ -55,5 +55,5 @@ struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
 WINDOW *info_win;
-int active, cont, extracting;
+int active, cont, extracting, quit;
 pthread_mutex_t lock;

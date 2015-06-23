@@ -30,3 +30,4 @@ void search_loop(void);
 void print_support(char *str);
 void create_archive(void);
 void integrity_check(const char *str);
+void change_tab(void);

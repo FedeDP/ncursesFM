@@ -26,22 +26,22 @@
 
 static void helper_function(int argc, const char *argv[]);
 static void init_func(void);
-static void main_loop(int *quit);
+static void main_loop(void);
 
 static const char *config_file_name = "/etc/default/ncursesFM.conf";
 // static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, const char *argv[])
 {
-    int quit = 0;
-
     helper_function(argc, argv);
     init_func();
     screen_init();
     pthread_mutex_init(&lock, NULL);
     while (!quit) {
-        main_loop(&quit);
+        main_loop();
     }
+    quit_thread_func(th);
+    quit_thread_func(extractor_th);
     free_everything();
     screen_end();
     pthread_mutex_destroy(&lock);
@@ -103,7 +103,7 @@ static void init_func(void)
     config_destroy(&cfg);
 }
 
-static void main_loop(int *quit)
+static void main_loop(void)
 {
     int c;
     struct stat file_stat;
@@ -137,17 +137,13 @@ static void main_loop(int *quit)
         break;
     case 9: // tab to change tab
         if (cont == MAX_TABS) {
-            active = 1 - active;
-            if (sv.searching != 3 + active) {
-                chdir(ps[active].my_cwd);
-            } else {
-                search_loop();
-            }
+           change_tab();
         }
         break;
-    case 'w': //close ps.active new_tab
-        if (active != 0) {
+    case 'w': // w to close second tab
+        if (active) {
             delete_tab();
+            change_tab();
         }
         break;
     case 'n': // new file
@@ -172,8 +168,8 @@ static void main_loop(int *quit)
         trigger_show_helper_message();
         break;
     case 's': // show stat about files (size and perms)
-        ps[active].stat_active = 1 - ps[active].stat_active;
-        if (ps[active].stat_active == 1) {
+        ps[active].stat_active = !ps[active].stat_active;
+        if (ps[active].stat_active) {
             list_everything(active, ps[active].delta, 0, ps[active].nl);
         } else {
             erase_stat();
@@ -213,9 +209,7 @@ static void main_loop(int *quit)
         get_mimetype(ps[active].nl[ps[active].curr_pos], NULL);
         break;
     case 'q': /* q to exit */
-        quit_thread_func(th);
-        quit_thread_func(extractor_th);
-        *quit = 1;
+        quit = 1;
         break;
     }
 }

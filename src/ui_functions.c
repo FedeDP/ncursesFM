@@ -23,6 +23,7 @@
 
 #include "ui_functions.h"
 
+static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
 static void scroll_helper_func(int x, int direction);
 static void colored_folders(int win, const char *name);
@@ -32,6 +33,9 @@ static void change_unit(float size, char *str);
 WINDOW *helper_win = NULL;
 static int dim, width[MAX_TABS];
 
+/*
+ * Initializes screen, create first tab, and create info_win
+ */
 void screen_init(void)
 {
     initscr();
@@ -51,6 +55,9 @@ void screen_init(void)
     wrefresh(info_win);
 }
 
+/*
+ * Clear any existing window, and remove stdscr
+ */
 void screen_end(void)
 {
     int i;
@@ -69,6 +76,11 @@ void screen_end(void)
     delwin(stdscr);
 }
 
+/*
+ * Creates a list of strings from current win path's files.
+ * It won't do anything is window 'win' is in search mode.
+ * If program cannot allocate memory, it will leave.
+ */
 void generate_list(int win)
 {
     int i, number_of_files;
@@ -81,11 +93,7 @@ void generate_list(int win)
     number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
     for (i = 0; i < number_of_files; i++) {
         if (!(ps[win].nl[i] = safe_malloc(sizeof(char) * PATH_MAX, "No more memory available. Program will exit."))) {
-            quit_thread_func(th);
-            quit_thread_func(extractor_th);
-            free_everything();
-            screen_end();
-            exit(1);
+            quit = 1;
         }
         sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
     }
@@ -99,18 +107,16 @@ void generate_list(int win)
     list_everything(win, 0, dim - 2, ps[win].nl);
 }
 
+/*
+ * Prints to window 'win' a list of strings.
+ * Check if window 'win' is in search mode, and takes care.
+ * If end == 0, it means it needs to print every string until the end of available rows.
+ * If stat_active == 1 for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
+ */
 void list_everything(int win, int old_dim, int end, char **files)
 {
     int i;
-    const char *search_mess = "q to leave search win";
 
-    wborder(ps[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
-    if (sv.searching != 3 + win) {
-        mvwprintw(ps[win].fm, 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
-    } else {
-        mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_mess), sv.searched_string);
-        mvwprintw(ps[win].fm, 0, width[win] - (strlen(search_mess) + 1), search_mess);
-    }
     if (end == 0) {
         end = dim - 2;
     }
@@ -129,15 +135,35 @@ void list_everything(int win, int old_dim, int end, char **files)
     if ((sv.searching != 3 + win) && (ps[win].stat_active == 1)) {
         show_stat(old_dim, end, win);
     }
+    print_border_and_title(win);
+}
+
+/*
+ * Helper function that prints borders and title of 'win'
+ */
+static void print_border_and_title(int win)
+{
+    const char *search_mess = "q to leave search win";
+    wborder(ps[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
+    if (sv.searching != 3 + win) {
+        mvwprintw(ps[win].fm, 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
+    } else {
+        mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_mess), sv.searched_string);
+        mvwprintw(ps[win].fm, 0, width[win] - (strlen(search_mess) + 1), search_mess);
+    }
     wrefresh(ps[win].fm);
 }
 
+/*
+ * Helper function passed to scandir (in generate_list() )
+ * Will return false for '.', and for every file starting with '.' (except for '..') if !show_hidden
+ */
 static int is_hidden(const struct dirent *current_file)
 {
     if ((strlen(current_file->d_name) == 1) && (current_file->d_name[0] == '.')) {
         return (FALSE);
     }
-    if (config.show_hidden == 0) {
+    if (!config.show_hidden) {
         if (strlen(current_file->d_name) > 1 && current_file->d_name[0] == '.' && current_file->d_name[1] != '.') {
             return (FALSE);
         }
@@ -146,15 +172,17 @@ static int is_hidden(const struct dirent *current_file)
     return (TRUE);
 }
 
+/*
+ * Creates a new tab and gives new tab the active flag.
+ * Then calculates new tab cwd, chdir there, and generate its list of files.
+ */
 void new_tab(void)
 {
     cont++;
     if (cont == 2) {
         width[active] = COLS / cont;
         wresize(ps[active].fm, dim, width[active]);
-        wborder(ps[active].fm, '|', '|', '-', '-', '+', '+', '+', '+');
-        mvwprintw(ps[active].fm, 0, 0, "Current:%.*s", width[active] - 1 - strlen("Current:"), ps[active].my_cwd);
-        wrefresh(ps[active].fm);
+        print_border_and_title(active);
     }
     active = cont - 1;
     width[active] = COLS / cont + COLS % cont;
@@ -174,6 +202,9 @@ void new_tab(void)
     generate_list(active);
 }
 
+/*
+ * Delete current tab (only second tab can be deleted)
+ */
 void delete_tab(void)
 {
     cont--;
@@ -183,12 +214,10 @@ void delete_tab(void)
     free_str(ps[active].nl);
     ps[active].stat_active = 0;
     memset(ps[active].my_cwd, 0, sizeof(ps[active].my_cwd));
-    active = cont - 1;
-    width[active] = COLS;
-    wborder(ps[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-    wresize(ps[active].fm, dim, width[active]);
-    wborder(ps[active].fm, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(ps[active].fm, 0, 0, "Current:%.*s", width[active] - 1 - strlen("Current:"), ps[active].my_cwd);
+    width[!active] = COLS;
+    wborder(ps[!active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wresize(ps[!active].fm, dim, width[!active]);
+    print_border_and_title(!active);
 }
 
 void scroll_down(char **str)
@@ -227,6 +256,10 @@ static void scroll_helper_func(int x, int direction)
     ps[active].delta += direction;
 }
 
+/*
+ * If there are 2 tabs, and both tabs are in the same path,
+ * a change in one tab will also refresh other tab.
+ */
 void sync_changes(void)
 {
     if (cont == 2) {
@@ -237,6 +270,9 @@ void sync_changes(void)
     generate_list(active);
 }
 
+/*
+ * Follow ls color scheme to color files/folders
+ */
 static void colored_folders(int win, const char *name)
 {
     struct stat file_stat;
@@ -258,15 +294,14 @@ void trigger_show_helper_message(void)
 {
     int i;
 
-     if (helper_win == NULL) {
+    if (helper_win == NULL) {
         dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
         for (i = 0; i < cont; i++) {
             wresize(ps[i].fm, dim, width[i]);
-            wborder(ps[i].fm, '|', '|', '-', '-', '+', '+', '+', '+');
-            mvwprintw(ps[i].fm, 0, 0, "Current:%.*s", width[i] - 1 - strlen("Current:"), ps[i].my_cwd);
+            print_border_and_title(i);
             if (ps[i].curr_pos > dim - 3) {
                 ps[i].curr_pos = dim - 3 + ps[i].delta;
-                mvwprintw(ps[i].fm, ps[i].curr_pos - ps[i].delta + INITIAL_POSITION, 1, "->");
+                mvwprintw(ps[i].fm, dim - 3 + INITIAL_POSITION, 1, "->");
             }
             wrefresh(ps[i].fm);
         }
@@ -306,6 +341,7 @@ static void helper_print(void)
     for (i = HELPER_HEIGHT - INFO_HEIGHT - 1; i >= 0; i--) {
         mvwprintw(helper_win, i + 1, 0, "| * %s", helper_string[i]);
     }
+    mvwprintw(helper_win, 0, 0, "Helper");
     wrefresh(helper_win);
 }
 
