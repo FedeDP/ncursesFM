@@ -92,7 +92,7 @@ void generate_list(int win)
     free_str(ps[win].nl);
     number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
     for (i = 0; i < number_of_files; i++) {
-        if (!(ps[win].nl[i] = safe_malloc(sizeof(char) * PATH_MAX, "No more memory available. Program will exit."))) {
+        if (!(ps[win].nl[i] = safe_malloc(sizeof(char) * PATH_MAX, fatal_mem_error))) {
             quit = 1;
         }
         sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
@@ -143,13 +143,12 @@ void list_everything(int win, int old_dim, int end, char **files)
  */
 static void print_border_and_title(int win)
 {
-    const char *search_mess = "q to leave search win";
     wborder(ps[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
     if (sv.searching != 3 + win) {
         mvwprintw(ps[win].fm, 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
     } else {
-        mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_mess), sv.searched_string);
-        mvwprintw(ps[win].fm, 0, width[win] - (strlen(search_mess) + 1), search_mess);
+        mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_tab_title), sv.searched_string);
+        mvwprintw(ps[win].fm, 0, width[win] - (strlen(search_tab_title) + 1), search_tab_title);
     }
     wrefresh(ps[win].fm);
 }
@@ -324,18 +323,6 @@ void trigger_show_helper_message(void)
 static void helper_print(void)
 {
     int i;
-    const char *helper_string[HELPER_HEIGHT - 2] = { "n and r to create/remove a file.",
-        "Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.",
-        "Enter will eventually ask to extract archives, or mount your ISO files.",
-        "To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.",
-        "Press h to trigger the showing of hide files. s to see stat about files in current folder.",
-        "c or x to select files. v to paste: files will be copied if selected with c, or cut if selected with x.",
-        "p to print a file. b to compress selected files. a to view md5/shasum of highlighted file.",
-        "You can copy as many files/dirs as you want. c/x again on a file/dir to remove it from file list.",
-        "o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.",
-        "t to create new tab (at most one more). w to close tab. u to view current file's mimetype.",
-        "You can't close first tab. Use q to quit.",
-        "Take a look to /etc/default/ncursesFM.conf file to change some settings."};
 
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
     for (i = HELPER_HEIGHT - INFO_HEIGHT - 1; i >= 0; i--) {

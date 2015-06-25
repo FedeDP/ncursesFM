@@ -46,11 +46,10 @@ void free_everything(void)
 
 void quit_thread_func(pthread_t tmp)
 {
-    char *mesg = "A thread is still running. Do you want to wait for it?(You should!) Y/n:> ";
     char c;
 
     if (is_thread_running(tmp)) {
-        ask_user(mesg, &c, 1, 'y');
+        ask_user(quit_with_running_thread, &c, 1, 'y');
         if (c == 'y') {
             pthread_join(tmp, NULL);
         }

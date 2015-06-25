@@ -89,10 +89,6 @@ void ask_user(const char *str, char *input, int dim, char c)
 
 void print_info(const char *str, int i)
 {
-    const char *extracting_mess = "Extracting...", *searching_mess = "Searching...";
-    const char *pasting_mess = "Pasting...", *archiving_mess = "Archiving...";
-    const char *found_searched_mess = "Search finished. Press f anytime to view the results.";
-    const char *selected_mess = "There are selected files.";
     int mess_line, search_mess_col = COLS - strlen(searching_mess);
 
     for (mess_line = INFO_LINE; mess_line != ERR_LINE + 1; mess_line++) {
@@ -184,7 +180,7 @@ thread_l *add_thread(thread_l *h)
     if (h) {
         h->next = add_thread(h->next);
     } else {
-        if (!(h = safe_malloc(sizeof(struct thread_list), "No memory available"))) {
+        if (!(h = safe_malloc(sizeof(struct thread_list), generic_mem_error))) {
             return NULL;
         }
         h->selected_files = NULL;
@@ -207,12 +203,10 @@ thread_l *free_old_thread_h(thread_l *x)
 
 void init_thread(int type, void (*f)(void))
 {
-    const char *thread_running = "There's already a thread working on a file list. This thread will be queued.";
-    const char *arch_mesg = "Insert new file name (defaults to first entry name):> ";
     char str[PATH_MAX];
 
     if (access(ps[active].my_cwd, W_OK) != 0) {
-        print_info("You do not have write perms here.", ERR_LINE);
+        print_info(no_w_perm, ERR_LINE);
         return;
     }
     switch (type) {
@@ -220,7 +214,7 @@ void init_thread(int type, void (*f)(void))
             strcpy(current_th->full_path, ps[active].my_cwd);
             break;
         case ARCHIVER_TH:
-            ask_user(arch_mesg, str, PATH_MAX, 0);
+            ask_user(archiving_mesg, str, PATH_MAX, 0);
             if (!strlen(str)) {
                 strcpy(str, strrchr(thread_h->selected_files->name, '/') + 1);
             }

@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <ctype.h>
-// #include "string_constants.h"
+#include "string_constants.h"
 
 #define INITIAL_POSITION 1
 #define MAX_TABS 2

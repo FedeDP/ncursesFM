@@ -84,7 +84,7 @@ static void init_func(void)
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
         if (config_lookup_string(&cfg, "editor", &str_editor)) {
-            if ((config.editor = safe_malloc(strlen(str_editor) * sizeof(char) + 1, "Memory allocation failed."))) {
+            if ((config.editor = safe_malloc(strlen(str_editor) * sizeof(char) + 1, generic_mem_error))) {
                 strcpy(config.editor, str_editor);
             }
         }
@@ -92,13 +92,13 @@ static void init_func(void)
             config.show_hidden = 0;
         }
         if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) && access(str_starting_dir, F_OK) != -1) {
-            if ((config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, "Memory allocation failed."))) {
+            if ((config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, generic_mem_error))) {
                 strcpy(config.starting_dir, str_starting_dir);
             }
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
     } else {
-        printf("Config file (/etc/default/ncursesFM.conf) not found. Using default values.\n");
+        printf("%s", config_file_missing);
         sleep(1);
     }
     config_destroy(&cfg);
@@ -186,7 +186,7 @@ static void main_loop(void)
         if (sv.searching == 0) {
             search();
         } else if (sv.searching == 1) {
-            print_info("There's already a search in progress. Wait for it.", INFO_LINE);
+            print_info(already_searching, INFO_LINE);
         } else if (sv.searching == 2) {
             list_found();
         }

@@ -79,7 +79,7 @@ void switch_hidden(void)
 void manage_file(const char *str)
 {
     if ((is_thread_running(th)) && (file_isCopied(str, 1))) {
-        print_info("This file is being pasted/archived. Cannot open.", ERR_LINE);
+        print_info(file_used_by_thread, ERR_LINE);
         return;
     }
     if (get_mimetype(str, "iso")) {
@@ -133,7 +133,7 @@ static void open_file(const char *str)
             refresh();
         }
     } else {
-        print_info("You have to specify a valid editor in config file.", ERR_LINE);
+        print_info(editor_missing, ERR_LINE);
     }
 }
 
@@ -143,11 +143,11 @@ static void iso_mount_service(const char *str)
     char mount_point[strlen(str)];
 
     if (access("/usr/bin/fuseiso", F_OK) == -1) {
-        print_info("You need fuseiso for iso mounting support.", ERR_LINE);
+        print_info(fuseiso_missing, ERR_LINE);
         return;
     }
     if (access(ps[active].my_cwd, W_OK) != 0) {
-        print_info("You do not have write permissions here.", ERR_LINE);
+        print_info(no_w_perm, ERR_LINE);
         return;
     }
     strcpy(mount_point, str);
@@ -166,9 +166,9 @@ static void iso_mount_service(const char *str)
     } else {
         waitpid(pid, NULL, 0);
         if (rmdir(mount_point) == 0) {
-            print_info("Succesfully unmounted.", INFO_LINE);
+            print_info(unmounted, INFO_LINE);
         } else {
-            print_info("Succesfully mounted.", INFO_LINE);
+            print_info(mounted, INFO_LINE);
         }
         sync_changes();
     }
@@ -177,21 +177,20 @@ static void iso_mount_service(const char *str)
 void new_file(void)
 {
     FILE *f;
-    const char *mesg = "Insert new file name:> ";
     char str[PATH_MAX];
 
     if ((is_thread_running(th)) && (file_isCopied(ps[active].my_cwd, 1))) {
-        print_info("This dir is being pasted/archived. Cannot create new file here.", ERR_LINE);
+        print_info(dir_being_used_by_thread, ERR_LINE);
         return;
     }
-    ask_user(mesg, str, PATH_MAX, 0);
+    ask_user("Insert new file name:> ", str, PATH_MAX, 0);
     if ((strlen(str)) && (access(str, F_OK) == -1)) {
         f = fopen(str, "w");
         fclose(f);
         sync_changes();
-        print_info("File created.", INFO_LINE);
+        print_info(file_created, INFO_LINE);
     } else {
-        print_info("Could not create the file.", ERR_LINE);
+        print_info(file_not_created, ERR_LINE);
     }
 }
 
@@ -201,16 +200,16 @@ void remove_file(void)
     char c;
 
     if (file_isCopied(ps[active].nl[ps[active].curr_pos], -1)) {
-        print_info("This file is already selected. Cancel its selection before.", INFO_LINE);
+        print_info(file_selected, INFO_LINE);
         return;
     }
     ask_user(mesg, &c, 1, 'n');
     if (c == 'y') {
         if (rmrf(ps[active].nl[ps[active].curr_pos]) == -1)
-            print_info("Could not remove. Check user permissions.", ERR_LINE);
+            print_info(rm_fail, ERR_LINE);
         else {
             sync_changes();
-            print_info("File/dir removed.", INFO_LINE);
+            print_info(removed, INFO_LINE);
         }
     }
 }
@@ -221,12 +220,12 @@ void manage_c_press(char c)
         thread_h = add_thread(thread_h);
     if ((!current_th->selected_files) || (remove_from_list(ps[active].nl[ps[active].curr_pos]) == 0)) {
         current_th->selected_files = select_file(c, current_th->selected_files);
-        print_info("File selected.", INFO_LINE);
+        print_info(file_sel1, INFO_LINE);
     } else {
         if (current_th->selected_files) {
-            print_info("File deleted from selected list.", INFO_LINE);
+            print_info(file_sel2, INFO_LINE);
         } else {
-            print_info("File deleted from selected list. Selected list empty.", INFO_LINE);
+            print_info(file_sel3, INFO_LINE);
         }
     }
 }
@@ -257,7 +256,7 @@ static file_list *select_file(char c, file_list *h)
     if (h) {
         h->next = select_file(c, h->next);
     } else {
-        if (!(h = safe_malloc(sizeof(struct list), "Memory allocation failed."))) {
+        if (!(h = safe_malloc(sizeof(struct list), generic_mem_error))) {
             return NULL;
         }
         strcpy(h->name, ps[active].nl[ps[active].curr_pos]);
@@ -362,7 +361,7 @@ static void check_pasted(void)
     while (tmp) {
         if (tmp->cut == 1) {
             if (rmrf(tmp->name) == -1) {
-                print_info("Could not cut. Check user permissions.", ERR_LINE);
+                print_info(rm_fail, ERR_LINE);
             }
         }
         if ((tmp->cut == 1) || (tmp->cut == MOVED_FILE)) {
@@ -376,24 +375,23 @@ static void check_pasted(void)
         }
         tmp = tmp->next;
     }
-    print_info("Every files has been copied/moved.", INFO_LINE);
+    print_info(pasted_mesg, INFO_LINE);
 }
 
 void rename_file_folders(void)
 {
-    const char *mesg = "Insert new name:> ";
     char str[PATH_MAX];
 
     if (file_isCopied(ps[active].nl[ps[active].curr_pos], -1)) {
-        print_info("This file is already selected. Cancel its selection before.", INFO_LINE);
+        print_info(file_selected, INFO_LINE);
         return;
     }
-    ask_user(mesg, str, PATH_MAX, 0);
+    ask_user("Insert new name:> ", str, PATH_MAX, 0);
     if (!(strlen(str)) || (rename(ps[active].nl[ps[active].curr_pos], str) == - 1)) {
         print_info(strerror(errno), ERR_LINE);
     } else {
         sync_changes();
-        print_info("File renamed.", INFO_LINE);
+        print_info(renamed, INFO_LINE);
     }
 }
 
@@ -403,7 +401,7 @@ void create_dir(void)
     char str[PATH_MAX];
 
     if ((is_thread_running(th)) && (file_isCopied(ps[active].my_cwd, 1))) {
-        print_info("This dir is being pasted/archived. Cannot create new dir here.", ERR_LINE);
+        print_info(dir_being_used_by_thread, ERR_LINE);
         return;
     }
     ask_user(mesg, str, PATH_MAX, 0);
@@ -414,7 +412,7 @@ void create_dir(void)
         print_info(strerror(errno), ERR_LINE);
     } else {
         sync_changes();
-        print_info("Folder created.", INFO_LINE);
+        print_info(dir_created, INFO_LINE);
     }
 }
 
@@ -433,7 +431,6 @@ static int rmrf(const char *path)
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
-    const char *memfail = "Stopping search as no more memory can be allocated.";
     char fixed_str[PATH_MAX];
     int i = 0;
 
@@ -452,7 +449,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     } else {
         strcpy(fixed_str, strrchr(path, '/') + 1);
         if (strncmp(fixed_str, sv.searched_string, strlen(sv.searched_string)) == 0) {
-            if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, memfail))) {
+            if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, search_mem_fail))) {
                 return 1;
             }
             strcpy(sv.found_searched[i], path);
@@ -466,7 +463,6 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 
 static int search_inside_archive(const char *path, int i)
 {
-    const char *memfail = "Stopping search as no more memory can be allocated.";
     char str[PATH_MAX];
     struct archive *a = archive_read_new();
     struct archive_entry *entry;
@@ -483,7 +479,7 @@ static int search_inside_archive(const char *path, int i)
                 strcpy(str, strrchr(str, '/') + 1);
             }
             if (strncmp(str, sv.searched_string, strlen(sv.searched_string)) == 0) {
-                if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, memfail))) {
+                if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, search_mem_fail))) {
                     archive_read_free(a);
                     return 1;
                 }
@@ -504,16 +500,14 @@ static int search_file(const char *path)
 void search(void)
 {
     pthread_t search_th;
-    const char *mesg = "Insert filename to be found, at least 5 chars:> ";
-    const char *s = "Do you want to search in archives too? Search can result slower and has higher memory usage. y/N:> ";
     char c;
 
-    ask_user(mesg, sv.searched_string, 20, 0);
+    ask_user(search_insert_name, sv.searched_string, 20, 0);
     if (strlen(sv.searched_string) < 5) {
-        print_info("At least 5 chars...", INFO_LINE);
+        print_info(searched_string_minimum, INFO_LINE);
         return;
     }
-    ask_user(s, &c, 1, 'n');
+    ask_user(search_archives, &c, 1, 'n');
     if (c == 'y') {
         sv.search_archive = 1;
     }
@@ -531,9 +525,9 @@ static void *search_thread(void *x)
         sv.searching = 0;
         sv.search_archive = 0;
         if (ret == 1) {
-            print_info("Too many files found; try with a larger string.", INFO_LINE);
+            print_info(too_many_found, INFO_LINE);
         } else {
-            print_info("No files found.", INFO_LINE);
+            print_info(no_found, INFO_LINE);
         }
     } else {
         sv.searching = 2;
@@ -564,8 +558,6 @@ void search_loop(void)
 {
     char arch_str[PATH_MAX];
     char input;
-    const char *mesg = "Open file? Y to open, n to switch to the folder:> ";
-    const char *arch_mesg = "This file is inside an archive. Switch to its directory? Y/n:> ";
     int c, len;
 
     arch_str[0] = '\0';
@@ -587,7 +579,7 @@ void search_loop(void)
             }
             len = strlen(strrchr(sv.found_searched[ps[active].curr_pos], '/'));
             if ((!strlen(arch_str)) && (len != 1)) { // is a file
-                ask_user(mesg, &input, 1, 'y');
+                ask_user(search_loop_str1, &input, 1, 'y');
                 if (input != 'n') {
                     if (input == 'y') {// is a file and user wants to open it
                         manage_file(sv.found_searched[ps[active].curr_pos]);
@@ -597,7 +589,7 @@ void search_loop(void)
             } // is a dir or an archive or a file but user wants to switch to its dir
             len = strlen(sv.found_searched[ps[active].curr_pos]) - len;
             if (strlen(arch_str)) { // is an archive
-                ask_user(arch_mesg, &input, 1, 'y');
+                ask_user(search_loop_str2, &input, 1, 'y');
                 if (input == 'y') {
                     len = strlen(arch_str) - strlen(strrchr(arch_str, '/'));
                 } else {
@@ -630,10 +622,9 @@ void search_loop(void)
 void print_support(char *str)
 {
     pthread_t print_thread;
-    const char *mesg = "Do you really want to print this file? Y/n:> ";
     char c;
 
-    ask_user(mesg, &c, 1, 'y');
+    ask_user(print_question, &c, 1, 'y');
     if (c == 'y') {
         pthread_create(&print_thread, NULL, print_file, str);
         pthread_detach(print_thread);
@@ -648,9 +639,9 @@ static void *print_file(void *filename)
     if (num_dests > 0) {
         default_dest = cupsGetDest(NULL, NULL, num_dests, dests);
         cupsPrintFile(default_dest->name, (char *)filename, "ncursesFM job", default_dest->num_options, default_dest->options);
-        print_info("Print job done.", INFO_LINE);
+        print_info(print_ok, INFO_LINE);
     } else {
-        print_info("No printers available.", ERR_LINE);
+        print_info(print_fail, ERR_LINE);
     }
     return NULL;
 }
@@ -699,7 +690,7 @@ static void *archiver_func(void *x)
             generate_list(i);
         }
     }
-    print_info("The archive is ready.", INFO_LINE);
+    print_info(archive_ready, INFO_LINE);
     execute_thread();
     return NULL;
 }
@@ -729,19 +720,17 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 
 static void try_extractor(const char *path)
 {
-    const char *extr_thread_running = "There's already an extractig operation. Please wait.";
     struct archive *a;
-    const char *question = "Do you really want to extract this archive? Y/n:> ";
     char c;
 
     if (is_thread_running(extractor_th)) {
-        print_info(extr_thread_running, INFO_LINE);
+        print_info(already_extracting, INFO_LINE);
         return;
     }
-    ask_user(question, &c, 1, 'y');
+    ask_user(extr_question, &c, 1, 'y');
     if (c == 'y') {
         if (access(ps[active].my_cwd, W_OK) != 0) {
-            print_info("No write perms here.", ERR_LINE);
+            print_info(no_w_perm, ERR_LINE);
             return;
         }
         a = archive_read_new();
@@ -789,7 +778,7 @@ static void *extractor_thread(void *a)
         }
     }
     extracting = 0;
-    print_info("Succesfully extracted.", INFO_LINE);
+    print_info(extracted, INFO_LINE);
     return NULL;
 }
 
@@ -812,7 +801,7 @@ void integrity_check(const char *str)
         fseek(fp, 0L, SEEK_END);
         size = ftell(fp);
         rewind(fp);
-        if (!(buffer = safe_malloc(size, "Memory allocation failed."))) {
+        if (!(buffer = safe_malloc(size, generic_mem_error))) {
             fclose(fp);
             return;
         }
@@ -847,7 +836,7 @@ static int shasum_func(unsigned char **hash, long size, unsigned char *buffer)
     if ((i == 224) || (i == 256) || (i == 384) || (i == 512)) {
         length = i / 8;
     }
-    if (!(*hash = safe_malloc(sizeof(unsigned char) * length, "Memory allocation failed."))) {
+    if (!(*hash = safe_malloc(sizeof(unsigned char) * length, generic_mem_error))) {
         return 0;
     }
     switch(i) {
@@ -873,16 +862,15 @@ static int shasum_func(unsigned char **hash, long size, unsigned char *buffer)
 static int md5sum_func(const char *str, unsigned char **hash, long size, unsigned char *buffer)
 {
     struct stat file_stat;
-    const char *question = "This file is quite large. Md5 sum can take very long time (up to some minutes). Continue? Y/n";
     char c = 'y';
     int ret = 0;
 
     lstat(str, &file_stat);
     if (file_stat.st_size > 100 * 1024 * 1024) { // 100 MB
-        ask_user(question, &c, 1, 'y');
+        ask_user(md5sum_warn, &c, 1, 'y');
     }
     if (c == 'y') {
-        if (!(*hash = safe_malloc(sizeof(unsigned char) * MD5_DIGEST_LENGTH, "Memory allocation failed."))) {
+        if (!(*hash = safe_malloc(sizeof(unsigned char) * MD5_DIGEST_LENGTH, generic_mem_error))) {
             return ret;
         }
         MD5(buffer, size, *hash);

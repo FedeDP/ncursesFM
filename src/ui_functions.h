@@ -1,7 +1,6 @@
 #include "quit_functions.h"
 
 #define INFO_HEIGHT 2
-#define HELPER_HEIGHT 14
 #define STAT_COL 30
 #define MAX_FILENAME_LENGTH 25
 
