@@ -2,5 +2,4 @@
  * fix way too chaotic print_info -> medium
  * fix naming -> easy
  * DOCS DOCS DOCS!!!
- * makefile: avoid printing "libX support enabled" multiple times...
  */

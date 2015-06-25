@@ -11,6 +11,7 @@ CONFDIR = /etc/default
 BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
 
+ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 ifneq ("$(wildcard /usr/include/X11/Xlib.h)","")
 CFLAGS+=-DLIBX11_PRESENT
 LIBS+=-lX11
@@ -27,6 +28,7 @@ ifneq ("$(wildcard /usr/include/openssl/)","")
 CFLAGS+=-DOPENSSL_PRESENT
 LIBS+=-lcrypto
 $(info libcrypto support enabled.)
+endif
 endif
 
 all: ncursesFM clean
