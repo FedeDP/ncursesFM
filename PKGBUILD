@@ -2,7 +2,7 @@
 
 pkgname=ncursesfm-git
 _gitname=ncursesFM
-pkgver=0.r183.d81ed4e
+pkgver=0.r209.f9dd23d
 pkgrel=1
 pkgdesc="A FileManager written in c and ncurses library."
 arch=('i686' 'x86_64')
@@ -28,8 +28,7 @@ pkgver() {
 build()
 {
     cd $srcdir/$_gitname
-    make ncursesFM
-    make clean
+    make
 }
 
 package() {

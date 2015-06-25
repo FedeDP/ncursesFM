@@ -10,6 +10,7 @@ BINDIR = /usr/bin
 CONFDIR = /etc/default
 BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
+DEFAULT_GOAL = all
 
 ifneq ("$(wildcard /usr/include/X11/Xlib.h)","")
 CFLAGS+=-DLIBX11_PRESENT
