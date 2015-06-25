@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <ctype.h>
+// #include "string_constants.h"
 
 #define INITIAL_POSITION 1
 #define MAX_TABS 2
@@ -49,7 +50,7 @@ typedef struct thread_list {
     struct thread_list *next;
 } thread_l;
 
-thread_l *thread_h, *current_th; // current_th: ptr to latest elem in thread_l list
+thread_l *thread_h, *running_h, *current_th; // current_th: ptr to latest elem in thread_l list
 pthread_t extractor_th, th;
 struct conf config;
 struct vars ps[MAX_TABS];

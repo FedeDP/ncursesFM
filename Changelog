@@ -52,3 +52,11 @@
 * file_isCopied() and change_thread_list_head() will now lock a mutex before checking head, to avoid possible crash: if file_isCopied() was checkin head, and in the meantime change_thread_list_head() would change my head, the program would crash. It should be now avoided.
 * fixed a small bug in print_info().
 * fixed a small bug in create_dir().
+
+5 / 25 / 2015
+* fixed a bug while switching tab: now properly chdir inside new active tab path
+* fixed a bug on 'c' press: ".." is no more selectable for copy/archiving
+* changed internal thread list implementation; now it is more robust
+* some changes in makefile: now libx11, libcrypto and libcups are optional build dep.
+* probably some other bugfixing i now forgot about
+* code cleanup

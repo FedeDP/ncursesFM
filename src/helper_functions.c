@@ -46,13 +46,16 @@ int file_isCopied(const char *str, int level)
 
     while (temp && level) {
         if (level == 1) {
-            pthread_mutex_lock(&lock);
-            temp = thread_h;
+            if (running_h) {
+                pthread_mutex_lock(&lock);
+                temp = running_h;
+            } else {
+                break;
+            }
         }
         tmp = temp->selected_files;
         while (tmp) {
             if (strncmp(str, tmp->name, strlen(tmp->name)) == 0) {
-                print_info("This file is already selected for copy.", INFO_LINE);
                 return 1;
             }
             tmp = tmp->next;
@@ -97,9 +100,9 @@ void print_info(const char *str, int i)
         wclrtoeol(info_win);
     }
     mess_line = INFO_LINE;
-    if (thread_h->selected_files) {
+    if (thread_h && thread_h->selected_files) {
         if (is_thread_running(th)) {
-            if (thread_h->type == PASTE_TH) {
+            if (running_h->type == PASTE_TH) {
                 mvwprintw(info_win, mess_line, COLS - strlen(pasting_mess), pasting_mess);
             } else {
                 mvwprintw(info_win, mess_line, COLS - strlen(archiving_mess), archiving_mess);
@@ -192,42 +195,27 @@ thread_l *add_thread(thread_l *h)
     return h;
 }
 
-void execute_thread(void)
+thread_l *free_old_thread_h(thread_l *x)
 {
-    switch (thread_h->type) {
-    case PASTE_TH:
-        paste_file();
-        break;
-    case ARCHIVER_TH:
-        create_archive();
-        break;
-    }
-}
-
-void change_thread_list_head(void)
-{
-    thread_l *tmp = thread_h;
     pthread_mutex_lock(&lock);
-    thread_h = thread_h->next;
+    free_copied_list(x->selected_files);
+    free(x);
+    x = NULL;
     pthread_mutex_unlock(&lock);
-    free_copied_list(tmp->selected_files);
-    free(tmp);
-    if (thread_h->type != 0)
-        execute_thread();
+    return x;
 }
 
-void init_thread(int type)
+void init_thread(int type, void (*f)(void))
 {
-    const char *thread_running = "There's already a thread working on this file list. This thread will be queued.";
+    const char *thread_running = "There's already a thread working on a file list. This thread will be queued.";
     const char *arch_mesg = "Insert new file name (defaults to first entry name):> ";
     char str[PATH_MAX];
 
     if (access(ps[active].my_cwd, W_OK) != 0) {
-        print_info("Cannot paste here, check user permissions. Paste somewhere else please.", ERR_LINE);
+        print_info("You do not have write perms here.", ERR_LINE);
         return;
     }
-    current_th->type = type;
-    switch (current_th->type) {
+    switch (type) {
         case PASTE_TH:
             strcpy(current_th->full_path, ps[active].my_cwd);
             break;
@@ -239,12 +227,15 @@ void init_thread(int type)
             sprintf(current_th->full_path, "%s/%s.tgz", ps[active].my_cwd, str);
             break;
     }
-    thread_h = add_thread(thread_h);
+    current_th->type = type;
     if (is_thread_running(th)) {
         print_info(thread_running, INFO_LINE);
     } else {
-        execute_thread();
+        running_h = thread_h;
+        thread_h = thread_h->next;
+        f();
     }
+    current_th = current_th->next;
 }
 
 void free_copied_list(file_list *h)

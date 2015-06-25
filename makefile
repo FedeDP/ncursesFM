@@ -1,5 +1,6 @@
 CC=gcc
-LIBS=-lncurses -lpthread -lcups -larchive -lconfig -lcrypto -lmagic -lX11
+LIBS=-lncurses -lpthread -larchive -lconfig -lmagic
+CFLAGS=
 RM = rm
 INSTALL = install -p
 INSTALL_PROGRAM = $(INSTALL) -m755
@@ -10,10 +11,28 @@ CONFDIR = /etc/default
 BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
 
+ifneq ("$(wildcard /usr/include/X11/Xlib.h)","")
+CFLAGS+=-DLIBX11_PRESENT
+LIBS+=-lX11
+$(info libX11 support enabled.)
+endif
+
+ifneq ("$(wildcard /usr/include/cups/cups.h)","")
+CFLAGS+=-DLIBCUPS_PRESENT
+LIBS+=-lcups
+$(info libcups support enabled.)
+endif
+
+ifneq ("$(wildcard /usr/include/openssl/)","")
+CFLAGS+=-DOPENSSL_PRESENT
+LIBS+=-lcrypto
+$(info libcrypto support enabled.)
+endif
+
 all: ncursesFM clean
 
 objects:
-	cd src/; $(CC) -c *.c -Wall
+	cd src/; $(CC) -c *.c -Wall $(CFLAGS)
 
 ncursesFM: objects
 	cd src/; $(CC) -o ../ncursesFM *.o $(LIBS)

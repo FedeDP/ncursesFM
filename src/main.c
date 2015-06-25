@@ -76,7 +76,8 @@ static void init_func(void)
     sv.searching = 0;
     sv.search_archive = 0;
     extracting = 0;
-    thread_h = add_thread(thread_h);
+    current_th = NULL;
+    running_h = NULL;
     config.editor = NULL;
     config.starting_dir = NULL;
     config.second_tab_starting_dir = 0;
@@ -155,13 +156,13 @@ static void main_loop(void)
         }
         break;
     case 'c': case 'x': // copy/cut file
-        if (strcmp(ps[active].nl[ps[active].curr_pos], "..") != 0) {
+        if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/'), "/..") != 0) {
             manage_c_press(c);
         }
         break;
     case 'v': // paste file
         if (current_th->selected_files) {
-            init_thread(PASTE_TH);
+            init_thread(PASTE_TH, paste_file);
         }
         break;
     case 'l':
@@ -190,21 +191,25 @@ static void main_loop(void)
             list_found();
         }
         break;
+    #ifdef LIBCUPS_PRESENT
     case 'p': // p to print
         if (S_ISREG(file_stat.st_mode)) {
             print_support(ps[active].nl[ps[active].curr_pos]);
         }
         break;
+    #endif
     case 'b': //b to compress
         if (current_th->selected_files) {
-            init_thread(ARCHIVER_TH);
+            init_thread(ARCHIVER_TH, create_archive);
         }
         break;
+    #ifdef OPENSSL_PRESENT
     case 'a': // a to view sha1sum
         if (S_ISREG(file_stat.st_mode)) {
             integrity_check(ps[active].nl[ps[active].curr_pos]);
         }
         break;
+    #endif
     case 'u': // u to view mimetype
         get_mimetype(ps[active].nl[ps[active].curr_pos], NULL);
         break;

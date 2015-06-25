@@ -40,7 +40,8 @@ void free_everything(void)
         }
         tmp = tmp->next;
     }
-    free_thread_list(thread_h);
+    if (thread_h)
+        free_thread_list(thread_h);
 }
 
 void quit_thread_func(pthread_t tmp)

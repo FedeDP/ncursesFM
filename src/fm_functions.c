@@ -23,7 +23,9 @@
 
 #include "fm_functions.h"
 
+#ifdef LIBX11_PRESENT
 static void xdg_open(const char *str);
+#endif
 static void open_file(const char *str);
 static void iso_mount_service(const char *str);
 static int remove_from_list(const char *name);
@@ -37,13 +39,18 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 static int search_inside_archive(const char *path, int i);
 static int search_file(const char *path);
 static void *search_thread(void *x);
+#ifdef LIBCUPS_PRESENT
 static void *print_file(void *filename);
+#endif
 static void *archiver_func(void *x);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void try_extractor(const char *path);
 static void *extractor_thread(void *a);
+#ifdef OPENSSL_PRESENT
 static int shasum_func(unsigned char **hash, long size, unsigned char *buffer);
 static int md5sum_func(const char *str, unsigned char **hash, long size, unsigned char *buffer);
+#endif
+static void execute_thread(void);
 
 static struct archive *archive = NULL;
 static int distance_from_root;
@@ -81,13 +88,14 @@ void manage_file(const char *str)
     if (is_archive(str)) {
          return try_extractor(str);
     }
-    if ((access("/usr/bin/xdg-open", X_OK) != -1) && (access("/usr/include/X11/Xlib.h", F_OK) != -1)) {
+    #ifdef LIBX11_PRESENT
+    if (access("/usr/bin/xdg-open", X_OK) != -1)
         return xdg_open(str);
-    } else {
-        return open_file(str);
-    }
+    #endif
+    return open_file(str);
 }
 
+#ifdef LIBX11_PRESENT
 static void xdg_open(const char *str)
 {
     pid_t pid;
@@ -107,6 +115,7 @@ static void xdg_open(const char *str)
         return open_file(str);
     }
 }
+#endif
 
 static void open_file(const char *str)
 {
@@ -208,14 +217,16 @@ void remove_file(void)
 
 void manage_c_press(char c)
 {
+    if (!current_th)
+        thread_h = add_thread(thread_h);
     if ((!current_th->selected_files) || (remove_from_list(ps[active].nl[ps[active].curr_pos]) == 0)) {
         current_th->selected_files = select_file(c, current_th->selected_files);
-        print_info("File added to copy list.", INFO_LINE);
+        print_info("File selected.", INFO_LINE);
     } else {
         if (current_th->selected_files) {
-            print_info("File deleted from copy list.", INFO_LINE);
+            print_info("File deleted from selected list.", INFO_LINE);
         } else {
-            print_info("File deleted from copy list. Copy list empty.", INFO_LINE);
+            print_info("File deleted from selected list. Selected list empty.", INFO_LINE);
         }
     }
 }
@@ -267,16 +278,16 @@ void paste_file(void)
     struct stat file_stat_copied, file_stat_pasted;
     file_list *tmp = NULL;
 
-    lstat(thread_h->full_path, &file_stat_pasted);
-    for (tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
+    lstat(running_h->full_path, &file_stat_pasted);
+    for (tmp = running_h->selected_files; tmp; tmp = tmp->next) {
         strcpy(copied_file_dir, tmp->name);
         copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
-        if (strcmp(thread_h->full_path, copied_file_dir) == 0) {
+        if (strcmp(running_h->full_path, copied_file_dir) == 0) {
             tmp->cut = CANNOT_PASTE_SAME_DIR;
         } else {
             lstat(copied_file_dir, &file_stat_copied);
             if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
-                sprintf(pasted_file, "%s%s", thread_h->full_path, strrchr(tmp->name, '/'));
+                sprintf(pasted_file, "%s%s", running_h->full_path, strrchr(tmp->name, '/'));
                 tmp->cut = MOVED_FILE;
                 if (rename(tmp->name, pasted_file) == - 1) {
                     print_info(strerror(errno), ERR_LINE);
@@ -294,7 +305,7 @@ void paste_file(void)
 
 static void *cpr(void *n)
 {
-    file_list *tmp = thread_h->selected_files;
+    file_list *tmp = running_h->selected_files;
 
     if (*((int *)n) > 0) {
         print_info(NULL, INFO_LINE);
@@ -307,7 +318,7 @@ static void *cpr(void *n)
         }
     }
     check_pasted();
-    change_thread_list_head();
+    execute_thread();
     return NULL;
 }
 
@@ -317,7 +328,7 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
     int len, fd_to, fd_from;
     char pasted_file[PATH_MAX];
 
-    sprintf(pasted_file, "%s%s", thread_h->full_path, path + distance_from_root);
+    sprintf(pasted_file, "%s%s", running_h->full_path, path + distance_from_root);
     if (typeflag == FTW_D) {
         mkdir(pasted_file, sb->st_mode);
     } else {
@@ -339,11 +350,11 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
 static void check_pasted(void)
 {
     int i, printed[cont];
-    file_list *tmp = thread_h->selected_files;
+    file_list *tmp = running_h->selected_files;
     char copied_file_dir[PATH_MAX];
 
     for (i = 0; i < cont; i++) {
-        if (strcmp(thread_h->full_path, ps[i].my_cwd) == 0) {
+        if (strcmp(running_h->full_path, ps[i].my_cwd) == 0) {
             generate_list(i);
             printed[i] = 1;
         }
@@ -615,16 +626,13 @@ void search_loop(void)
     free_str(sv.found_searched);
 }
 
+#ifdef LIBCUPS_PRESENT
 void print_support(char *str)
 {
     pthread_t print_thread;
     const char *mesg = "Do you really want to print this file? Y/n:> ";
     char c;
 
-    if (access("/usr/include/cups/cups.h", F_OK ) == -1) {
-        print_info("You must have libcups installed.", ERR_LINE);
-        return;
-    }
     ask_user(mesg, &c, 1, 'y');
     if (c == 'y') {
         pthread_create(&print_thread, NULL, print_file, str);
@@ -646,13 +654,10 @@ static void *print_file(void *filename)
     }
     return NULL;
 }
+#endif
 
 void create_archive(void)
 {
-    if (access(ps[active].my_cwd, W_OK) != 0) {
-        print_info("No write perms here.", ERR_LINE);
-        return;
-    }
     archive = archive_write_new();
     if ((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) {
         print_info(archive_error_string(archive), ERR_LINE);
@@ -660,7 +665,7 @@ void create_archive(void)
         archive = NULL;
         return;
     }
-    if (archive_write_open_filename(archive, thread_h->full_path) == ARCHIVE_FATAL) {
+    if (archive_write_open_filename(archive, running_h->full_path) == ARCHIVE_FATAL) {
         print_info(strerror(archive_errno(archive)), ERR_LINE);
         archive_write_free(archive);
         archive = NULL;
@@ -675,7 +680,7 @@ void create_archive(void)
 
 static void *archiver_func(void *x)
 {
-    file_list *tmp = thread_h->selected_files;
+    file_list *tmp = running_h->selected_files;
     char str[PATH_MAX];
     int i;
 
@@ -687,15 +692,15 @@ static void *archiver_func(void *x)
     }
     archive_write_free(archive);
     archive = NULL;
-    strcpy(str, thread_h->full_path);
-    str[strlen(thread_h->full_path) - strlen(strrchr(thread_h->full_path, '/'))] = '\0';
+    strcpy(str, running_h->full_path);
+    str[strlen(running_h->full_path) - strlen(strrchr(running_h->full_path, '/'))] = '\0';
     for (i = 0; i < cont; i++) {
         if (strcmp(str, ps[i].my_cwd) == 0) {
             generate_list(i);
         }
     }
     print_info("The archive is ready.", INFO_LINE);
-    change_thread_list_head();
+    execute_thread();
     return NULL;
 }
 
@@ -724,7 +729,7 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 
 static void try_extractor(const char *path)
 {
-    const char *extr_thread_running = "There's already an extractig operation. Currently only one is supported. Please wait.";
+    const char *extr_thread_running = "There's already an extractig operation. Please wait.";
     struct archive *a;
     const char *question = "Do you really want to extract this archive? Y/n:> ";
     char c;
@@ -788,6 +793,7 @@ static void *extractor_thread(void *a)
     return NULL;
 }
 
+#ifdef OPENSSL_PRESENT
 void integrity_check(const char *str)
 {
     const char *question = "Shasum (1, default) or md5sum (2)?> ";
@@ -799,14 +805,6 @@ void integrity_check(const char *str)
 
     ask_user(question, &c, 1, '1');
     if ((c == '1') || (c == '2')) {
-        if ((c == '1') && (access("/usr/include/openssl/sha.h", F_OK ) == -1)) {
-            print_info("You must have openssl installed.", ERR_LINE);
-            return;
-        }
-        if ((c == '2') && (access("/usr/include/openssl/md5.h", F_OK ) == -1)) {
-            print_info("You must have openssl installed.", ERR_LINE);
-            return;
-        }
         if(!(fp = fopen(str, "rb"))) {
             print_info(strerror(errno), ERR_LINE);
             return;
@@ -892,6 +890,7 @@ static int md5sum_func(const char *str, unsigned char **hash, long size, unsigne
     }
     return ret;
 }
+#endif
 
 void change_tab(void)
 {
@@ -900,5 +899,22 @@ void change_tab(void)
         chdir(ps[active].my_cwd);
     } else {
         search_loop();
+    }
+}
+
+static void execute_thread(void)
+{
+    running_h = free_old_thread_h(running_h);
+    if (thread_h && thread_h->type) {
+        running_h = thread_h;
+        thread_h = thread_h->next;
+        switch (running_h->type) {
+        case PASTE_TH:
+            paste_file();
+            break;
+        case ARCHIVER_TH:
+            create_archive();
+            break;
+        }
     }
 }
