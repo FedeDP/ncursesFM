@@ -52,9 +52,9 @@ int main(int argc, const char *argv[])
 static void helper_function(int argc, const char *argv[])
 {
     if (argc != 1) {
-        if (strcmp(argv[1], "-h") != 0)
+        if (strcmp(argv[1], "-h") != 0) {
             printf("Use '-h' to view helper message\n");
-        else {
+        } else {
             printf("\tNcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
             printf("\tThis program comes with ABSOLUTELY NO WARRANTY;\n");
             printf("\tThis is free software, and you are welcome to redistribute it under certain conditions;\n");
@@ -81,6 +81,7 @@ static void init_func(void)
     config.editor = NULL;
     config.starting_dir = NULL;
     config.second_tab_starting_dir = 0;
+    config.show_hidden = 0;
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
         if (config_lookup_string(&cfg, "editor", &str_editor)) {
@@ -88,9 +89,7 @@ static void init_func(void)
                 strcpy(config.editor, str_editor);
             }
         }
-        if (!config_lookup_int(&cfg, "show_hidden", &config.show_hidden)) {
-            config.show_hidden = 0;
-        }
+        config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
         if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) && access(str_starting_dir, F_OK) != -1) {
             if ((config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, generic_mem_error))) {
                 strcpy(config.starting_dir, str_starting_dir);
@@ -151,7 +150,7 @@ static void main_loop(void)
         new_file();
         break;
     case 'r': //remove file
-        if (strcmp(ps[active].nl[ps[active].curr_pos], "..") != 0) {
+        if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/'), "/..") != 0) {
             remove_file();
         }
         break;
@@ -193,7 +192,7 @@ static void main_loop(void)
         break;
     #ifdef LIBCUPS_PRESENT
     case 'p': // p to print
-        if (S_ISREG(file_stat.st_mode)) {
+        if (S_ISREG(file_stat.st_mode) && !get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable")) {
             print_support(ps[active].nl[ps[active].curr_pos]);
         }
         break;
