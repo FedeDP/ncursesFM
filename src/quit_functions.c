@@ -46,8 +46,8 @@ void quit_thread_func(void)
         if (c == 'y') {
             pthread_join(th, NULL);
         }
-    } else {
-        pthread_join(th, NULL);     // I need this otherwise valgrind will think this is a memleak
+    } else if (th) {
+            pthread_join(th, NULL);     // I need this otherwise valgrind will think this is a memleak
     }
 }
 
