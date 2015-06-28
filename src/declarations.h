@@ -9,10 +9,15 @@
 
 #define INITIAL_POSITION 1
 #define MAX_TABS 2
+
 #define INFO_LINE 0
 #define ERR_LINE 1
+
 #define PASTE_TH 1
 #define ARCHIVER_TH 2
+#define EXTRACTOR_TH 3
+#define RM_TH 4
+#define RENAME_TH 5
 
 struct conf {
     char *editor;
@@ -45,16 +50,16 @@ struct search_vars {
 
 typedef struct thread_list {
     file_list *selected_files;
-    int type;
+    void (*f)(void);
     char full_path[PATH_MAX];
     struct thread_list *next;
 } thread_l;
 
 thread_l *thread_h, *running_h, *current_th; // current_th: ptr to latest elem in thread_l list
-pthread_t extractor_th, th;
+pthread_t th;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
 WINDOW *info_win;
-int active, cont, extracting, quit;
+int active, cont, thread_type, quit;
 pthread_mutex_t lock;

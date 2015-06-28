@@ -39,32 +39,22 @@ int is_archive(const char *filename)
     return 0;
 }
 
-int file_isCopied(const char *str, int level)
+int file_is_used(const char *str)
 {
     file_list *tmp;
-    thread_l *temp = thread_h;
 
-    while (temp && level) {
-        if (level == 1) {
-            if (running_h) {
-                pthread_mutex_lock(&lock);
-                temp = running_h;
-            } else {
-                break;
-            }
-        }
-        tmp = temp->selected_files;
+    if (running_h) {
+        pthread_mutex_lock(&lock);
+        tmp = running_h->selected_files;
         while (tmp) {
             if (strncmp(str, tmp->name, strlen(tmp->name)) == 0) {
+                print_info(file_used_by_thread, ERR_LINE);
+                pthread_mutex_unlock(&lock);
                 return 1;
             }
             tmp = tmp->next;
         }
-        if (level == 1) {
-            pthread_mutex_unlock(&lock);
-        }
-        temp = temp->next;
-        level--;
+        pthread_mutex_unlock(&lock);
     }
     return 0;
 }
@@ -89,37 +79,23 @@ void ask_user(const char *str, char *input, int dim, char c)
 
 void print_info(const char *str, int i)
 {
-    int mess_line, search_mess_col = COLS - strlen(searching_mess);
+    int k, cols = COLS;
 
-    for (mess_line = INFO_LINE; mess_line != ERR_LINE + 1; mess_line++) {
-        wmove(info_win, mess_line, strlen("I:") + 1);
+    for (k = INFO_LINE; k != ERR_LINE + 1; k++) {
+        wmove(info_win, k, strlen("I:") + 1);
         wclrtoeol(info_win);
     }
-    mess_line = INFO_LINE;
+    if (thread_type) {
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(thread_job_mesg[thread_type - 1]), thread_job_mesg[thread_type - 1]);
+    }
     if (thread_h && thread_h->selected_files) {
-        if (is_thread_running(th)) {
-            if (running_h->type == PASTE_TH) {
-                mvwprintw(info_win, mess_line, COLS - strlen(pasting_mess), pasting_mess);
-            } else {
-                mvwprintw(info_win, mess_line, COLS - strlen(archiving_mess), archiving_mess);
-            }
-        } else {
-            mvwprintw(info_win, mess_line, COLS - strlen(selected_mess), selected_mess);
+        if (thread_type) {
+            cols = COLS - strlen(thread_job_mesg[thread_type - 1]) - 1;
         }
-        mess_line++;
+        mvwprintw(info_win, INFO_LINE, cols - strlen(selected_mess), selected_mess);
     }
-    if (extracting == 1) {
-        mvwprintw(info_win, mess_line, COLS - strlen(extracting_mess), extracting_mess);
-        if (mess_line == INFO_LINE) {
-            mess_line++;
-        } else {
-            search_mess_col = search_mess_col - (strlen(extracting_mess) + 1);
-        }
-    }
-    if (sv.searching == 1) {
-        mvwprintw(info_win, mess_line, search_mess_col, searching_mess);
-    } else if (sv.searching == 2) {
-        mvwprintw(info_win, mess_line, COLS - strlen(found_searched_mess), found_searched_mess);
+    if ((sv.searching == 1) || (sv.searching == 2)) {
+        mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
     }
     if (str) {
         mvwprintw(info_win, i, strlen("I: ") + 1, str);
@@ -168,7 +144,7 @@ int get_mimetype(const char *path, const char *test)
     return ret;
 }
 
-int is_thread_running(pthread_t th)
+int is_thread_running(void)
 {
     if ((th) && (pthread_kill(th, 0) != ESRCH))
         return 1;
@@ -185,51 +161,77 @@ thread_l *add_thread(thread_l *h)
         }
         h->selected_files = NULL;
         h->next = NULL;
-        h->type = 0;
+        h->f = NULL;
         current_th = h;
     }
     return h;
 }
 
-thread_l *free_old_thread_h(thread_l *x)
+void free_running_h(void)
 {
-    pthread_mutex_lock(&lock);
-    free_copied_list(x->selected_files);
-    free(x);
-    x = NULL;
-    pthread_mutex_unlock(&lock);
-    return x;
+    if (running_h) {
+        pthread_mutex_lock(&lock);
+        if (running_h->selected_files)
+            free_copied_list(running_h->selected_files);
+        free(running_h);
+        running_h = NULL;
+        pthread_mutex_unlock(&lock);
+    }
 }
 
-void init_thread(int type, void (*f)(void))
+void init_thread(int type, void (*f)(void), const char *str)
 {
-    char str[PATH_MAX];
+    char name[PATH_MAX], temp[PATH_MAX];
+    const char *mesg = "Are you serious? y/N:> ";
+    const char *rename_mesg = "Insert new file name:> ";
+    char c = 'n';
 
     if (access(ps[active].my_cwd, W_OK) != 0) {
         print_info(no_w_perm, ERR_LINE);
         return;
     }
-    switch (type) {
-        case PASTE_TH:
-            strcpy(current_th->full_path, ps[active].my_cwd);
-            break;
-        case ARCHIVER_TH:
-            ask_user(archiving_mesg, str, PATH_MAX, 0);
-            if (!strlen(str)) {
-                strcpy(str, strrchr(thread_h->selected_files->name, '/') + 1);
-            }
-            sprintf(current_th->full_path, "%s/%s.tgz", ps[active].my_cwd, str);
-            break;
+    if ((type >= EXTRACTOR_TH) && (type <= RENAME_TH)) {
+        if (type == RM_TH) {
+            ask_user(mesg, &c, 1, 'n');
+        } else if (type == EXTRACTOR_TH) {
+            ask_user(extr_question, &c, 1, 'y');
+        } else if (type == RENAME_TH) {
+            ask_user(rename_mesg, temp, PATH_MAX, 0);
+        }
+        if ((c != 'y') && (strlen(temp) == 0)) {
+            return;
+        }
+        thread_h = add_thread(thread_h);
     }
-    current_th->type = type;
-    if (is_thread_running(th)) {
+    strcpy(current_th->full_path, str);
+    if (type == RENAME_TH) {
+        strcpy(name, ps[active].my_cwd);
+        sprintf(name + strlen(name), "/%s", temp);
+        current_th->selected_files = select_file('c', current_th->selected_files, name);
+    } else if (type == ARCHIVER_TH) {
+        ask_user(archiving_mesg, name, PATH_MAX, 0);
+        if (!strlen(name)) {
+            strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
+        }
+        sprintf(current_th->full_path + strlen(str), "/%s.tgz", name);
+    }
+    current_th->f = f;
+    if (is_thread_running()) {
         print_info(thread_running, INFO_LINE);
     } else {
+        execute_thread();
+    }
+    current_th = NULL;
+}
+
+void execute_thread(void)
+{
+    free_running_h();
+    if (thread_h && thread_h->f) {
         running_h = thread_h;
         thread_h = thread_h->next;
-        f();
+        running_h->f();
     }
-    current_th = current_th->next;
 }
 
 void free_copied_list(file_list *h)
@@ -237,4 +239,44 @@ void free_copied_list(file_list *h)
     if (h->next)
         free_copied_list(h->next);
     free(h);
+}
+
+int remove_from_list(const char *name)
+{
+    file_list *temp = NULL, *tmp = current_th->selected_files;
+
+    if (strcmp(name, tmp->name) == 0) {
+        current_th->selected_files = current_th->selected_files->next;
+        free(tmp);
+        return 1;
+    }
+    while(tmp->next) {
+        if (strcmp(name, tmp->next->name) == 0) {
+            temp = tmp->next;
+            tmp->next = tmp->next->next;
+            free(temp);
+            return 1;
+        }
+        tmp = tmp->next;
+    }
+    return 0;
+}
+
+file_list *select_file(char c, file_list *h, const char *str)
+{
+    if (h) {
+        h->next = select_file(c, h->next, str);
+    } else {
+        if (!(h = safe_malloc(sizeof(struct list), generic_mem_error))) {
+            return NULL;
+        }
+        strcpy(h->name, str);
+        if (c == 'x') {
+            h->cut = 1;
+        } else {
+            h->cut = 0;
+        }
+        h->next = NULL;
+    }
+    return h;
 }

@@ -60,3 +60,10 @@
 * some changes in makefile: now libx11, libcrypto and libcups are optional build dep.
 * probably some other bugfixing i now forgot about
 * code cleanup
+
+5 / 28 / 2015
+* fixed some bugs
+* semplified code, now way more readable and simple
+* reworked thread_list; now every file operation (except for new_file and create_dir) will be linked in a thread_l struct
+* print_info() is now way more readable and easy to understand
+* added string_constants source file, with lots of const char used inside other source files, to improve readability

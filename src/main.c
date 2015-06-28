@@ -40,8 +40,7 @@ int main(int argc, const char *argv[])
     while (!quit) {
         main_loop();
     }
-    quit_thread_func(th);
-    quit_thread_func(extractor_th);
+    quit_thread_func();
     free_everything();
     screen_end();
     pthread_mutex_destroy(&lock);
@@ -75,7 +74,6 @@ static void init_func(void)
     cont = 0;
     sv.searching = 0;
     sv.search_archive = 0;
-    extracting = 0;
     current_th = NULL;
     running_h = NULL;
     config.editor = NULL;
@@ -150,18 +148,18 @@ static void main_loop(void)
         new_file();
         break;
     case 'r': //remove file
-        if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/'), "/..") != 0) {
-            remove_file();
+        if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
+            init_thread(RM_TH, remove_file, ps[active].nl[ps[active].curr_pos]);
         }
         break;
     case 'c': case 'x': // copy/cut file
-        if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/'), "/..") != 0) {
+        if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
             manage_c_press(c);
         }
         break;
     case 'v': // paste file
-        if (current_th->selected_files) {
-            init_thread(PASTE_TH, paste_file);
+        if (current_th && current_th->selected_files) {
+            init_thread(PASTE_TH, paste_file, ps[active].my_cwd);
         }
         break;
     case 'l':
@@ -176,7 +174,7 @@ static void main_loop(void)
         }
         break;
     case 'o': // o to rename
-        rename_file_folders();
+        init_thread(RENAME_TH, rename_file_folders, ps[active].nl[ps[active].curr_pos]);
         break;
     case 'd': // d to create folder
         create_dir();
@@ -198,8 +196,8 @@ static void main_loop(void)
         break;
     #endif
     case 'b': //b to compress
-        if (current_th->selected_files) {
-            init_thread(ARCHIVER_TH, create_archive);
+        if (current_th && current_th->selected_files) {
+            init_thread(ARCHIVER_TH, create_archive, ps[active].my_cwd);
         }
         break;
     #ifdef OPENSSL_PRESENT

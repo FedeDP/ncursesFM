@@ -19,9 +19,9 @@ Ncurses File Manager for linux
 * Extract (compressed) archive through libarchive.
 * Compress files/folders through libarchive -> to select files/folders, use c/x (same as copy/cut)
 * View current file's mimetype through libmagic.
-* Pasting, compressing, extracting, printing and searching are executed in other threads. You'll get a notification when the job is done.
+* File operations are performed in a different thread. You'll get a notification when the job is done.
 * If you try to quit while a {pasting, compressing, extracting} thread is still running, you'll be asked if ncursesFM must wait for the thread to finish its work. (Printing thread and search thread are safer, no data corruption is possible)
-* You can queue as many pasting/archiving threads as you wish, they'll be taken into care one by one.
+* You can queue as many file operations as you wish, they'll be taken into care one by one.
 
 **IT DOES NOT SUPPORT TERMINAL RESIZE**. It is meant to be used maximized, or from a tty.
 

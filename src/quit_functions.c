@@ -26,7 +26,6 @@
 void free_everything(void)
 {
     int j;
-    thread_l *tmp = thread_h;
 
     free_str(sv.found_searched);
     for (j = 0; j < cont; j++) {
@@ -34,25 +33,21 @@ void free_everything(void)
     }
     free(config.editor);
     free(config.starting_dir);
-    while (tmp) {
-        if (tmp->selected_files) {
-            free_copied_list(tmp->selected_files);
-        }
-        tmp = tmp->next;
-    }
     if (thread_h)
         free_thread_list(thread_h);
 }
 
-void quit_thread_func(pthread_t tmp)
+void quit_thread_func(void)
 {
     char c;
 
-    if (is_thread_running(tmp)) {
+    if (is_thread_running()) {
         ask_user(quit_with_running_thread, &c, 1, 'y');
         if (c == 'y') {
-            pthread_join(tmp, NULL);
+            pthread_join(th, NULL);
         }
+    } else {
+        pthread_join(th, NULL);     // I need this otherwise valgrind will think this is a memleak
     }
 }
 
@@ -61,5 +56,7 @@ void free_thread_list(thread_l *h)
     if (h->next) {
         free_thread_list(h->next);
     }
+    if (h->selected_files)
+        free_copied_list(h->selected_files);
     free(h);
 }

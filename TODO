@@ -1,5 +1,5 @@
 /* TODO:
- * fix way too chaotic print_info -> medium
  * fix naming -> easy
  * DOCS DOCS DOCS!!!
+ * add a queued_jobs glob var to print something like "job %d of %d done", or "[job %d/%d] Pasting files..."
  */
