@@ -48,8 +48,6 @@ const char *pasted_mesg = "Every files has been copied/moved.";
 const char *thread_job_mesg[] = {"Pasting...", "Archiving...", "Extracting..."};
 const char *selected_mess = "There are selected files.";
 
-const char *md5sum_warn = "This file is quite large. Md5 sum can take very long time (up to some minutes). Continue? Y/n";
-
 const char *file_used_by_thread = "There's a thread working on this file/dir. Please wait.";
 const char *thread_running = "There's already a thread working. This thread will be queued.";
 const char *quit_with_running_thread = "A thread is still running. Do you want to wait for it?(You should!) Y/n:> ";
@@ -60,9 +58,9 @@ const char *helper_string[] = { "n and r to create/remove a file.",
                                 "To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.",
                                 "Press h to trigger the showing of hide files. s to see stat about files in current folder.",
                                 "c or x to select files. v to paste: files will be copied if selected with c, or cut if selected with x.",
-                                "p to print a file. b to compress selected files. a to view md5/shasum of highlighted file.",
+                                "p to print a file. b to compress selected files. u to view current file's mimetype.",
                                 "You can copy as many files/dirs as you want. c/x again on a file/dir to remove it from file list.",
                                 "o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.",
-                                "t to create new tab (at most one more). w to close tab. u to view current file's mimetype.",
+                                "t to create new tab (at most one more). w to close tab. ",
                                 "You can't close first tab. Use q to quit.",
                                 "Take a look to /etc/default/ncursesFM.conf file to change some settings."};

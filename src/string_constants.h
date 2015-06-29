@@ -50,8 +50,6 @@ const char *pasted_mesg;
 const char *thread_job_mesg[3];
 const char *selected_mess;
 
-const char *md5sum_warn;
-
 const char *file_used_by_thread;
 const char *thread_running;
 const char *quit_with_running_thread;
