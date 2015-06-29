@@ -23,12 +23,6 @@ CFLAGS+=-DLIBCUPS_PRESENT
 LIBS+=-lcups
 $(info libcups support enabled.)
 endif
-
-ifneq ("$(wildcard /usr/include/openssl/)","")
-CFLAGS+=-DOPENSSL_PRESENT
-LIBS+=-lcrypto
-$(info libcrypto support enabled.)
-endif
 endif
 
 all: ncursesFM clean
