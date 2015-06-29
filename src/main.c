@@ -28,8 +28,8 @@ static void helper_function(int argc, const char *argv[]);
 static void init_func(void);
 static void main_loop(void);
 
-// static const char *config_file_name = "/etc/default/ncursesFM.conf";
-static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
+static const char *config_file_name = "/etc/default/ncursesFM.conf";
+// static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, const char *argv[])
 {
