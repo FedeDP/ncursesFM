@@ -44,10 +44,6 @@ static void *archiver_func(void *x);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void try_extractor(void);
 static void *extractor_thread(void *a);
-#ifdef OPENSSL_PRESENT
-static int shasum_func(unsigned char **hash, long size, unsigned char *buffer);
-static int md5sum_func(const char *str, unsigned char **hash, long size, unsigned char *buffer);
-#endif
 static void sync_and_print(const char *str);
 
 static struct archive *archive = NULL;
@@ -709,104 +705,6 @@ static void *extractor_thread(void *a)
     execute_thread();
     return NULL;
 }
-
-#ifdef OPENSSL_PRESENT
-void integrity_check(const char *str)
-{
-    const char *question = "Shasum (1, default) or md5sum (2)?> ";
-    unsigned char *hash = NULL, *buffer = NULL;
-    int length, i;
-    FILE *fp;
-    long size;
-    char c;
-
-    ask_user(question, &c, 1, '1');
-    if ((c == '1') || (c == '2')) {
-        if(!(fp = fopen(str, "rb"))) {
-            print_info(strerror(errno), ERR_LINE);
-            return;
-        }
-        fseek(fp, 0L, SEEK_END);
-        size = ftell(fp);
-        rewind(fp);
-        if (!(buffer = safe_malloc(size, generic_mem_error))) {
-            fclose(fp);
-            return;
-        }
-        fread(buffer, size, 1, fp);
-        fclose(fp);
-        if (c == '1') {
-            length = shasum_func(&hash, size, buffer);
-        } else if (c == '2') {
-            length = md5sum_func(str, &hash, size, buffer);
-        }
-        free(buffer);
-        char s[2 * length];
-        s[0] = '\0';
-        for(i = 0; i < length; i++) {
-            sprintf(s + strlen(s), "%02x", hash[i]);
-        }
-        print_info(s, INFO_LINE);
-        free(hash);
-    }
-}
-
-static int shasum_func(unsigned char **hash, long size, unsigned char *buffer)
-{
-    int i = 1, length = SHA_DIGEST_LENGTH;
-    char input[4];
-    const char *question = "Which shasum do you want? Choose between 1, 224, 256, 384, 512. Defaults to 1.> ";
-
-    ask_user(question, input, 4, 0);
-    if (strlen(input)) {
-        i = atoi(input);
-    }
-    if ((i == 224) || (i == 256) || (i == 384) || (i == 512)) {
-        length = i / 8;
-    }
-    if (!(*hash = safe_malloc(sizeof(unsigned char) * length, generic_mem_error))) {
-        return 0;
-    }
-    switch(i) {
-    case 224:
-        SHA224(buffer, size, *hash);
-        break;
-    case 256:
-        SHA256(buffer, size, *hash);
-        break;
-    case 384:
-        SHA384(buffer, size, *hash);
-        break;
-    case 512:
-        SHA512(buffer, size, *hash);
-        break;
-    default:
-        SHA1(buffer, size, *hash);
-        break;
-    }
-    return length;
-}
-
-static int md5sum_func(const char *str, unsigned char **hash, long size, unsigned char *buffer)
-{
-    struct stat file_stat;
-    char c = 'y';
-    int ret = 0;
-
-    lstat(str, &file_stat);
-    if (file_stat.st_size > 100 * 1024 * 1024) { // 100 MB
-        ask_user(md5sum_warn, &c, 1, 'y');
-    }
-    if (c == 'y') {
-        if (!(*hash = safe_malloc(sizeof(unsigned char) * MD5_DIGEST_LENGTH, generic_mem_error))) {
-            return ret;
-        }
-        MD5(buffer, size, *hash);
-        ret = MD5_DIGEST_LENGTH;
-    }
-    return ret;
-}
-#endif
 
 void change_tab(void)
 {

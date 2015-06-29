@@ -186,11 +186,12 @@ void init_thread(int type, void (*f)(void), const char *str)
     const char *rename_mesg = "Insert new file name:> ";
     char c = 'n';
 
+    temp[0] = '\0';
     if (access(ps[active].my_cwd, W_OK) != 0) {
         print_info(no_w_perm, ERR_LINE);
         return;
     }
-    if ((type >= EXTRACTOR_TH) && (type <= RENAME_TH)) {
+    if (type >= EXTRACTOR_TH) {
         if (type == RM_TH) {
             ask_user(mesg, &c, 1, 'n');
         } else if (type == EXTRACTOR_TH) {

@@ -5,10 +5,6 @@
 #include <fcntl.h>
 #include <archive.h>
 #include <archive_entry.h>
-#ifdef OPENSSL_PRESENT
-#include <openssl/sha.h>
-#include <openssl/md5.h>
-#endif
 #ifdef LIBX11_PRESENT
 #include <X11/Xlib.h>
 #endif
@@ -37,7 +33,4 @@ void search_loop(void);
 void print_support(char *str);
 #endif
 void create_archive(void);
-#ifdef OPENSSL_PRESENT
-void integrity_check(const char *str);
-#endif
 void change_tab(void);

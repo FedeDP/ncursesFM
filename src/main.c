@@ -200,13 +200,6 @@ static void main_loop(void)
             init_thread(ARCHIVER_TH, create_archive, ps[active].my_cwd);
         }
         break;
-    #ifdef OPENSSL_PRESENT
-    case 'a': // a to view sha1sum
-        if (S_ISREG(file_stat.st_mode)) {
-            integrity_check(ps[active].nl[ps[active].curr_pos]);
-        }
-        break;
-    #endif
     case 'u': // u to view mimetype
         get_mimetype(ps[active].nl[ps[active].curr_pos], NULL);
         break;

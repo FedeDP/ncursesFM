@@ -67,3 +67,7 @@
 * reworked thread_list; now every file operation (except for new_file and create_dir) will be linked in a thread_l struct
 * print_info() is now way more readable and easy to understand
 * added string_constants source file, with lots of const char used inside other source files, to improve readability
+
+5 / 29 / 2015
+* fixed a little bug in init_thread()
+* removed openssl support. This does not really belong to a fm function.

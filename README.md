@@ -12,7 +12,6 @@ Ncurses File Manager for linux
 * Stats support (permissions and sizes).
 * In-program helper message -> press 'l'.
 * Sync between tabs.
-* Shasum/md5sum, through openssl.
 * Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to open it, if it was a file, or to move in your searched location.
 * It can search your string inside archives too. Then, if found, you can go to the folder of the archive, to extract it.
 * Basic print support: you need "libcups" for this to work.
@@ -41,7 +40,6 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 ## Optional compile time dependencies
 
 * libcups -> print support
-* openssl -> md5/shasum support
 * libx11  -> check whether ncursesFM is started in a X environment or not.
 
 ## Runtime dependencies
