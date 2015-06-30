@@ -41,13 +41,11 @@ void quit_thread_func(void)
 {
     char c;
 
-    if (is_thread_running()) {
+    if (running_h) {
         ask_user(quit_with_running_thread, &c, 1, 'y');
         if (c == 'y') {
             pthread_join(th, NULL);
         }
-    } else if (th) {
-            pthread_join(th, NULL);     // I need this otherwise valgrind will think this is a memleak
     }
 }
 

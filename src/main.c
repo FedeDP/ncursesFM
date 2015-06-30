@@ -76,6 +76,7 @@ static void init_func(void)
     sv.search_archive = 0;
     current_th = NULL;
     running_h = NULL;
+    num_of_jobs = 0;
     config.editor = NULL;
     config.starting_dir = NULL;
     config.second_tab_starting_dir = 0;

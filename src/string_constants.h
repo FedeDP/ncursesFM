@@ -47,7 +47,7 @@ const char *extracted;
 
 const char *pasted_mesg;
 
-const char *thread_job_mesg[3];
+const char *thread_job_mesg[5];
 const char *selected_mess;
 
 const char *file_used_by_thread;

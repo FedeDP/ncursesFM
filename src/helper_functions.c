@@ -79,20 +79,21 @@ void ask_user(const char *str, char *input, int dim, char c)
 
 void print_info(const char *str, int i)
 {
-    int k, cols = COLS;
+    int k;
+    char st[PATH_MAX];
 
     for (k = INFO_LINE; k != ERR_LINE + 1; k++) {
         wmove(info_win, k, strlen("I:") + 1);
         wclrtoeol(info_win);
     }
-    if (thread_type) {
-        mvwprintw(info_win, INFO_LINE, COLS - strlen(thread_job_mesg[thread_type - 1]), thread_job_mesg[thread_type - 1]);
+    k = -1;
+    if (running_h && running_h->type) {
+        sprintf(st, "[%d/%d] %s", running_h->num, num_of_jobs, thread_job_mesg[running_h->type - 1]);
+        k = strlen(st);
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
     }
-    if (thread_h && thread_h->selected_files) {
-        if (thread_type) {
-            cols = COLS - strlen(thread_job_mesg[thread_type - 1]) - 1;
-        }
-        mvwprintw(info_win, INFO_LINE, cols - strlen(selected_mess), selected_mess);
+    if (current_th && current_th->selected_files) {
+        mvwprintw(info_win, INFO_LINE, COLS - k - 1 - strlen(selected_mess), selected_mess);
     }
     if ((sv.searching == 1) || (sv.searching == 2)) {
         mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
@@ -144,13 +145,6 @@ int get_mimetype(const char *path, const char *test)
     return ret;
 }
 
-int is_thread_running(void)
-{
-    if ((th) && (pthread_kill(th, 0) != ESRCH))
-        return 1;
-    return 0;
-}
-
 thread_l *add_thread(thread_l *h)
 {
     if (h) {
@@ -163,23 +157,22 @@ thread_l *add_thread(thread_l *h)
         h->next = NULL;
         h->f = NULL;
         current_th = h;
+        num_of_jobs++;
     }
     return h;
 }
 
 void free_running_h(void)
 {
-    if (running_h) {
-        pthread_mutex_lock(&lock);
-        if (running_h->selected_files)
-            free_copied_list(running_h->selected_files);
-        free(running_h);
-        running_h = NULL;
-        pthread_mutex_unlock(&lock);
-    }
+    pthread_mutex_lock(&lock);
+    if (running_h->selected_files)
+        free_copied_list(running_h->selected_files);
+    free(running_h);
+    running_h = NULL;
+    pthread_mutex_unlock(&lock);
 }
 
-void init_thread(int type, void (*f)(void), const char *str)
+void init_thread(int type, void *(*f)(void *), const char *str)
 {
     char name[PATH_MAX], temp[PATH_MAX];
     const char *mesg = "Are you serious? y/N:> ";
@@ -205,6 +198,8 @@ void init_thread(int type, void (*f)(void), const char *str)
         thread_h = add_thread(thread_h);
     }
     strcpy(current_th->full_path, str);
+    current_th->num = num_of_jobs;
+    current_th->type = type;
     if (type == RENAME_TH) {
         strcpy(name, ps[active].my_cwd);
         sprintf(name + strlen(name), "/%s", temp);
@@ -217,21 +212,32 @@ void init_thread(int type, void (*f)(void), const char *str)
         sprintf(current_th->full_path + strlen(str), "/%s.tgz", name);
     }
     current_th->f = f;
-    if (is_thread_running()) {
+    current_th = NULL;
+    if (running_h) {
         print_info(thread_running, INFO_LINE);
     } else {
         execute_thread();
     }
-    current_th = NULL;
 }
 
 void execute_thread(void)
 {
-    free_running_h();
+    int inside_th = 0;
+
+    if (running_h) {
+        free_running_h();
+        inside_th = 1;
+    }
     if (thread_h && thread_h->f) {
         running_h = thread_h;
         thread_h = thread_h->next;
-        running_h->f();
+        if (inside_th) {
+            running_h->f(NULL);
+        } else {
+            pthread_create(&th, NULL, running_h->f, NULL);
+        }
+    } else {
+        num_of_jobs = 0;
     }
 }
 

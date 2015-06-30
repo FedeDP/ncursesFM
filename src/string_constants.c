@@ -45,7 +45,7 @@ const char *extracted = "Succesfully extracted.";
 
 const char *pasted_mesg = "Every files has been copied/moved.";
 
-const char *thread_job_mesg[] = {"Pasting...", "Archiving...", "Extracting..."};
+const char *thread_job_mesg[] = {"Pasting...", "Archiving...", "Extracting...", "Removing...", "Renaming..."};
 const char *selected_mess = "There are selected files.";
 
 const char *file_used_by_thread = "There's a thread working on this file/dir. Please wait.";

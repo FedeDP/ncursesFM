@@ -1,6 +1,6 @@
-CC=gcc
-LIBS=-lncurses -lpthread -larchive -lconfig -lmagic
-CFLAGS=
+CC = gcc
+LIBS = -lncurses -lpthread -larchive -lconfig -lmagic
+CFLAGS =
 RM = rm
 INSTALL = install -p
 INSTALL_PROGRAM = $(INSTALL) -m755

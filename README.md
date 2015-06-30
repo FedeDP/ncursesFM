@@ -47,9 +47,6 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 * required: ncurses, libconfig, libmagic, libarchive, plus every optional build dep if compiled with its support.
 * optional: fuseiso, xdg-utils (only if compiled with libx11 support)
 
-In Archlinux libmagic is provided by "file" package, that is part of base-devel group. So it is not listed inside PKGBUILD.
-
-
 ## Install instructions:
 
 *Archlinux users can install ncursesFM from aur*: https://aur.archlinux.org/packages/ncursesfm-git/

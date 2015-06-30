@@ -71,3 +71,9 @@
 5 / 29 / 2015
 * fixed a little bug in init_thread()
 * removed openssl support. This does not really belong to a fm function.
+
+5 / 30 / 2015
+* removed is_thread_running() func (using running_h ptr as reference now)
+* fixed some small issues all around
+* added a "[1/3]" style counter for jobs queue printing (eg: "[1/2] Pasting...")
+* exec_thread() will now spawn a thread if it is not present. Every operation passed to init_thread() will be executed in a thread now.
