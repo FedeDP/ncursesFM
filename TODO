@@ -1,6 +1,6 @@
 /* TODO:
  * fix naming -> easy
  * DOCS DOCS DOCS!!!
- * add a queued_jobs glob var to print something like "job %d of %d done", or "[job %d/%d] Pasting files..." ??
  * queue even create_dir /new_file?
+ * show_volumes() and mount_volumes()?
  */
