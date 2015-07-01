@@ -23,6 +23,9 @@
 
 #include "helper_functions.h"
 
+static int num_of_jobs = 0;
+static pthread_t th;
+
 int is_archive(const char *filename)
 {
     const char *ext[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
@@ -35,26 +38,6 @@ int is_archive(const char *filename)
             }
             i++;
         }
-    }
-    return 0;
-}
-
-int file_is_used(const char *str)
-{
-    file_list *tmp;
-
-    if (running_h) {
-        pthread_mutex_lock(&lock);
-        tmp = running_h->selected_files;
-        while (tmp) {
-            if (strncmp(str, tmp->name, strlen(tmp->name)) == 0) {
-                print_info(file_used_by_thread, ERR_LINE);
-                pthread_mutex_unlock(&lock);
-                return 1;
-            }
-            tmp = tmp->next;
-        }
-        pthread_mutex_unlock(&lock);
     }
     return 0;
 }
@@ -164,19 +147,17 @@ thread_l *add_thread(thread_l *h)
 
 void free_running_h(void)
 {
-    pthread_mutex_lock(&lock);
     if (running_h->selected_files)
         free_copied_list(running_h->selected_files);
     free(running_h);
     running_h = NULL;
-    pthread_mutex_unlock(&lock);
 }
 
 void init_thread(int type, void *(*f)(void *), const char *str)
 {
     char name[PATH_MAX], temp[PATH_MAX];
     const char *mesg = "Are you serious? y/N:> ";
-    const char *rename_mesg = "Insert new file name:> ";
+    const char *name_mesg = "Insert new file name:> ";
     char c = 'n';
 
     temp[0] = '\0';
@@ -189,8 +170,8 @@ void init_thread(int type, void *(*f)(void *), const char *str)
             ask_user(mesg, &c, 1, 'n');
         } else if (type == EXTRACTOR_TH) {
             ask_user(extr_question, &c, 1, 'y');
-        } else if (type == RENAME_TH) {
-            ask_user(rename_mesg, temp, PATH_MAX, 0);
+        } else if (type >= RENAME_TH) {
+            ask_user(name_mesg, temp, PATH_MAX, 0);
         }
         if ((c != 'y') && (strlen(temp) == 0)) {
             return;
@@ -210,23 +191,27 @@ void init_thread(int type, void *(*f)(void *), const char *str)
             strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
         }
         sprintf(current_th->full_path + strlen(str), "/%s.tgz", name);
+    } else if (type >= NEW_FILE_TH) {
+        strcat(current_th->full_path, "/");
+        strcat(current_th->full_path, temp);
     }
     current_th->f = f;
     current_th = NULL;
     if (running_h) {
         print_info(thread_running, INFO_LINE);
     } else {
-        execute_thread();
+        execute_thread(NULL, INFO_LINE);
     }
 }
 
-void execute_thread(void)
+void execute_thread(const char *str, int line)
 {
     int inside_th = 0;
 
     if (running_h) {
         free_running_h();
         inside_th = 1;
+        print_info(str, line);
     }
     if (thread_h && thread_h->f) {
         running_h = thread_h;
@@ -286,4 +271,40 @@ file_list *select_file(char c, file_list *h, const char *str)
         h->next = NULL;
     }
     return h;
+}
+
+void free_everything(void)
+{
+    int j;
+
+    free_str(sv.found_searched);
+    for (j = 0; j < cont; j++) {
+        free_str(ps[j].nl);
+    }
+    free(config.editor);
+    free(config.starting_dir);
+    if (thread_h)
+        free_thread_list(thread_h);
+}
+
+void quit_thread_func(void)
+{
+    char c;
+
+    if (running_h) {
+        ask_user(quit_with_running_thread, &c, 1, 'y');
+        if (c == 'y') {
+            pthread_join(th, NULL);
+        }
+    }
+}
+
+void free_thread_list(thread_l *h)
+{
+    if (h->next) {
+        free_thread_list(h->next);
+    }
+    if (h->selected_files)
+        free_copied_list(h->selected_files);
+    free(h);
 }

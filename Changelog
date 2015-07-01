@@ -1,4 +1,4 @@
-5 / 5 / 2015
+6 / 5 / 2015
 * removed info_message global var
 * splitted th in paste_th and archiver_th
 * reverted strncpy use (no null-terminated strings...); back to strcpy.
@@ -10,50 +10,50 @@
 * Now using libmagic and get_mimetype function to understand whether it is a plain/text file (to open it), or an iso image (to mount).
 * added "u" to view current file mimetype
 
-5 / 6 / 2015
+6 / 6 / 2015
 * better is_archive function. It is now faster than before, and search through archives use less memory and time.
 
-5 / 7 / 2015
+6 / 7 / 2015
 * Better integration between shasum_func and md5_func
 * Added a warn message about md5sum being very slow if file size is larger than 100MB.
 * added "is_thread_running" function.
 * Better checks in manage_file, and in create_archive/try_extractor/paste_file.
 * libarchive is not an optdep...
 
-5 / 8 / 2015
+6 / 8 / 2015
 * get rid of memmove; now copying with 'strcpy(dest, src + 1)' to remove starting "/"
 * fixed little memleak
 * moved every "access" check to first lines of functions
 
-5 / 9 / 2015
+6 / 9 / 2015
 * fixed new_file / create_dir bugs: if cwd is being pasted/archived, i can't create a file/dir there. Now gracefully managing this possibility.
 
-5 / 10 / 2015
+6 / 10 / 2015
 * check fopen/open errors
 * fixed a bug in open_file
 * fixed a bug in print_info/extractor_thread: i still need extracting glob var
 
-5 / 11 / 2015
+6 / 11 / 2015
 * added support for xdg_open while in X environment, otherwise old config.editor variable will be used to open (only, obviously) text files. With xdg_open user can virtually open every type of file
 * better makefile
 * updated readme and pkgbuild with new deps
 
-5 / 12 / 2015
+6 / 12 / 2015
 * huge rework: now you can queue as many copy/archive as you want, they'll be taken into care one after the other.
 * switched to full path for namelist; solved some problems and finally removed "chdir" workardounds in list_everything
 * get rid of sv.search_active_win -> now sv.searching will be equal to "3 + its win" : 3 for first tab, 4 for second tab.
 * redirect vforked stdout and stderr to /dev/null
 
-5 / 13 / 2015
+6 / 13 / 2015
 * using safe_malloc in add_thread function
 
-5 / 17 / 2015
+6 / 17 / 2015
 * file_isCopied() will now check only the right depth level (ie: only head of thread_l, or everything).
 * file_isCopied() and change_thread_list_head() will now lock a mutex before checking head, to avoid possible crash: if file_isCopied() was checkin head, and in the meantime change_thread_list_head() would change my head, the program would crash. It should be now avoided.
 * fixed a small bug in print_info().
 * fixed a small bug in create_dir().
 
-5 / 25 / 2015
+6 / 25 / 2015
 * fixed a bug while switching tab: now properly chdir inside new active tab path
 * fixed a bug on 'c' press: ".." is no more selectable for copy/archiving
 * changed internal thread list implementation; now it is more robust
@@ -61,19 +61,29 @@
 * probably some other bugfixing i now forgot about
 * code cleanup
 
-5 / 28 / 2015
+6 / 28 / 2015
 * fixed some bugs
 * semplified code, now way more readable and simple
 * reworked thread_list; now every file operation (except for new_file and create_dir) will be linked in a thread_l struct
 * print_info() is now way more readable and easy to understand
 * added string_constants source file, with lots of const char used inside other source files, to improve readability
 
-5 / 29 / 2015
+6 / 29 / 2015
 * fixed a little bug in init_thread()
 * removed openssl support. This does not really belong to a fm function.
 
-5 / 30 / 2015
+6 / 30 / 2015
 * removed is_thread_running() func (using running_h ptr as reference now)
 * fixed some small issues all around
 * added a "[1/3]" style counter for jobs queue printing (eg: "[1/2] Pasting...")
 * exec_thread() will now spawn a thread if it is not present. Every operation passed to init_thread() will be executed in a thread now.
+
+7 / 1 / 2015
+* now using flock to lock files while a thread is using them.
+* removed is_file_used function
+* fixed a bug in main where file_stat was updated before a thread called generate_list. So file_stat had the wrong informations about current file.
+* Using a mutex to avoid that while in main_loop there's the call to "stat", generate_list changed current_position (or something else).
+* code cleanup
+* fixed generic issues
+* fixed a bug in extractor thread: it previously extracted the files in process cwd, and not in the dir the archive was.
+* better thread safety

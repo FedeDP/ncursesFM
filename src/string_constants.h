@@ -12,9 +12,7 @@ const char *no_w_perm;
 const char *unmounted;
 const char *mounted;
 const char *file_created;
-const char *file_not_created;
 const char *renamed;
-const char *dir_created;
 const char *rm_fail;
 const char *removed;
 
@@ -47,7 +45,7 @@ const char *extracted;
 
 const char *pasted_mesg;
 
-const char *thread_job_mesg[5];
+const char *thread_job_mesg[7];
 const char *selected_mess;
 
 const char *file_used_by_thread;

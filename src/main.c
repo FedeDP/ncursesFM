@@ -34,9 +34,9 @@ static const char *config_file_name = "/etc/default/ncursesFM.conf";
 int main(int argc, const char *argv[])
 {
     helper_function(argc, argv);
+    pthread_mutex_init(&lock, NULL);
     init_func();
     screen_init();
-    pthread_mutex_init(&lock, NULL);
     while (!quit) {
         main_loop();
     }
@@ -76,7 +76,6 @@ static void init_func(void)
     sv.search_archive = 0;
     current_th = NULL;
     running_h = NULL;
-    num_of_jobs = 0;
     config.editor = NULL;
     config.starting_dir = NULL;
     config.second_tab_starting_dir = 0;
@@ -105,9 +104,8 @@ static void init_func(void)
 static void main_loop(void)
 {
     int c;
-    struct stat file_stat;
+    struct stat current_file_stat;
 
-    stat(ps[active].nl[ps[active].curr_pos], &file_stat);
     c = wgetch(ps[active].fm);
     if ((c >= 'A') && (c <= 'Z')) {
         c = tolower(c);
@@ -123,7 +121,10 @@ static void main_loop(void)
         switch_hidden();
         break;
     case 10: // enter to change dir or open a file.
-        if (S_ISDIR(file_stat.st_mode) || S_ISLNK(file_stat.st_mode)) {
+        pthread_mutex_lock(&lock);
+        stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
+        pthread_mutex_unlock(&lock);
+        if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
             change_dir(ps[active].nl[ps[active].curr_pos]);
         } else {
             manage_file(ps[active].nl[ps[active].curr_pos]);
@@ -146,7 +147,7 @@ static void main_loop(void)
         }
         break;
     case 'n': // new file
-        new_file();
+        init_thread(NEW_FILE_TH, new_file, ps[active].my_cwd);
         break;
     case 'r': //remove file
         if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
@@ -178,7 +179,7 @@ static void main_loop(void)
         init_thread(RENAME_TH, rename_file_folders, ps[active].nl[ps[active].curr_pos]);
         break;
     case 'd': // d to create folder
-        create_dir();
+        init_thread(CREATE_DIR_TH, new_file, ps[active].my_cwd);
         break;
     case 'f': // f to search
         if (sv.searching == 0) {
@@ -191,7 +192,10 @@ static void main_loop(void)
         break;
     #ifdef LIBCUPS_PRESENT
     case 'p': // p to print
-        if (S_ISREG(file_stat.st_mode) && !get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable")) {
+        pthread_mutex_lock(&lock);
+        stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
+        pthread_mutex_unlock(&lock);
+        if (S_ISREG(current_file_stat.st_mode) && !get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable")) {
             print_support(ps[active].nl[ps[active].curr_pos]);
         }
         break;

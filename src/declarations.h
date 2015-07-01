@@ -18,6 +18,8 @@
 #define EXTRACTOR_TH 3
 #define RM_TH 4
 #define RENAME_TH 5
+#define NEW_FILE_TH 6
+#define CREATE_DIR_TH 7
 
 struct conf {
     char *editor;
@@ -58,10 +60,9 @@ typedef struct thread_list {
 } thread_l;
 
 thread_l *thread_h, *running_h, *current_th; // current_th: ptr to latest elem in thread_l list
-pthread_t th;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
 WINDOW *info_win;
-int active, cont, quit, num_of_jobs;
+int active, cont, quit;
 pthread_mutex_t lock;

@@ -9,10 +9,8 @@ const char *no_w_perm = "You do not have write permissions here.";
 
 const char *unmounted = "Succesfully unmounted.";
 const char *mounted = "Succesfully mounted.";
-const char *file_created = "File created.";
-const char *file_not_created = "Could not create the file.";
+const char *file_created = "File/dir created.";
 const char *renamed = "File renamed.";
-const char *dir_created = "Folder created.";
 const char *rm_fail = "Could not cut/remove.";
 const char *removed = "File/dir removed.";
 
@@ -45,7 +43,7 @@ const char *extracted = "Succesfully extracted.";
 
 const char *pasted_mesg = "Every files has been copied/moved.";
 
-const char *thread_job_mesg[] = {"Pasting...", "Archiving...", "Extracting...", "Removing...", "Renaming..."};
+const char *thread_job_mesg[] = {"Pasting...", "Archiving...", "Extracting...", "Removing...", "Renaming...", "Creating file...", "Creating dir..."};
 const char *selected_mess = "There are selected files.";
 
 const char *file_used_by_thread = "There's a thread working on this file/dir. Please wait.";

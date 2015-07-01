@@ -44,7 +44,6 @@ static void archiver_func(void);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void *try_extractor(void *x);
 static void extractor_thread(struct archive *a);
-static void sync_and_print(const char *str);
 
 static struct archive *archive = NULL;
 static int distance_from_root;
@@ -52,7 +51,9 @@ static int distance_from_root;
 void change_dir(const char *str)
 {
     if (chdir(str) != -1) {
+        pthread_mutex_lock(&lock);
         getcwd(ps[active].my_cwd, PATH_MAX);
+        pthread_mutex_unlock(&lock);
         generate_list(active);
         print_info(NULL, INFO_LINE);
     } else {
@@ -72,20 +73,26 @@ void switch_hidden(void)
 
 void manage_file(const char *str)
 {
-    if ((running_h) && (file_is_used(str))) {
-        return;
+    int fd = open(str, O_RDONLY);
+
+    if ((running_h) && (flock(fd, LOCK_EX | LOCK_NB))) {
+        print_info(file_used_by_thread, ERR_LINE);
+    } else {
+        if (get_mimetype(str, "iso")) {
+            iso_mount_service(str);
+        } else if (is_archive(str)) {
+            init_thread(EXTRACTOR_TH, try_extractor, str);
+        }
+        #ifdef LIBX11_PRESENT
+        else if (access("/usr/bin/xdg-open", X_OK) != -1) {
+            xdg_open(str);
+        }
+        #endif
+        else {
+            open_file(str);
+        }
     }
-    if (get_mimetype(str, "iso")) {
-        return iso_mount_service(str);
-    }
-    if (is_archive(str)) {
-        return init_thread(EXTRACTOR_TH, try_extractor, str);
-    }
-    #ifdef LIBX11_PRESENT
-    if (access("/usr/bin/xdg-open", X_OK) != -1)
-        return xdg_open(str);
-    #endif
-    return open_file(str);
+    close(fd);
 }
 
 #ifdef LIBX11_PRESENT
@@ -163,36 +170,44 @@ static void iso_mount_service(const char *str)
         } else {
             print_info(mounted, INFO_LINE);
         }
-        sync_changes();
+        sync_changes(ps[active].my_cwd);
     }
 }
 
-void new_file(void)
+void *new_file(void *x)
 {
     FILE *f;
-    char str[PATH_MAX];
+    char current_dir[PATH_MAX];
 
-    if ((running_h) && (file_is_used(ps[active].my_cwd))) {
-        return;
+    if (running_h->type == NEW_FILE_TH) {
+            f = fopen(running_h->full_path, "w");
+            fclose(f);
+    } else {
+        mkdir(running_h->full_path, 0700);
     }
-    ask_user("Insert new file name:> ", str, PATH_MAX, 0);
-    if ((strlen(str)) && (access(str, F_OK) == -1)) {
-        f = fopen(str, "w");
-        fclose(f);
-        return sync_and_print(file_created);
-    }
-    return print_info(file_not_created, ERR_LINE);
+    strcpy(current_dir, running_h->full_path);
+    current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
+    sync_changes(current_dir);
+    execute_thread(file_created, INFO_LINE);
+    return NULL;
 }
 
 void *remove_file(void *x)
 {
+    const char *str = removed;
+    char current_dir[PATH_MAX];
+    int line = INFO_LINE;
+
+    print_info(NULL, INFO_LINE);
     if (rmrf(running_h->full_path) == -1) {
-        print_info(rm_fail, ERR_LINE);
+        str = rm_fail;
+        line = ERR_LINE;
     } else {
-        running_h->type = 0;
-        sync_and_print(removed);
+        strcpy(current_dir, running_h->full_path);
+        current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
+        sync_changes(current_dir);
     }
-    execute_thread();
+    execute_thread(str, line);
     return NULL;
 }
 
@@ -239,7 +254,7 @@ void *paste_file(void *x)
         }
     }
     cpr(i);
-    execute_thread();
+    execute_thread(pasted_mesg, INFO_LINE);
     return NULL;
 }
 
@@ -271,6 +286,8 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
         fd_to = open(pasted_file, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, sb->st_mode);
         fd_from = open(path, O_RDONLY);
         if ((fd_to != -1) && (fd_from != -1)) {
+            flock(fd_to, LOCK_EX);
+            flock(fd_from, LOCK_EX);
             len = read(fd_from, buff, sizeof(buff));
             while (len > 0) {
                 write(fd_to, buff, len);
@@ -278,6 +295,8 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
             }
             close(fd_to);
             close(fd_from);
+            flock(fd_to, LOCK_UN);
+            flock(fd_from, LOCK_UN);
         }
     }
     return 0;
@@ -285,16 +304,10 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
 
 static void check_pasted(void)
 {
-    int i, printed[cont];
     file_list *tmp = running_h->selected_files;
     char copied_file_dir[PATH_MAX];
 
-    for (i = 0; i < cont; i++) {
-        if (strcmp(running_h->full_path, ps[i].my_cwd) == 0) {
-            generate_list(i);
-            printed[i] = 1;
-        }
-    }
+    sync_changes(running_h->full_path);
     while (tmp) {
         if (tmp->cut == 1) {
             if (rmrf(tmp->name) == -1) {
@@ -304,51 +317,39 @@ static void check_pasted(void)
         if ((tmp->cut == 1) || (tmp->cut == MOVED_FILE)) {
             strcpy(copied_file_dir, tmp->name);
             copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
-            for (i = 0; i < cont; i++) {
-                if ((printed[i] == 0) && (strcmp(copied_file_dir, ps[i].my_cwd) == 0)) {
-                    generate_list(i);
-                }
-            }
+            sync_changes(copied_file_dir);
         }
         tmp = tmp->next;
     }
-    running_h->type = 0;
-    print_info(pasted_mesg, INFO_LINE);
 }
 
 void *rename_file_folders(void *x)
 {
+    const char *str = renamed;
+    char current_dir[PATH_MAX];
+    int line = INFO_LINE;
+
     if (rename(running_h->full_path, running_h->selected_files->name) == - 1) {
-        print_info(strerror(errno), ERR_LINE);
+        str = strerror(errno);
+        line = ERR_LINE;
     } else {
-        running_h->type = 0;
-        sync_and_print(renamed);
+        strcpy(current_dir, running_h->full_path);
+        current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
+        sync_changes(current_dir);
     }
-    execute_thread();
+    execute_thread(str, line);
     return NULL;
-}
-
-void create_dir(void)
-{
-    const char *mesg = "Insert new folder name:> ";
-    char str[PATH_MAX];
-
-    if ((running_h) && (file_is_used(ps[active].my_cwd))) {
-        return;
-    }
-    ask_user(mesg, str, PATH_MAX, 0);
-    if (!strlen(str)) {
-        return;
-    }
-    if (mkdir(str, 0700) == - 1) {
-        return print_info(strerror(errno), ERR_LINE);
-    }
-    return sync_and_print(dir_created);
 }
 
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
-    return remove(path);
+    int res, fd;
+
+    fd = open(path, O_RDONLY);
+    flock(fd, LOCK_EX);
+    res = remove(path);
+    close(fd);
+    return res;
 }
 
 static int rmrf(const char *path)
@@ -553,12 +554,19 @@ void print_support(char *str)
 {
     pthread_t print_thread;
     char c;
+    int fd = open(str, O_RDONLY);
 
+    if ((running_h) && (flock(fd, LOCK_EX | LOCK_NB))) {
+        print_info(file_used_by_thread, ERR_LINE);
+        close(fd);
+        return;
+    }
     ask_user(print_question, &c, 1, 'y');
     if (c == 'y') {
         pthread_create(&print_thread, NULL, print_file, str);
         pthread_detach(print_thread);
     }
+    close(fd);
 }
 
 static void *print_file(void *filename)
@@ -579,21 +587,23 @@ static void *print_file(void *filename)
 
 void *create_archive(void *x)
 {
+    const char *str = archive_ready;
+    int line = INFO_LINE, fd;
+
     archive = archive_write_new();
-    if ((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) {
-        print_info(archive_error_string(archive), ERR_LINE);
+    if (((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) ||
+        (archive_write_open_filename(archive, running_h->full_path) == ARCHIVE_FATAL)) {
+        str = strerror(archive_errno(archive));
+        line = ERR_LINE;
         archive_write_free(archive);
         archive = NULL;
-        return NULL;
+    } else {
+        fd = open(running_h->full_path, O_RDONLY);
+        flock(fd, LOCK_EX);
+        archiver_func();
+        close(fd);
     }
-    if (archive_write_open_filename(archive, running_h->full_path) == ARCHIVE_FATAL) {
-        print_info(strerror(archive_errno(archive)), ERR_LINE);
-        archive_write_free(archive);
-        archive = NULL;
-        return NULL;
-    }
-    archiver_func();
-    execute_thread();
+    execute_thread(str, line);
     return NULL;
 }
 
@@ -601,7 +611,6 @@ static void archiver_func(void)
 {
     file_list *tmp = running_h->selected_files;
     char str[PATH_MAX];
-    int i;
 
     print_info(NULL, INFO_LINE);
     while (tmp) {
@@ -613,13 +622,7 @@ static void archiver_func(void)
     archive = NULL;
     strcpy(str, running_h->full_path);
     str[strlen(running_h->full_path) - strlen(strrchr(running_h->full_path, '/'))] = '\0';
-    for (i = 0; i < cont; i++) {
-        if (strcmp(str, ps[i].my_cwd) == 0) {
-            generate_list(i);
-        }
-    }
-    running_h->type = 0;
-    print_info(archive_ready, INFO_LINE);
+    sync_changes(str);
 }
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -635,6 +638,7 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     archive_entry_free(entry);
     fd = open(path, O_RDONLY);
     if (fd != -1) {
+        flock(fd, LOCK_EX);
         len = read(fd, buff, sizeof(buff));
         while (len > 0) {
             archive_write_data(archive, buff, len);
@@ -648,17 +652,23 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 static void *try_extractor(void *x)
 {
     struct archive *a;
+    const char *str = extracted;
+    int line = INFO_LINE, fd;
 
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
     if (archive_read_open_filename(a, running_h->full_path, BUFF_SIZE) == ARCHIVE_OK) {
+        fd = open(running_h->full_path, O_RDONLY);
+        flock(fd, LOCK_EX);
         extractor_thread(a);
+        close(fd);
     } else {
-        print_info(archive_error_string(a), ERR_LINE);
+        str = archive_error_string(a);
+        line = ERR_LINE;
         archive_read_free(a);
     }
-    execute_thread();
+    execute_thread(str, line);
     return NULL;
 }
 
@@ -666,12 +676,12 @@ static void extractor_thread(struct archive *a)
 {
     struct archive *ext;
     struct archive_entry *entry;
-    int flags, len, i;
-    char buff[BUFF_SIZE], current_dir[PATH_MAX];
+    int flags, len, fd;
+    char buff[BUFF_SIZE], current_dir[PATH_MAX], fullpathname[PATH_MAX];
 
-    print_info(NULL, INFO_LINE);
     strcpy(current_dir, running_h->full_path);
     current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
+    print_info(NULL, INFO_LINE);
     ext = archive_write_disk_new();
     flags = ARCHIVE_EXTRACT_TIME;
     flags |= ARCHIVE_EXTRACT_PERM;
@@ -680,36 +690,31 @@ static void extractor_thread(struct archive *a)
     archive_write_disk_set_options(ext, flags);
     archive_write_disk_set_standard_lookup(ext);
     while (archive_read_next_header(a, &entry) != ARCHIVE_EOF) {
+        sprintf(fullpathname, "%s/%s", current_dir, archive_entry_pathname(entry));
+        archive_entry_set_pathname(entry, fullpathname);
         archive_write_header(ext, entry);
+        fd = open(fullpathname, O_RDONLY);
+        flock(fd, LOCK_EX);
         len = archive_read_data(a, buff, sizeof(buff));
         while (len > 0) {
             archive_write_data(ext, buff, len);
             len = archive_read_data(a, buff, sizeof(buff));
         }
+        close(fd);
     }
     archive_read_free(a);
     archive_write_free(ext);
-    for (i = 0; i < cont; i++) {
-        if (strcmp(ps[i].my_cwd, current_dir) == 0) {
-            generate_list(i);
-        }
-    }
-    running_h->type = 0;
-    print_info(extracted, INFO_LINE);
+    sync_changes(current_dir);
 }
 
 void change_tab(void)
 {
+    pthread_mutex_lock(&lock);
     active = !active;
+    pthread_mutex_unlock(&lock);
     if (sv.searching != 3 + active) {
         chdir(ps[active].my_cwd);
     } else {
         search_loop();
     }
-}
-
-static void sync_and_print(const char *str)
-{
-    sync_changes();
-    print_info(str, INFO_LINE);
 }

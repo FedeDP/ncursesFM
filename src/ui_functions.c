@@ -89,6 +89,7 @@ void generate_list(int win)
     if (sv.searching == 3 + win) {
         return;
     }
+    pthread_mutex_lock(&lock);
     free_str(ps[win].nl);
     number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
     for (i = 0; i < number_of_files; i++) {
@@ -105,6 +106,7 @@ void generate_list(int win)
     ps[win].delta = 0;
     ps[win].curr_pos = 0;
     list_everything(win, 0, dim - 2, ps[win].nl);
+    pthread_mutex_unlock(&lock);
 }
 
 /*
@@ -159,14 +161,10 @@ static void print_border_and_title(int win)
  */
 static int is_hidden(const struct dirent *current_file)
 {
-    if ((strlen(current_file->d_name) == 1) && (current_file->d_name[0] == '.')) {
-        return (FALSE);
-    }
-    if (!config.show_hidden) {
-        if (strlen(current_file->d_name) > 1 && current_file->d_name[0] == '.' && current_file->d_name[1] != '.') {
+    if (current_file->d_name[0] == '.') {
+        if ((strlen(current_file->d_name) == 1) || ((!config.show_hidden) && current_file->d_name[1] != '.')) {
             return (FALSE);
         }
-        return (TRUE);
     }
     return (TRUE);
 }
@@ -259,14 +257,15 @@ static void scroll_helper_func(int x, int direction)
  * If there are 2 tabs, and both tabs are in the same path,
  * a change in one tab will also refresh other tab.
  */
-void sync_changes(void)
+void sync_changes(const char *str)
 {
-    if (cont == 2) {
-        if (strcmp(ps[active].my_cwd, ps[1 - active].my_cwd) == 0) {
-            generate_list(1 - active);
+    int i;
+
+    for (i = 0; i < cont; i++) {
+        if (strcmp(str, ps[i].my_cwd) == 0) {
+            generate_list(i);
         }
     }
-    generate_list(active);
 }
 
 /*

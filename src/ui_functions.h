@@ -1,4 +1,4 @@
-#include "quit_functions.h"
+#include "helper_functions.h"
 
 #define INFO_HEIGHT 2
 #define STAT_COL 30
@@ -12,7 +12,7 @@ void new_tab(void);
 void delete_tab(void);
 void scroll_down(char **str);
 void scroll_up(char **str);
-void sync_changes(void);
+void sync_changes(const char *str);
 void trigger_show_helper_message(void);
 void show_stat(int init, int end, int win);
 void erase_stat(void);
