@@ -153,7 +153,7 @@ void free_running_h(void)
     running_h = NULL;
 }
 
-void init_thread(int type, void *(*f)(void *), const char *str)
+void init_thread(int type, void (*f)(void), const char *str)
 {
     char name[PATH_MAX], temp[PATH_MAX];
     const char *mesg = "Are you serious? y/N:> ";
@@ -200,30 +200,26 @@ void init_thread(int type, void *(*f)(void *), const char *str)
     if (running_h) {
         print_info(thread_running, INFO_LINE);
     } else {
-        execute_thread(NULL, INFO_LINE);
+        thread_m.str = NULL;
+        pthread_create(&th, NULL, execute_thread, NULL);
     }
 }
 
-void execute_thread(const char *str, int line)
+void *execute_thread(void *x)
 {
-    int inside_th = 0;
-
-    if (running_h) {
+    if (thread_m.str) {
         free_running_h();
-        inside_th = 1;
-        print_info(str, line);
+        print_info(thread_m.str, thread_m.line);
     }
     if (thread_h && thread_h->f) {
         running_h = thread_h;
         thread_h = thread_h->next;
-        if (inside_th) {
-            running_h->f(NULL);
-        } else {
-            pthread_create(&th, NULL, running_h->f, NULL);
-        }
+        running_h->f();
+        execute_thread(NULL);
     } else {
         num_of_jobs = 0;
     }
+    return NULL;
 }
 
 void free_copied_list(file_list *h)

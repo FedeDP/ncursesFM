@@ -42,7 +42,7 @@ static void *print_file(void *filename);
 #endif
 static void archiver_func(void);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-static void *try_extractor(void *x);
+static void try_extractor(void);
 static void extractor_thread(struct archive *a);
 
 static struct archive *archive = NULL;
@@ -174,7 +174,7 @@ static void iso_mount_service(const char *str)
     }
 }
 
-void *new_file(void *x)
+void new_file(void)
 {
     FILE *f;
     char current_dir[PATH_MAX];
@@ -188,27 +188,25 @@ void *new_file(void *x)
     strcpy(current_dir, running_h->full_path);
     current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
     sync_changes(current_dir);
-    execute_thread(file_created, INFO_LINE);
-    return NULL;
+    thread_m.str = file_created;
+    thread_m.line = INFO_LINE;
 }
 
-void *remove_file(void *x)
+void remove_file(void)
 {
-    const char *str = removed;
     char current_dir[PATH_MAX];
-    int line = INFO_LINE;
 
+    thread_m.str = removed;
+    thread_m.line = INFO_LINE;
     print_info(NULL, INFO_LINE);
     if (rmrf(running_h->full_path) == -1) {
-        str = rm_fail;
-        line = ERR_LINE;
+        thread_m.str = rm_fail;
+        thread_m.line = ERR_LINE;
     } else {
         strcpy(current_dir, running_h->full_path);
         current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
         sync_changes(current_dir);
     }
-    execute_thread(str, line);
-    return NULL;
 }
 
 void manage_c_press(char c)
@@ -227,7 +225,7 @@ void manage_c_press(char c)
     }
 }
 
-void *paste_file(void *x)
+void paste_file(void)
 {
     char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX];
     struct stat file_stat_copied, file_stat_pasted;
@@ -254,8 +252,8 @@ void *paste_file(void *x)
         }
     }
     cpr(i);
-    execute_thread(pasted_mesg, INFO_LINE);
-    return NULL;
+    thread_m.str = pasted_mesg;
+    thread_m.line = INFO_LINE;
 }
 
 static void cpr(int n)
@@ -323,22 +321,20 @@ static void check_pasted(void)
     }
 }
 
-void *rename_file_folders(void *x)
+void rename_file_folders(void)
 {
-    const char *str = renamed;
     char current_dir[PATH_MAX];
-    int line = INFO_LINE;
 
+    thread_m.str = renamed;
+    thread_m.line = INFO_LINE;
     if (rename(running_h->full_path, running_h->selected_files->name) == - 1) {
-        str = strerror(errno);
-        line = ERR_LINE;
+        thread_m.str = strerror(errno);
+        thread_m.line = ERR_LINE;
     } else {
         strcpy(current_dir, running_h->full_path);
         current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
         sync_changes(current_dir);
     }
-    execute_thread(str, line);
-    return NULL;
 }
 
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -537,8 +533,7 @@ void search_loop(void)
                 return;
             }
             break;
-        case 'q':
-        case 'Q':
+        case 'q': case 'Q':
             strcpy(sv.found_searched[ps[active].curr_pos], ps[active].my_cwd);
             break;
         }
@@ -585,16 +580,17 @@ static void *print_file(void *filename)
 }
 #endif
 
-void *create_archive(void *x)
+void create_archive(void)
 {
-    const char *str = archive_ready;
-    int line = INFO_LINE, fd;
+    int fd;
 
+    thread_m.str = archive_ready;
+    thread_m.line = INFO_LINE;
     archive = archive_write_new();
     if (((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) ||
         (archive_write_open_filename(archive, running_h->full_path) == ARCHIVE_FATAL)) {
-        str = strerror(archive_errno(archive));
-        line = ERR_LINE;
+        thread_m.str = strerror(archive_errno(archive));
+    thread_m.line = ERR_LINE;
         archive_write_free(archive);
         archive = NULL;
     } else {
@@ -603,8 +599,6 @@ void *create_archive(void *x)
         archiver_func();
         close(fd);
     }
-    execute_thread(str, line);
-    return NULL;
 }
 
 static void archiver_func(void)
@@ -649,12 +643,13 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     return 0;
 }
 
-static void *try_extractor(void *x)
+static void try_extractor(void)
 {
     struct archive *a;
-    const char *str = extracted;
-    int line = INFO_LINE, fd;
+    int fd;
 
+    thread_m.str = extracted;
+    thread_m.line = INFO_LINE;
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
@@ -664,12 +659,10 @@ static void *try_extractor(void *x)
         extractor_thread(a);
         close(fd);
     } else {
-        str = archive_error_string(a);
-        line = ERR_LINE;
+        thread_m.str = archive_error_string(a);
+        thread_m.line = ERR_LINE;
         archive_read_free(a);
     }
-    execute_thread(str, line);
-    return NULL;
 }
 
 static void extractor_thread(struct archive *a)

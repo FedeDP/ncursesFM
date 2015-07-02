@@ -52,12 +52,17 @@ struct search_vars {
 
 typedef struct thread_list {
     file_list *selected_files;
-    void *(*f)(void *);
+    void (*f)(void);
     char full_path[PATH_MAX];
     struct thread_list *next;
     int num;
     int type;
 } thread_l;
+
+struct thread_mesg {
+    const char *str;
+    int line;
+};
 
 thread_l *thread_h, *running_h, *current_th; // current_th: ptr to latest elem in thread_l list
 struct conf config;
@@ -66,3 +71,4 @@ struct search_vars sv;
 WINDOW *info_win;
 int active, cont, quit;
 pthread_mutex_t lock;
+struct thread_mesg thread_m;

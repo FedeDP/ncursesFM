@@ -87,3 +87,6 @@
 * fixed generic issues
 * fixed a bug in extractor thread: it previously extracted the files in process cwd, and not in the dir the archive was.
 * better thread safety
+
+7 /2 / 2015
+* better execute thread: not it is executed in another thread and calls running_h->f(); plus calls itself recursively. Way better now.

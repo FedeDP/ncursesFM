@@ -78,7 +78,7 @@ void screen_end(void)
 
 /*
  * Creates a list of strings from current win path's files.
- * It won't do anything is window 'win' is in search mode.
+ * It won't do anything if window 'win' is in search mode.
  * If program cannot allocate memory, it will leave.
  */
 void generate_list(int win)
@@ -380,6 +380,5 @@ void erase_stat(void)
         wmove(ps[active].fm, i + 1, STAT_COL);
         wclrtoeol(ps[active].fm);
     }
-    wborder(ps[active].fm, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(ps[active].fm, 0, 0, "Current:%.*s", width[active] - 1 - strlen("Current:"), ps[active].my_cwd);
+    print_border_and_title(active);
 }
