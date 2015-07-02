@@ -156,26 +156,18 @@ void free_running_h(void)
 void init_thread(int type, void (*f)(void), const char *str)
 {
     char name[PATH_MAX], temp[PATH_MAX];
-    const char *mesg = "Are you serious? y/N:> ";
-    const char *name_mesg = "Insert new file name:> ";
-    char c = 'n';
 
-    temp[0] = '\0';
     if (access(ps[active].my_cwd, W_OK) != 0) {
         print_info(no_w_perm, ERR_LINE);
         return;
     }
-    if (type >= EXTRACTOR_TH) {
-        if (type == RM_TH) {
-            ask_user(mesg, &c, 1, 'n');
-        } else if (type == EXTRACTOR_TH) {
-            ask_user(extr_question, &c, 1, 'y');
-        } else if (type >= RENAME_TH) {
-            ask_user(name_mesg, temp, PATH_MAX, 0);
-        }
-        if ((c != 'y') && (strlen(temp) == 0)) {
+    if (type >= RENAME_TH) {
+        ask_user(ask_name, temp, PATH_MAX, 0);
+        if (!strlen(temp)) {
             return;
         }
+    }
+    if (!current_th) {
         thread_h = add_thread(thread_h);
     }
     strcpy(current_th->full_path, str);
@@ -184,7 +176,7 @@ void init_thread(int type, void (*f)(void), const char *str)
     if (type == RENAME_TH) {
         strcpy(name, ps[active].my_cwd);
         sprintf(name + strlen(name), "/%s", temp);
-        current_th->selected_files = select_file('c', current_th->selected_files, name);
+        current_th->selected_files = select_file(0, current_th->selected_files, name);
     } else if (type == ARCHIVER_TH) {
         ask_user(archiving_mesg, name, PATH_MAX, 0);
         if (!strlen(name)) {
@@ -207,7 +199,7 @@ void init_thread(int type, void (*f)(void), const char *str)
 
 void *execute_thread(void *x)
 {
-    if (thread_m.str) {
+    if (running_h) {
         free_running_h();
         print_info(thread_m.str, thread_m.line);
     }

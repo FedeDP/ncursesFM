@@ -34,7 +34,7 @@ static void check_pasted(void);
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int rmrf(const char *path);
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-static int search_inside_archive(const char *path, int i);
+static int search_inside_archive(const char *path);
 static int search_file(const char *path);
 static void *search_thread(void *x);
 #ifdef LIBCUPS_PRESENT
@@ -74,6 +74,7 @@ void switch_hidden(void)
 void manage_file(const char *str)
 {
     int fd = open(str, O_RDONLY);
+    char c;
 
     if ((running_h) && (flock(fd, LOCK_EX | LOCK_NB))) {
         print_info(file_used_by_thread, ERR_LINE);
@@ -81,7 +82,10 @@ void manage_file(const char *str)
         if (get_mimetype(str, "iso")) {
             iso_mount_service(str);
         } else if (is_archive(str)) {
-            init_thread(EXTRACTOR_TH, try_extractor, str);
+            ask_user(extr_question, &c, 1, 'y');
+            if (c == 'y') {
+                init_thread(EXTRACTOR_TH, try_extractor, str);
+            }
         }
         #ifdef LIBX11_PRESENT
         else if (access("/usr/bin/xdg-open", X_OK) != -1) {
@@ -359,36 +363,33 @@ static int rmrf(const char *path)
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
     char fixed_str[PATH_MAX];
-    int i = 0;
 
     if (ftwbuf->level == 0) {
         return 0;
     }
-    while ((sv.found_searched[i]) && (i < MAX_NUMBER_OF_FOUND)) {
-        i++;
-    }
-    if (i == MAX_NUMBER_OF_FOUND) {
+    if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
         free_str(sv.found_searched);
         return 1;
     }
     if ((sv.search_archive) && (is_archive(strrchr(path, '/')))) {
-        return search_inside_archive(path, i);
+        return search_inside_archive(path);
     } else {
         strcpy(fixed_str, strrchr(path, '/') + 1);
         if (strncmp(fixed_str, sv.searched_string, strlen(sv.searched_string)) == 0) {
-            if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, search_mem_fail))) {
+            if (!(sv.found_searched[sv.found_cont] = safe_malloc(sizeof(char) * PATH_MAX, search_mem_fail))) {
                 return 1;
             }
-            strcpy(sv.found_searched[i], path);
+            strcpy(sv.found_searched[sv.found_cont], path);
             if (typeflag == FTW_D) {
-                strcat(sv.found_searched[i], "/");
+                strcat(sv.found_searched[sv.found_cont], "/");
             }
+            sv.found_cont++;
         }
     }
     return 0;
 }
 
-static int search_inside_archive(const char *path, int i)
+static int search_inside_archive(const char *path)
 {
     char str[PATH_MAX];
     struct archive *a = archive_read_new();
@@ -406,12 +407,12 @@ static int search_inside_archive(const char *path, int i)
                 strcpy(str, strrchr(str, '/') + 1);
             }
             if (strncmp(str, sv.searched_string, strlen(sv.searched_string)) == 0) {
-                if (!(sv.found_searched[i] = safe_malloc(sizeof(char) * PATH_MAX, search_mem_fail))) {
+                if (!(sv.found_searched[sv.found_cont] = safe_malloc(sizeof(char) * PATH_MAX, search_mem_fail))) {
                     archive_read_free(a);
                     return 1;
                 }
-                sprintf(sv.found_searched[i], "%s/%s", path, archive_entry_pathname(entry));
-                i++;
+                sprintf(sv.found_searched[sv.found_cont], "%s/%s", path, archive_entry_pathname(entry));
+                sv.found_cont++;
             }
         }
     }
@@ -434,6 +435,8 @@ void search(void)
         print_info(searched_string_minimum, INFO_LINE);
         return;
     }
+    sv.found_cont = 0;
+    sv.search_archive = 0;
     ask_user(search_archives, &c, 1, 'n');
     if (c == 'y') {
         sv.search_archive = 1;
@@ -450,7 +453,6 @@ static void *search_thread(void *x)
 
     if (!sv.found_searched[0]) {
         sv.searching = 0;
-        sv.search_archive = 0;
         if (ret == 1) {
             print_info(too_many_found, INFO_LINE);
         } else {
@@ -465,20 +467,16 @@ static void *search_thread(void *x)
 
 void list_found(void)
 {
-    int i = 0;
     char str[20];
 
     sv.searching = 3 + active;
-    while (sv.found_searched[i]) {
-        i++;
-    }
     ps[active].delta = 0;
     ps[active].curr_pos = 0;
     wclear(ps[active].fm);
     list_everything(active, 0, 0, sv.found_searched);
-    sprintf(str, "%d files found.", i);
+    sprintf(str, "%d files found.", sv.found_cont);
     print_info(str, INFO_LINE);
-    search_loop();
+    return search_loop();
 }
 
 void search_loop(void)
@@ -498,7 +496,7 @@ void search_loop(void)
             scroll_down(sv.found_searched);
             break;
         case 10:
-            if (sv.search_archive) {
+            if (sv.search_archive) {    // check if the current path is inside an archive
                 strcpy(arch_str, sv.found_searched[ps[active].curr_pos]);
                 while (strlen(arch_str) && !is_archive(strrchr(arch_str, '/'))) {
                     arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
@@ -507,11 +505,8 @@ void search_loop(void)
             len = strlen(strrchr(sv.found_searched[ps[active].curr_pos], '/'));
             if ((!strlen(arch_str)) && (len != 1)) { // is a file
                 ask_user(search_loop_str1, &input, 1, 'y');
-                if (input != 'n') {
-                    if (input == 'y') {// is a file and user wants to open it
-                        manage_file(sv.found_searched[ps[active].curr_pos]);
-                    }
-                    break;
+                if (input == 'y') { // is a file and user wants to open it
+                    manage_file(sv.found_searched[ps[active].curr_pos]);
                 }
             } // is a dir or an archive or a file but user wants to switch to its dir
             len = strlen(sv.found_searched[ps[active].curr_pos]) - len;
@@ -528,8 +523,10 @@ void search_loop(void)
             break;
         case 9: // tab to change tab
             if (cont == MAX_TABS) {
+                pthread_mutex_lock(&lock);
                 active = 1 - active;
                 chdir(ps[active].my_cwd);
+                pthread_mutex_unlock(&lock);
                 return;
             }
             break;
@@ -539,7 +536,6 @@ void search_loop(void)
         }
     } while ((c != 'q') && (c != 'Q'));
     sv.searching = 0;
-    sv.search_archive = 0;
     change_dir(sv.found_searched[ps[active].curr_pos]);
     free_str(sv.found_searched);
 }

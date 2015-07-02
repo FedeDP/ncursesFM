@@ -48,6 +48,7 @@ struct search_vars {
     char *found_searched[PATH_MAX];
     int searching;
     int search_archive;
+    int found_cont;
 };
 
 typedef struct thread_list {

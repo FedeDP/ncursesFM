@@ -19,6 +19,8 @@ const char *file_sel1 = "File selected.";
 const char *file_sel2 = "File deleted from selected list.";
 const char *file_sel3 = "File deleted from selected list. Selected list empty.";
 
+const char *sure = "Are you serious? y/N:> ";
+
 const char *already_searching = "There's already a search in progress. Wait for it.";
 const char *search_mem_fail = "Stopping search as no more memory can be allocated.";
 const char *search_insert_name = "Insert filename to be found, at least 5 chars:> ";
@@ -26,7 +28,7 @@ const char *search_archives = "Do you want to search in archives too? Search can
 const char *searched_string_minimum = "At least 5 chars...";
 const char *too_many_found = "Too many files found; try with a larger string.";
 const char *no_found = "No files found.";
-const char *search_loop_str1 = "Open file? Y to open, n to switch to the folder:> ";
+const char *search_loop_str1 = "Open file? Y to open, any other to switch to the folder:> ";
 const char *search_loop_str2 = "This file is inside an archive. Switch to its directory? Y/n:> ";
 const char *search_tab_title = "q to leave search win";
 const char *searching_mess[] = {"Searching...", "Search finished. Press f anytime to view the results."};
@@ -37,6 +39,8 @@ const char *print_fail = "No printers available.";
 
 const char *archiving_mesg = "Insert new file name (defaults to first entry name):> ";
 const char *archive_ready = "The archive is ready.";
+
+const char *ask_name = "Insert new file name:> ";
 
 const char *extr_question = "Do you really want to extract this archive? Y/n:> ";
 const char *extracted = "Succesfully extracted.";

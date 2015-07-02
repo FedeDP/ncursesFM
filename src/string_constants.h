@@ -21,6 +21,8 @@ const char *file_sel1;
 const char *file_sel2;
 const char *file_sel3;
 
+const char *sure;
+
 const char *already_searching;
 const char *search_mem_fail;
 const char *search_insert_name;
@@ -39,6 +41,8 @@ const char *print_fail;
 
 const char *archiving_mesg;
 const char *archive_ready;
+
+const char *ask_name;
 
 const char *extr_question;
 const char *extracted;

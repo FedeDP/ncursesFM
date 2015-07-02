@@ -73,7 +73,6 @@ static void init_func(void)
 
     cont = 0;
     sv.searching = 0;
-    sv.search_archive = 0;
     current_th = NULL;
     running_h = NULL;
     config.editor = NULL;
@@ -104,6 +103,7 @@ static void init_func(void)
 static void main_loop(void)
 {
     int c;
+    char x;
     struct stat current_file_stat;
 
     c = wgetch(ps[active].fm);
@@ -151,7 +151,10 @@ static void main_loop(void)
         break;
     case 'r': //remove file
         if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
-            init_thread(RM_TH, remove_file, ps[active].nl[ps[active].curr_pos]);
+            ask_user(sure, &x, 1, 'n');
+            if (x == 'y') {
+                init_thread(RM_TH, remove_file, ps[active].nl[ps[active].curr_pos]);
+            }
         }
         break;
     case 'c': case 'x': // copy/cut file

@@ -280,6 +280,8 @@ static void colored_folders(int win, const char *name)
             wattron(ps[win].fm, COLOR_PAIR(1));
         } else if (S_ISLNK(file_stat.st_mode)) {
             wattron(ps[win].fm, COLOR_PAIR(3));
+        } else if (is_archive(name)) {
+            wattron(ps[win].fm, COLOR_PAIR(4));
         } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
             wattron(ps[win].fm, COLOR_PAIR(2));
         }
