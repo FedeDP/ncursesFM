@@ -37,10 +37,7 @@ int main(int argc, const char *argv[])
     pthread_mutex_init(&lock, NULL);
     init_func();
     screen_init();
-    while (!quit) {
-        main_loop();
-    }
-    quit_thread_func();
+    main_loop();
     free_everything();
     screen_end();
     pthread_mutex_destroy(&lock);
@@ -106,113 +103,115 @@ static void main_loop(void)
     char x;
     struct stat current_file_stat;
 
-    c = wgetch(ps[active].fm);
-    if ((c >= 'A') && (c <= 'Z')) {
-        c = tolower(c);
-    }
-    switch (c) {
-    case KEY_UP:
-        scroll_up(ps[active].nl);
-        break;
-    case KEY_DOWN:
-        scroll_down(ps[active].nl);
-        break;
-    case 'h': // h to show hidden files
-        switch_hidden();
-        break;
-    case 10: // enter to change dir or open a file.
-        pthread_mutex_lock(&lock);
-        stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
-        pthread_mutex_unlock(&lock);
-        if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
-            change_dir(ps[active].nl[ps[active].curr_pos]);
-        } else {
-            manage_file(ps[active].nl[ps[active].curr_pos]);
+    while (!quit) {
+        c = wgetch(ps[active].fm);
+        if ((c >= 'A') && (c <= 'Z')) {
+            c = tolower(c);
         }
-        break;
-    case 't': // t to open second tab
-        if (cont < MAX_TABS) {
-            new_tab();
-        }
-        break;
-    case 9: // tab to change tab
-        if (cont == MAX_TABS) {
-           change_tab();
-        }
-        break;
-    case 'w': // w to close second tab
-        if (active) {
-            delete_tab();
-            change_tab();
-        }
-        break;
-    case 'n': // new file
-        init_thread(NEW_FILE_TH, new_file, ps[active].my_cwd);
-        break;
-    case 'r': //remove file
-        if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
-            ask_user(sure, &x, 1, 'n');
-            if (x == 'y') {
-                init_thread(RM_TH, remove_file, ps[active].nl[ps[active].curr_pos]);
+        switch (c) {
+        case KEY_UP:
+            scroll_up(ps[active].nl);
+            break;
+        case KEY_DOWN:
+            scroll_down(ps[active].nl);
+            break;
+        case 'h': // h to show hidden files
+            switch_hidden();
+            break;
+        case 10: // enter to change dir or open a file.
+            pthread_mutex_lock(&lock);
+            stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
+            pthread_mutex_unlock(&lock);
+            if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
+                change_dir(ps[active].nl[ps[active].curr_pos]);
+            } else {
+                manage_file(ps[active].nl[ps[active].curr_pos]);
             }
+            break;
+        case 't': // t to open second tab
+            if (cont < MAX_TABS) {
+                new_tab();
+            }
+            break;
+        case 9: // tab to change tab
+            if (cont == MAX_TABS) {
+                change_tab();
+            }
+            break;
+        case 'w': // w to close second tab
+            if (active) {
+                delete_tab();
+                change_tab();
+            }
+            break;
+        case 'n': // new file
+            init_thread(NEW_FILE_TH, new_file, ps[active].my_cwd);
+            break;
+        case 'r': //remove file
+            if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
+                ask_user(sure, &x, 1, 'n');
+                if (x == 'y') {
+                    init_thread(RM_TH, remove_file, ps[active].nl[ps[active].curr_pos]);
+                }
+            }
+            break;
+        case 'c': case 'x': // copy/cut file
+            if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
+                manage_c_press(c);
+            }
+            break;
+        case 'v': // paste file
+            if (current_th && current_th->selected_files) {
+                init_thread(PASTE_TH, paste_file, ps[active].my_cwd);
+            }
+            break;
+        case 'l':
+            trigger_show_helper_message();
+            break;
+        case 's': // show stat about files (size and perms)
+            ps[active].stat_active = !ps[active].stat_active;
+            if (ps[active].stat_active) {
+                list_everything(active, ps[active].delta, 0, ps[active].nl);
+            } else {
+                erase_stat();
+            }
+            break;
+        case 'o': // o to rename
+            init_thread(RENAME_TH, rename_file_folders, ps[active].nl[ps[active].curr_pos]);
+            break;
+        case 'd': // d to create folder
+            init_thread(CREATE_DIR_TH, new_file, ps[active].my_cwd);
+            break;
+        case 'f': // f to search
+            if (sv.searching == 0) {
+                search();
+            } else if (sv.searching == 1) {
+                print_info(already_searching, INFO_LINE);
+            } else if (sv.searching == 2) {
+                list_found();
+            }
+            break;
+        #ifdef LIBCUPS_PRESENT
+        case 'p': // p to print
+            pthread_mutex_lock(&lock);
+            stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
+            pthread_mutex_unlock(&lock);
+            if (S_ISREG(current_file_stat.st_mode) && !get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable")) {
+                print_support(ps[active].nl[ps[active].curr_pos]);
+            }
+            break;
+        #endif
+        case 'b': //b to compress
+            if (current_th && current_th->selected_files) {
+                init_thread(ARCHIVER_TH, create_archive, ps[active].my_cwd);
+            }
+            break;
+        case 'u': // u to view mimetype
+            get_mimetype(ps[active].nl[ps[active].curr_pos], NULL);
+            break;
+        case 'q': /* q to exit */
+            quit = 1;
+            break;
         }
-        break;
-    case 'c': case 'x': // copy/cut file
-        if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
-            manage_c_press(c);
-        }
-        break;
-    case 'v': // paste file
-        if (current_th && current_th->selected_files) {
-            init_thread(PASTE_TH, paste_file, ps[active].my_cwd);
-        }
-        break;
-    case 'l':
-        trigger_show_helper_message();
-        break;
-    case 's': // show stat about files (size and perms)
-        ps[active].stat_active = !ps[active].stat_active;
-        if (ps[active].stat_active) {
-            list_everything(active, ps[active].delta, 0, ps[active].nl);
-        } else {
-            erase_stat();
-        }
-        break;
-    case 'o': // o to rename
-        init_thread(RENAME_TH, rename_file_folders, ps[active].nl[ps[active].curr_pos]);
-        break;
-    case 'd': // d to create folder
-        init_thread(CREATE_DIR_TH, new_file, ps[active].my_cwd);
-        break;
-    case 'f': // f to search
-        if (sv.searching == 0) {
-            search();
-        } else if (sv.searching == 1) {
-            print_info(already_searching, INFO_LINE);
-        } else if (sv.searching == 2) {
-            list_found();
-        }
-        break;
-    #ifdef LIBCUPS_PRESENT
-    case 'p': // p to print
-        pthread_mutex_lock(&lock);
-        stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
-        pthread_mutex_unlock(&lock);
-        if (S_ISREG(current_file_stat.st_mode) && !get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable")) {
-            print_support(ps[active].nl[ps[active].curr_pos]);
-        }
-        break;
-    #endif
-    case 'b': //b to compress
-        if (current_th && current_th->selected_files) {
-            init_thread(ARCHIVER_TH, create_archive, ps[active].my_cwd);
-        }
-        break;
-    case 'u': // u to view mimetype
-        get_mimetype(ps[active].nl[ps[active].curr_pos], NULL);
-        break;
-    case 'q': /* q to exit */
-        quit = 1;
-        break;
     }
 }

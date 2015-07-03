@@ -23,6 +23,12 @@
 
 #include "helper_functions.h"
 
+static void free_running_h(void);
+static void init_thread_helper(const char *temp, const char *str);
+static void *execute_thread(void *x);
+static void free_thread_list(thread_l *h);
+static void quit_thread_func(void);
+
 static int num_of_jobs = 0;
 static pthread_t th;
 
@@ -155,7 +161,7 @@ void free_running_h(void)
 
 void init_thread(int type, void (*f)(void), const char *str)
 {
-    char name[PATH_MAX], temp[PATH_MAX];
+    char temp[PATH_MAX];
 
     if (access(ps[active].my_cwd, W_OK) != 0) {
         print_info(no_w_perm, ERR_LINE);
@@ -173,20 +179,7 @@ void init_thread(int type, void (*f)(void), const char *str)
     strcpy(current_th->full_path, str);
     current_th->num = num_of_jobs;
     current_th->type = type;
-    if (type == RENAME_TH) {
-        strcpy(name, ps[active].my_cwd);
-        sprintf(name + strlen(name), "/%s", temp);
-        current_th->selected_files = select_file(0, current_th->selected_files, name);
-    } else if (type == ARCHIVER_TH) {
-        ask_user(archiving_mesg, name, PATH_MAX, 0);
-        if (!strlen(name)) {
-            strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
-        }
-        sprintf(current_th->full_path + strlen(str), "/%s.tgz", name);
-    } else if (type >= NEW_FILE_TH) {
-        strcat(current_th->full_path, "/");
-        strcat(current_th->full_path, temp);
-    }
+    init_thread_helper(temp, str);
     current_th->f = f;
     current_th = NULL;
     if (running_h) {
@@ -197,7 +190,27 @@ void init_thread(int type, void (*f)(void), const char *str)
     }
 }
 
-void *execute_thread(void *x)
+static void init_thread_helper(const char *temp, const char *str)
+{
+    char name[PATH_MAX];
+
+    if (current_th->type == RENAME_TH) {
+        strcpy(name, ps[active].my_cwd);
+        sprintf(name + strlen(name), "/%s", temp);
+        current_th->selected_files = select_file(0, current_th->selected_files, name);
+    } else if (current_th->type == ARCHIVER_TH) {
+        ask_user(archiving_mesg, name, PATH_MAX, 0);
+        if (!strlen(name)) {
+            strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
+        }
+        sprintf(current_th->full_path + strlen(str), "/%s.tgz", name);
+    } else if (current_th->type >= NEW_FILE_TH) {
+        strcat(current_th->full_path, "/");
+        strcat(current_th->full_path, temp);
+    }
+}
+
+static void *execute_thread(void *x)
 {
     if (running_h) {
         free_running_h();
@@ -265,6 +278,7 @@ void free_everything(void)
 {
     int j;
 
+    quit_thread_func();
     free_str(sv.found_searched);
     for (j = 0; j < cont; j++) {
         free_str(ps[j].nl);
