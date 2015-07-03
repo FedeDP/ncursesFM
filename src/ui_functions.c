@@ -28,6 +28,8 @@ static int is_hidden(const struct dirent *current_file);
 static void scroll_helper_func(int x, int direction);
 static void colored_folders(int win, const char *name);
 static void helper_print(void);
+static void create_helper_win(void);
+static void remove_helper_win(void);
 static void change_unit(float size, char *str);
 
 WINDOW *helper_win = NULL;
@@ -175,6 +177,9 @@ static int is_hidden(const struct dirent *current_file)
  */
 void new_tab(void)
 {
+    if (cont == MAX_TABS) {
+        return;
+    }
     cont++;
     if (cont == 2) {
         width[active] = COLS / cont;
@@ -205,16 +210,16 @@ void new_tab(void)
 void delete_tab(void)
 {
     cont--;
-    wclear(ps[active].fm);
-    delwin(ps[active].fm);
-    ps[active].fm = NULL;
-    free_str(ps[active].nl);
-    ps[active].stat_active = 0;
-    memset(ps[active].my_cwd, 0, sizeof(ps[active].my_cwd));
-    width[!active] = COLS;
-    wborder(ps[!active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-    wresize(ps[!active].fm, dim, width[!active]);
-    print_border_and_title(!active);
+    wclear(ps[!active].fm);
+    delwin(ps[!active].fm);
+    ps[!active].fm = NULL;
+    free_str(ps[!active].nl);
+    ps[!active].stat_active = 0;
+    memset(ps[!active].my_cwd, 0, sizeof(ps[!active].my_cwd));
+    width[active] = COLS;
+    wborder(ps[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wresize(ps[active].fm, dim, width[active]);
+    print_border_and_title(active);
 }
 
 void scroll_down(char **str)
@@ -292,32 +297,44 @@ static void colored_folders(int win, const char *name)
 
 void trigger_show_helper_message(void)
 {
+    if (helper_win == NULL) {
+        create_helper_win();
+    } else {
+        remove_helper_win();
+    }
+}
+
+static void create_helper_win(void)
+{
     int i;
 
-    if (helper_win == NULL) {
-        dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
-        for (i = 0; i < cont; i++) {
-            wresize(ps[i].fm, dim, width[i]);
-            print_border_and_title(i);
-            if (ps[i].curr_pos > dim - 3) {
-                ps[i].curr_pos = dim - 3 + ps[i].delta;
-                mvwprintw(ps[i].fm, dim - 3 + INITIAL_POSITION, 1, "->");
-            }
-            wrefresh(ps[i].fm);
+    dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
+    for (i = 0; i < cont; i++) {
+        wresize(ps[i].fm, dim, width[i]);
+        print_border_and_title(i);
+        if (ps[i].curr_pos > dim - 3) {
+            ps[i].curr_pos = dim - 3 + ps[i].delta;
+            mvwprintw(ps[i].fm, dim - 3 + INITIAL_POSITION, 1, "->");
         }
-        helper_win = subwin(stdscr, HELPER_HEIGHT, COLS, LINES - INFO_HEIGHT - HELPER_HEIGHT, 0);
-        wclear(helper_win);
-        helper_print();
-    } else {
-        wclear(helper_win);
-        delwin(helper_win);
-        helper_win = NULL;
-        dim = LINES - INFO_HEIGHT;
-        for (i = 0; i < cont; i++) {
-            mvwhline(ps[i].fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
-            wresize(ps[i].fm, dim, width[i]);
-            list_everything(i, dim - 2 - HELPER_HEIGHT + ps[i].delta, HELPER_HEIGHT, ps[i].nl);
-        }
+        wrefresh(ps[i].fm);
+    }
+    helper_win = subwin(stdscr, HELPER_HEIGHT, COLS, LINES - INFO_HEIGHT - HELPER_HEIGHT, 0);
+    wclear(helper_win);
+    helper_print();
+}
+
+static void remove_helper_win(void)
+{
+    int i;
+
+    wclear(helper_win);
+    delwin(helper_win);
+    helper_win = NULL;
+    dim = LINES - INFO_HEIGHT;
+    for (i = 0; i < cont; i++) {
+        mvwhline(ps[i].fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
+        wresize(ps[i].fm, dim, width[i]);
+        list_everything(i, dim - 2 - HELPER_HEIGHT + ps[i].delta, HELPER_HEIGHT, ps[i].nl);
     }
 }
 

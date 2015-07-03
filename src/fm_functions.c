@@ -522,14 +522,8 @@ void search_loop(void)
             c = 'q';
             break;
         case 9: // tab to change tab
-            if (cont == MAX_TABS) {
-                pthread_mutex_lock(&lock);
-                active = 1 - active;
-                chdir(ps[active].my_cwd);
-                pthread_mutex_unlock(&lock);
-                return;
-            }
-            break;
+            change_tab();
+            return;
         case 'q': case 'Q':
             strcpy(sv.found_searched[ps[active].curr_pos], ps[active].my_cwd);
             break;
@@ -698,12 +692,14 @@ static void extractor_thread(struct archive *a)
 
 void change_tab(void)
 {
-    pthread_mutex_lock(&lock);
-    active = !active;
-    pthread_mutex_unlock(&lock);
-    if (sv.searching != 3 + active) {
-        chdir(ps[active].my_cwd);
-    } else {
-        search_loop();
+    if (cont == MAX_TABS) {
+        pthread_mutex_lock(&lock);
+        active = !active;
+        pthread_mutex_unlock(&lock);
+        if (sv.searching != 3 + active) {
+            chdir(ps[active].my_cwd);
+        } else {
+            search_loop();
+        }
     }
 }
