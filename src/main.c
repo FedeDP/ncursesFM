@@ -22,23 +22,24 @@
  * END_COMMON_COPYRIGHT_HEADER */
 
 #include "fm_functions.h"
+#ifdef LIBCONFIG_PRESENT
 #include <libconfig.h>
+#endif
 
 static void helper_function(int argc, const char *argv[]);
-#ifdef LIBCONFIG_PRESENT
 static void init_func(void);
+#ifdef LIBCONFIG_PRESENT
+static void read_config_file(void);
 #endif
 static void main_loop(void);
-
-static const char *config_file_name = "/etc/default/ncursesFM.conf";
-// static const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
 
 int main(int argc, const char *argv[])
 {
     helper_function(argc, argv);
     pthread_mutex_init(&lock, NULL);
-    #ifdef LIBCONFIG_PRESENT
     init_func();
+    #ifdef LIBCONFIG_PRESENT
+    read_config_file();
     #endif
     screen_init();
     main_loop();
@@ -69,9 +70,6 @@ static void helper_function(int argc, const char *argv[])
 
 static void init_func(void)
 {
-    const char *str_editor, *str_starting_dir;
-    config_t cfg;
-
     cont = 0;
     sv.searching = 0;
     current_th = NULL;
@@ -80,7 +78,16 @@ static void init_func(void)
     config.starting_dir = NULL;
     config.second_tab_starting_dir = 0;
     config.show_hidden = 0;
-    #ifdef LIBCONFIG_PRESENT
+}
+
+#ifdef LIBCONFIG_PRESENT
+static void read_config_file(void)
+{
+    config_t cfg;
+    const char *config_file_name = "/etc/default/ncursesFM.conf";
+//     const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
+    const char *str_editor, *str_starting_dir;
+
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
         if (config_lookup_string(&cfg, "editor", &str_editor)) {
@@ -100,8 +107,8 @@ static void init_func(void)
         sleep(1);
     }
     config_destroy(&cfg);
-    #endif
 }
+#endif
 
 static void main_loop(void)
 {
