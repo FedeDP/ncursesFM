@@ -25,7 +25,9 @@
 #include <libconfig.h>
 
 static void helper_function(int argc, const char *argv[]);
+#ifdef LIBCONFIG_PRESENT
 static void init_func(void);
+#endif
 static void main_loop(void);
 
 static const char *config_file_name = "/etc/default/ncursesFM.conf";
@@ -35,7 +37,9 @@ int main(int argc, const char *argv[])
 {
     helper_function(argc, argv);
     pthread_mutex_init(&lock, NULL);
+    #ifdef LIBCONFIG_PRESENT
     init_func();
+    #endif
     screen_init();
     main_loop();
     free_everything();
@@ -76,6 +80,7 @@ static void init_func(void)
     config.starting_dir = NULL;
     config.second_tab_starting_dir = 0;
     config.show_hidden = 0;
+    #ifdef LIBCONFIG_PRESENT
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
         if (config_lookup_string(&cfg, "editor", &str_editor)) {
@@ -95,6 +100,7 @@ static void init_func(void)
         sleep(1);
     }
     config_destroy(&cfg);
+    #endif
 }
 
 static void main_loop(void)

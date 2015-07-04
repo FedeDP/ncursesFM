@@ -114,7 +114,8 @@ void generate_list(int win)
 /*
  * Prints to window 'win' a list of strings.
  * Check if window 'win' is in search mode, and takes care.
- * If end == 0, it means it needs to print every string until the end of available rows.
+ * If end == 0, it means it needs to print every string until the end of available rows,
+ * else it indicates how many strings the function has to print (starting from files[old_dim])
  * If stat_active == 1 for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
  */
 void list_everything(int win, int old_dim, int end, char **files)
@@ -204,9 +205,6 @@ void new_tab(void)
     generate_list(active);
 }
 
-/*
- * Delete current tab (only second tab can be deleted)
- */
 void delete_tab(void)
 {
     cont--;
@@ -259,8 +257,8 @@ static void scroll_helper_func(int x, int direction)
 }
 
 /*
- * If there are 2 tabs, and both tabs are in the same path,
- * a change in one tab will also refresh other tab.
+ * Check which of the "cont" tabs is in the "str" path,
+ * then refresh it.
  */
 void sync_changes(const char *str)
 {
@@ -274,7 +272,8 @@ void sync_changes(const char *str)
 }
 
 /*
- * Follow ls color scheme to color files/folders
+ * Follow ls color scheme to color files/folders. Archives are yellow.
+ * Receives a win and a full path to be checked.
  */
 static void colored_folders(int win, const char *name)
 {
@@ -304,6 +303,12 @@ void trigger_show_helper_message(void)
     }
 }
 
+/*
+ * Changes "dim" global var;
+ * if current position in the folder was > dim - 3 (where dim goes from 0 to dim - 1, and -2 is because of helper_win borders),
+ * change it to dim - 3 + ps[i].delta.
+ * Then create helper_win and print its strings.
+ */
 static void create_helper_win(void)
 {
     int i;
@@ -350,6 +355,12 @@ static void helper_print(void)
     wrefresh(helper_win);
 }
 
+/*
+ * init: from where to print stats.
+ * end: how many files' stats we need to print.
+ * win: window where we need to print.
+ * if init is 0, in the first line ("..") print "total size"
+ */
 void show_stat(int init, int end, int win)
 {
     int i = init, j;
@@ -378,6 +389,10 @@ void show_stat(int init, int end, int win)
     }
 }
 
+/*
+ * Helper function used in show_stat: received a size,
+ * it changes the unit from Kb to Mb to Gb if size > 1024 (previous unit)
+ */
 static void change_unit(float size, char *str)
 {
     char *unit[3] = {"KB", "MB", "GB"};

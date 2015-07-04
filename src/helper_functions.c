@@ -32,6 +32,11 @@ static void quit_thread_func(void);
 static int num_of_jobs = 0;
 static pthread_t th;
 
+/*
+ * Given a filename, the function checks:
+ * 1) if there is a '.' starting substring in it (else it returns 0)
+ * 2) for each of the *ext strings, checks if last "strlen(*ext)" chars in filename are equals to *ext. If yes, returns 1.
+ */
 int is_archive(const char *filename)
 {
     const char *ext[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
@@ -48,6 +53,10 @@ int is_archive(const char *filename)
     return 0;
 }
 
+/*
+ * Given a str, a char input[dim], and a char c (that is default value if enter is pressed, if dim == 1),
+ * asks the user "str" and saves in input the user response.
+ */
 void ask_user(const char *str, char *input, int dim, char c)
 {
     echo();
@@ -66,6 +75,12 @@ void ask_user(const char *str, char *input, int dim, char c)
     print_info(NULL, INFO_LINE);
 }
 
+/*
+ * Given a string str, and a line i, prints str on the I line of INFO_WIN.
+ * Plus, it searches for running th, and if found, prints running_h message(depends on its type) at the end of INFO_LINE
+ * It searches for selected_files too, and prints a message at the end of INFO_LINE - (strlen(running_h mesg) if there's.
+ * Finally, if a search is running, prints a message at the end of ERR_LINE;
+ */
 void print_info(const char *str, int i)
 {
     int k;
@@ -75,14 +90,14 @@ void print_info(const char *str, int i)
         wmove(info_win, k, strlen("I:") + 1);
         wclrtoeol(info_win);
     }
-    k = -1;
+    k = 0;
     if (running_h && running_h->type) {
         sprintf(st, "[%d/%d] %s", running_h->num, num_of_jobs, thread_job_mesg[running_h->type - 1]);
-        k = strlen(st);
+        k = strlen(st) + 1;
         mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
     }
     if (current_th && current_th->selected_files) {
-        mvwprintw(info_win, INFO_LINE, COLS - k - 1 - strlen(selected_mess), selected_mess);
+        mvwprintw(info_win, INFO_LINE, COLS - k - strlen(selected_mess), selected_mess);
     }
     if ((sv.searching == 1) || (sv.searching == 2)) {
         mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
@@ -114,6 +129,10 @@ void free_str(char *str[PATH_MAX])
     }
 }
 
+/*
+ * Gived a full path: if test != NULL, searches the string test in the mimetype, and if found returns 1;
+ * If !test, it just prints the mimetype.
+ */
 int get_mimetype(const char *path, const char *test)
 {
     int ret = 0;

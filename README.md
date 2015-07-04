@@ -33,18 +33,18 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 ## Build requirements
 
 * ncurses    -> UI
-* libconfig  -> config file parsing
 * libarchive -> archiving/extracting support
 * libmagic   -> mimetype support
 
 ## Optional compile time dependencies
 
 * libcups -> print support
+* libconfig  -> config file parsing
 * libx11  -> check whether ncursesFM is started in a X environment or not.
 
 ## Runtime dependencies
 
-* required: ncurses, libconfig, libmagic, libarchive, plus every optional build dep if compiled with its support.
+* required: ncurses, libmagic, libarchive, plus every optional build dep if compiled with its support.
 * optional: fuseiso, xdg-utils (only if compiled with libx11 support)
 
 ## Install instructions:

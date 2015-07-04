@@ -11,9 +11,9 @@ license=('GPL')
 depends=('ncurses' 'libconfig' 'libarchive' 'libcups' 'libx11')
 optdepends=('fuseiso: for fuse archive/iso mounting support'
             'xdg-utils: xdg-open support')
-#depends=('git') -> libcups and libx11 are optional build dep.
-#                   If compiled without them, the program will run just fine;
-#                   but that would disable xdg-open and printing support.
+# libcups, libconfig and libx11 are optional build dep.
+# If compiled without them, the program will run just fine;
+# but that would disable xdg-open, config file read, and printing support.
 makedepends=('git')
 source=("git://github.com/FedeDP/${_gitname}.git")
 backup=('etc/default/ncursesFM.conf')

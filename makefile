@@ -1,5 +1,5 @@
 CC = gcc
-LIBS = -lncurses -lpthread -larchive -lconfig -lmagic
+LIBS = -lncurses -lpthread -larchive -lmagic
 CFLAGS =
 RM = rm
 INSTALL = install -p
@@ -23,6 +23,13 @@ CFLAGS+=-DLIBCUPS_PRESENT
 LIBS+=-lcups
 $(info libcups support enabled.)
 endif
+
+ifneq ("$(wildcard /usr/include/libconfig.h)","")
+CFLAGS+=-DLIBCONFIG_PRESENT
+LIBS+=-lconfig
+$(info libconfig support enabled.)
+endif
+
 endif
 
 all: ncursesFM clean

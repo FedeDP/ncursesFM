@@ -522,8 +522,7 @@ void search_loop(void)
             c = 'q';
             break;
         case 9: // tab to change tab
-            change_tab();
-            return;
+            return change_tab();
         case 'q': case 'Q':
             strcpy(sv.found_searched[ps[active].curr_pos], ps[active].my_cwd);
             break;
