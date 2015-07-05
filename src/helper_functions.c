@@ -114,7 +114,6 @@ void *safe_malloc(ssize_t size, const char *str)
 
     if (!(ptr = malloc(size))) {
         print_info(str, ERR_LINE);
-        return NULL;
     }
     return ptr;
 }
@@ -153,6 +152,10 @@ int get_mimetype(const char *path, const char *test)
     return ret;
 }
 
+/*
+ * Adds a job to the thread_list (thread_l list).
+ * current_th will always point to the newly created job (ie the last job to be executed).
+ */
 thread_l *add_thread(thread_l *h)
 {
     if (h) {
@@ -170,6 +173,10 @@ thread_l *add_thread(thread_l *h)
     return h;
 }
 
+/*
+ * running_h is a ptr to the currently running job.
+ * This function will free its memory and set it to NULL.
+ */
 void free_running_h(void)
 {
     if (running_h->selected_files)
@@ -178,6 +185,14 @@ void free_running_h(void)
     running_h = NULL;
 }
 
+/*
+ * Given a type, a function and a str:
+ * - checks if we have write oaccess in cwd.
+ * - if type is one of {RENAME_TH, NEW_FILE_TH, CREATE_DIR_TH}, asks user the name of the new file.
+ * - If current_th has not been allocated yet (ie: if type != {PASTE_TH, ARCHIVER_TH}), adds a new job to the thread_list
+ * - Initializes the new job
+ * - if there's a thread running, prints a message that the job will be queued, else starts the th to execute the job.
+ */
 void init_thread(int type, void (*f)(void), const char *str)
 {
     char temp[PATH_MAX];
@@ -209,6 +224,9 @@ void init_thread(int type, void (*f)(void), const char *str)
     }
 }
 
+/*
+ * Just a helper thread for init_thread(); it sets some members of thread_l struct depending of current_th->type
+ */
 static void init_thread_helper(const char *temp, const char *str)
 {
     char name[PATH_MAX];
@@ -229,6 +247,10 @@ static void init_thread_helper(const char *temp, const char *str)
     }
 }
 
+/*
+ * - first check if we come from a recursive call (if we're in a running th), then frees previously finished job and print its completion mesg.
+ * - if thread_h is not NULL, and thread_f is already assigned, the th has another job waiting for it, so we run it, else we finished our work: num_of_jobs = 0.
+ */
 static void *execute_thread(void *x)
 {
     if (running_h) {
