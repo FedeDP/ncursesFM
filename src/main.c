@@ -27,6 +27,7 @@
 #endif
 
 static void helper_function(int argc, const char *argv[]);
+static void parse_cmd(int argc, const char *argv[]);
 static void init_func(void);
 #ifdef LIBCONFIG_PRESENT
 static void read_config_file(void);
@@ -35,13 +36,20 @@ static void main_loop(void);
 
 int main(int argc, const char *argv[])
 {
+    init_func();
     helper_function(argc, argv);
     pthread_mutex_init(&lock, NULL);
-    init_func();
     #ifdef LIBCONFIG_PRESENT
     read_config_file();
     #endif
+    if (access(config.starting_dir, F_OK) == -1) {
+        free(config.starting_dir);
+        config.starting_dir = NULL;
+    }
     screen_init();
+    if (cont == 2) {
+        change_tab();
+    }
     main_loop();
     free_everything();
     screen_end();
@@ -53,18 +61,49 @@ int main(int argc, const char *argv[])
 static void helper_function(int argc, const char *argv[])
 {
     if (argc != 1) {
-        if (strcmp(argv[1], "-h") != 0) {
-            printf("Use '-h' to view helper message\n");
-        } else {
+        if (strcmp(argv[1], "-h") == 0) {
             printf("\tNcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
             printf("\tThis program comes with ABSOLUTELY NO WARRANTY;\n");
             printf("\tThis is free software, and you are welcome to redistribute it under certain conditions;\n");
             printf("\tIt is GPL licensed. Have a look at COPYING file.\n");
-            printf("\t\t* Have a look at the config file /etc/default/ncursesFM.conf.\n");
+            printf("\t\t* -h to view this helper message.\n");
+            printf("\t\t* --editor=/path/to/editor to set an editor for current session.\n");
+            printf("\t\t* --starting-dir=/path/to/dir to set a starting directory for current session.\n");
+            printf("\t\t* Have a look at the config file /etc/default/ncursesFM.conf to set your preferred defaults.\n");
             printf("\t\t* Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
             printf("\t\t* Press 'l' while in program to view a more detailed helper message.\n");
+            exit(0);
+        } else {
+            parse_cmd(argc, argv);
         }
-        exit(0);
+    }
+}
+
+static void parse_cmd(int argc, const char *argv[])
+{
+    int i, j = 1;
+    const char *cmd_switch[] = {"--editor=", "--starting-dir="};
+
+    while ((argv[j]) && (j < argc)) {
+        i = 0;
+        while (i < 2) {
+            if (strncmp(cmd_switch[i], argv[j], strlen(cmd_switch[i])) == 0) {
+                switch (i) {
+                case 0:
+                    if ((!config.editor) && (config.editor = safe_malloc((strlen(argv[j]) - strlen(cmd_switch[i])) * sizeof(char) + 1, generic_mem_error))) {
+                        strcpy(config.editor, argv[j] + strlen(cmd_switch[i]));
+                    }
+                    break;
+                case 1:
+                    if ((!config.starting_dir) && (config.starting_dir = safe_malloc((strlen(argv[j]) - strlen(cmd_switch[i])) * sizeof(char) + 1, generic_mem_error))) {
+                        strcpy(config.starting_dir, argv[j] + strlen(cmd_switch[i]));
+                    }
+                    break;
+                }
+            }
+            i++;
+        }
+        j++;
     }
 }
 
@@ -78,6 +117,7 @@ static void init_func(void)
     config.starting_dir = NULL;
     config.second_tab_starting_dir = 0;
     config.show_hidden = 0;
+    config.starting_tabs = 1;
 }
 
 #ifdef LIBCONFIG_PRESENT
@@ -87,21 +127,26 @@ static void read_config_file(void)
     const char *config_file_name = "/etc/default/ncursesFM.conf";
 //     const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
     const char *str_editor, *str_starting_dir;
+    int start_with_2_tabs;
 
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
-        if (config_lookup_string(&cfg, "editor", &str_editor)) {
+        if (!config.editor && config_lookup_string(&cfg, "editor", &str_editor)) {
             if ((config.editor = safe_malloc(strlen(str_editor) * sizeof(char) + 1, generic_mem_error))) {
                 strcpy(config.editor, str_editor);
             }
         }
         config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
-        if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) && access(str_starting_dir, F_OK) != -1) {
+        if (!config.startig_dir && config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) {
             if ((config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, generic_mem_error))) {
                 strcpy(config.starting_dir, str_starting_dir);
             }
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
+        config_lookup_int(&cfg, "start_with_2_tabs", &start_with_2_tabs);
+        if (start_with_2_tabs) {
+            config.starting_tabs = 2;
+        }
     } else {
         printf("%s", config_file_missing);
         sleep(1);

@@ -71,6 +71,13 @@ void switch_hidden(void)
     }
 }
 
+/*
+ * Check if file is locked down by running thread.
+ * Check if it is an iso, then try to mount it.
+ * If is an archive, initialize a thread job to extract it.
+ * if compiled with X11 support, and xdg-open is found, open the file,
+ * else open the file with $config.editor.
+ */
 void manage_file(const char *str)
 {
     int fd = open(str, O_RDONLY);
@@ -99,6 +106,9 @@ void manage_file(const char *str)
     close(fd);
 }
 
+/*
+ * If we're on a X screen, open the file with xdg-open.
+ */
 #ifdef LIBX11_PRESENT
 static void xdg_open(const char *str)
 {
@@ -121,6 +131,9 @@ static void xdg_open(const char *str)
 }
 #endif
 
+/*
+ * If file mimetype contains "text" or "x-empty" (empty file), open it with config.editor.
+ */
 static void open_file(const char *str)
 {
     pid_t pid;
@@ -141,6 +154,10 @@ static void open_file(const char *str)
     }
 }
 
+/*
+ * Create a dir with the file.iso name without extension, and mount there the iso through fuseiso.
+ * If mkdir fails, it means folder is already present, so unmount the iso.
+ */
 static void iso_mount_service(const char *str)
 {
     pid_t pid;
@@ -184,8 +201,8 @@ void new_file(void)
     char current_dir[PATH_MAX];
 
     if (running_h->type == NEW_FILE_TH) {
-            f = fopen(running_h->full_path, "w");
-            fclose(f);
+        f = fopen(running_h->full_path, "w");
+        fclose(f);
     } else {
         mkdir(running_h->full_path, 0700);
     }
@@ -213,6 +230,11 @@ void remove_file(void)
     }
 }
 
+/*
+ * If !current_th, adds a thread job.
+ * If there are no selected files for the current job, or the file user selected wasn't already selected,
+ * add this file to selected_files list.
+ */
 void manage_c_press(char c)
 {
     if (!current_th)

@@ -50,7 +50,9 @@ void screen_init(void)
     noecho();
     curs_set(0);
     dim = LINES - INFO_HEIGHT;
-    new_tab();
+    while (cont < config.starting_tabs) {
+        new_tab();
+    }
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
     mvwprintw(info_win, INFO_LINE, 1, "I: ");
     mvwprintw(info_win, ERR_LINE, 1, "E: ");

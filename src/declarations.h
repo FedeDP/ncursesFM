@@ -26,6 +26,7 @@ struct conf {
     int show_hidden;
     char *starting_dir;
     int second_tab_starting_dir;
+    int starting_tabs;
 };
 
 typedef struct list {
