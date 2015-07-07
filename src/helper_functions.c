@@ -93,8 +93,8 @@ void print_info(const char *str, int i)
         wclrtoeol(info_win);
     }
     k = 0;
-    if (running_h && running_h->type) {
-        sprintf(st, "[%d/%d] %s", running_h->num, num_of_jobs, thread_job_mesg[running_h->type - 1]);
+    if (thread_h && thread_h->type) {
+        sprintf(st, "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type - 1]);
         k = strlen(st) + 1;
         mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
     }
@@ -181,10 +181,13 @@ thread_job_list *add_thread(thread_job_list *h)
  */
 void free_running_h(void)
 {
-    if (running_h->selected_files)
-        free_copied_list(running_h->selected_files);
-    free(running_h);
-    running_h = NULL;
+    thread_job_list * tmp = thread_h;
+
+    thread_h = thread_h->next;
+    if (tmp->selected_files)
+        free_copied_list(tmp->selected_files);
+    free(tmp);
+    tmp = NULL;
 }
 
 /*
@@ -215,7 +218,7 @@ void init_thread(int type, void (*f)(void), const char *str)
     current_th->type = type;
     init_thread_helper(temp, str);
     current_th->f = f;
-    if (running_h) {
+    if (num_of_jobs > 1) {
         print_info(thread_running, INFO_LINE);
     } else {
         thread_m.str = NULL;
@@ -271,15 +274,13 @@ static void copy_selected_files(void)
  */
 static void *execute_thread(void *x)
 {
-    if (running_h) {
+    if (x) {
         free_running_h();
         print_info(thread_m.str, thread_m.line);
     }
     if (thread_h && thread_h->f) {
-        running_h = thread_h;
-        thread_h = thread_h->next;
-        running_h->f();
-        execute_thread(NULL);
+        thread_h->f();
+        return execute_thread(thread_h);
     } else {
         num_of_jobs = 0;
     }
@@ -337,10 +338,6 @@ void free_everything(void)
 {
     int j;
 
-    if (thread_h) {
-        free_thread_job_list(thread_h);
-        thread_h = NULL;
-    }
     quit_thread_func();
     free_str(sv.found_searched);
     for (j = 0; j < cont; j++) {
@@ -357,10 +354,14 @@ void quit_thread_func(void)
 {
     char c;
 
-    if (running_h) {
+    if (thread_h) {
         ask_user(quit_with_running_thread, &c, 1, 'y');
         if (c == 'y') {
+            free_thread_job_list(thread_h->next);
+            thread_h->next = NULL;
             pthread_join(th, NULL);
+        } else {
+            free_thread_job_list(thread_h);
         }
     }
 }

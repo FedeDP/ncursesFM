@@ -100,3 +100,4 @@
 * fixed some bugs; now add_thread is always executed inside init_thread; this will fix some bugs in certain conditions
 * only way for current running job, if a thread is running and user tries to leave; not for all the job's list.
 * current_th now static inside helper_functions
+* remove running_h

@@ -115,7 +115,6 @@ static void init_func(void)
 {
     cont = 0;
     sv.searching = 0;
-    running_h = NULL;
     thread_h = NULL;
     selected = NULL;
     config.editor = NULL;

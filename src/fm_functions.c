@@ -83,7 +83,7 @@ void manage_file(const char *str)
     int fd = open(str, O_RDONLY);
     char c;
 
-    if ((running_h) && (flock(fd, LOCK_EX | LOCK_NB))) {
+    if ((thread_h) && (flock(fd, LOCK_EX | LOCK_NB))) {
         print_info(file_used_by_thread, ERR_LINE);
     } else {
         if (get_mimetype(str, "iso")) {
@@ -200,13 +200,13 @@ void new_file(void)
     FILE *f;
     char current_dir[PATH_MAX];
 
-    if (running_h->type == NEW_FILE_TH) {
-        f = fopen(running_h->full_path, "w");
+    if (thread_h->type == NEW_FILE_TH) {
+        f = fopen(thread_h->full_path, "w");
         fclose(f);
     } else {
-        mkdir(running_h->full_path, 0700);
+        mkdir(thread_h->full_path, 0700);
     }
-    strcpy(current_dir, running_h->full_path);
+    strcpy(current_dir, thread_h->full_path);
     current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
     sync_changes(current_dir);
     thread_m.str = file_created;
@@ -220,11 +220,11 @@ void remove_file(void)
     thread_m.str = removed;
     thread_m.line = INFO_LINE;
     print_info(NULL, INFO_LINE);
-    if (rmrf(running_h->full_path) == -1) {
+    if (rmrf(thread_h->full_path) == -1) {
         thread_m.str = rm_fail;
         thread_m.line = ERR_LINE;
     } else {
-        strcpy(current_dir, running_h->full_path);
+        strcpy(current_dir, thread_h->full_path);
         current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
         sync_changes(current_dir);
     }
@@ -255,16 +255,16 @@ void paste_file(void)
     file_list *tmp = NULL;
     int i = 0;
 
-    lstat(running_h->full_path, &file_stat_pasted);
-    for (tmp = running_h->selected_files; tmp; tmp = tmp->next) {
+    lstat(thread_h->full_path, &file_stat_pasted);
+    for (tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
         strcpy(copied_file_dir, tmp->name);
         copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
-        if (strcmp(running_h->full_path, copied_file_dir) == 0) {
+        if (strcmp(thread_h->full_path, copied_file_dir) == 0) {
             tmp->cut = CANNOT_PASTE_SAME_DIR;
         } else {
             lstat(copied_file_dir, &file_stat_copied);
             if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
-                sprintf(pasted_file, "%s%s", running_h->full_path, strrchr(tmp->name, '/'));
+                sprintf(pasted_file, "%s%s", thread_h->full_path, strrchr(tmp->name, '/'));
                 tmp->cut = MOVED_FILE;
                 if (rename(tmp->name, pasted_file) == - 1) {
                     print_info(strerror(errno), ERR_LINE);
@@ -281,7 +281,7 @@ void paste_file(void)
 
 static void cpr(int n)
 {
-    file_list *tmp = running_h->selected_files;
+    file_list *tmp = thread_h->selected_files;
 
     print_info(NULL, INFO_LINE);
     while ((n > 0) && (tmp)) {
@@ -300,7 +300,7 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
     int len, fd_to, fd_from;
     char pasted_file[PATH_MAX];
 
-    sprintf(pasted_file, "%s%s", running_h->full_path, path + distance_from_root);
+    sprintf(pasted_file, "%s%s", thread_h->full_path, path + distance_from_root);
     if (typeflag == FTW_D) {
         mkdir(pasted_file, sb->st_mode);
     } else {
@@ -325,10 +325,10 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
 
 static void check_pasted(void)
 {
-    file_list *tmp = running_h->selected_files;
+    file_list *tmp = thread_h->selected_files;
     char copied_file_dir[PATH_MAX];
 
-    sync_changes(running_h->full_path);
+    sync_changes(thread_h->full_path);
     while (tmp) {
         if (tmp->cut == 1) {
             if (rmrf(tmp->name) == -1) {
@@ -350,11 +350,11 @@ void rename_file_folders(void)
 
     thread_m.str = renamed;
     thread_m.line = INFO_LINE;
-    if (rename(running_h->full_path, running_h->selected_files->name) == - 1) {
+    if (rename(thread_h->full_path, thread_h->selected_files->name) == - 1) {
         thread_m.str = strerror(errno);
         thread_m.line = ERR_LINE;
     } else {
-        strcpy(current_dir, running_h->full_path);
+        strcpy(current_dir, thread_h->full_path);
         current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
         sync_changes(current_dir);
     }
@@ -559,7 +559,7 @@ void print_support(char *str)
     char c;
     int fd = open(str, O_RDONLY);
 
-    if ((running_h) && (flock(fd, LOCK_EX | LOCK_NB))) {
+    if ((thread_h) && (flock(fd, LOCK_EX | LOCK_NB))) {
         print_info(file_used_by_thread, ERR_LINE);
         close(fd);
         return;
@@ -596,13 +596,13 @@ void create_archive(void)
     thread_m.line = INFO_LINE;
     archive = archive_write_new();
     if (((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) ||
-        (archive_write_open_filename(archive, running_h->full_path) == ARCHIVE_FATAL)) {
+        (archive_write_open_filename(archive, thread_h->full_path) == ARCHIVE_FATAL)) {
         thread_m.str = strerror(archive_errno(archive));
     thread_m.line = ERR_LINE;
         archive_write_free(archive);
         archive = NULL;
     } else {
-        fd = open(running_h->full_path, O_RDONLY);
+        fd = open(thread_h->full_path, O_RDONLY);
         flock(fd, LOCK_EX);
         archiver_func();
         close(fd);
@@ -611,7 +611,7 @@ void create_archive(void)
 
 static void archiver_func(void)
 {
-    file_list *tmp = running_h->selected_files;
+    file_list *tmp = thread_h->selected_files;
     char str[PATH_MAX];
 
     print_info(NULL, INFO_LINE);
@@ -622,8 +622,8 @@ static void archiver_func(void)
     }
     archive_write_free(archive);
     archive = NULL;
-    strcpy(str, running_h->full_path);
-    str[strlen(running_h->full_path) - strlen(strrchr(running_h->full_path, '/'))] = '\0';
+    strcpy(str, thread_h->full_path);
+    str[strlen(thread_h->full_path) - strlen(strrchr(thread_h->full_path, '/'))] = '\0';
     sync_changes(str);
 }
 
@@ -661,8 +661,8 @@ static void try_extractor(void)
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
-    if (archive_read_open_filename(a, running_h->full_path, BUFF_SIZE) == ARCHIVE_OK) {
-        fd = open(running_h->full_path, O_RDONLY);
+    if (archive_read_open_filename(a, thread_h->full_path, BUFF_SIZE) == ARCHIVE_OK) {
+        fd = open(thread_h->full_path, O_RDONLY);
         flock(fd, LOCK_EX);
         extractor_thread(a);
         close(fd);
@@ -680,7 +680,7 @@ static void extractor_thread(struct archive *a)
     int flags, len, fd;
     char buff[BUFF_SIZE], current_dir[PATH_MAX], fullpathname[PATH_MAX];
 
-    strcpy(current_dir, running_h->full_path);
+    strcpy(current_dir, thread_h->full_path);
     current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
     print_info(NULL, INFO_LINE);
     ext = archive_write_disk_new();

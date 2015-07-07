@@ -52,7 +52,7 @@ const char *selected_mess = "There are selected files.";
 
 const char *file_used_by_thread = "There's a thread working on this file/dir. Please wait.";
 const char *thread_running = "There's already a thread working. This thread will be queued.";
-const char *quit_with_running_thread = "A thread is still running. Do you want to wait for it?(You should!) Y/n:> ";
+const char *quit_with_running_thread = "A job is still running. Do you want to wait for it?(You should!) It only waits for current job, other queued job will be lost. Y/n:> ";
 
 const char *helper_string[] = { "n and r to create/remove a file.",
                                 "Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.",

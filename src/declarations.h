@@ -66,7 +66,7 @@ struct thread_mesg {
     int line;
 };
 
-thread_job_list *thread_h, *running_h;
+thread_job_list *thread_h;
 file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
