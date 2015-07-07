@@ -105,14 +105,19 @@ static void parse_cmd(int argc, const char *argv[])
         }
         j++;
     }
+    if (!config.editor && !config.starting_dir) {
+        printf("Use '-h' to view helper message.\n");
+        exit(0);
+    }
 }
 
 static void init_func(void)
 {
     cont = 0;
     sv.searching = 0;
-    current_th = NULL;
     running_h = NULL;
+    thread_h = NULL;
+    selected = NULL;
     config.editor = NULL;
     config.starting_dir = NULL;
     config.second_tab_starting_dir = 0;
@@ -215,7 +220,7 @@ static void main_loop(void)
             }
             break;
         case 'v': // paste file
-            if (current_th && current_th->selected_files) {
+            if (selected) {
                 init_thread(PASTE_TH, paste_file, ps[active].my_cwd);
             }
             break;
@@ -256,7 +261,7 @@ static void main_loop(void)
             break;
         #endif
         case 'b': //b to compress
-            if (current_th && current_th->selected_files) {
+            if (selected) {
                 init_thread(ARCHIVER_TH, create_archive, ps[active].my_cwd);
             }
             break;

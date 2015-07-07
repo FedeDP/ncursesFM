@@ -59,14 +59,15 @@ typedef struct thread_list {
     struct thread_list *next;
     int num;
     int type;
-} thread_l;
+} thread_job_list;
 
 struct thread_mesg {
     const char *str;
     int line;
 };
 
-thread_l *thread_h, *running_h, *current_th; // current_th: ptr to latest elem in thread_l list
+thread_job_list *thread_h, *running_h;
+file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;

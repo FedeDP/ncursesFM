@@ -95,3 +95,8 @@
 * a few small changes
 * libconfig is now compile time optional
 * some more DOCS
+
+7 / 7 / 2015
+* fixed some bugs; now add_thread is always executed inside init_thread; this will fix some bugs in certain conditions
+* only way for current running job, if a thread is running and user tries to leave; not for all the job's list.
+* current_th now static inside helper_functions

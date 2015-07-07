@@ -231,19 +231,16 @@ void remove_file(void)
 }
 
 /*
- * If !current_th, adds a thread job.
- * If there are no selected files for the current job, or the file user selected wasn't already selected,
- * add this file to selected_files list.
+ * If there are no selected files, or the file user selected wasn't already selected,
+ * add this file to selecte list.
  */
 void manage_c_press(char c)
 {
-    if (!current_th)
-        thread_h = add_thread(thread_h);
-    if ((!current_th->selected_files) || (remove_from_list(ps[active].nl[ps[active].curr_pos]) == 0)) {
-        current_th->selected_files = select_file(c, current_th->selected_files,  ps[active].nl[ps[active].curr_pos]);
+    if ((!selected) || (remove_from_list(ps[active].nl[ps[active].curr_pos]) == 0)) {
+        selected = select_file(c, selected,  ps[active].nl[ps[active].curr_pos]);
         print_info(file_sel1, INFO_LINE);
     } else {
-        if (current_th->selected_files) {
+        if (selected) {
             print_info(file_sel2, INFO_LINE);
         } else {
             print_info(file_sel3, INFO_LINE);
