@@ -24,13 +24,13 @@
 #include "helper_functions.h"
 
 static void free_running_h(void);
+static thread_job_list *add_thread(thread_job_list *h, int type, const char *path, void (*f)(void));
 static void init_thread_helper(const char *temp, const char *str);
 static void copy_selected_files(void);
 static void *execute_thread(void *x);
 static void free_thread_job_list(thread_job_list *h);
 static void quit_thread_func(void);
 
-static int num_of_jobs = 0;
 static pthread_t th;
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
 
@@ -53,61 +53,6 @@ int is_archive(const char *filename)
         }
     }
     return 0;
-}
-
-/*
- * Given a str, a char input[dim], and a char c (that is default value if enter is pressed, if dim == 1),
- * asks the user "str" and saves in input the user response.
- */
-void ask_user(const char *str, char *input, int dim, char c)
-{
-    echo();
-    print_info(str, INFO_LINE);
-    if (dim == 1) {
-        *input = wgetch(info_win);
-        if ((*input >= 'A') && (*input <= 'Z')) {
-            *input = tolower(*input);
-        } else if (*input == 10) {
-            *input = c;
-        }
-    } else {
-        wgetstr(info_win, input);
-    }
-    noecho();
-    print_info(NULL, INFO_LINE);
-}
-
-/*
- * Given a string str, and a line i, prints str on the I line of INFO_WIN.
- * Plus, it searches for running th, and if found, prints running_h message(depends on its type) at the end of INFO_LINE
- * It searches for selected_files too, and prints a message at the end of INFO_LINE - (strlen(running_h mesg) if there's.
- * Finally, if a search is running, prints a message at the end of ERR_LINE;
- */
-void print_info(const char *str, int i)
-{
-    int k;
-    char st[PATH_MAX];
-
-    for (k = INFO_LINE; k != ERR_LINE + 1; k++) {
-        wmove(info_win, k, strlen("I:") + 1);
-        wclrtoeol(info_win);
-    }
-    k = 0;
-    if (thread_h && thread_h->type) {
-        sprintf(st, "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type - 1]);
-        k = strlen(st) + 1;
-        mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
-    }
-    if (selected) {
-        mvwprintw(info_win, INFO_LINE, COLS - k - strlen(selected_mess), selected_mess);
-    }
-    if ((sv.searching == 1) || (sv.searching == 2)) {
-        mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
-    }
-    if (str) {
-        mvwprintw(info_win, i, strlen("I: ") + 1, str);
-    }
-    wrefresh(info_win);
 }
 
 void *safe_malloc(ssize_t size, const char *str)
@@ -158,19 +103,22 @@ int get_mimetype(const char *path, const char *test)
  * Adds a job to the thread_job_list (thread_job_list list).
  * current_th will always point to the newly created job (ie the last job to be executed).
  */
-thread_job_list *add_thread(thread_job_list *h)
+static thread_job_list *add_thread(thread_job_list *h, int type, const char *path, void (*f)(void))
 {
     if (h) {
-        h->next = add_thread(h->next);
+        h->next = add_thread(h->next, type, path, f);
     } else {
         if (!(h = safe_malloc(sizeof(struct thread_list), generic_mem_error))) {
             return NULL;
         }
+        num_of_jobs++;
         h->selected_files = NULL;
         h->next = NULL;
-        h->f = NULL;
+        h->f = f;
+        strcpy(h->full_path, path);
+        h->type = type;
+        h->num = num_of_jobs;
         current_th = h;
-        num_of_jobs++;
     }
     return h;
 }
@@ -212,12 +160,8 @@ void init_thread(int type, void (*f)(void), const char *str)
             return;
         }
     }
-    thread_h = add_thread(thread_h);
-    strcpy(current_th->full_path, str);
-    current_th->num = num_of_jobs;
-    current_th->type = type;
+    thread_h = add_thread(thread_h, type, str, f);
     init_thread_helper(temp, str);
-    current_th->f = f;
     if (num_of_jobs > 1) {
         print_info(thread_running, INFO_LINE);
     } else {
@@ -357,8 +301,11 @@ void quit_thread_func(void)
     if (thread_h) {
         ask_user(quit_with_running_thread, &c, 1, 'y');
         if (c == 'y') {
-            free_thread_job_list(thread_h->next);
-            thread_h->next = NULL;
+            ask_user(quit_waiting_only_current, &c, 1, 'y');
+            if (c == 'n') {
+                free_thread_job_list(thread_h->next);
+                thread_h->next = NULL;
+            }
             pthread_join(th, NULL);
         } else {
             free_thread_job_list(thread_h);

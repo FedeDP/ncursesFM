@@ -32,7 +32,7 @@ static void create_helper_win(void);
 static void remove_helper_win(void);
 static void change_unit(float size, char *str);
 
-WINDOW *helper_win = NULL;
+static WINDOW *helper_win = NULL, *info_win = NULL;
 static int dim, width[MAX_TABS];
 
 /*
@@ -120,7 +120,7 @@ void generate_list(int win)
  * else it indicates how many strings the function has to print (starting from files[old_dim])
  * If stat_active == 1 for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
  */
-void list_everything(int win, int old_dim, int end, char **files)
+void list_everything(int win, int old_dim, int end, char *files[])
 {
     int i;
 
@@ -417,4 +417,59 @@ void erase_stat(void)
         wclrtoeol(ps[active].fm);
     }
     print_border_and_title(active);
+}
+
+/*
+ * Given a string str, and a line i, prints str on the I line of INFO_WIN.
+ * Plus, it searches for running th, and if found, prints running_h message(depends on its type) at the end of INFO_LINE
+ * It searches for selected_files too, and prints a message at the end of INFO_LINE - (strlen(running_h mesg) if there's.
+ * Finally, if a search is running, prints a message at the end of ERR_LINE;
+ */
+void print_info(const char *str, int i)
+{
+    int k;
+    char st[PATH_MAX];
+
+    for (k = INFO_LINE; k != ERR_LINE + 1; k++) {
+        wmove(info_win, k, strlen("I:") + 1);
+        wclrtoeol(info_win);
+    }
+    k = 0;
+    if (thread_h && thread_h->type) {
+        sprintf(st, "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type - 1]);
+        k = strlen(st) + 1;
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
+    }
+    if (selected) {
+        mvwprintw(info_win, INFO_LINE, COLS - k - strlen(selected_mess), selected_mess);
+    }
+    if ((sv.searching == 1) || (sv.searching == 2)) {
+        mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
+    }
+    if (str) {
+        mvwprintw(info_win, i, strlen("I: ") + 1, str);
+    }
+    wrefresh(info_win);
+}
+
+/*
+ * Given a str, a char input[dim], and a char c (that is default value if enter is pressed, if dim == 1),
+ * asks the user "str" and saves in input the user response.
+ */
+void ask_user(const char *str, char *input, int dim, char c)
+{
+    echo();
+    print_info(str, INFO_LINE);
+    if (dim == 1) {
+        *input = wgetch(info_win);
+        if ((*input >= 'A') && (*input <= 'Z')) {
+            *input = tolower(*input);
+        } else if (*input == 10) {
+            *input = c;
+        }
+    } else {
+        wgetstr(info_win, input);
+    }
+    noecho();
+    print_info(NULL, INFO_LINE);
 }

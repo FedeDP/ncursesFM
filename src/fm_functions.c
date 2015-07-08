@@ -598,7 +598,7 @@ void create_archive(void)
     if (((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) ||
         (archive_write_open_filename(archive, thread_h->full_path) == ARCHIVE_FATAL)) {
         thread_m.str = strerror(archive_errno(archive));
-    thread_m.line = ERR_LINE;
+        thread_m.line = ERR_LINE;
         archive_write_free(archive);
         archive = NULL;
     } else {

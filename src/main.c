@@ -129,7 +129,6 @@ static void read_config_file(void)
 {
     config_t cfg;
     const char *config_file_name = "/etc/default/ncursesFM.conf";
-//     const char *config_file_name = "/home/federico/ncursesFM/ncursesFM.conf";  // local test entry
     const char *str_editor, *str_starting_dir;
     int start_with_2_tabs;
 

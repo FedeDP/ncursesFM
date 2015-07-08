@@ -71,7 +71,6 @@ file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
-WINDOW *info_win;
-int active, cont, quit;
+int active, cont, quit, num_of_jobs;
 pthread_mutex_t lock;
 struct thread_mesg thread_m;

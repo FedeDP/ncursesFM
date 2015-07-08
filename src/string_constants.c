@@ -23,7 +23,7 @@ const char *sure = "Are you serious? y/N:> ";
 
 const char *already_searching = "There's already a search in progress. Wait for it.";
 const char *search_mem_fail = "Stopping search as no more memory can be allocated.";
-const char *search_insert_name = "Insert filename to be found, at least 5 chars:> ";
+const char *search_insert_name = "Insert filename to be found, at least 5 chars, max 20 chars.:> ";
 const char *search_archives = "Do you want to search in archives too? Search can result slower and has higher memory usage. y/N:> ";
 const char *searched_string_minimum = "At least 5 chars...";
 const char *too_many_found = "Too many files found; try with a larger string.";
@@ -52,7 +52,8 @@ const char *selected_mess = "There are selected files.";
 
 const char *file_used_by_thread = "There's a thread working on this file/dir. Please wait.";
 const char *thread_running = "There's already a thread working. This thread will be queued.";
-const char *quit_with_running_thread = "A job is still running. Do you want to wait for it?(You should!) It only waits for current job, other queued job will be lost. Y/n:> ";
+const char *quit_with_running_thread = "A job is still running. Do you want to wait for it?(You should!) :> ";
+const char *quit_waiting_only_current = "Wait for all the jobs (Y) or only current job (n)?";
 
 const char *helper_string[] = { "n and r to create/remove a file.",
                                 "Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.",

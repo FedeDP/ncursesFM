@@ -7,7 +7,7 @@
 void screen_init(void);
 void screen_end(void);
 void generate_list(int win);
-void list_everything(int win, int old_dim, int end, char **files);
+void list_everything(int win, int old_dim, int end, char *files[]);
 void new_tab(void);
 void delete_tab(void);
 void scroll_down(char **str);
