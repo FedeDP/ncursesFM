@@ -316,8 +316,6 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
             }
             close(fd_to);
             close(fd_from);
-            flock(fd_to, LOCK_UN);
-            flock(fd_from, LOCK_UN);
         }
     }
     return 0;
@@ -362,13 +360,7 @@ void rename_file_folders(void)
 
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
-    int res, fd;
-
-    fd = open(path, O_RDONLY);
-    flock(fd, LOCK_EX);
-    res = remove(path);
-    close(fd);
-    return res;
+    return remove(path);
 }
 
 static int rmrf(const char *path)

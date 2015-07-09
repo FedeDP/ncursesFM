@@ -124,8 +124,7 @@ static thread_job_list *add_thread(thread_job_list *h, int type, const char *pat
 }
 
 /*
- * running_h is a ptr to the currently running job.
- * This function will free its memory and set it to NULL.
+ * This function will move thread_job_list head to head->next, and will free old head memory and set it to NULL.
  */
 void free_running_h(void)
 {
@@ -200,6 +199,9 @@ static void init_thread_helper(const char *temp, const char *str)
     }
 }
 
+/*
+ * Helper function that will copy file_list *selected to current_th->selected_files, then will free selected.
+ */
 static void copy_selected_files(void)
 {
     file_list *tmp = selected;
@@ -213,8 +215,8 @@ static void copy_selected_files(void)
 }
 
 /*
- * - first check if we come from a recursive call (if we're in a running th), then frees previously finished job and print its completion mesg.
- * - if thread_h is not NULL, and thread_f is already assigned, the th has another job waiting for it, so we run it, else we finished our work: num_of_jobs = 0.
+ * First check if we come from a recursive call, then frees previously finished job and print its completion mesg.
+ * If thread_h is not NULL, the th has another job waiting for it, so we run it, else we finished our work: num_of_jobs = 0.
  */
 static void *execute_thread(void *x)
 {
@@ -222,7 +224,7 @@ static void *execute_thread(void *x)
         free_running_h();
         print_info(thread_m.str, thread_m.line);
     }
-    if (thread_h && thread_h->f) {
+    if (thread_h) {
         thread_h->f();
         return execute_thread(thread_h);
     } else {

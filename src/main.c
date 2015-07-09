@@ -166,6 +166,9 @@ static void main_loop(void)
 
     while (!quit) {
         c = wgetch(ps[active].fm);
+        pthread_mutex_lock(&lock);
+        stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
+        pthread_mutex_unlock(&lock);
         if ((c >= 'A') && (c <= 'Z')) {
             c = tolower(c);
         }
@@ -180,9 +183,6 @@ static void main_loop(void)
             switch_hidden();
             break;
         case 10: // enter to change dir or open a file.
-            pthread_mutex_lock(&lock);
-            stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
-            pthread_mutex_unlock(&lock);
             if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
                 change_dir(ps[active].nl[ps[active].curr_pos]);
             } else {
@@ -205,7 +205,7 @@ static void main_loop(void)
             init_thread(NEW_FILE_TH, new_file, ps[active].my_cwd);
             break;
         case 'r': //remove file
-            if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
+            if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) { // check this is not ".." dir
                 ask_user(sure, &x, 1, 'n');
                 if (x == 'y') {
                     init_thread(RM_TH, remove_file, ps[active].nl[ps[active].curr_pos]);
@@ -222,7 +222,7 @@ static void main_loop(void)
                 init_thread(PASTE_TH, paste_file, ps[active].my_cwd);
             }
             break;
-        case 'l':
+        case 'l':  // show helper mess
             trigger_show_helper_message();
             break;
         case 's': // show stat about files (size and perms)
@@ -250,9 +250,6 @@ static void main_loop(void)
             break;
         #ifdef LIBCUPS_PRESENT
         case 'p': // p to print
-            pthread_mutex_lock(&lock);
-            stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
-            pthread_mutex_unlock(&lock);
             if (S_ISREG(current_file_stat.st_mode) && !get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable")) {
                 print_support(ps[active].nl[ps[active].curr_pos]);
             }

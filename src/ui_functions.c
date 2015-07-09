@@ -435,7 +435,7 @@ void print_info(const char *str, int i)
         wclrtoeol(info_win);
     }
     k = 0;
-    if (thread_h && thread_h->type) {
+    if (thread_h) {
         sprintf(st, "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type - 1]);
         k = strlen(st) + 1;
         mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
