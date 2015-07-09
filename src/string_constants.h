@@ -49,7 +49,7 @@ const char *extracted;
 
 const char *pasted_mesg;
 
-const char *thread_job_mesg[7];
+const char *thread_job_mesg[8];
 const char *selected_mess;
 
 const char *file_used_by_thread;

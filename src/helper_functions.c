@@ -153,7 +153,7 @@ void init_thread(int type, void (*f)(void), const char *str)
         print_info(no_w_perm, ERR_LINE);
         return;
     }
-    if (type >= RENAME_TH) {
+    if ((type >= RENAME_TH) && (type <= CREATE_DIR_TH)) {
         ask_user(ask_name, temp, PATH_MAX, 0);
         if (!strlen(temp)) {
             return;
@@ -261,20 +261,16 @@ int remove_from_list(const char *name)
     return 0;
 }
 
-file_list *select_file(char c, file_list *h, const char *str)
+file_list *select_file(int i, file_list *h, const char *str)
 {
     if (h) {
-        h->next = select_file(c, h->next, str);
+        h->next = select_file(i, h->next, str);
     } else {
         if (!(h = safe_malloc(sizeof(struct list), generic_mem_error))) {
             return NULL;
         }
         strcpy(h->name, str);
-        if (c == 'x') {
-            h->cut = 1;
-        } else {
-            h->cut = 0;
-        }
+        h->cut = i;
         h->next = NULL;
     }
     return h;

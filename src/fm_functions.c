@@ -27,7 +27,7 @@
 static void xdg_open(const char *str);
 #endif
 static void open_file(const char *str);
-static void iso_mount_service(const char *str);
+static void iso_mount_service(void);
 static void cpr(int n);
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void check_pasted(void);
@@ -44,6 +44,7 @@ static void archiver_func(void);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void try_extractor(void);
 static void extractor_thread(struct archive *a);
+static void sync_th_cwd(const char *str);
 
 static struct archive *archive = NULL;
 static int distance_from_root;
@@ -87,7 +88,7 @@ void manage_file(const char *str)
         print_info(file_used_by_thread, ERR_LINE);
     } else {
         if (get_mimetype(str, "iso")) {
-            iso_mount_service(str);
+            init_thread(FUSEISO_TH, iso_mount_service, str);
         } else if (is_archive(str)) {
             ask_user(extr_question, &c, 1, 'y');
             if (c == 'y') {
@@ -158,65 +159,56 @@ static void open_file(const char *str)
  * Create a dir with the file.iso name without extension, and mount there the iso through fuseiso.
  * If mkdir fails, it means folder is already present, so unmount the iso.
  */
-static void iso_mount_service(const char *str)
+static void iso_mount_service(void)
 {
     pid_t pid;
-    char mount_point[strlen(str)];
+    char mount_point[strlen(thread_h->full_path)];
 
+    thread_m.line = INFO_LINE;
     if (access("/usr/bin/fuseiso", F_OK) == -1) {
-        print_info(fuseiso_missing, ERR_LINE);
+        thread_m.line = ERR_LINE;
+        thread_m.str = fuseiso_missing;
         return;
     }
-    if (access(ps[active].my_cwd, W_OK) != 0) {
-        print_info(no_w_perm, ERR_LINE);
-        return;
-    }
-    strcpy(mount_point, str);
-    mount_point[strlen(str) - strlen(strrchr(str, '.'))] = '\0';
+    print_info(NULL, INFO_LINE);
+    strcpy(mount_point, thread_h->full_path);
+    mount_point[strlen(mount_point) - strlen(strrchr(mount_point, '.'))] = '\0';
     pid = vfork();
     if (pid == 0) {
-        int fd = open("/dev/null",O_WRONLY);
-        dup2(fd, 1);
-        dup2(fd, 2);
-        close(fd);
         if (mkdir(mount_point, ACCESSPERMS) == -1) {
             execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
         } else {
-            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", str, mount_point, NULL);
+            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", thread_h->full_path, mount_point, NULL);
         }
     } else {
         waitpid(pid, NULL, 0);
         if (rmdir(mount_point) == 0) {
-            print_info(unmounted, INFO_LINE);
+            thread_m.str = unmounted;
         } else {
-            print_info(mounted, INFO_LINE);
+            thread_m.str = mounted;
         }
-        sync_changes(ps[active].my_cwd);
+        sync_th_cwd(thread_h->full_path);
     }
 }
 
 void new_file(void)
 {
     FILE *f;
-    char current_dir[PATH_MAX];
 
+    print_info(NULL, INFO_LINE);
     if (thread_h->type == NEW_FILE_TH) {
         f = fopen(thread_h->full_path, "w");
         fclose(f);
     } else {
         mkdir(thread_h->full_path, 0700);
     }
-    strcpy(current_dir, thread_h->full_path);
-    current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
-    sync_changes(current_dir);
+    sync_th_cwd(thread_h->full_path);
     thread_m.str = file_created;
     thread_m.line = INFO_LINE;
 }
 
 void remove_file(void)
 {
-    char current_dir[PATH_MAX];
-
     thread_m.str = removed;
     thread_m.line = INFO_LINE;
     print_info(NULL, INFO_LINE);
@@ -224,9 +216,7 @@ void remove_file(void)
         thread_m.str = rm_fail;
         thread_m.line = ERR_LINE;
     } else {
-        strcpy(current_dir, thread_h->full_path);
-        current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
-        sync_changes(current_dir);
+        sync_th_cwd(thread_h->full_path);
     }
 }
 
@@ -234,10 +224,10 @@ void remove_file(void)
  * If there are no selected files, or the file user selected wasn't already selected,
  * add this file to selecte list.
  */
-void manage_c_press(char c)
+void manage_c_press(int i)
 {
     if ((!selected) || (remove_from_list(ps[active].nl[ps[active].curr_pos]) == 0)) {
-        selected = select_file(c, selected,  ps[active].nl[ps[active].curr_pos]);
+        selected = select_file(i, selected,  ps[active].nl[ps[active].curr_pos]);
         print_info(file_sel1, INFO_LINE);
     } else {
         if (selected) {
@@ -324,7 +314,6 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
 static void check_pasted(void)
 {
     file_list *tmp = thread_h->selected_files;
-    char copied_file_dir[PATH_MAX];
 
     sync_changes(thread_h->full_path);
     while (tmp) {
@@ -334,9 +323,7 @@ static void check_pasted(void)
             }
         }
         if ((tmp->cut == 1) || (tmp->cut == MOVED_FILE)) {
-            strcpy(copied_file_dir, tmp->name);
-            copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
-            sync_changes(copied_file_dir);
+            sync_th_cwd(tmp->name);
         }
         tmp = tmp->next;
     }
@@ -344,17 +331,14 @@ static void check_pasted(void)
 
 void rename_file_folders(void)
 {
-    char current_dir[PATH_MAX];
-
     thread_m.str = renamed;
     thread_m.line = INFO_LINE;
     if (rename(thread_h->full_path, thread_h->selected_files->name) == - 1) {
         thread_m.str = strerror(errno);
         thread_m.line = ERR_LINE;
     } else {
-        strcpy(current_dir, thread_h->full_path);
-        current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
-        sync_changes(current_dir);
+        print_info(NULL, INFO_LINE);
+        sync_th_cwd(thread_h->full_path);
     }
 }
 
@@ -604,7 +588,6 @@ void create_archive(void)
 static void archiver_func(void)
 {
     file_list *tmp = thread_h->selected_files;
-    char str[PATH_MAX];
 
     print_info(NULL, INFO_LINE);
     while (tmp) {
@@ -614,9 +597,7 @@ static void archiver_func(void)
     }
     archive_write_free(archive);
     archive = NULL;
-    strcpy(str, thread_h->full_path);
-    str[strlen(thread_h->full_path) - strlen(strrchr(thread_h->full_path, '/'))] = '\0';
-    sync_changes(str);
+    sync_th_cwd(thread_h->full_path);
 }
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -712,4 +693,13 @@ void change_tab(void)
             search_loop();
         }
     }
+}
+
+static void sync_th_cwd(const char *str)
+{
+    char current_dir[PATH_MAX];
+
+    strcpy(current_dir, str);
+    current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
+    sync_changes(current_dir);
 }

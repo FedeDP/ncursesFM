@@ -22,7 +22,7 @@ void switch_hidden(void);
 void manage_file(const char *str);
 void new_file(void);
 void remove_file(void);
-void manage_c_press(char c);
+void manage_c_press(int i);
 void paste_file(void);
 void rename_file_folders(void);
 void search(void);

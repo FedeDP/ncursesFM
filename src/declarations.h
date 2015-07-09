@@ -20,6 +20,7 @@
 #define RENAME_TH 5
 #define NEW_FILE_TH 6
 #define CREATE_DIR_TH 7
+#define FUSEISO_TH 8
 
 struct conf {
     char *editor;

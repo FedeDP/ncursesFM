@@ -214,7 +214,11 @@ static void main_loop(void)
             break;
         case 'c': case 'x': // copy/cut file
             if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
-                manage_c_press(c);
+                if (c == 'c') {
+                    manage_c_press(0);
+                } else {
+                    manage_c_press(1);
+                }
             }
             break;
         case 'v': // paste file
