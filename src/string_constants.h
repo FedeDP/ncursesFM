@@ -9,12 +9,7 @@ const char *fatal_mem_error;
 
 const char *no_w_perm;
 
-const char *unmounted;
-const char *mounted;
-const char *file_created;
-const char *renamed;
 const char *rm_fail;
-const char *removed;
 
 const char *file_selected;
 const char *file_sel1;
@@ -40,16 +35,14 @@ const char *print_ok;
 const char *print_fail;
 
 const char *archiving_mesg;
-const char *archive_ready;
 
 const char *ask_name;
 
 const char *extr_question;
-const char *extracted;
 
-const char *pasted_mesg;
 
 const char *thread_job_mesg[8];
+const char *thread_str[8];
 const char *selected_mess;
 
 const char *file_used_by_thread;

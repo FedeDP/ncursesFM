@@ -163,7 +163,6 @@ static void iso_mount_service(void)
     pid_t pid;
     char mount_point[strlen(thread_h->full_path)];
 
-    thread_m.line = INFO_LINE;
     if (access("/usr/bin/fuseiso", F_OK) == -1) {
         thread_m.line = ERR_LINE;
         thread_m.str = fuseiso_missing;
@@ -181,11 +180,7 @@ static void iso_mount_service(void)
         }
     } else {
         waitpid(pid, NULL, 0);
-        if (rmdir(mount_point) == 0) {
-            thread_m.str = unmounted;
-        } else {
-            thread_m.str = mounted;
-        }
+        rmdir(mount_point);
         sync_th_cwd(thread_h->full_path);
     }
 }
@@ -202,14 +197,10 @@ void new_file(void)
         mkdir(thread_h->full_path, 0700);
     }
     sync_th_cwd(thread_h->full_path);
-    thread_m.str = file_created;
-    thread_m.line = INFO_LINE;
 }
 
 void remove_file(void)
 {
-    thread_m.str = removed;
-    thread_m.line = INFO_LINE;
     print_info(NULL, INFO_LINE);
     if (rmrf(thread_h->full_path) == -1) {
         thread_m.str = rm_fail;
@@ -264,8 +255,6 @@ void paste_file(void)
         }
     }
     cpr(i);
-    thread_m.str = pasted_mesg;
-    thread_m.line = INFO_LINE;
 }
 
 static void cpr(int n)
@@ -328,8 +317,6 @@ static void check_pasted(void)
 
 void rename_file_folders(void)
 {
-    thread_m.str = renamed;
-    thread_m.line = INFO_LINE;
     print_info(NULL, INFO_LINE);
     if (rename(thread_h->full_path, thread_h->selected_files->name) == - 1) {
         thread_m.str = strerror(errno);
@@ -556,8 +543,6 @@ void create_archive(void)
 {
     int fd;
 
-    thread_m.str = archive_ready;
-    thread_m.line = INFO_LINE;
     archive = archive_write_new();
     if (((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) ||
         (archive_write_open_filename(archive, thread_h->full_path) == ARCHIVE_FATAL)) {
@@ -570,6 +555,7 @@ void create_archive(void)
         flock(fd, LOCK_EX);
         archiver_func();
         close(fd);
+        sync_th_cwd(thread_h->full_path);
     }
 }
 
@@ -585,7 +571,6 @@ static void archiver_func(void)
     }
     archive_write_free(archive);
     archive = NULL;
-    sync_th_cwd(thread_h->full_path);
 }
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -617,8 +602,6 @@ static void try_extractor(void)
     struct archive *a;
     int fd;
 
-    thread_m.str = extracted;
-    thread_m.line = INFO_LINE;
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
@@ -638,17 +621,14 @@ static void extractor_thread(struct archive *a)
 {
     struct archive *ext;
     struct archive_entry *entry;
-    int flags, len, fd;
+    int len, fd;
+    int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
     char buff[BUFF_SIZE], current_dir[PATH_MAX], fullpathname[PATH_MAX];
 
     strcpy(current_dir, thread_h->full_path);
     current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
     print_info(NULL, INFO_LINE);
     ext = archive_write_disk_new();
-    flags = ARCHIVE_EXTRACT_TIME;
-    flags |= ARCHIVE_EXTRACT_PERM;
-    flags |= ARCHIVE_EXTRACT_ACL;
-    flags |= ARCHIVE_EXTRACT_FFLAGS;
     archive_write_disk_set_options(ext, flags);
     archive_write_disk_set_standard_lookup(ext);
     while (archive_read_next_header(a, &entry) != ARCHIVE_EOF) {

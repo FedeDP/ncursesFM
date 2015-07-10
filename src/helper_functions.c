@@ -225,6 +225,8 @@ static void *execute_thread(void *x)
         print_info(thread_m.str, thread_m.line);
     }
     if (thread_h) {
+        thread_m.str = thread_str[current_th->type - 1];
+        thread_m.line = INFO_LINE;
         thread_h->f();
         return execute_thread(thread_h);
     } else {

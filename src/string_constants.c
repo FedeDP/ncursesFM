@@ -7,12 +7,7 @@ const char *fatal_mem_error = "No more memory available. Program will exit.";
 
 const char *no_w_perm = "You do not have write permissions here.";
 
-const char *unmounted = "Succesfully unmounted.";
-const char *mounted = "Succesfully mounted.";
-const char *file_created = "File/dir created.";
-const char *renamed = "File renamed.";
 const char *rm_fail = "Could not cut/remove.";
-const char *removed = "File/dir removed.";
 
 const char *file_selected = "This file is already selected. Cancel its selection before.";
 const char *file_sel1 = "File selected.";
@@ -38,16 +33,14 @@ const char *print_ok = "Print job done.";
 const char *print_fail = "No printers available.";
 
 const char *archiving_mesg = "Insert new file name (defaults to first entry name):> ";
-const char *archive_ready = "The archive is ready.";
 
 const char *ask_name = "Insert new file name:> ";
 
 const char *extr_question = "Do you really want to extract this archive? Y/n:> ";
-const char *extracted = "Succesfully extracted.";
-
-const char *pasted_mesg = "Every files has been copied/moved.";
 
 const char *thread_job_mesg[] = {"Pasting...", "Archiving...", "Extracting...", "Removing...", "Renaming...", "Creating file...", "Creating dir...", "(Un)Mounting iso..."};
+const char *thread_str[] = {"Every files has been copied/moved.", "The archive is ready.", "Succesfully extracted.", "File/dir removed.",
+                            "File renamed.", "File created.", "Dir created.", "ISO (un)mounted."};
 const char *selected_mess = "There are selected files.";
 
 const char *file_used_by_thread = "There's a thread working on this file/dir. Please wait.";
