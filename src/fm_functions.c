@@ -35,7 +35,6 @@ static int recursive_remove(const char *path, const struct stat *sb, int typefla
 static int rmrf(const char *path);
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int search_inside_archive(const char *path);
-static int search_file(const char *path);
 static void *search_thread(void *x);
 #ifdef LIBCUPS_PRESENT
 static void *print_file(void *filename);
@@ -317,12 +316,10 @@ static void check_pasted(void)
 
     sync_changes(thread_h->full_path);
     while (tmp) {
-        if (tmp->cut == 1) {
-            if (rmrf(tmp->name) == -1) {
-                print_info(rm_fail, ERR_LINE);
-            }
-        }
         if ((tmp->cut == 1) || (tmp->cut == MOVED_FILE)) {
+            if (tmp->cut == 1) {
+                rmrf(tmp->name);
+            }
             sync_th_cwd(tmp->name);
         }
         tmp = tmp->next;
@@ -333,11 +330,11 @@ void rename_file_folders(void)
 {
     thread_m.str = renamed;
     thread_m.line = INFO_LINE;
+    print_info(NULL, INFO_LINE);
     if (rename(thread_h->full_path, thread_h->selected_files->name) == - 1) {
         thread_m.str = strerror(errno);
         thread_m.line = ERR_LINE;
     } else {
-        print_info(NULL, INFO_LINE);
         sync_th_cwd(thread_h->full_path);
     }
 }
@@ -349,10 +346,7 @@ static int recursive_remove(const char *path, const struct stat *sb, int typefla
 
 static int rmrf(const char *path)
 {
-    if (access(path, W_OK) == 0) {
-        return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS | FTW_MOUNT);
-    }
-    return -1;
+    return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS | FTW_MOUNT);
 }
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -368,18 +362,17 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     }
     if ((sv.search_archive) && (is_archive(strrchr(path, '/')))) {
         return search_inside_archive(path);
-    } else {
-        strcpy(fixed_str, strrchr(path, '/') + 1);
-        if (strncmp(fixed_str, sv.searched_string, strlen(sv.searched_string)) == 0) {
-            if (!(sv.found_searched[sv.found_cont] = safe_malloc(sizeof(char) * PATH_MAX, search_mem_fail))) {
-                return 1;
-            }
-            strcpy(sv.found_searched[sv.found_cont], path);
-            if (typeflag == FTW_D) {
-                strcat(sv.found_searched[sv.found_cont], "/");
-            }
-            sv.found_cont++;
+    }
+    strcpy(fixed_str, strrchr(path, '/') + 1);
+    if (strncmp(fixed_str, sv.searched_string, strlen(sv.searched_string)) == 0) {
+        if (!(sv.found_searched[sv.found_cont] = safe_malloc(sizeof(char) * PATH_MAX, search_mem_fail))) {
+            return 1;
         }
+        strcpy(sv.found_searched[sv.found_cont], path);
+        if (typeflag == FTW_D) {
+            strcat(sv.found_searched[sv.found_cont], "/");
+        }
+        sv.found_cont++;
     }
     return 0;
 }
@@ -392,10 +385,10 @@ static int search_inside_archive(const char *path)
 
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
-    if (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK) {
+    if ((a) && (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK)) {
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
             strcpy(str, archive_entry_pathname(entry));
-            if (str[strlen(str) - 1] == '/') {// check if we're on a dir
+            if (str[strlen(str) - 1] == '/') {  // check if we're on a dir
                 str[strlen(str) - 1] = '\0';
             }
             if (strrchr(str, '/')) {
@@ -413,11 +406,6 @@ static int search_inside_archive(const char *path)
     }
     archive_read_free(a);
     return 0;
-}
-
-static int search_file(const char *path)
-{
-    return nftw(path, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
 }
 
 void search(void)
@@ -444,7 +432,7 @@ void search(void)
 
 static void *search_thread(void *x)
 {
-    int ret = search_file(ps[active].my_cwd);
+    int ret = nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
 
     if (!sv.found_searched[0]) {
         sv.searching = 0;
@@ -634,7 +622,7 @@ static void try_extractor(void)
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
-    if (archive_read_open_filename(a, thread_h->full_path, BUFF_SIZE) == ARCHIVE_OK) {
+    if ((a) && (archive_read_open_filename(a, thread_h->full_path, BUFF_SIZE) == ARCHIVE_OK)) {
         fd = open(thread_h->full_path, O_RDONLY);
         flock(fd, LOCK_EX);
         extractor_thread(a);
