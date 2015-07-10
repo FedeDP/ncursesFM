@@ -140,7 +140,7 @@ static void read_config_file(void)
             }
         }
         config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
-        if (!config.startig_dir && config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) {
+        if (!config.starting_dir && config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) {
             if ((config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, generic_mem_error))) {
                 strcpy(config.starting_dir, str_starting_dir);
             }
