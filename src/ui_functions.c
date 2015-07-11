@@ -444,7 +444,7 @@ void print_info(const char *str, int i)
         mvwprintw(info_win, INFO_LINE, COLS - k - strlen(selected_mess), selected_mess);
     }
     if (sv.searching) {
-        if (sv.searching == 3) {
+        if (sv.searching >= 3) {
             sprintf(search_str, "%d files found.", sv.found_cont);
             mvwprintw(info_win, ERR_LINE, COLS - strlen(search_str), search_str);
         } else {
