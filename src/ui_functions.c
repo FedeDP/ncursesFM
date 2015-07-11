@@ -428,7 +428,7 @@ void erase_stat(void)
 void print_info(const char *str, int i)
 {
     int k;
-    char st[PATH_MAX];
+    char st[PATH_MAX], search_str[20];
 
     for (k = INFO_LINE; k != ERR_LINE + 1; k++) {
         wmove(info_win, k, strlen("I:") + 1);
@@ -443,8 +443,13 @@ void print_info(const char *str, int i)
     if (selected) {
         mvwprintw(info_win, INFO_LINE, COLS - k - strlen(selected_mess), selected_mess);
     }
-    if ((sv.searching == 1) || (sv.searching == 2)) {
-        mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
+    if (sv.searching) {
+        if (sv.searching == 3) {
+            sprintf(search_str, "%d files found.", sv.found_cont);
+            mvwprintw(info_win, ERR_LINE, COLS - strlen(search_str), search_str);
+        } else {
+            mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
+        }
     }
     if (str) {
         mvwprintw(info_win, i, strlen("I: ") + 1, str);

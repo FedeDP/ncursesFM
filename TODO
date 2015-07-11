@@ -1,5 +1,5 @@
 /* TODO:
  * fm_functions doc
  * semplify code
- * search-inside_archive...try again to use same struct archive *a (global), so i'll have to add read_support_format(all) etc etc only once-> better performance
+ * use "r" to reload current dir? -> when a thread finished its work, ask user to press r to reload current dir list-> get rid of mutex
  */

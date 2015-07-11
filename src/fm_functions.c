@@ -437,15 +437,12 @@ static void *search_thread(void *x)
 
 void list_found(void)
 {
-    char str[20];
-
     sv.searching = 3 + active;
     ps[active].delta = 0;
     ps[active].curr_pos = 0;
     wclear(ps[active].fm);
     list_everything(active, 0, 0, sv.found_searched);
-    sprintf(str, "%d files found.", sv.found_cont);
-    print_info(str, INFO_LINE);
+    print_info(NULL, INFO_LINE);
     return search_loop();
 }
 
@@ -652,9 +649,7 @@ static void extractor_thread(struct archive *a)
 void change_tab(void)
 {
     if (cont == MAX_TABS) {
-        pthread_mutex_lock(&lock);
         active = !active;
-        pthread_mutex_unlock(&lock);
         if (sv.searching != 3 + active) {
             chdir(ps[active].my_cwd);
         } else {
