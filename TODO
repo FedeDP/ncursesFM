@@ -1,5 +1,4 @@
 /* TODO:
  * fm_functions doc
- * semplify code
- * use "r" to reload current dir? -> when a thread finished its work, ask user to press r to reload current dir list-> get rid of mutex
+ * semplify code -> try to get rid of mutex...
  */
