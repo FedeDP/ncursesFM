@@ -23,8 +23,10 @@
 
 #include "ui_functions.h"
 
+static void generate_list(int win);
 static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
+static void initialize_tab_cwd(void);
 static void scroll_helper_func(int x, int direction);
 static void colored_folders(int win, const char *name);
 static void helper_print(void);
@@ -50,9 +52,7 @@ void screen_init(void)
     noecho();
     curs_set(0);
     dim = LINES - INFO_HEIGHT;
-    while (cont < config.starting_tabs) {
-        new_tab();
-    }
+    new_tab();
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
     mvwprintw(info_win, INFO_LINE, 1, "I: ");
     mvwprintw(info_win, ERR_LINE, 1, "E: ");
@@ -67,8 +67,7 @@ void screen_end(void)
     int i;
 
     for (i = 0; i < cont; i++) {
-        wclear(ps[i].fm);
-        delwin(ps[i].fm);
+        delete_tab();
     }
     if (helper_win) {
         wclear(helper_win);
@@ -85,32 +84,35 @@ void screen_end(void)
  * It won't do anything if window 'win' is in search mode.
  * If program cannot allocate memory, it will leave.
  */
-void generate_list(int win)
+static void generate_list(int win)
 {
-    int i, number_of_files;
+    int i = 0, number_of_files;
     struct dirent **files;
 
     if (sv.searching == 3 + win) {
         return;
     }
-    pthread_mutex_lock(&lock);
-    free_str(ps[win].nl);
+    while ((needs_refresh == REFRESH) && (ps[win].nl[i])) {
+        i++;
+    }
     number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
-    for (i = 0; i < number_of_files; i++) {
-        if (!(ps[win].nl[i] = safe_malloc(sizeof(char) * PATH_MAX, fatal_mem_error))) {
-            quit = 1;
+    if (i != number_of_files) {
+        free_str(ps[win].nl);
+        for (i = 0; i < number_of_files; i++) {
+            if (!(ps[win].nl[i] = safe_malloc(sizeof(char) * PATH_MAX, fatal_mem_error))) {
+                quit = 1;
+            }
+            sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
         }
-        sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
+        wclear(ps[win].fm);
+        ps[win].delta = 0;
+        ps[win].curr_pos = 0;
+        list_everything(win, 0, 0, ps[win].nl);
     }
     for (i = number_of_files - 1; i >= 0; i--) {
         free(files[i]);
     }
     free(files);
-    wclear(ps[win].fm);
-    ps[win].delta = 0;
-    ps[win].curr_pos = 0;
-    list_everything(win, 0, dim - 2, ps[win].nl);
-    pthread_mutex_unlock(&lock);
 }
 
 /*
@@ -184,7 +186,7 @@ void new_tab(void)
         return;
     }
     cont++;
-    if (cont == 2) {
+    if (cont == MAX_TABS) {
         width[active] = COLS / cont;
         wresize(ps[active].fm, dim, width[active]);
         print_border_and_title(active);
@@ -195,6 +197,13 @@ void new_tab(void)
     keypad(ps[active].fm, TRUE);
     scrollok(ps[active].fm, TRUE);
     idlok(ps[active].fm, TRUE);
+    wtimeout(ps[active].fm, 100);
+    ps[active].stat_active = 0;
+    initialize_tab_cwd();
+}
+
+static void initialize_tab_cwd(void)
+{
     if (config.starting_dir) {
         if ((cont == 1) || (config.second_tab_starting_dir != 0)){
             strcpy(ps[active].my_cwd, config.starting_dir);
@@ -204,18 +213,22 @@ void new_tab(void)
         getcwd(ps[active].my_cwd, PATH_MAX);
     }
     chdir(ps[active].my_cwd);
-    generate_list(active);
+    needs_refresh = FORCE_REFRESH;
 }
 
 void delete_tab(void)
 {
     cont--;
-    wclear(ps[!active].fm);
-    delwin(ps[!active].fm);
-    ps[!active].fm = NULL;
-    free_str(ps[!active].nl);
-    ps[!active].stat_active = 0;
-    memset(ps[!active].my_cwd, 0, sizeof(ps[!active].my_cwd));
+    wclear(ps[cont].fm);
+    delwin(ps[cont].fm);
+    ps[cont].fm = NULL;
+    free_str(ps[cont].nl);
+    ps[cont].stat_active = 0;
+    memset(ps[cont].my_cwd, 0, sizeof(ps[!active].my_cwd));
+}
+
+void enlarge_first_tab(void)
+{
     width[active] = COLS;
     wborder(ps[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wresize(ps[active].fm, dim, width[active]);
@@ -262,15 +275,14 @@ static void scroll_helper_func(int x, int direction)
  * Check which of the "cont" tabs is in the "str" path,
  * then refresh it.
  */
-void sync_changes(const char *str)
+void sync_changes(void)
 {
     int i;
 
     for (i = 0; i < cont; i++) {
-        if (strcmp(str, ps[i].my_cwd) == 0) {
-            generate_list(i);
-        }
+        generate_list(i);
     }
+    needs_refresh = 0;
 }
 
 /*
@@ -298,7 +310,7 @@ static void colored_folders(int win, const char *name)
 
 void trigger_show_helper_message(void)
 {
-    if (helper_win == NULL) {
+    if (!helper_win) {
         create_helper_win();
     } else {
         remove_helper_win();

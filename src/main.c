@@ -38,7 +38,6 @@ int main(int argc, const char *argv[])
 {
     init_func();
     helper_function(argc, argv);
-    pthread_mutex_init(&lock, NULL);
     #ifdef LIBCONFIG_PRESENT
     read_config_file();
     #endif
@@ -47,13 +46,9 @@ int main(int argc, const char *argv[])
         config.starting_dir = NULL;
     }
     screen_init();
-    if (cont == 2) {
-        change_tab();
-    }
     main_loop();
     free_everything();
     screen_end();
-    pthread_mutex_destroy(&lock);
     printf("\033c"); // to clear terminal/vt after leaving program
     return 0;
 }
@@ -114,6 +109,7 @@ static void parse_cmd(int argc, const char *argv[])
 static void init_func(void)
 {
     cont = 0;
+    quit = 0;
     sv.searching = 0;
     thread_h = NULL;
     selected = NULL;
@@ -121,7 +117,6 @@ static void init_func(void)
     config.starting_dir = NULL;
     config.second_tab_starting_dir = 0;
     config.show_hidden = 0;
-    config.starting_tabs = 1;
 }
 
 #ifdef LIBCONFIG_PRESENT
@@ -146,10 +141,6 @@ static void read_config_file(void)
             }
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
-        config_lookup_int(&cfg, "start_with_2_tabs", &start_with_2_tabs);
-        if (start_with_2_tabs) {
-            config.starting_tabs = 2;
-        }
     } else {
         printf("%s", config_file_missing);
         sleep(1);
@@ -165,10 +156,11 @@ static void main_loop(void)
     struct stat current_file_stat;
 
     while (!quit) {
+        if (needs_refresh) {
+            sync_changes();
+        }
         c = wgetch(ps[active].fm);
-        pthread_mutex_lock(&lock);
         stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
-        pthread_mutex_unlock(&lock);
         if ((c >= 'A') && (c <= 'Z')) {
             c = tolower(c);
         }
@@ -199,6 +191,7 @@ static void main_loop(void)
             if (active) {
                 change_tab();
                 delete_tab();
+                enlarge_first_tab();
             }
             break;
         case 'n': // new file

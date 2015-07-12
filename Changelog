@@ -101,3 +101,10 @@
 * only way for current running job, if a thread is running and user tries to leave; not for all the job's list.
 * current_th now static inside helper_functions
 * remove running_h
+
+12 / 7 / 2015
+* lots of internal changes
+* got rid of mutex
+* now every ps.fm WIN changes are performed inside main thread, way more reliable.
+* small code cleanup and bugfixing
+* something more i may have forgot about

@@ -1,13 +1,10 @@
 const char *config_file_missing = "Config file (/etc/default/ncursesFM.conf) not found. Using default values.\n";
 const char *editor_missing = "You have to specify a valid editor in config file.";
-const char *fuseiso_missing = "You need fuseiso for iso mounting support.";
 
 const char *generic_mem_error = "Memory allocation failed.";
 const char *fatal_mem_error = "No more memory available. Program will exit.";
 
 const char *no_w_perm = "You do not have write permissions here.";
-
-const char *rm_fail = "Could not cut/remove.";
 
 const char *file_selected = "This file is already selected. Cancel its selection before.";
 const char *file_sel1 = "File selected.";
@@ -23,8 +20,6 @@ const char *search_archives = "Do you want to search in archives too? Search can
 const char *searched_string_minimum = "At least 5 chars...";
 const char *too_many_found = "Too many files found; try with a larger string.";
 const char *no_found = "No files found.";
-const char *search_loop_str1 = "Open file? Y to open, any other to switch to the folder:> ";
-const char *search_loop_str2 = "This file is inside an archive. Switch to its directory? Y/n:> ";
 const char *search_tab_title = "q to leave search win";
 const char *searching_mess[] = {"Searching...", "Search finished. Press f anytime to view the results."};
 
@@ -41,6 +36,8 @@ const char *extr_question = "Do you really want to extract this archive? Y/n:> "
 const char *thread_job_mesg[] = {"Pasting...", "Archiving...", "Extracting...", "Removing...", "Renaming...", "Creating file...", "Creating dir...", "(Un)Mounting iso..."};
 const char *thread_str[] = {"Every files has been copied/moved.", "The archive is ready.", "Succesfully extracted.", "File/dir removed.",
                             "File renamed.", "File created.", "Dir created.", "ISO (un)mounted."};
+const char *thread_fail_str[] = {"Could not paste.", "Could not archive.", "Could not extract.", "Could not remove.", "Could not rename.",
+                                "Could not create file.", "Could not create folder.", "Fuseiso missing."};
 const char *selected_mess = "There are selected files.";
 
 const char *file_used_by_thread = "There's a thread working on this file/dir. Please wait.";

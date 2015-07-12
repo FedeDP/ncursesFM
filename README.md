@@ -12,7 +12,7 @@ Ncurses File Manager for linux
 * Stats support (permissions and sizes).
 * In-program helper message -> press 'l'.
 * Sync between tabs.
-* Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to open it, if it was a file, or to move in your searched location.
+* Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to move to its folder.
 * It can search your string inside archives too. Then, if found, you can go to the folder of the archive, to extract it.
 * Basic print support: you need "libcups" for this to work.
 * Extract (compressed) archive through libarchive.

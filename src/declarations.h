@@ -22,12 +22,14 @@
 #define CREATE_DIR_TH 7
 #define FUSEISO_TH 8
 
+#define REFRESH 1
+#define FORCE_REFRESH 2
+
 struct conf {
     char *editor;
     int show_hidden;
     char *starting_dir;
     int second_tab_starting_dir;
-    int starting_tabs;
 };
 
 typedef struct list {
@@ -55,7 +57,7 @@ struct search_vars {
 
 typedef struct thread_list {
     file_list *selected_files;
-    void (*f)(void);
+    int (*f)(void);
     char full_path[PATH_MAX];
     struct thread_list *next;
     int num;
@@ -72,6 +74,5 @@ file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
-int active, cont, quit, num_of_jobs;
-pthread_mutex_t lock;
+int active, quit, num_of_jobs, needs_refresh, cont;
 struct thread_mesg thread_m;

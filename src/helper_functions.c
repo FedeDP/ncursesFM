@@ -24,7 +24,7 @@
 #include "helper_functions.h"
 
 static void free_running_h(void);
-static thread_job_list *add_thread(thread_job_list *h, int type, const char *path, void (*f)(void));
+static thread_job_list *add_thread(thread_job_list *h, int type, const char *path, int (*f)(void));
 static void init_thread_helper(const char *temp, const char *str);
 static void copy_selected_files(void);
 static void *execute_thread(void *x);
@@ -103,7 +103,7 @@ int get_mimetype(const char *path, const char *test)
  * Adds a job to the thread_job_list (thread_job_list list).
  * current_th will always point to the newly created job (ie the last job to be executed).
  */
-static thread_job_list *add_thread(thread_job_list *h, int type, const char *path, void (*f)(void))
+static thread_job_list *add_thread(thread_job_list *h, int type, const char *path, int (*f)(void))
 {
     if (h) {
         h->next = add_thread(h->next, type, path, f);
@@ -145,7 +145,7 @@ void free_running_h(void)
  * - Initializes the new job
  * - if there's a thread running, prints a message that the job will be queued, else starts the th to execute the job.
  */
-void init_thread(int type, void (*f)(void), const char *str)
+void init_thread(int type, int (*f)(void), const char *str)
 {
     char temp[PATH_MAX];
 
@@ -225,9 +225,15 @@ static void *execute_thread(void *x)
         print_info(thread_m.str, thread_m.line);
     }
     if (thread_h) {
-        thread_m.str = thread_str[current_th->type - 1];
-        thread_m.line = INFO_LINE;
-        thread_h->f();
+        print_info(NULL, INFO_LINE);
+        if (thread_h->f() == -1) {
+            thread_m.str = thread_fail_str[current_th->type - 1];
+            thread_m.line = ERR_LINE;
+        } else {
+            thread_m.str = thread_str[current_th->type - 1];
+            thread_m.line = INFO_LINE;
+        }
+        needs_refresh = REFRESH;
         return execute_thread(thread_h);
     } else {
         num_of_jobs = 0;
@@ -280,13 +286,8 @@ file_list *select_file(int i, file_list *h, const char *str)
 
 void free_everything(void)
 {
-    int j;
-
     quit_thread_func();
     free_str(sv.found_searched);
-    for (j = 0; j < cont; j++) {
-        free_str(ps[j].nl);
-    }
     free(config.editor);
     free(config.starting_dir);
     if (selected) {

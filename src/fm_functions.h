@@ -20,16 +20,15 @@
 void change_dir(const char *str);
 void switch_hidden(void);
 void manage_file(const char *str);
-void new_file(void);
-void remove_file(void);
+int new_file(void);
+int remove_file(void);
 void manage_c_press(int i);
-void paste_file(void);
-void rename_file_folders(void);
+int paste_file(void);
+int rename_file_folders(void);
 void search(void);
 void list_found(void);
-void search_loop(void);
 #ifdef LIBCUPS_PRESENT
 void print_support(char *str);
 #endif
-void create_archive(void);
+int create_archive(void);
 void change_tab(void);
