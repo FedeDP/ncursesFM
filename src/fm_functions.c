@@ -52,6 +52,7 @@ void change_dir(const char *str)
 {
     if (chdir(str) != -1) {
         getcwd(ps[active].my_cwd, PATH_MAX);
+        print_info(NULL, INFO_LINE);
         needs_refresh = FORCE_REFRESH;
     } else {
         print_info(strerror(errno), ERR_LINE);
