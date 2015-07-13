@@ -250,9 +250,9 @@ static void cpr(int n)
         if ((tmp->cut != MOVED_FILE) && (tmp->cut != CANNOT_PASTE_SAME_DIR)) {
             distance_from_root = strlen(tmp->name) - strlen(strrchr(tmp->name, '/'));
             nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
-        }
-        if (tmp->cut == 1) {
-            rmrf(tmp->name);
+            if (tmp->cut == 1) {
+                rmrf(tmp->name);
+            }
         }
         tmp = tmp->next;
     }
