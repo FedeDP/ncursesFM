@@ -76,8 +76,7 @@ void free_str(char *str[PATH_MAX])
 }
 
 /*
- * Gived a full path: if test != NULL, searches the string test in the mimetype, and if found returns 1;
- * If !test, it just prints the mimetype.
+ * Gived a full path searches the string test in the mimetype, and if found returns 1;
  */
 int get_mimetype(const char *path, const char *test)
 {
@@ -88,12 +87,8 @@ int get_mimetype(const char *path, const char *test)
     magic_cookie = magic_open(MAGIC_MIME_TYPE);
     magic_load(magic_cookie, NULL);
     mimetype = magic_file(magic_cookie, path);
-    if (test) {
-        if (strstr(mimetype, test)) {
-            ret = 1;
-        }
-    } else {
-        print_info(mimetype, INFO_LINE);
+    if (strstr(mimetype, test)) {
+        ret = 1;
     }
     magic_close(magic_cookie);
     return ret;

@@ -207,9 +207,9 @@ static void main_loop(void)
         case 'c': case 'x': // copy/cut file
             if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
                 if (c == 'c') {
-                    manage_c_press(0);
+                    manage_c_press(0, ps[active].nl[ps[active].curr_pos]);
                 } else {
-                    manage_c_press(1);
+                    manage_c_press(1, ps[active].nl[ps[active].curr_pos]);
                 }
             }
             break;
@@ -255,9 +255,6 @@ static void main_loop(void)
             if (selected) {
                 init_thread(ARCHIVER_TH, create_archive, ps[active].my_cwd);
             }
-            break;
-        case 'u': // u to view mimetype
-            get_mimetype(ps[active].nl[ps[active].curr_pos], NULL);
             break;
         case 'q': /* q to exit */
             quit = 1;

@@ -51,9 +51,8 @@ const char *helper_string[] = { "n and r to create/remove a file.",
                                 "To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.",
                                 "Press h to trigger the showing of hide files. s to see stat about files in current folder.",
                                 "c or x to select files. v to paste: files will be copied if selected with c, or cut if selected with x.",
-                                "p to print a file. b to compress selected files. u to view current file's mimetype.",
+                                "p to print a file. b to compress selected files.",
                                 "You can copy as many files/dirs as you want. c/x again on a file/dir to remove it from file list.",
                                 "o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.",
                                 "t to create new tab (at most one more). w to close tab. ",
-                                "You can't close first tab. Use q to quit.",
-                                "Take a look to /etc/default/ncursesFM.conf file to change some settings."};
+                                "You can't close first tab. Use q to quit."};

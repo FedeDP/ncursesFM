@@ -198,10 +198,10 @@ int remove_file(void)
  * If there are no selected files, or the file user selected wasn't already selected,
  * add this file to selecte list.
  */
-void manage_c_press(int i)
+void manage_c_press(int i, const char *str)
 {
-    if ((!selected) || (remove_from_list(ps[active].nl[ps[active].curr_pos]) == 0)) {
-        selected = select_file(i, selected,  ps[active].nl[ps[active].curr_pos]);
+    if ((!selected) || (remove_from_list(str) == 0)) {
+        selected = select_file(i, selected, str);
         print_info(file_sel1, INFO_LINE);
     } else {
         if (selected) {

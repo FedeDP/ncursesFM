@@ -1,4 +1,4 @@
-#define HELPER_HEIGHT 14
+#define HELPER_HEIGHT 13
 
 const char *config_file_missing;
 const char *editor_missing;
