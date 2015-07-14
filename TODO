@@ -1,5 +1,5 @@
 /* TODO:
  * fm_functions doc
  * update DOC
- * code cleanup
+ * parallelize jobs if selected file is not being used by curernt th (otherwise keep current implementation of a job list) ?
  */
