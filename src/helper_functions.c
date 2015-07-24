@@ -297,14 +297,11 @@ void quit_thread_func(void)
     if (thread_h) {
         ask_user(quit_with_running_thread, &c, 1, 'y');
         if (c == 'y') {
-            ask_user(quit_waiting_only_current, &c, 1, 'y');
-            if (c == 'n') {
-                free_thread_job_list(thread_h->next);
-                thread_h->next = NULL;
-            }
             pthread_join(th, NULL);
         } else {
-            free_thread_job_list(thread_h);
+            if (thread_h) {     // if user waits before answering, we have to check if thread_h is still != NULL, otherwise free_thread_job_list would segfault
+                free_thread_job_list(thread_h);
+            }
         }
     }
 }

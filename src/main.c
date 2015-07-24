@@ -41,7 +41,7 @@ int main(int argc, const char *argv[])
     #ifdef LIBCONFIG_PRESENT
     read_config_file();
     #endif
-    if (access(config.starting_dir, F_OK) == -1) {
+    if ((config.starting_dir) && (access(config.starting_dir, F_OK) == -1)) {
         free(config.starting_dir);
         config.starting_dir = NULL;
     }
