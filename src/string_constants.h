@@ -43,6 +43,5 @@ const char *selected_mess;
 const char *file_used_by_thread;
 const char *thread_running;
 const char *quit_with_running_thread;
-const char *quit_waiting_only_current;
 
 const char *helper_string[HELPER_HEIGHT - 2];
