@@ -318,8 +318,6 @@ void free_thread_job_list(thread_job_list *h)
 
 static void sig_handler(int signum)
 {
-    if (thread_h) {
-        free_thread_job_list(thread_h);
-    }
+    free_thread_job_list(thread_h);
     pthread_exit(NULL);
 }
