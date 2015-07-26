@@ -1,5 +1,5 @@
 /* TODO:
  * fm_functions doc
  * update DOC
- * is_archive is not an ideal check...what if a file is called x.tar.gz, but is a text file? -> using get_mimetype is too slow...
+ * Signal handler to gracefully exit from pthread when user wants to leave without waiting for the thread to finish its work
  */
