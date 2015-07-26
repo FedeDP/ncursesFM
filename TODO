@@ -1,5 +1,4 @@
 /* TODO:
  * fm_functions doc
  * update DOC
- * Signal handler to gracefully exit from pthread when user wants to leave without waiting for the thread to finish its work
  */

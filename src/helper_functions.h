@@ -2,6 +2,7 @@
 #include <sys/stat.h>
 #include <magic.h>
 #include <unistd.h>
+#include <signal.h>
 
 int is_archive(const char *filename);
 void ask_user(const char *str, char *input, int dim, char c);

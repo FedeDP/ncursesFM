@@ -30,6 +30,7 @@ static void copy_selected_files(void);
 static void *execute_thread(void *x);
 static void free_thread_job_list(thread_job_list *h);
 static void quit_thread_func(void);
+static void sig_handler(int signum);
 
 static pthread_t th;
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
@@ -215,6 +216,7 @@ static void copy_selected_files(void)
  */
 static void *execute_thread(void *x)
 {
+    signal(SIGINT, sig_handler);
     if (x) {
         free_running_h();
         print_info(thread_m.str, thread_m.line);
@@ -299,9 +301,7 @@ void quit_thread_func(void)
         if (c == 'y') {
             pthread_join(th, NULL);
         } else {
-            if (thread_h) {     // if user waits before answering, we have to check if thread_h is still != NULL, otherwise free_thread_job_list would segfault
-                free_thread_job_list(thread_h);
-            }
+            pthread_kill(th, SIGINT);
         }
     }
 }
@@ -314,4 +314,12 @@ void free_thread_job_list(thread_job_list *h)
     if (h->selected_files)
         free_copied_list(h->selected_files);
     free(h);
+}
+
+static void sig_handler(int signum)
+{
+    if (thread_h) {
+        free_thread_job_list(thread_h);
+    }
+    pthread_exit(NULL);
 }
