@@ -64,15 +64,9 @@ typedef struct thread_list {
     int type;
 } thread_job_list;
 
-struct thread_mesg {
-    const char *str;
-    int line;
-};
-
 thread_job_list *thread_h;
 file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
 int active, quit, num_of_jobs, needs_refresh, cont;
-struct thread_mesg thread_m;

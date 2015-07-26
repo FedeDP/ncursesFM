@@ -23,6 +23,11 @@
 
 #include "helper_functions.h"
 
+struct thread_mesg {
+    const char *str;
+    int line;
+};
+
 static void free_running_h(void);
 static thread_job_list *add_thread(thread_job_list *h, int type, const char *path, int (*f)(void));
 static void init_thread_helper(const char *temp, const char *str);
@@ -34,6 +39,7 @@ static void sig_handler(int signum);
 
 static pthread_t th;
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
+static struct thread_mesg thread_m;
 
 /*
  * Given a filename, the function checks:
@@ -161,6 +167,7 @@ void init_thread(int type, int (*f)(void), const char *str)
         print_info(thread_running, INFO_LINE);
     } else {
         thread_m.str = NULL;
+        thread_m.line = INFO_LINE;
         pthread_create(&th, NULL, execute_thread, NULL);
     }
 }
@@ -217,12 +224,8 @@ static void copy_selected_files(void)
 static void *execute_thread(void *x)
 {
     signal(SIGINT, sig_handler);
-    if (x) {
-        free_running_h();
-        print_info(thread_m.str, thread_m.line);
-    }
+    print_info(thread_m.str, thread_m.line);
     if (thread_h) {
-        print_info(NULL, INFO_LINE);
         if (thread_h->f() == -1) {
             thread_m.str = thread_fail_str[current_th->type - 1];
             thread_m.line = ERR_LINE;
@@ -230,8 +233,9 @@ static void *execute_thread(void *x)
             thread_m.str = thread_str[current_th->type - 1];
             thread_m.line = INFO_LINE;
         }
+        free_running_h();
         needs_refresh = REFRESH;
-        return execute_thread(thread_h);
+        return execute_thread(NULL);
     } else {
         num_of_jobs = 0;
     }
