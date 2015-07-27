@@ -74,30 +74,24 @@ void switch_hidden(void)
  */
 void manage_file(const char *str)
 {
-    int fd = open(str, O_RDONLY);
     char c;
 
-    if ((thread_h) && (flock(fd, LOCK_EX | LOCK_NB))) {
-        print_info(file_used_by_thread, ERR_LINE);
-    } else {
-        if (get_mimetype(str, "iso")) {
-            init_thread(FUSEISO_TH, iso_mount_service, str);
-        } else if (is_archive(str)) {
-            ask_user(extr_question, &c, 1, 'y');
-            if (c == 'y') {
-                init_thread(EXTRACTOR_TH, try_extractor, str);
-            }
-        }
-        #ifdef LIBX11_PRESENT
-        else if (access("/usr/bin/xdg-open", X_OK) != -1) {
-            xdg_open(str);
-        }
-        #endif
-        else {
-            open_file(str);
-        }
+    if (get_mimetype(str, "iso")) {
+        return init_thread(FUSEISO_TH, iso_mount_service, str);
     }
-    close(fd);
+    if (is_archive(str)) {
+        ask_user(extr_question, &c, 1, 'y');
+        if (c == 'y') {
+            return init_thread(EXTRACTOR_TH, try_extractor, str);
+        }
+        return;
+    }
+    #ifdef LIBX11_PRESENT
+    if (access("/usr/bin/xdg-open", X_OK) != -1) {
+        return xdg_open(str);
+    }
+    #endif
+    return open_file(str);
 }
 
 /*
@@ -157,7 +151,7 @@ static int iso_mount_service(void)
     pid_t pid;
     char mount_point[strlen(thread_h->full_path)];
 
-    if (access("/usr/bin/fuseiso", F_OK) == -1) {
+    if ((access("/usr/bin/fuseiso", F_OK) == -1) || (access(thread_h->full_path, F_OK) == -1)) {
         return -1;
     }
     strcpy(mount_point, thread_h->full_path);
@@ -271,8 +265,6 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
         fd_to = open(pasted_file, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, sb->st_mode);
         fd_from = open(path, O_RDONLY);
         if ((fd_to != -1) && (fd_from != -1)) {
-            flock(fd_to, LOCK_EX);
-            flock(fd_from, LOCK_EX);
             len = read(fd_from, buff, sizeof(buff));
             while (len > 0) {
                 write(fd_to, buff, len);
@@ -460,19 +452,12 @@ void print_support(char *str)
 {
     pthread_t print_thread;
     char c;
-    int fd = open(str, O_RDONLY);
 
-    if ((thread_h) && (flock(fd, LOCK_EX | LOCK_NB))) {
-        print_info(file_used_by_thread, ERR_LINE);
-        close(fd);
-        return;
-    }
     ask_user(print_question, &c, 1, 'y');
     if (c == 'y') {
         pthread_create(&print_thread, NULL, print_file, str);
         pthread_detach(print_thread);
     }
-    close(fd);
 }
 
 static void *print_file(void *filename)
@@ -493,8 +478,6 @@ static void *print_file(void *filename)
 
 int create_archive(void)
 {
-    int fd;
-
     archive = archive_write_new();
     if (((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) ||
         (archive_write_open_filename(archive, thread_h->full_path) == ARCHIVE_FATAL)) {
@@ -502,10 +485,7 @@ int create_archive(void)
         archive = NULL;
         return -1;
     }
-    fd = open(thread_h->full_path, O_RDONLY);
-    flock(fd, LOCK_EX);
     archiver_func();
-    close(fd);
     return 0;
 }
 
@@ -535,7 +515,6 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     archive_entry_free(entry);
     fd = open(path, O_RDONLY);
     if (fd != -1) {
-        flock(fd, LOCK_EX);
         len = read(fd, buff, sizeof(buff));
         while (len > 0) {
             archive_write_data(archive, buff, len);
@@ -549,16 +528,12 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 static int try_extractor(void)
 {
     struct archive *a;
-    int fd;
 
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
     if ((a) && (archive_read_open_filename(a, thread_h->full_path, BUFF_SIZE) == ARCHIVE_OK)) {
-        fd = open(thread_h->full_path, O_RDONLY);
-        flock(fd, LOCK_EX);
         extractor_thread(a);
-        close(fd);
         return 0;
     }
     archive_read_free(a);
@@ -569,7 +544,7 @@ static void extractor_thread(struct archive *a)
 {
     struct archive *ext;
     struct archive_entry *entry;
-    int len, fd;
+    int len;
     int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
     char buff[BUFF_SIZE], current_dir[PATH_MAX], fullpathname[PATH_MAX];
 
@@ -582,14 +557,11 @@ static void extractor_thread(struct archive *a)
         sprintf(fullpathname, "%s/%s", current_dir, archive_entry_pathname(entry));
         archive_entry_set_pathname(entry, fullpathname);
         archive_write_header(ext, entry);
-        fd = open(fullpathname, O_RDONLY);
-        flock(fd, LOCK_EX);
         len = archive_read_data(a, buff, sizeof(buff));
         while (len > 0) {
             archive_write_data(ext, buff, len);
             len = archive_read_data(a, buff, sizeof(buff));
         }
-        close(fd);
     }
     archive_read_free(a);
     archive_write_free(ext);

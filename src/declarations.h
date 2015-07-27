@@ -22,7 +22,7 @@
 #define CREATE_DIR_TH 7
 #define FUSEISO_TH 8
 
-#define REFRESH 1   // the win needs a refresh, but we have to check whether it is really needed before.
+#define REFRESH 1   // the win may need a refresh, but we have to check whether it is really needed before.
 #define FORCE_REFRESH 2     // the win surely needs a refresh. Skip check, it is useless, and refresh.
 
 struct conf {
