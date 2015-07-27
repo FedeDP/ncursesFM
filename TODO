@@ -1,5 +1,4 @@
 /* TODO:
  * update DOC
- * add "question active" flag to avoid deletion of user question. Ie: user is being asked a question while a thread job is complete, and a print delete the question.
  * Remove more than one file (using c to select as i do in copy)?
  */

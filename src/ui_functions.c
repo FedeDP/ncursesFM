@@ -35,7 +35,7 @@ static void remove_helper_win(void);
 static void change_unit(float size, char *str);
 
 static WINDOW *helper_win = NULL, *info_win = NULL;
-static int dim, width[MAX_TABS];
+static int dim, width[MAX_TABS], asking_question = 0;
 
 /*
  * Initializes screen, create first tab, and create info_win
@@ -441,9 +441,9 @@ void print_info(const char *str, int i)
 {
     int k;
     char st[PATH_MAX], search_str[20];
-
+    // "quit_with_running_thread" is the longest question string i print. If asking a question (asking_question == 1), i won't clear the question being asked.
     for (k = INFO_LINE; k != ERR_LINE + 1; k++) {
-        wmove(info_win, k, strlen("I:") + 1);
+        wmove(info_win, k, strlen("I:") + 1 + (asking_question * strlen(quit_with_running_thread)));
         wclrtoeol(info_win);
     }
     k = 0;
@@ -463,7 +463,7 @@ void print_info(const char *str, int i)
             mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
         }
     }
-    if (str) {
+    if (str && !asking_question) {
         mvwprintw(info_win, i, strlen("I: ") + 1, str);
     }
     wrefresh(info_win);
@@ -477,6 +477,7 @@ void ask_user(const char *str, char *input, int dim, char c)
 {
     echo();
     print_info(str, INFO_LINE);
+    asking_question = 1;
     if (dim == 1) {
         *input = wgetch(info_win);
         if ((*input >= 'A') && (*input <= 'Z')) {
@@ -488,5 +489,6 @@ void ask_user(const char *str, char *input, int dim, char c)
         wgetstr(info_win, input);
     }
     noecho();
+    asking_question = 0;
     print_info(NULL, INFO_LINE);
 }
