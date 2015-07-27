@@ -40,7 +40,6 @@ const char *thread_str[8];
 const char *thread_fail_str[8];
 const char *selected_mess;
 
-const char *file_used_by_thread;
 const char *thread_running;
 const char *quit_with_running_thread;
 

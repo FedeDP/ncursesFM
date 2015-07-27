@@ -40,7 +40,6 @@ const char *thread_fail_str[] = {"Could not paste.", "Could not archive.", "Coul
                                 "Could not create file.", "Could not create folder.", "Fuseiso missing."};
 const char *selected_mess = "There are selected files.";
 
-const char *file_used_by_thread = "There's a thread working on this file/dir. Please wait.";
 const char *thread_running = "There's already a thread working. This thread will be queued.";
 const char *quit_with_running_thread = "A job is still running. Do you want to wait for it?(You should!) Y/n:> ";
 
