@@ -82,6 +82,9 @@ void screen_end(void)
 /*
  * Creates a list of strings from current win path's files.
  * It won't do anything if window 'win' is in search mode.
+ * If needs_refresh is set to REFRESH (not FORCE_REFRESH),
+ * it will check if number of files in current dir has changed.
+ * If it changed, the function will create a new list of files and print them to screen (list_everything)
  * If program cannot allocate memory, it will leave.
  */
 static void generate_list(int win)
@@ -202,6 +205,10 @@ void new_tab(void)
     initialize_tab_cwd();
 }
 
+/*
+ * Helper function for new_tab().
+ * Saves new tab's cwd, chdir the process inside there, and put flag "needs_refresh" to FORCE_REFRESH.
+ */
 static void initialize_tab_cwd(void)
 {
     if (config.starting_dir) {
@@ -216,6 +223,9 @@ static void initialize_tab_cwd(void)
     needs_refresh = FORCE_REFRESH;
 }
 
+/*
+ * Removes a tab and resets its stored values (cwd, stat_active)
+ */
 void delete_tab(void)
 {
     cont--;
@@ -227,6 +237,9 @@ void delete_tab(void)
     memset(ps[cont].my_cwd, 0, sizeof(ps[!active].my_cwd));
 }
 
+/*
+ * Called in main_loop (main.c) after deletion of second tab.
+ */
 void enlarge_first_tab(void)
 {
     width[active] = COLS;
@@ -272,8 +285,8 @@ static void scroll_helper_func(int x, int direction)
 }
 
 /*
- * Check which of the "cont" tabs is in the "str" path,
- * then refresh it.
+ * Calls generate_list for every tab present.
+ * Put needs_refresh off.
  */
 void sync_changes(void)
 {
@@ -286,8 +299,9 @@ void sync_changes(void)
 }
 
 /*
- * Follow ls color scheme to color files/folders. Archives are yellow.
+ * Follow ls color scheme to color files/folders. + Archives are yellow.
  * Receives a win and a full path to be checked.
+ * If it cannot stat a file, it means it is inside an archive (in search_mode), so we print it yellow.
  */
 static void colored_folders(int win, const char *name)
 {
@@ -342,6 +356,9 @@ static void create_helper_win(void)
     helper_print();
 }
 
+/*
+ * Remove helper_win, resize every ps.fm win and prints last HELPER_HEIGHT lines for each ps.win.
+ */
 static void remove_helper_win(void)
 {
     int i;
@@ -420,6 +437,9 @@ static void change_unit(float size, char *str)
     sprintf(str, "%.2f%s", size, unit[i]);
 }
 
+/*
+ * Move to STAT_COL for each ps.fm win and clear to eol.
+ */
 void erase_stat(void)
 {
     int i;
@@ -433,9 +453,11 @@ void erase_stat(void)
 
 /*
  * Given a string str, and a line i, prints str on the I line of INFO_WIN.
- * Plus, it searches for running th, and if found, prints running_h message(depends on its type) at the end of INFO_LINE
+ * Plus, if thread_h is not NULL, prints thread_job_mesg message(depends on current job type) at the end of INFO_LINE
  * It searches for selected_files too, and prints a message at the end of INFO_LINE - (strlen(running_h mesg) if there's.
  * Finally, if a search is running, prints a message at the end of ERR_LINE;
+ * If asking_question != 0, there's a question being asked to user, so we won't clear it inside the for,
+ * and we won't print str if i == INFO_LINE (that's the line where the user is being asked the question!)
  */
 void print_info(const char *str, int i)
 {
@@ -463,7 +485,7 @@ void print_info(const char *str, int i)
             mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
         }
     }
-    if (str && !asking_question) {
+    if (str && (!asking_question || i == ERR_LINE)) {
         mvwprintw(info_win, i, strlen("I: ") + 1, str);
     }
     wrefresh(info_win);
