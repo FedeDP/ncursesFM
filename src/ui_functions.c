@@ -461,21 +461,21 @@ void erase_stat(void)
  */
 void print_info(const char *str, int i)
 {
-    int k;
+    int len = 0;
     char st[PATH_MAX], search_str[20];
+
     // "quit_with_running_thread" is the longest question string i print. If asking a question (asking_question == 1), i won't clear the question being asked.
-    for (k = INFO_LINE; k != ERR_LINE + 1; k++) {
-        wmove(info_win, k, strlen("I:") + 1 + (asking_question * strlen(quit_with_running_thread)));
-        wclrtoeol(info_win);
-    }
-    k = 0;
+    wmove(info_win, INFO_LINE, strlen("I:") + 1 + (asking_question * strlen(quit_with_running_thread)));
+    wclrtoeol(info_win);
+    wmove(info_win, ERR_LINE, strlen("E:") + 1);
+    wclrtoeol(info_win);
     if (thread_h) {
         sprintf(st, "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type - 1]);
-        k = strlen(st) + 1;
+        len = strlen(st) + 1;
         mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
     }
     if (selected) {
-        mvwprintw(info_win, INFO_LINE, COLS - k - strlen(selected_mess), selected_mess);
+        mvwprintw(info_win, INFO_LINE, COLS - len - strlen(selected_mess), selected_mess);
     }
     if (sv.searching) {
         if (sv.searching >= 3) {
