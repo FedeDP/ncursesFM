@@ -155,10 +155,7 @@ static void main_loop(void)
     struct stat current_file_stat;
 
     while (!quit) {
-        if (needs_refresh) {
-            sync_changes();
-        }
-        c = wgetch(ps[active].fm);
+        c = win_refresh_and_getch();
         stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
         if ((c >= 'A') && (c <= 'Z')) {
             c = tolower(c);

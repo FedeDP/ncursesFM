@@ -394,9 +394,7 @@ static void *search_thread(void *x)
 void list_found(void)
 {
     sv.searching = 3 + active;
-    ps[active].delta = 0;
-    ps[active].curr_pos = 0;
-    wclear(ps[active].fm);
+    reset_win(active);
     list_everything(active, 0, 0, sv.found_searched);
     print_info(NULL, INFO_LINE);
     return search_loop();
@@ -407,7 +405,7 @@ static void search_loop(void)
     int c;
 
     do {
-        c = wgetch(ps[active].fm);
+        c = win_refresh_and_getch();
         switch (c) {
         case KEY_UP:
             scroll_up(sv.found_searched);

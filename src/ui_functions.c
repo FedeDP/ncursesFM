@@ -107,15 +107,20 @@ static void generate_list(int win)
             }
             sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
         }
-        wclear(ps[win].fm);
-        ps[win].delta = 0;
-        ps[win].curr_pos = 0;
+        reset_win(win);
         list_everything(win, 0, 0, ps[win].nl);
     }
     for (i = number_of_files - 1; i >= 0; i--) {
         free(files[i]);
     }
     free(files);
+}
+
+void reset_win(int win)
+{
+    wclear(ps[win].fm);
+    ps[win].delta = 0;
+    ps[win].curr_pos = 0;
 }
 
 /*
@@ -513,4 +518,12 @@ void ask_user(const char *str, char *input, int dim, char c)
     noecho();
     asking_question = 0;
     print_info(NULL, INFO_LINE);
+}
+
+int win_refresh_and_getch(void)
+{
+    if (needs_refresh) {
+        sync_changes();
+    }
+    return wgetch(ps[active].fm);
 }

@@ -6,6 +6,7 @@
 
 void screen_init(void);
 void screen_end(void);
+void reset_win(int win);
 void list_everything(int win, int old_dim, int end, char *files[]);
 void new_tab(void);
 void delete_tab(void);
@@ -16,3 +17,4 @@ void sync_changes(void);
 void trigger_show_helper_message(void);
 void show_stat(int init, int end, int win);
 void erase_stat(void);
+int win_refresh_and_getch(void);
