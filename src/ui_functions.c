@@ -28,14 +28,16 @@ static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
 static void initialize_tab_cwd(void);
 static void scroll_helper_func(int x, int direction);
+static void sync_changes(void);
 static void colored_folders(int win, const char *name);
 static void helper_print(void);
 static void create_helper_win(void);
 static void remove_helper_win(void);
 static void change_unit(float size, char *str);
+static void erase_stat(void);
 
-static WINDOW *helper_win = NULL, *info_win = NULL;
-static int dim, width[MAX_TABS], asking_question = 0;
+static WINDOW *helper_win, *info_win, *fm[MAX_TABS];
+static int dim, width[MAX_TABS], asking_question, delta[MAX_TABS], stat_active[MAX_TABS];
 
 /*
  * Initializes screen, create first tab, and create info_win
@@ -118,8 +120,8 @@ static void generate_list(int win)
 
 void reset_win(int win)
 {
-    wclear(ps[win].fm);
-    ps[win].delta = 0;
+    wclear(fm[win]);
+    delta[win] = 0;
     ps[win].curr_pos = 0;
 }
 
@@ -137,19 +139,19 @@ void list_everything(int win, int old_dim, int end, char *files[])
     if (end == 0) {
         end = dim - 2;
     }
-    wattron(ps[win].fm, A_BOLD);
+    wattron(fm[win], A_BOLD);
     for (i = old_dim; (files[i]) && (i  < old_dim + end); i++) {
         colored_folders(win, files[i]);
         if (sv.searching == 3 + win) {
-            mvwprintw(ps[win].fm, INITIAL_POSITION + i - ps[win].delta, 4, "%.*s", width[win] - 5, files[i]);
+            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, files[i]);
         } else {
-            mvwprintw(ps[win].fm, INITIAL_POSITION + i - ps[win].delta, 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(files[i], '/') + 1);
+            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(files[i], '/') + 1);
         }
-        wattroff(ps[win].fm, COLOR_PAIR);
+        wattroff(fm[win], COLOR_PAIR);
     }
-    wattroff(ps[win].fm, A_BOLD);
-    mvwprintw(ps[win].fm, INITIAL_POSITION + ps[win].curr_pos - ps[win].delta, 1, "->");
-    if ((sv.searching != 3 + win) && (ps[win].stat_active == 1)) {
+    wattroff(fm[win], A_BOLD);
+    mvwprintw(fm[win], INITIAL_POSITION + ps[win].curr_pos - delta[win], 1, "->");
+    if ((sv.searching != 3 + win) && (stat_active[win] == 1)) {
         show_stat(old_dim, end, win);
     }
     print_border_and_title(win);
@@ -160,14 +162,14 @@ void list_everything(int win, int old_dim, int end, char *files[])
  */
 static void print_border_and_title(int win)
 {
-    wborder(ps[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
+    wborder(fm[win], '|', '|', '-', '-', '+', '+', '+', '+');
     if (sv.searching != 3 + win) {
-        mvwprintw(ps[win].fm, 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
+        mvwprintw(fm[win], 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
     } else {
-        mvwprintw(ps[win].fm, 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_tab_title), sv.searched_string);
-        mvwprintw(ps[win].fm, 0, width[win] - (strlen(search_tab_title) + 1), search_tab_title);
+        mvwprintw(fm[win], 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_tab_title), sv.searched_string);
+        mvwprintw(fm[win], 0, width[win] - (strlen(search_tab_title) + 1), search_tab_title);
     }
-    wrefresh(ps[win].fm);
+    wrefresh(fm[win]);
 }
 
 /*
@@ -196,17 +198,17 @@ void new_tab(void)
     cont++;
     if (cont == MAX_TABS) {
         width[active] = COLS / cont;
-        wresize(ps[active].fm, dim, width[active]);
+        wresize(fm[active], dim, width[active]);
         print_border_and_title(active);
     }
     active = cont - 1;
     width[active] = COLS / cont + COLS % cont;
-    ps[active].fm = subwin(stdscr, dim, width[active], 0, (COLS * active) / cont);
-    keypad(ps[active].fm, TRUE);
-    scrollok(ps[active].fm, TRUE);
-    idlok(ps[active].fm, TRUE);
-    wtimeout(ps[active].fm, 100);
-    ps[active].stat_active = 0;
+    fm[active] = subwin(stdscr, dim, width[active], 0, (COLS * active) / cont);
+    keypad(fm[active], TRUE);
+    scrollok(fm[active], TRUE);
+    idlok(fm[active], TRUE);
+    wtimeout(fm[active], 100);
+    stat_active[active] = 0;
     initialize_tab_cwd();
 }
 
@@ -234,11 +236,10 @@ static void initialize_tab_cwd(void)
 void delete_tab(void)
 {
     cont--;
-    wclear(ps[cont].fm);
-    delwin(ps[cont].fm);
-    ps[cont].fm = NULL;
+    wclear(fm[cont]);
+    delwin(fm[cont]);
+    fm[cont] = NULL;
     free_str(ps[cont].nl);
-    ps[cont].stat_active = 0;
     memset(ps[cont].my_cwd, 0, sizeof(ps[!active].my_cwd));
 }
 
@@ -248,8 +249,8 @@ void delete_tab(void)
 void enlarge_first_tab(void)
 {
     width[active] = COLS;
-    wborder(ps[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-    wresize(ps[active].fm, dim, width[active]);
+    wborder(fm[active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wresize(fm[active], dim, width[active]);
     print_border_and_title(active);
 }
 
@@ -257,12 +258,12 @@ void scroll_down(char **str)
 {
     if (str[ps[active].curr_pos + 1]) {
         ps[active].curr_pos++;
-        if (ps[active].curr_pos - (dim - 2) == ps[active].delta) {
+        if (ps[active].curr_pos - (dim - 2) == delta[active]) {
             scroll_helper_func(dim - 2, 1);
             list_everything(active, ps[active].curr_pos, 1, str);
         } else {
-            mvwprintw(ps[active].fm, ps[active].curr_pos - ps[active].delta, 1, "  ");
-            mvwprintw(ps[active].fm, ps[active].curr_pos - ps[active].delta + INITIAL_POSITION, 1, "->");
+            mvwprintw(fm[active], ps[active].curr_pos - delta[active], 1, "  ");
+            mvwprintw(fm[active], ps[active].curr_pos - delta[active] + INITIAL_POSITION, 1, "->");
         }
     }
 }
@@ -271,29 +272,29 @@ void scroll_up(char **str)
 {
     if (ps[active].curr_pos > 0) {
         ps[active].curr_pos--;
-        if (ps[active].curr_pos < ps[active].delta) {
+        if (ps[active].curr_pos < delta[active]) {
             scroll_helper_func(INITIAL_POSITION, -1);
-            list_everything(active, ps[active].delta, 1, str);
+            list_everything(active, delta[active], 1, str);
         } else {
-            mvwprintw(ps[active].fm, ps[active].curr_pos - ps[active].delta + 2, 1, "  ");
-            mvwprintw(ps[active].fm, ps[active].curr_pos - ps[active].delta + 1, 1, "->");
+            mvwprintw(fm[active], ps[active].curr_pos - delta[active] + 2, 1, "  ");
+            mvwprintw(fm[active], ps[active].curr_pos - delta[active] + 1, 1, "->");
         }
     }
 }
 
 static void scroll_helper_func(int x, int direction)
 {
-    mvwprintw(ps[active].fm, x, 1, "  ");
-    wborder(ps[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-    wscrl(ps[active].fm, direction);
-    ps[active].delta += direction;
+    mvwprintw(fm[active], x, 1, "  ");
+    wborder(fm[active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wscrl(fm[active], direction);
+    delta[active] += direction;
 }
 
 /*
  * Calls generate_list for every tab present.
  * Put needs_refresh off.
  */
-void sync_changes(void)
+static void sync_changes(void)
 {
     int i;
 
@@ -314,16 +315,16 @@ static void colored_folders(int win, const char *name)
 
     if (lstat(name, &file_stat) == 0) {
         if (S_ISDIR(file_stat.st_mode)) {
-            wattron(ps[win].fm, COLOR_PAIR(1));
+            wattron(fm[win], COLOR_PAIR(1));
         } else if (S_ISLNK(file_stat.st_mode)) {
-            wattron(ps[win].fm, COLOR_PAIR(3));
+            wattron(fm[win], COLOR_PAIR(3));
         } else if (is_archive(name)) {
-            wattron(ps[win].fm, COLOR_PAIR(4));
+            wattron(fm[win], COLOR_PAIR(4));
         } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
-            wattron(ps[win].fm, COLOR_PAIR(2));
+            wattron(fm[win], COLOR_PAIR(2));
         }
     } else {
-        wattron(ps[win].fm, COLOR_PAIR(4));
+        wattron(fm[win], COLOR_PAIR(4));
     }
 }
 
@@ -348,13 +349,13 @@ static void create_helper_win(void)
 
     dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
     for (i = 0; i < cont; i++) {
-        wresize(ps[i].fm, dim, width[i]);
+        wresize(fm[i], dim, width[i]);
         print_border_and_title(i);
         if (ps[i].curr_pos > dim - 3) {
-            ps[i].curr_pos = dim - 3 + ps[i].delta;
-            mvwprintw(ps[i].fm, dim - 3 + INITIAL_POSITION, 1, "->");
+            ps[i].curr_pos = dim - 3 + delta[i];
+            mvwprintw(fm[i], dim - 3 + INITIAL_POSITION, 1, "->");
         }
-        wrefresh(ps[i].fm);
+        wrefresh(fm[i]);
     }
     helper_win = subwin(stdscr, HELPER_HEIGHT, COLS, LINES - INFO_HEIGHT - HELPER_HEIGHT, 0);
     wclear(helper_win);
@@ -373,9 +374,9 @@ static void remove_helper_win(void)
     helper_win = NULL;
     dim = LINES - INFO_HEIGHT;
     for (i = 0; i < cont; i++) {
-        mvwhline(ps[i].fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
-        wresize(ps[i].fm, dim, width[i]);
-        list_everything(i, dim - 2 - HELPER_HEIGHT + ps[i].delta, HELPER_HEIGHT, ps[i].nl);
+        mvwhline(fm[i], dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
+        wresize(fm[i], dim, width[i]);
+        list_everything(i, dim - 2 - HELPER_HEIGHT + delta[i], HELPER_HEIGHT, ps[i].nl);
     }
 }
 
@@ -411,16 +412,16 @@ void show_stat(int init, int end, int win)
             total_size += file_stat.st_size;
         }
         change_unit(total_size, str);
-        mvwprintw(ps[win].fm, INITIAL_POSITION, STAT_COL, "Total size: %s", str);
+        mvwprintw(fm[win], INITIAL_POSITION, STAT_COL, "Total size: %s", str);
         i = 1;
     }
     for (; ((i < init + end) && (ps[win].nl[i])); i++) {
         stat(ps[win].nl[i], &file_stat);
         change_unit(file_stat.st_size, str);
-        mvwprintw(ps[win].fm, i + INITIAL_POSITION - ps[win].delta, STAT_COL, "%s", str);
-        wprintw(ps[win].fm, "\t");
+        mvwprintw(fm[win], i + INITIAL_POSITION - delta[win], STAT_COL, "%s", str);
+        wprintw(fm[win], "\t");
         for (j = 0; j < 9; j++) {
-            wprintw(ps[win].fm, (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
+            wprintw(fm[win], (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
         }
     }
 }
@@ -442,16 +443,26 @@ static void change_unit(float size, char *str)
     sprintf(str, "%.2f%s", size, unit[i]);
 }
 
+void show_stats(void)
+{
+    stat_active[active] = !stat_active[active];
+    if (stat_active[active]) {
+        list_everything(active, delta[active], 0, ps[active].nl);
+    } else {
+        erase_stat();
+    }
+}
+
 /*
  * Move to STAT_COL for each ps.fm win and clear to eol.
  */
-void erase_stat(void)
+static void erase_stat(void)
 {
     int i;
 
     for (i = 0; (ps[active].nl[i]) && (i < dim - 2); i++) {
-        wmove(ps[active].fm, i + 1, STAT_COL);
-        wclrtoeol(ps[active].fm);
+        wmove(fm[active], i + 1, STAT_COL);
+        wclrtoeol(fm[active]);
     }
     print_border_and_title(active);
 }
@@ -525,5 +536,5 @@ int win_refresh_and_getch(void)
     if (needs_refresh) {
         sync_changes();
     }
-    return wgetch(ps[active].fm);
+    return wgetch(fm[active]);
 }

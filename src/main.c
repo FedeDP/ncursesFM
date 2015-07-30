@@ -28,7 +28,6 @@
 
 static void helper_function(int argc, const char *argv[]);
 static void parse_cmd(int argc, const char *argv[]);
-static void init_func(void);
 #ifdef LIBCONFIG_PRESENT
 static void read_config_file(void);
 #endif
@@ -36,7 +35,6 @@ static void main_loop(void);
 
 int main(int argc, const char *argv[])
 {
-    init_func();
     helper_function(argc, argv);
     #ifdef LIBCONFIG_PRESENT
     read_config_file();
@@ -106,19 +104,6 @@ static void parse_cmd(int argc, const char *argv[])
     }
 }
 
-static void init_func(void)
-{
-    cont = 0;
-    quit = 0;
-    sv.searching = 0;
-    thread_h = NULL;
-    selected = NULL;
-    config.editor = NULL;
-    config.starting_dir = NULL;
-    config.second_tab_starting_dir = 0;
-    config.show_hidden = 0;
-}
-
 #ifdef LIBCONFIG_PRESENT
 static void read_config_file(void)
 {
@@ -181,7 +166,9 @@ static void main_loop(void)
             new_tab();
             break;
         case 9: // tab to change tab
-            change_tab();
+            if (cont == MAX_TABS) {
+                change_tab();
+            }
             break;
         case 'w': // w to close second tab
             if (active) {
@@ -219,12 +206,7 @@ static void main_loop(void)
             trigger_show_helper_message();
             break;
         case 's': // show stat about files (size and perms)
-            ps[active].stat_active = !ps[active].stat_active;
-            if (ps[active].stat_active) {
-                list_everything(active, ps[active].delta, 0, ps[active].nl);
-            } else {
-                erase_stat();
-            }
+            show_stats();
             break;
         case 'o': // o to rename
             init_thread(RENAME_TH, rename_file_folders, ps[active].nl[ps[active].curr_pos]);

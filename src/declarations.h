@@ -40,10 +40,7 @@ typedef struct list {
 
 struct vars {
     int curr_pos;
-    int delta;
-    int stat_active;
     char my_cwd[PATH_MAX];
-    WINDOW *fm;
     char *nl[PATH_MAX];
 };
 

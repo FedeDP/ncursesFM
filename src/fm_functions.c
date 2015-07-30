@@ -418,7 +418,9 @@ static void search_loop(void)
             c = 'q';
             break;
         case 9: // tab to change tab
-            return change_tab();
+            if (cont == MAX_TABS) {
+                return change_tab();
+            }
         case 'q': case 'Q':
             strcpy(sv.found_searched[ps[active].curr_pos], ps[active].my_cwd);
             break;
@@ -567,12 +569,10 @@ static void extractor_thread(struct archive *a)
 
 void change_tab(void)
 {
-    if (cont == MAX_TABS) {
-        active = !active;
-        if (sv.searching != 3 + active) {
-            chdir(ps[active].my_cwd);
-        } else {
-            search_loop();
-        }
+    active = !active;
+    if (sv.searching != 3 + active) {
+        chdir(ps[active].my_cwd);
+    } else {
+        search_loop();
     }
 }
