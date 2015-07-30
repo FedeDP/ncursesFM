@@ -108,3 +108,10 @@
 * now every ps.fm WIN changes are performed inside main thread, way more reliable.
 * small code cleanup and bugfixing
 * something more i may have forgot about
+
+7 / 30 / 2015
+* fixed some bugs
+* every WIN* var is now static inside ui_functions.c
+* removed flock() calls
+* lots of other internal changes, have a look to commits since last changelog update
+
