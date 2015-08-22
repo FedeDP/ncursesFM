@@ -142,9 +142,7 @@ static void main_loop(void)
     while (!quit) {
         c = win_refresh_and_getch();
         stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
-        if ((c >= 'A') && (c <= 'Z')) {
-            c = tolower(c);
-        }
+        c = tolower(c);
         switch (c) {
         case KEY_UP:
             scroll_up(ps[active].nl);
