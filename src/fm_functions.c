@@ -194,16 +194,15 @@ int remove_file(void)
  */
 void manage_c_press(int i, const char *str)
 {
+    const char *s;
+
     if ((!selected) || (remove_from_list(str) == 0)) {
         selected = select_file(i, selected, str);
-        print_info(file_sel1, INFO_LINE);
+        s = file_sel[0];
     } else {
-        if (selected) {
-            print_info(file_sel2, INFO_LINE);
-        } else {
-            print_info(file_sel3, INFO_LINE);
-        }
+        ((selected) ? (s = file_sel[1]) : (s = file_sel[2]));
     }
+    print_info(s, INFO_LINE);
 }
 
 int paste_file(void)

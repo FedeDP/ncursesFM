@@ -9,9 +9,7 @@ const char *fatal_mem_error;
 const char *no_w_perm;
 
 const char *file_selected;
-const char *file_sel1;
-const char *file_sel2;
-const char *file_sel3;
+const char *file_sel[3];
 
 const char *sure;
 

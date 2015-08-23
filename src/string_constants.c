@@ -7,9 +7,7 @@ const char *fatal_mem_error = "No more memory available. Program will exit.";
 const char *no_w_perm = "You do not have write permissions here.";
 
 const char *file_selected = "This file is already selected. Cancel its selection before.";
-const char *file_sel1 = "File selected.";
-const char *file_sel2 = "File deleted from selected list.";
-const char *file_sel3 = "File deleted from selected list. Selected list empty.";
+const char *file_sel[] = {"File selected.", "File deleted from selected list.", "File deleted from selected list. Selected list empty."};
 
 const char *sure = "Are you serious? y/N:> ";
 

@@ -1,4 +1,5 @@
 /* TODO:
  * update DOC
  * Remove more than one file (using c to select as i do in copy)?
+ * switch to space as global key to select files? -> split copy and cut functions thread (select with space for {rm, paste, cut, archive} and v for paste, x for cut)
  */
