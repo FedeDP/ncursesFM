@@ -107,7 +107,11 @@ static void generate_list(int win)
             if (!(ps[win].nl[i] = safe_malloc(sizeof(char) * PATH_MAX, fatal_mem_error))) {
                 quit = 1;
             }
-            sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
+            if (strcmp(ps[win].my_cwd, "/") != 0) {
+                sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
+            } else {
+                sprintf(ps[win].nl[i], "/%s", files[i]->d_name);
+            }
         }
         reset_win(win);
         list_everything(win, 0, 0, ps[win].nl);
@@ -486,7 +490,7 @@ void print_info(const char *str, int i)
     wmove(info_win, ERR_LINE, strlen("E:") + 1);
     wclrtoeol(info_win);
     if (thread_h) {
-        sprintf(st, "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type - 1]);
+        sprintf(st, "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type]);
         len = strlen(st) + 1;
         mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
     }

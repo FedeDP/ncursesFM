@@ -178,25 +178,26 @@ static void main_loop(void)
             init_thread(NEW_FILE_TH, new_file, ps[active].my_cwd);
             break;
         case 'r': //remove file
-            if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) { // check this is not ".." dir
+            if (selected) {
                 ask_user(sure, &x, 1, 'n');
                 if (x == 'y') {
-                    init_thread(RM_TH, remove_file, ps[active].nl[ps[active].curr_pos]);
+                    init_thread(RM_TH, remove_file, ps[active].my_cwd);
                 }
             }
             break;
-        case 'c': case 'x': // copy/cut file
+        case 32: // space to select files
             if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
-                if (c == 'c') {
-                    manage_c_press(0, ps[active].nl[ps[active].curr_pos]);
-                } else {
-                    manage_c_press(1, ps[active].nl[ps[active].curr_pos]);
-                }
+                manage_space_press(ps[active].nl[ps[active].curr_pos]);
             }
             break;
-        case 'v': // paste file
+        case 'v': // paste files
             if (selected) {
                 init_thread(PASTE_TH, paste_file, ps[active].my_cwd);
+            }
+            break;
+        case 'x': // move(cut) files
+            if (selected) {
+                init_thread(MOVE_TH, move_file, ps[active].my_cwd);
             }
             break;
         case 'l':  // show helper mess

@@ -28,10 +28,10 @@ static void xdg_open(const char *str);
 #endif
 static void open_file(const char *str);
 static int iso_mount_service(void);
-static void cpr(int n);
+static void cpr(file_list *tmp);
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-static int rmrf(const char *path);
+static void rmrf(const char *path);
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int search_inside_archive(const char *path);
 static void *search_thread(void *x);
@@ -185,19 +185,29 @@ int new_file(void)
 
 int remove_file(void)
 {
-    return rmrf(thread_h->full_path);
+    int ok = 0;
+    file_list *tmp = thread_h->selected_files;
+
+    while (tmp) {
+        if (access(tmp->name, W_OK) == 0) {
+            ok++;
+            rmrf(tmp->name);
+        }
+        tmp = tmp->next;
+    }
+    return (ok ? 1 : -1);
 }
 
 /*
  * If there are no selected files, or the file user selected wasn't already selected,
  * add this file to selecte list.
  */
-void manage_c_press(int i, const char *str)
+void manage_space_press(const char *str)
 {
     const char *s;
 
     if ((!selected) || (remove_from_list(str) == 0)) {
-        selected = select_file(i, selected, str);
+        selected = select_file(selected, str);
         s = file_sel[0];
     } else {
         ((selected) ? (s = file_sel[1]) : (s = file_sel[2]));
@@ -207,48 +217,49 @@ void manage_c_press(int i, const char *str)
 
 int paste_file(void)
 {
+    char copied_file_dir[PATH_MAX];
+    file_list *tmp = NULL;
+
+    for (tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
+        strcpy(copied_file_dir, tmp->name);
+        copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
+        if (strcmp(thread_h->full_path, copied_file_dir) != 0) {
+            cpr(tmp);
+        }
+    }
+    return 0;
+}
+
+int move_file(void)
+{
     char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX];
     struct stat file_stat_copied, file_stat_pasted;
     file_list *tmp = NULL;
-    int i = 0;
 
     lstat(thread_h->full_path, &file_stat_pasted);
     for (tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
         strcpy(copied_file_dir, tmp->name);
         copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
-        if (strcmp(thread_h->full_path, copied_file_dir) == 0) {
-            tmp->cut = CANNOT_PASTE_SAME_DIR;
-        } else {
+        if (strcmp(thread_h->full_path, copied_file_dir) != 0) {
             lstat(copied_file_dir, &file_stat_copied);
-            if ((tmp->cut == 1) && (file_stat_copied.st_dev == file_stat_pasted.st_dev)) {
+            if (file_stat_copied.st_dev == file_stat_pasted.st_dev) { // if on the same fs, just rename the file
                 sprintf(pasted_file, "%s%s", thread_h->full_path, strrchr(tmp->name, '/'));
-                tmp->cut = MOVED_FILE;
                 if (rename(tmp->name, pasted_file) == - 1) {
                     print_info(strerror(errno), ERR_LINE);
                 }
-            } else {
-                i++;
-            }
-        }
-    }
-    cpr(i);
-    return 0;
-}
-
-static void cpr(int n)
-{
-    file_list *tmp = thread_h->selected_files;
-
-    while ((n > 0) && (tmp)) {
-        if ((tmp->cut != MOVED_FILE) && (tmp->cut != CANNOT_PASTE_SAME_DIR)) {
-            distance_from_root = strlen(tmp->name) - strlen(strrchr(tmp->name, '/'));
-            nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
-            if (tmp->cut == 1) {
+            } else { // copy file and remove original file
+                cpr(tmp);
                 rmrf(tmp->name);
             }
         }
-        tmp = tmp->next;
     }
+    return 0;
+}
+
+static void cpr(file_list *tmp)
+{
+    distance_from_root = strlen(tmp->name) - strlen(strrchr(tmp->name, '/'));
+    nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
 }
 
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -286,9 +297,9 @@ static int recursive_remove(const char *path, const struct stat *sb, int typefla
     return remove(path);
 }
 
-static int rmrf(const char *path)
+static void rmrf(const char *path)
 {
-    return nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS | FTW_MOUNT);
+    nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS | FTW_MOUNT);
 }
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)

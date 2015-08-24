@@ -31,24 +31,24 @@ const char *ask_name = "Insert new file name:> ";
 
 const char *extr_question = "Do you really want to extract this archive? Y/n:> ";
 
-const char *thread_job_mesg[] = {"Pasting...", "Archiving...", "Extracting...", "Removing...", "Renaming...", "Creating file...", "Creating dir...", "(Un)Mounting iso..."};
-const char *thread_str[] = {"Every files has been copied/moved.", "The archive is ready.", "Succesfully extracted.", "File/dir removed.",
-                            "File renamed.", "File created.", "Dir created.", "ISO (un)mounted."};
-const char *thread_fail_str[] = {"Could not paste.", "Could not archive.", "Could not extract.", "Could not remove.", "Could not rename.",
-                                "Could not create file.", "Could not create folder.", "Fuseiso missing."};
+const char *thread_job_mesg[] = {"Moving...", "Pasting...", "Archiving...", "Extracting...", "Removing...", "Renaming...",
+                                "Creating file...", "Creating dir...", "(Un)Mounting iso..."};
+const char *thread_str[] = {"Every file has been moved.", "Every files has been copied.", "The archive is ready.", "Succesfully extracted.",
+                            "File/dir removed.", "File renamed.", "File created.", "Dir created.", "ISO (un)mounted."};
+const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not archive.", "Could not extract.", "Could not remove.",
+                                "Could not rename.", "Could not create file.", "Could not create folder.", "Fuseiso missing."};
 const char *selected_mess = "There are selected files.";
 
 const char *thread_running = "There's already a thread working. This thread will be queued.";
 const char *quit_with_running_thread = "A job is still running. Do you want to wait for it?(You should!) Y/n:> ";
 
-const char *helper_string[] = { "n and r to create/remove a file.",
-                                "Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.",
+const char *helper_string[] = { "Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.",
                                 "Enter will eventually ask to extract archives, or mount your ISO files.",
                                 "To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.",
                                 "Press h to trigger the showing of hide files. s to see stat about files in current folder.",
-                                "c or x to select files. v to paste: files will be copied if selected with c, or cut if selected with x.",
-                                "p to print a file. b to compress selected files.",
-                                "You can copy as many files/dirs as you want. c/x again on a file/dir to remove it from file list.",
-                                "o to rename current file/dir; d to create new dir. f to search (case sensitive) for a file.",
-                                "t to create new tab (at most one more). w to close tab. ",
+                                "Space to select files. You can select as many files as you want.",
+                                "Space again on a file to remove it from selected files list.",
+                                "v/x to paste/cut(move), b to compress and r to remove selected files.",
+                                "o to rename current file/dir; n/d to create new file/dir. f to search (case sensitive) for a file.",
+                                "t to create new tab (at most one more). w to close tab. p to print a file.",
                                 "You can't close first tab. Use q to quit."};

@@ -1,4 +1,4 @@
-#define HELPER_HEIGHT 13
+#define HELPER_HEIGHT 12
 
 const char *config_file_missing;
 const char *editor_missing;
@@ -33,9 +33,9 @@ const char *ask_name;
 
 const char *extr_question;
 
-const char *thread_job_mesg[8];
-const char *thread_str[8];
-const char *thread_fail_str[8];
+const char *thread_job_mesg[9];
+const char *thread_str[9];
+const char *thread_fail_str[9];
 const char *selected_mess;
 
 const char *thread_running;

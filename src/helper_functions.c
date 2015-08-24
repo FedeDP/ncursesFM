@@ -30,7 +30,7 @@ struct thread_mesg {
 
 static void free_running_h(void);
 static thread_job_list *add_thread(thread_job_list *h, int type, const char *path, int (*f)(void));
-static void init_thread_helper(const char *temp, const char *str);
+static void init_thread_helper(const char *temp);
 static void copy_selected_files(void);
 static void *execute_thread(void *x);
 static void free_thread_job_list(thread_job_list *h);
@@ -151,7 +151,7 @@ void init_thread(int type, int (*f)(void), const char *str)
 {
     char temp[PATH_MAX];
 
-    if (access(ps[active].my_cwd, W_OK) != 0) {
+    if ((type != RM_TH) && (access(ps[active].my_cwd, W_OK) != 0)) {
         print_info(no_w_perm, ERR_LINE);
         return;
     }
@@ -162,7 +162,7 @@ void init_thread(int type, int (*f)(void), const char *str)
         }
     }
     thread_h = add_thread(thread_h, type, str, f);
-    init_thread_helper(temp, str);
+    init_thread_helper(temp);
     if (num_of_jobs > 1) {
         print_info(thread_running, INFO_LINE);
     } else {
@@ -175,7 +175,7 @@ void init_thread(int type, int (*f)(void), const char *str)
 /*
  * Just a helper thread for init_thread(); it sets some members of thread_job_list struct depending of current_th->type
  */
-static void init_thread_helper(const char *temp, const char *str)
+static void init_thread_helper(const char *temp)
 {
     char name[PATH_MAX];
 
@@ -183,16 +183,16 @@ static void init_thread_helper(const char *temp, const char *str)
     case RENAME_TH:
         strcpy(name, ps[active].my_cwd);
         sprintf(name + strlen(name), "/%s", temp);
-        current_th->selected_files = select_file(0, current_th->selected_files, name);
+        current_th->selected_files = select_file(current_th->selected_files, name);
         break;
-    case PASTE_TH: case ARCHIVER_TH:
+    case MOVE_TH: case PASTE_TH: case ARCHIVER_TH: case RM_TH:
         copy_selected_files();
         if (current_th->type == ARCHIVER_TH) {
             ask_user(archiving_mesg, name, PATH_MAX, 0);
             if (!strlen(name)) {
                 strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
             }
-            sprintf(current_th->full_path + strlen(str), "/%s.tgz", name);
+            sprintf(current_th->full_path + strlen(current_th->full_path), "/%s.tgz", name);
         }
         break;
     case NEW_FILE_TH: case CREATE_DIR_TH:
@@ -210,7 +210,7 @@ static void copy_selected_files(void)
     file_list *tmp = selected;
 
     while (tmp) {
-        current_th->selected_files = select_file(tmp->cut, current_th->selected_files, tmp->name);
+        current_th->selected_files = select_file(current_th->selected_files, tmp->name);
         tmp = tmp->next;
     }
     free_copied_list(selected);
@@ -227,10 +227,10 @@ static void *execute_thread(void *x)
     print_info(thread_m.str, thread_m.line);
     if (thread_h) {
         if (thread_h->f() == -1) {
-            thread_m.str = thread_fail_str[current_th->type - 1];
+            thread_m.str = thread_fail_str[current_th->type];
             thread_m.line = ERR_LINE;
         } else {
-            thread_m.str = thread_str[current_th->type - 1];
+            thread_m.str = thread_str[current_th->type];
             thread_m.line = INFO_LINE;
         }
         free_running_h();
@@ -270,16 +270,15 @@ int remove_from_list(const char *name)
     return 0;
 }
 
-file_list *select_file(int i, file_list *h, const char *str)
+file_list *select_file(file_list *h, const char *str)
 {
     if (h) {
-        h->next = select_file(i, h->next, str);
+        h->next = select_file(h->next, str);
     } else {
         if (!(h = safe_malloc(sizeof(struct list), generic_mem_error))) {
             return NULL;
         }
         strcpy(h->name, str);
-        h->cut = i;
         h->next = NULL;
     }
     return h;

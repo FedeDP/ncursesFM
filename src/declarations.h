@@ -13,6 +13,7 @@
 #define INFO_LINE 0
 #define ERR_LINE 1
 
+#define MOVE_TH 0
 #define PASTE_TH 1
 #define ARCHIVER_TH 2
 #define EXTRACTOR_TH 3
@@ -34,7 +35,6 @@ struct conf {
 
 typedef struct list {
     char name[PATH_MAX];
-    int cut;
     struct list *next;
 } file_list;
 
