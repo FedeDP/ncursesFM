@@ -195,7 +195,7 @@ int remove_file(void)
         }
         tmp = tmp->next;
     }
-    return (ok ? 1 : -1);
+    return (ok ? 0 : -1);
 }
 
 /*
