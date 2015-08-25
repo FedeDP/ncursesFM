@@ -36,7 +36,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 static int search_inside_archive(const char *path);
 static void *search_thread(void *x);
 static void search_loop(void);
-static int search_loop_enter_press(void);
+static int search_loop_enter_press(const char *str);
 #ifdef LIBCUPS_PRESENT
 static void *print_file(void *filename);
 #endif
@@ -45,7 +45,7 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 static int try_extractor(void);
 static void extractor_thread(struct archive *a);
 
-static struct archive *archive = NULL;
+static struct archive *archive;
 static int distance_from_root;
 
 void change_dir(const char *str)
@@ -66,7 +66,6 @@ void switch_hidden(void)
 }
 
 /*
- * Check if file is locked down by running thread.
  * Check if it is an iso, then try to mount it.
  * If is an archive, initialize a thread job to extract it.
  * if compiled with X11 support, and xdg-open is found, open the file,
@@ -424,7 +423,7 @@ static void search_loop(void)
             scroll_down(sv.found_searched);
             break;
         case 10:
-            sv.found_searched[ps[active].curr_pos][search_loop_enter_press()] = '\0';
+            sv.found_searched[ps[active].curr_pos][search_loop_enter_press(sv.found_searched[ps[active].curr_pos])] = '\0';
             c = 'q';
             break;
         case 9: // tab to change tab
@@ -441,12 +440,12 @@ static void search_loop(void)
     free_str(sv.found_searched);
 }
 
-static int search_loop_enter_press(void)
+static int search_loop_enter_press(const char *str)
 {
     char arch_str[PATH_MAX] = {};
 
     if (sv.search_archive) {    // check if the current path is inside an archive
-        strcpy(arch_str, sv.found_searched[ps[active].curr_pos]);
+        strcpy(arch_str, str);
         while (strlen(arch_str) && !is_archive(strrchr(arch_str, '/'))) {
             arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
         }
@@ -454,7 +453,7 @@ static int search_loop_enter_press(void)
     if (strlen(arch_str)) {
         return (strlen(arch_str) - strlen(strrchr(arch_str, '/')));
     }
-    return (strlen(sv.found_searched[ps[active].curr_pos]) - strlen(strrchr(sv.found_searched[ps[active].curr_pos], '/')));
+    return (strlen(str) - strlen(strrchr(str, '/')));
 }
 
 #ifdef LIBCUPS_PRESENT
