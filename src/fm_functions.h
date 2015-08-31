@@ -14,8 +14,6 @@
 
 #define MAX_NUMBER_OF_FOUND 100
 #define BUFF_SIZE 8192
-#define CANNOT_PASTE_SAME_DIR -2
-#define MOVED_FILE -1
 
 void change_dir(const char *str);
 void switch_hidden(void);
