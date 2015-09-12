@@ -85,11 +85,11 @@ void manage_file(const char *str)
         }
         return;
     }
-    #ifdef LIBX11_PRESENT
+#ifdef LIBX11_PRESENT
     if (access("/usr/bin/xdg-open", X_OK) != -1) {
         return xdg_open(str);
     }
-    #endif
+#endif
     return open_file(str);
 }
 

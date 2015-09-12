@@ -3,6 +3,9 @@
 #include <magic.h>
 #include <unistd.h>
 #include <signal.h>
+#ifdef SYSTEMD_PRESENT
+#include <systemd/sd-bus.h>
+#endif
 
 int is_archive(const char *filename);
 void ask_user(const char *str, char *input, int dim, char c);

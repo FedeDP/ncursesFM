@@ -115,3 +115,6 @@
 * removed flock() calls
 * lots of other internal changes, have a look to commits since last changelog update
 
+12 / 9 / 2015
+* new option to lock powermanagement actions (eg: autosuspend after N minutes) while a job is being performed (eg: while pasting a large file) to avoid data loss.
+This uses sd-bus api, so it is meant for systemd systems only.

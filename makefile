@@ -30,6 +30,12 @@ LIBS+=-lconfig
 $(info libconfig support enabled.)
 endif
 
+ifneq ("$(wildcard /proc/1/comm)","systemd")
+CFLAGS+=-DSYSTEMD_PRESENT
+LIBS+=-lsystemd
+$(info logind support enabled.)
+endif
+
 endif
 
 all: ncursesFM clean

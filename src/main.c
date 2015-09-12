@@ -36,9 +36,9 @@ static void main_loop(void);
 int main(int argc, const char *argv[])
 {
     helper_function(argc, argv);
-    #ifdef LIBCONFIG_PRESENT
+#ifdef LIBCONFIG_PRESENT
     read_config_file();
-    #endif
+#endif
     if ((config.starting_dir) && (access(config.starting_dir, F_OK) == -1)) {
         free(config.starting_dir);
         config.starting_dir = NULL;
@@ -54,14 +54,15 @@ int main(int argc, const char *argv[])
 static void helper_function(int argc, const char *argv[])
 {
     if (argc != 1) {
-        if (strcmp(argv[1], "-h") == 0) {
+        if ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)) {
             printf("\tNcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
             printf("\tThis program comes with ABSOLUTELY NO WARRANTY;\n");
             printf("\tThis is free software, and you are welcome to redistribute it under certain conditions;\n");
             printf("\tIt is GPL licensed. Have a look at COPYING file.\n");
-            printf("\t\t* -h to view this helper message.\n");
+            printf("\t\t* -h/--help to view this helper message.\n");
             printf("\t\t* --editor=/path/to/editor to set an editor for current session.\n");
             printf("\t\t* --starting-dir=/path/to/dir to set a starting directory for current session.\n");
+            printf("\t\t* --inhibit=1 to switch off powermanagement functions only while a joblist is being processed.\n");
             printf("\t\t* Have a look at the config file /etc/default/ncursesFM.conf to set your preferred defaults.\n");
             printf("\t\t* Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
             printf("\t\t* Press 'l' while in program to view a more detailed helper message.\n");
@@ -74,31 +75,27 @@ static void helper_function(int argc, const char *argv[])
 
 static void parse_cmd(int argc, const char *argv[])
 {
-    int i, j = 1;
-    const char *cmd_switch[] = {"--editor=", "--starting-dir="};
+    int j = 1, changed = 1;
+    const char *cmd_switch[] = {"--editor=", "--starting-dir=", "--inhibit="};
 
-    while ((argv[j]) && (j < argc)) {
-        i = 0;
-        while (i < 2) {
-            if (strncmp(cmd_switch[i], argv[j], strlen(cmd_switch[i])) == 0) {
-                switch (i) {
-                case 0:
-                    if ((!config.editor) && (config.editor = safe_malloc((strlen(argv[j]) - strlen(cmd_switch[i])) * sizeof(char) + 1, generic_mem_error))) {
-                        strcpy(config.editor, argv[j] + strlen(cmd_switch[i]));
-                    }
-                    break;
-                case 1:
-                    if ((!config.starting_dir) && (config.starting_dir = safe_malloc((strlen(argv[j]) - strlen(cmd_switch[i])) * sizeof(char) + 1, generic_mem_error))) {
-                        strcpy(config.starting_dir, argv[j] + strlen(cmd_switch[i]));
-                    }
-                    break;
-                }
+    while (j < argc) {
+        if (strncmp(cmd_switch[0], argv[j], strlen(cmd_switch[0])) == 0) {
+            if ((!config.editor) && (config.editor = safe_malloc((strlen(argv[j]) - strlen(cmd_switch[0])) * sizeof(char) + 1, generic_mem_error))) {
+                strcpy(config.editor, argv[j] + strlen(cmd_switch[0]));
+                changed++;
             }
-            i++;
+        } else if (strncmp(cmd_switch[1], argv[j], strlen(cmd_switch[1])) == 0) {
+            if ((!config.starting_dir) && (config.starting_dir = safe_malloc((strlen(argv[j]) - strlen(cmd_switch[1])) * sizeof(char) + 1, generic_mem_error))) {
+                strcpy(config.starting_dir, argv[j] + strlen(cmd_switch[1]));
+                changed++;
+            }
+        } else if (!config.inhibit && strncmp(cmd_switch[2], argv[j], strlen(cmd_switch[2])) == 0) {
+            config.inhibit = atoi(argv[j] + strlen(cmd_switch[2]));
+            changed++;
         }
         j++;
     }
-    if (!config.editor && !config.starting_dir) {
+    if (changed != argc) {
         printf("Use '-h' to view helper message.\n");
         exit(0);
     }
@@ -125,6 +122,7 @@ static void read_config_file(void)
             }
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
+        config_lookup_int(&cfg, "inhibit", &config.inhibit);
     } else {
         printf("%s", config_file_missing);
         sleep(1);
@@ -221,13 +219,13 @@ static void main_loop(void)
                 list_found();
             }
             break;
-        #ifdef LIBCUPS_PRESENT
+#ifdef LIBCUPS_PRESENT
         case 'p': // p to print
             if (S_ISREG(current_file_stat.st_mode) && !get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable")) {
                 print_support(ps[active].nl[ps[active].curr_pos]);
             }
             break;
-        #endif
+#endif
         case 'b': //b to compress
             if (selected) {
                 init_thread(ARCHIVER_TH, create_archive, ps[active].my_cwd);
