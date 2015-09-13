@@ -372,15 +372,20 @@ static void create_helper_win(void)
 static void remove_helper_win(void)
 {
     int i;
+    char **files;
 
     wclear(helper_win);
     delwin(helper_win);
     helper_win = NULL;
     dim = LINES - INFO_HEIGHT;
     for (i = 0; i < cont; i++) {
+        files = ps[i].nl;
         mvwhline(fm[i], dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
         wresize(fm[i], dim, width[i]);
-        list_everything(i, dim - 2 - HELPER_HEIGHT + delta[i], HELPER_HEIGHT, ps[i].nl);
+        if (sv.searching == 3 + i) {
+            files = sv.found_searched;
+        }
+        list_everything(i, dim - 2 - HELPER_HEIGHT + delta[i], HELPER_HEIGHT, files);
     }
 }
 

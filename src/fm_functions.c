@@ -430,6 +430,9 @@ static void search_loop(void)
             if (cont == MAX_TABS) {
                 return change_tab();
             }
+        case 'l': case 'L':
+            trigger_show_helper_message();
+            break;
         case 'q': case 'Q':
             strcpy(sv.found_searched[ps[active].curr_pos], ps[active].my_cwd);
             break;
