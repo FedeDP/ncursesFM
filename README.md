@@ -20,8 +20,8 @@ Ncurses File Manager for linux
 * File operations are performed in a different thread. You'll get a notification when the job is done.
 * If you try to quit while a thread is still running, you'll be asked if ncursesFM must wait for the thread to finish its work. (Printing thread and search thread are safer, no data corruption is possible; so it won't ask anything)
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
-* Powermanagement inhibition while processing a job(eg: while pasting a file) through sd-bus to avoid data loss. It is switched off by default. It requires a systemd booted system.
-You can enable this feature from the config file or with "--inhibit=1" cmdline switch.
+* Powermanagement inhibition while processing a job(eg: while pasting a file) to avoid data loss. It relies upon logind (sd-bud API), so it requires a systemd booted system.
+It is switched off by default. You can enable this feature from the config file or with "--inhibit=1" cmdline switch.
 
 **IT DOES NOT SUPPORT TERMINAL RESIZE**. It is meant to be used maximized, or from a tty.
 
