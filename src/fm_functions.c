@@ -197,7 +197,7 @@ int remove_file(void)
 
 /*
  * If there are no selected files, or the file user selected wasn't already selected,
- * add this file to selecte list.
+ * add this file to select list.
  */
 void manage_space_press(const char *str)
 {
@@ -415,7 +415,7 @@ void leave_search_mode(const char *str)
     free_str(sv.found_searched);
 }
 
-int search_loop_enter_press(const char *str)
+int search_enter_press(const char *str)
 {
     char arch_str[PATH_MAX] = {};
 
@@ -425,10 +425,7 @@ int search_loop_enter_press(const char *str)
             arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
         }
     }
-    if (strlen(arch_str)) {
-        return (strlen(arch_str) - strlen(strrchr(arch_str, '/')));
-    }
-    return (strlen(str) - strlen(strrchr(str, '/')));
+    return (strlen(arch_str)) ?  (strlen(arch_str) - strlen(strrchr(arch_str, '/'))) : (strlen(str) - strlen(strrchr(str, '/')));
 }
 
 #ifdef LIBCUPS_PRESENT

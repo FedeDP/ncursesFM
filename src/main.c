@@ -133,7 +133,7 @@ static void read_config_file(void)
 
 static void main_loop(void)
 {
-    int c;
+    int c, length;
     char x;
     struct stat current_file_stat;
 
@@ -153,11 +153,12 @@ static void main_loop(void)
             switch_hidden();
             break;
         case 10: // enter to change dir or open a file.
-            if ((sv.searching == 3 + active) || (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode))) {
+            if (sv.searching == 3 + active) {
+                length = search_enter_press(ps[active].files_ptr[ps[active].curr_pos]);
+                ps[active].files_ptr[ps[active].curr_pos][length] = '\0';
+                leave_search_mode(ps[active].files_ptr[ps[active].curr_pos]);
+            } else if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
                 change_dir(ps[active].files_ptr[ps[active].curr_pos]);
-                if (sv.searching == 3 + active) {
-                    leave_search_mode(ps[active].files_ptr[ps[active].curr_pos]);
-                }
             } else {
                 manage_file(ps[active].files_ptr[ps[active].curr_pos]);
             }
