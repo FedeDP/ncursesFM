@@ -158,7 +158,10 @@ static void main_loop(void)
             }
             break;
         case 't': // t to open second tab
-            new_tab();
+            if (cont < MAX_TABS) {
+                new_tab();
+                change_tab();
+            }
             break;
         case 9: // tab to change tab
             if (cont == MAX_TABS) {
@@ -167,9 +170,10 @@ static void main_loop(void)
             break;
         case 'w': // w to close second tab
             if (active) {
-                change_tab();
+                active = 0;
                 delete_tab();
                 enlarge_first_tab();
+                change_tab();
             }
             break;
         case 'n': // new file

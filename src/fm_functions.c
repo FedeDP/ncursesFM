@@ -415,7 +415,7 @@ static void search_loop(void)
 
     do {
         c = win_refresh_and_getch();
-        switch (c) {
+        switch (tolower(c)) {
         case KEY_UP:
             scroll_up(sv.found_searched);
             break;
@@ -430,10 +430,15 @@ static void search_loop(void)
             if (cont == MAX_TABS) {
                 return change_tab();
             }
-        case 'l': case 'L':
+        case 'l':
             trigger_show_helper_message();
             break;
-        case 'q': case 'Q':
+        case 't': // t to open second tab
+            if (cont < MAX_TABS) {
+                new_tab();
+                return change_tab();
+            }
+        case 'q':
             strcpy(sv.found_searched[ps[active].curr_pos], ps[active].my_cwd);
             break;
         }
@@ -581,7 +586,7 @@ static void extractor_thread(struct archive *a)
 
 void change_tab(void)
 {
-    active = !active;
+    active = (!active + cont) % MAX_TABS;
     if (sv.searching != 3 + active) {
         chdir(ps[active].my_cwd);
     } else {

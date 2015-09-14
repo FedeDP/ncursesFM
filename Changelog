@@ -118,3 +118,6 @@
 12 / 9 / 2015
 * new option to lock powermanagement actions (eg: autosuspend after N minutes) while a job is being performed (eg: while pasting a large file) to avoid data loss.
 This uses sd-bus api, so it is meant for systemd systems only.
+* fixed a bug related to helper win while in search mode.
+* added ability to trigger helper win showing in search mode
+* added ability to create new tab in search mode

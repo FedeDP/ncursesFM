@@ -196,23 +196,19 @@ static int is_hidden(const struct dirent *current_file)
  */
 void new_tab(void)
 {
-    if (cont == MAX_TABS) {
-        return;
-    }
     cont++;
     if (cont == MAX_TABS) {
         width[active] = COLS / cont;
         wresize(fm[active], dim, width[active]);
         print_border_and_title(active);
     }
-    active = cont - 1;
-    width[active] = COLS / cont + COLS % cont;
-    fm[active] = subwin(stdscr, dim, width[active], 0, (COLS * active) / cont);
-    keypad(fm[active], TRUE);
-    scrollok(fm[active], TRUE);
-    idlok(fm[active], TRUE);
-    wtimeout(fm[active], 100);
-    stat_active[active] = 0;
+    width[cont - 1] = COLS / cont + COLS % cont;
+    fm[cont - 1] = subwin(stdscr, dim, width[cont - 1], 0, (COLS * (cont - 1)) / cont);
+    keypad(fm[cont - 1], TRUE);
+    scrollok(fm[cont - 1], TRUE);
+    idlok(fm[cont - 1], TRUE);
+    wtimeout(fm[cont - 1], 100);
+    stat_active[cont - 1] = 0;
     initialize_tab_cwd();
 }
 
@@ -224,18 +220,17 @@ static void initialize_tab_cwd(void)
 {
     if (config.starting_dir) {
         if ((cont == 1) || (config.second_tab_starting_dir != 0)){
-            strcpy(ps[active].my_cwd, config.starting_dir);
+            strcpy(ps[cont - 1].my_cwd, config.starting_dir);
         }
     }
-    if (strlen(ps[active].my_cwd) == 0) {
-        getcwd(ps[active].my_cwd, PATH_MAX);
+    if (strlen(ps[cont - 1].my_cwd) == 0) {
+        getcwd(ps[cont - 1].my_cwd, PATH_MAX);
     }
-    chdir(ps[active].my_cwd);
     needs_refresh = FORCE_REFRESH;
 }
 
 /*
- * Removes a tab and resets its stored values (cwd, stat_active)
+ * Removes a tab and resets its cwd
  */
 void delete_tab(void)
 {
@@ -244,7 +239,7 @@ void delete_tab(void)
     delwin(fm[cont]);
     fm[cont] = NULL;
     free_str(ps[cont].nl);
-    memset(ps[cont].my_cwd, 0, sizeof(ps[!active].my_cwd));
+    memset(ps[cont].my_cwd, 0, sizeof(ps[cont].my_cwd));
 }
 
 /*
