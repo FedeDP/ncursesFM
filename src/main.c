@@ -156,7 +156,7 @@ static void main_loop(void)
             if ((sv.searching == 3 + active) || (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode))) {
                 change_dir(ps[active].files_ptr[ps[active].curr_pos]);
                 if (sv.searching == 3 + active) {
-                    leave_search_mode();
+                    leave_search_mode(ps[active].files_ptr[ps[active].curr_pos]);
                 }
             } else {
                 manage_file(ps[active].files_ptr[ps[active].curr_pos]);
@@ -246,10 +246,9 @@ static void main_loop(void)
                 init_thread(ARCHIVER_TH, create_archive, ps[active].my_cwd);
             }
             break;
-        case 'q': /* q to exit */
+        case 'q': /* q to exit/leave search mode */
             if (sv.searching == 3 + active) {
-                strcpy(ps[active].files_ptr[ps[active].curr_pos], ps[active].my_cwd);
-                leave_search_mode();
+                leave_search_mode(ps[active].my_cwd);
             } else {
                 quit = 1;
             }

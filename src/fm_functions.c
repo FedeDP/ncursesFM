@@ -408,10 +408,10 @@ void list_found(void)
     print_info(NULL, INFO_LINE);
 }
 
-void leave_search_mode(void)
+void leave_search_mode(const char *str)
 {
     sv.searching = 0;
-    change_dir(ps[active].files_ptr[ps[active].curr_pos]);
+    change_dir(str);
     free_str(sv.found_searched);
 }
 
