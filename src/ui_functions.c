@@ -38,6 +38,7 @@ static void erase_stat(void);
 
 static WINDOW *helper_win, *info_win, *fm[MAX_TABS];
 static int dim, width[MAX_TABS], asking_question, delta[MAX_TABS], stat_active[MAX_TABS];
+static char *namelist[PATH_MAX][MAX_TABS];
 
 /*
  * Initializes screen, create first tab, and create info_win
@@ -91,32 +92,32 @@ void screen_end(void)
  */
 static void generate_list(int win)
 {
-    int i = 0, number_of_files;
+    int i = ps[win].number_of_files;
     struct dirent **files;
 
     if (sv.searching == 3 + win) {
         return;
     }
-    while ((needs_refresh == REFRESH) && (ps[win].nl[i])) {
-        i++;
-    }
-    number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
-    if (i != number_of_files) {
-        free_str(ps[win].nl);
-        for (i = 0; i < number_of_files; i++) {
-            if (!(ps[win].nl[i] = safe_malloc(sizeof(char) * PATH_MAX, fatal_mem_error))) {
+    ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
+    if ((needs_refresh == FORCE_REFRESH) || (i != ps[win].number_of_files)) {
+        free_str(namelist[win]);
+        for (i = 0; i < ps[win].number_of_files && !quit; i++) {
+            if (!(namelist[win][i] = safe_malloc(sizeof(char) * PATH_MAX, fatal_mem_error))) {
                 quit = 1;
             }
             if (strcmp(ps[win].my_cwd, "/") != 0) {
-                sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
+                sprintf(namelist[win][i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
             } else {
-                sprintf(ps[win].nl[i], "/%s", files[i]->d_name);
+                sprintf(namelist[win][i], "/%s", files[i]->d_name);
             }
         }
-        reset_win(win);
-        list_everything(win, 0, 0, ps[win].nl);
+        if (!quit) {
+            reset_win(win);
+            ps[win].files_ptr = namelist[win];
+            list_everything(win, 0, 0);
+        }
     }
-    for (i = number_of_files - 1; i >= 0; i--) {
+    for (i = ps[win].number_of_files - 1; i >= 0; i--) {
         free(files[i]);
     }
     free(files);
@@ -136,7 +137,7 @@ void reset_win(int win)
  * else it indicates how many strings the function has to print (starting from files[old_dim])
  * If stat_active == 1 for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
  */
-void list_everything(int win, int old_dim, int end, char *files[])
+void list_everything(int win, int old_dim, int end)
 {
     int i;
 
@@ -144,12 +145,12 @@ void list_everything(int win, int old_dim, int end, char *files[])
         end = dim - 2;
     }
     wattron(fm[win], A_BOLD);
-    for (i = old_dim; (files[i]) && (i  < old_dim + end); i++) {
-        colored_folders(win, files[i]);
+    for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
+        colored_folders(win, ps[win].files_ptr[i]);
         if (sv.searching == 3 + win) {
-            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, files[i]);
+            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, ps[win].files_ptr[i]);
         } else {
-            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(files[i], '/') + 1);
+            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(ps[win].files_ptr[i], '/') + 1);
         }
         wattroff(fm[win], COLOR_PAIR);
     }
@@ -238,7 +239,9 @@ void delete_tab(void)
     wclear(fm[cont]);
     delwin(fm[cont]);
     fm[cont] = NULL;
-    free_str(ps[cont].nl);
+    free_str(namelist[cont]);
+    ps[cont].files_ptr = NULL;
+    ps[cont].number_of_files = 0;
     memset(ps[cont].my_cwd, 0, sizeof(ps[cont].my_cwd));
 }
 
@@ -253,13 +256,13 @@ void enlarge_first_tab(void)
     print_border_and_title(active);
 }
 
-void scroll_down(char **str)
+void scroll_down(void)
 {
-    if (str[ps[active].curr_pos + 1]) {
+    if (ps[active].curr_pos < ps[active].number_of_files - 1) {
         ps[active].curr_pos++;
         if (ps[active].curr_pos - (dim - 2) == delta[active]) {
             scroll_helper_func(dim - 2, 1);
-            list_everything(active, ps[active].curr_pos, 1, str);
+            list_everything(active, ps[active].curr_pos, 1);
         } else {
             mvwprintw(fm[active], ps[active].curr_pos - delta[active], 1, "  ");
             mvwprintw(fm[active], ps[active].curr_pos - delta[active] + INITIAL_POSITION, 1, "->");
@@ -267,13 +270,13 @@ void scroll_down(char **str)
     }
 }
 
-void scroll_up(char **str)
+void scroll_up(void)
 {
     if (ps[active].curr_pos > 0) {
         ps[active].curr_pos--;
         if (ps[active].curr_pos < delta[active]) {
             scroll_helper_func(INITIAL_POSITION, -1);
-            list_everything(active, delta[active], 1, str);
+            list_everything(active, delta[active], 1);
         } else {
             mvwprintw(fm[active], ps[active].curr_pos - delta[active] + 2, 1, "  ");
             mvwprintw(fm[active], ps[active].curr_pos - delta[active] + 1, 1, "->");
@@ -300,7 +303,7 @@ static void sync_changes(void)
     for (i = 0; i < cont; i++) {
         generate_list(i);
     }
-    needs_refresh = 0;
+    needs_refresh = NO_REFRESH;
 }
 
 /*
@@ -367,20 +370,15 @@ static void create_helper_win(void)
 static void remove_helper_win(void)
 {
     int i;
-    char **files;
 
     wclear(helper_win);
     delwin(helper_win);
     helper_win = NULL;
     dim = LINES - INFO_HEIGHT;
     for (i = 0; i < cont; i++) {
-        files = ps[i].nl;
         mvwhline(fm[i], dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
         wresize(fm[i], dim, width[i]);
-        if (sv.searching == 3 + i) {
-            files = sv.found_searched;
-        }
-        list_everything(i, dim - 2 - HELPER_HEIGHT + delta[i], HELPER_HEIGHT, files);
+        list_everything(i, dim - 2 - HELPER_HEIGHT + delta[i], HELPER_HEIGHT);
     }
 }
 
@@ -411,16 +409,16 @@ void show_stat(int init, int end, int win)
     struct stat file_stat;
 
     if (init == 0) {
-        for (i = 1; ps[win].nl[i]; i++) {
-            stat(ps[win].nl[i], &file_stat);
+        for (i = 1; i < ps[win].number_of_files; i++) {
+            stat(namelist[win][i], &file_stat);
             total_size += file_stat.st_size;
         }
         change_unit(total_size, str);
         mvwprintw(fm[win], INITIAL_POSITION, STAT_COL, "Total size: %s", str);
         i = 1;
     }
-    for (; ((i < init + end) && (ps[win].nl[i])); i++) {
-        stat(ps[win].nl[i], &file_stat);
+    for (; ((i < init + end) && (i < ps[win].number_of_files)); i++) {
+        stat(namelist[win][i], &file_stat);
         change_unit(file_stat.st_size, str);
         mvwprintw(fm[win], i + INITIAL_POSITION - delta[win], STAT_COL, "%s", str);
         wprintw(fm[win], "\t");
@@ -451,20 +449,20 @@ void show_stats(void)
 {
     stat_active[active] = !stat_active[active];
     if (stat_active[active]) {
-        list_everything(active, delta[active], 0, ps[active].nl);
+        list_everything(active, delta[active], 0);
     } else {
         erase_stat();
     }
 }
 
 /*
- * Move to STAT_COL for each ps.fm win and clear to eol.
+ * Move to STAT_COL and clear to eol.
  */
 static void erase_stat(void)
 {
     int i;
 
-    for (i = 0; (ps[active].nl[i]) && (i < dim - 2); i++) {
+    for (i = 0; (i < ps[active].number_of_files) && (i < dim - 2); i++) {
         wmove(fm[active], i + 1, STAT_COL);
         wclrtoeol(fm[active]);
     }
@@ -535,7 +533,7 @@ void ask_user(const char *str, char *input, int dim, char c)
 
 int win_refresh_and_getch(void)
 {
-    if (needs_refresh) {
+    if (needs_refresh != NO_REFRESH) {
         sync_changes();
     }
     return wgetch(fm[active]);

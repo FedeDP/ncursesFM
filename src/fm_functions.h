@@ -26,6 +26,8 @@ int move_file(void);
 int rename_file_folders(void);
 void search(void);
 void list_found(void);
+int search_loop_enter_press(const char *str);
+void leave_search_mode(void);
 #ifdef LIBCUPS_PRESENT
 void print_support(char *str);
 #endif

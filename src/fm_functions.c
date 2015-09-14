@@ -35,8 +35,6 @@ static void rmrf(const char *path);
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int search_inside_archive(const char *path);
 static void *search_thread(void *x);
-static void search_loop(void);
-static int search_loop_enter_press(const char *str);
 #ifdef LIBCUPS_PRESENT
 static void *print_file(void *filename);
 #endif
@@ -403,52 +401,21 @@ static void *search_thread(void *x)
 void list_found(void)
 {
     sv.searching = 3 + active;
+    ps[active].files_ptr = sv.found_searched;
+    ps[active].number_of_files = sv.found_cont;
     reset_win(active);
-    list_everything(active, 0, 0, sv.found_searched);
+    list_everything(active, 0, 0);
     print_info(NULL, INFO_LINE);
-    return search_loop();
 }
 
-static void search_loop(void)
+void leave_search_mode(void)
 {
-    int c;
-
-    do {
-        c = win_refresh_and_getch();
-        switch (tolower(c)) {
-        case KEY_UP:
-            scroll_up(sv.found_searched);
-            break;
-        case KEY_DOWN:
-            scroll_down(sv.found_searched);
-            break;
-        case 10:
-            sv.found_searched[ps[active].curr_pos][search_loop_enter_press(sv.found_searched[ps[active].curr_pos])] = '\0';
-            c = 'q';
-            break;
-        case 9: // tab to change tab
-            if (cont == MAX_TABS) {
-                return change_tab();
-            }
-        case 'l':
-            trigger_show_helper_message();
-            break;
-        case 't': // t to open second tab
-            if (cont < MAX_TABS) {
-                new_tab();
-                return change_tab();
-            }
-        case 'q':
-            strcpy(sv.found_searched[ps[active].curr_pos], ps[active].my_cwd);
-            break;
-        }
-    } while ((c != 'q') && (c != 'Q'));
     sv.searching = 0;
-    change_dir(sv.found_searched[ps[active].curr_pos]);
+    change_dir(ps[active].files_ptr[ps[active].curr_pos]);
     free_str(sv.found_searched);
 }
 
-static int search_loop_enter_press(const char *str)
+int search_loop_enter_press(const char *str)
 {
     char arch_str[PATH_MAX] = {};
 
@@ -587,9 +554,5 @@ static void extractor_thread(struct archive *a)
 void change_tab(void)
 {
     active = (!active + cont) % MAX_TABS;
-    if (sv.searching != 3 + active) {
-        chdir(ps[active].my_cwd);
-    } else {
-        search_loop();
-    }
+    chdir(ps[active].my_cwd);
 }

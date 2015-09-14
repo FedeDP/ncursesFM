@@ -139,22 +139,27 @@ static void main_loop(void)
 
     while (!quit) {
         c = win_refresh_and_getch();
-        stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
+        if (sv.searching != 3 + active) {
+            stat(ps[active].files_ptr[ps[active].curr_pos], &current_file_stat);
+        }
         switch (tolower(c)) {
         case KEY_UP:
-            scroll_up(ps[active].nl);
+            scroll_up();
             break;
         case KEY_DOWN:
-            scroll_down(ps[active].nl);
+            scroll_down();
             break;
         case 'h': // h to show hidden files
             switch_hidden();
             break;
         case 10: // enter to change dir or open a file.
-            if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
-                change_dir(ps[active].nl[ps[active].curr_pos]);
+            if ((sv.searching == 3 + active) || (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode))) {
+                change_dir(ps[active].files_ptr[ps[active].curr_pos]);
+                if (sv.searching == 3 + active) {
+                    leave_search_mode();
+                }
             } else {
-                manage_file(ps[active].nl[ps[active].curr_pos]);
+                manage_file(ps[active].files_ptr[ps[active].curr_pos]);
             }
             break;
         case 't': // t to open second tab
@@ -169,7 +174,7 @@ static void main_loop(void)
             }
             break;
         case 'w': // w to close second tab
-            if (active) {
+            if ((active) && (sv.searching != 3 + active)) {
                 active = 0;
                 delete_tab();
                 enlarge_first_tab();
@@ -177,10 +182,12 @@ static void main_loop(void)
             }
             break;
         case 'n': // new file
-            init_thread(NEW_FILE_TH, new_file, ps[active].my_cwd);
+            if (sv.searching != 3 + active) {
+                init_thread(NEW_FILE_TH, new_file, ps[active].my_cwd);
+            }
             break;
         case 'r': //remove file
-            if (selected) {
+            if ((sv.searching != 3 + active) && (selected)) {
                 ask_user(sure, &x, 1, 'n');
                 if (x == 'y') {
                     init_thread(RM_TH, remove_file, ps[active].my_cwd);
@@ -188,17 +195,17 @@ static void main_loop(void)
             }
             break;
         case 32: // space to select files
-            if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
-                manage_space_press(ps[active].nl[ps[active].curr_pos]);
+            if ((sv.searching != 3 + active) && (strcmp(strrchr(ps[active].files_ptr[ps[active].curr_pos], '/') + 1, "..") != 0)) {
+                manage_space_press(ps[active].files_ptr[ps[active].curr_pos]);
             }
             break;
         case 'v': // paste files
-            if (selected) {
+            if ((sv.searching != 3 + active) && (selected)) {
                 init_thread(PASTE_TH, paste_file, ps[active].my_cwd);
             }
             break;
         case 'x': // move(cut) files
-            if (selected) {
+            if ((sv.searching != 3 + active) && (selected)) {
                 init_thread(MOVE_TH, move_file, ps[active].my_cwd);
             }
             break;
@@ -209,10 +216,14 @@ static void main_loop(void)
             show_stats();
             break;
         case 'o': // o to rename
-            init_thread(RENAME_TH, rename_file_folders, ps[active].nl[ps[active].curr_pos]);
+            if (sv.searching != 3 + active) {
+                init_thread(RENAME_TH, rename_file_folders, ps[active].files_ptr[ps[active].curr_pos]);
+            }
             break;
         case 'd': // d to create folder
-            init_thread(CREATE_DIR_TH, new_file, ps[active].my_cwd);
+            if (sv.searching != 3 + active) {
+                init_thread(CREATE_DIR_TH, new_file, ps[active].my_cwd);
+            }
             break;
         case 'f': // f to search
             if (sv.searching == 0) {
@@ -225,18 +236,23 @@ static void main_loop(void)
             break;
 #ifdef LIBCUPS_PRESENT
         case 'p': // p to print
-            if (S_ISREG(current_file_stat.st_mode) && !get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable")) {
-                print_support(ps[active].nl[ps[active].curr_pos]);
+            if ((sv.searching != 3 + active) && (S_ISREG(current_file_stat.st_mode)) && (!get_mimetype(ps[active].files_ptr[ps[active].curr_pos], "x-executable"))) {
+                print_support(ps[active].files_ptr[ps[active].curr_pos]);
             }
             break;
 #endif
         case 'b': //b to compress
-            if (selected) {
+            if ((sv.searching != 3 + active) && (selected)) {
                 init_thread(ARCHIVER_TH, create_archive, ps[active].my_cwd);
             }
             break;
         case 'q': /* q to exit */
-            quit = 1;
+            if (sv.searching == 3 + active) {
+                strcpy(ps[active].files_ptr[ps[active].curr_pos], ps[active].my_cwd);
+                leave_search_mode();
+            } else {
+                quit = 1;
+            }
             break;
         }
     }

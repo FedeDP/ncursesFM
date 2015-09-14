@@ -1,4 +1,5 @@
 /* TODO:
  * update DOC
  * make write permission checks uniform (init_thread check and rm_th checks...)
+ * extend to 2 searches
  */

@@ -23,6 +23,7 @@
 #define CREATE_DIR_TH 7
 #define FUSEISO_TH 8
 
+#define NO_REFRESH 0
 #define REFRESH 1   // the win may need a refresh, but we have to check whether it is really needed before.
 #define FORCE_REFRESH 2     // the win surely needs a refresh. Skip check, it is useless, and refresh.
 
@@ -42,7 +43,8 @@ typedef struct list {
 struct vars {
     int curr_pos;
     char my_cwd[PATH_MAX];
-    char *nl[PATH_MAX];
+    char **files_ptr;
+    int number_of_files;
 };
 
 struct search_vars {
