@@ -12,7 +12,6 @@
 #include <cups/cups.h>
 #endif
 
-#define MAX_NUMBER_OF_FOUND 100
 #define BUFF_SIZE 8192
 
 void change_dir(const char *str);

@@ -1,4 +1,5 @@
 #define HELPER_HEIGHT 12
+#define FILE_OPERATIONS 9
 
 const char *config_file_missing;
 const char *editor_missing;
@@ -9,6 +10,7 @@ const char *fatal_mem_error;
 const char *no_w_perm;
 
 const char *file_selected;
+const char *no_selected_files;
 const char *file_sel[3];
 
 const char *sure;
@@ -33,9 +35,9 @@ const char *ask_name;
 
 const char *extr_question;
 
-const char *thread_job_mesg[9];
-const char *thread_str[9];
-const char *thread_fail_str[9];
+const char *thread_job_mesg[FILE_OPERATIONS];
+const char *thread_str[FILE_OPERATIONS];
+const char *thread_fail_str[FILE_OPERATIONS];
 const char *selected_mess;
 
 const char *thread_running;

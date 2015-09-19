@@ -51,7 +51,7 @@ void change_dir(const char *str)
     if (chdir(str) != -1) {
         getcwd(ps[active].my_cwd, PATH_MAX);
         print_info(NULL, INFO_LINE);
-        needs_refresh = FORCE_REFRESH;
+        ps[active].needs_refresh = FORCE_REFRESH;
     } else {
         print_info(strerror(errno), ERR_LINE);
     }
@@ -59,8 +59,12 @@ void change_dir(const char *str)
 
 void switch_hidden(void)
 {
+    int i;
+
     config.show_hidden = !config.show_hidden;
-    needs_refresh = REFRESH;
+    for (i = 0; i < cont; i++) {
+        ps[i].needs_refresh = REFRESH;
+    }
 }
 
 /*
@@ -74,12 +78,12 @@ void manage_file(const char *str)
     char c;
 
     if (get_mimetype(str, "iso")) {
-        return init_thread(FUSEISO_TH, iso_mount_service, str);
+        return init_thread(FUSEISO_TH, iso_mount_service);
     }
     if (is_archive(str)) {
         ask_user(extr_question, &c, 1, 'y');
         if (c == 'y') {
-            return init_thread(EXTRACTOR_TH, try_extractor, str);
+            return init_thread(EXTRACTOR_TH, try_extractor);
         }
         return;
     }
@@ -146,19 +150,19 @@ static void open_file(const char *str)
 static int iso_mount_service(void)
 {
     pid_t pid;
-    char mount_point[strlen(thread_h->full_path)];
+    char mount_point[strlen(thread_h->filename)];
 
-    if ((access("/usr/bin/fuseiso", F_OK) == -1) || (access(thread_h->full_path, F_OK) == -1)) {
+    if ((access("/usr/bin/fuseiso", F_OK) == -1) || (access(thread_h->filename, F_OK) == -1)) {
         return -1;
     }
-    strcpy(mount_point, thread_h->full_path);
+    strcpy(mount_point, thread_h->filename);
     mount_point[strlen(mount_point) - strlen(strrchr(mount_point, '.'))] = '\0';
     pid = vfork();
     if (pid == 0) {
         if (mkdir(mount_point, ACCESSPERMS) == -1) {
             execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
         } else {
-            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", thread_h->full_path, mount_point, NULL);
+            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", thread_h->filename, mount_point, NULL);
         }
     } else {
         waitpid(pid, NULL, 0);
@@ -172,10 +176,10 @@ int new_file(void)
     FILE *f;
 
     if (thread_h->type == NEW_FILE_TH) {
-        f = fopen(thread_h->full_path, "w");
+        f = fopen(thread_h->filename, "w");
         fclose(f);
     } else {
-        mkdir(thread_h->full_path, 0700);
+        mkdir(thread_h->filename, 0700);
     }
     return 0;
 }
@@ -286,7 +290,7 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
 
 int rename_file_folders(void)
 {
-    return rename(thread_h->full_path, thread_h->selected_files->name);
+    return rename(thread_h->filename, thread_h->selected_files->name);
 }
 
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
@@ -301,7 +305,7 @@ static void rmrf(const char *path)
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
-    char fixed_str[PATH_MAX];
+    char fixed_str[NAME_MAX];
 
     if (ftwbuf->level == 0) {
         return 0;
@@ -315,9 +319,6 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     }
     strcpy(fixed_str, strrchr(path, '/') + 1);
     if (strncmp(fixed_str, sv.searched_string, strlen(sv.searched_string)) == 0) {
-        if (!(sv.found_searched[sv.found_cont] = safe_malloc(sizeof(char) * PATH_MAX, search_mem_fail))) {
-            return 1;
-        }
         strcpy(sv.found_searched[sv.found_cont], path);
         if (typeflag == FTW_D) {
             strcat(sv.found_searched[sv.found_cont], "/");
@@ -329,7 +330,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 
 static int search_inside_archive(const char *path)
 {
-    char str[PATH_MAX];
+    char str[PATH_MAX], *ptr;
     struct archive *a = archive_read_new();
     struct archive_entry *entry;
 
@@ -341,14 +342,11 @@ static int search_inside_archive(const char *path)
             if (str[strlen(str) - 1] == '/') {  // check if we're on a dir
                 str[strlen(str) - 1] = '\0';
             }
+            ptr = str;
             if (strrchr(str, '/')) {
-                strcpy(str, strrchr(str, '/') + 1);
+                ptr = strrchr(str, '/') + 1;
             }
-            if (strncmp(str, sv.searched_string, strlen(sv.searched_string)) == 0) {
-                if (!(sv.found_searched[sv.found_cont] = safe_malloc(sizeof(char) * PATH_MAX, search_mem_fail))) {
-                    archive_read_free(a);
-                    return 1;
-                }
+            if (strncmp(ptr, sv.searched_string, strlen(sv.searched_string)) == 0) {
                 sprintf(sv.found_searched[sv.found_cont], "%s/%s", path, archive_entry_pathname(entry));
                 sv.found_cont++;
             }
@@ -384,7 +382,7 @@ static void *search_thread(void *x)
 {
     int ret = nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
 
-    if (!sv.found_searched[0]) {
+    if (!strlen(sv.found_searched[0])) {
         sv.searching = 0;
         if (ret == 1) {
             print_info(too_many_found, INFO_LINE);
@@ -401,7 +399,7 @@ static void *search_thread(void *x)
 void list_found(void)
 {
     sv.searching = 3 + active;
-    ps[active].files_ptr = sv.found_searched;
+    free_nl(active);
     ps[active].number_of_files = sv.found_cont;
     reset_win(active);
     list_everything(active, 0, 0);
@@ -461,7 +459,7 @@ int create_archive(void)
 {
     archive = archive_write_new();
     if (((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) ||
-        (archive_write_open_filename(archive, thread_h->full_path) == ARCHIVE_FATAL)) {
+        (archive_write_open_filename(archive, thread_h->filename) == ARCHIVE_FATAL)) {
         archive_write_free(archive);
         archive = NULL;
         return -1;
@@ -485,7 +483,7 @@ static void archiver_func(void)
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
-    char buff[BUFF_SIZE], entry_name[PATH_MAX];
+    char buff[BUFF_SIZE], entry_name[NAME_MAX];
     int len, fd;
     struct archive_entry *entry = archive_entry_new();
 
@@ -513,7 +511,7 @@ static int try_extractor(void)
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
-    if ((a) && (archive_read_open_filename(a, thread_h->full_path, BUFF_SIZE) == ARCHIVE_OK)) {
+    if ((a) && (archive_read_open_filename(a, thread_h->filename, BUFF_SIZE) == ARCHIVE_OK)) {
         extractor_thread(a);
         return 0;
     }
@@ -529,7 +527,7 @@ static void extractor_thread(struct archive *a)
     int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
     char buff[BUFF_SIZE], current_dir[PATH_MAX], fullpathname[PATH_MAX];
 
-    strcpy(current_dir, thread_h->full_path);
+    strcpy(current_dir, thread_h->filename);
     current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
     ext = archive_write_disk_new();
     archive_write_disk_set_options(ext, flags);

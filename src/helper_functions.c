@@ -29,7 +29,7 @@ struct thread_mesg {
 };
 
 static void free_running_h(void);
-static thread_job_list *add_thread(thread_job_list *h, int type, const char *path, int (*f)(void));
+static thread_job_list *add_thread(thread_job_list *h, int type, int (*f)(void));
 #ifdef SYSTEMD_PRESENT
 static void inhibit_suspend(void);
 static void free_bus(void);
@@ -37,6 +37,7 @@ static void free_bus(void);
 static void init_thread_helper(const char *temp);
 static void copy_selected_files(void);
 static void *execute_thread(void *x);
+static void check_refresh(void);
 static void free_thread_job_list(thread_job_list *h);
 static void quit_thread_func(void);
 static void sig_handler(int signum);
@@ -80,13 +81,18 @@ void *safe_malloc(ssize_t size, const char *str)
     return ptr;
 }
 
-void free_str(char *str[PATH_MAX])
+void free_nl(int win)
+{
+    free(ps[win].nl);
+    ps[win].nl = NULL;
+}
+
+void free_str(char str[][PATH_MAX])
 {
     int i;
 
-    for (i = 0; str[i]; i++) {
-        str[i] = realloc(str[i], 0);
-        free(str[i]);
+    for (i = 0; i < sv.found_cont; i++) {
+        memset(sv.found_searched[i], 0, strlen(sv.found_searched[i]));
     }
 }
 
@@ -113,10 +119,10 @@ int get_mimetype(const char *path, const char *test)
  * Adds a job to the thread_job_list (thread_job_list list).
  * current_th will always point to the newly created job (ie the last job to be executed).
  */
-static thread_job_list *add_thread(thread_job_list *h, int type, const char *path, int (*f)(void))
+static thread_job_list *add_thread(thread_job_list *h, int type, int (*f)(void))
 {
     if (h) {
-        h->next = add_thread(h->next, type, path, f);
+        h->next = add_thread(h->next, type, f);
     } else {
         if (!(h = safe_malloc(sizeof(struct thread_list), generic_mem_error))) {
             return NULL;
@@ -125,7 +131,7 @@ static thread_job_list *add_thread(thread_job_list *h, int type, const char *pat
         h->selected_files = NULL;
         h->next = NULL;
         h->f = f;
-        strcpy(h->full_path, path);
+        strcpy(h->full_path, ps[active].my_cwd);
         h->type = type;
         h->num = num_of_jobs;
         current_th = h;
@@ -138,7 +144,7 @@ static thread_job_list *add_thread(thread_job_list *h, int type, const char *pat
  */
 void free_running_h(void)
 {
-    thread_job_list * tmp = thread_h;
+    thread_job_list *tmp = thread_h;
 
     thread_h = thread_h->next;
     if (tmp->selected_files)
@@ -155,21 +161,17 @@ void free_running_h(void)
  * - Initializes the new job
  * - if there's a thread running, prints a message that the job will be queued, else starts the th to execute the job.
  */
-void init_thread(int type, int (*f)(void), const char *str)
+void init_thread(int type, int (*f)(void))
 {
-    char temp[PATH_MAX];
+    char temp[NAME_MAX];
 
-    if ((type != RM_TH) && (access(ps[active].my_cwd, W_OK) != 0)) {
-        print_info(no_w_perm, ERR_LINE);
-        return;
-    }
-    if ((type >= RENAME_TH) && (type <= CREATE_DIR_TH)) {
-        ask_user(ask_name, temp, PATH_MAX, 0);
+    if ((type >= NEW_FILE_TH) && (type <= RENAME_TH)) {
+        ask_user(ask_name, temp, NAME_MAX, 0);
         if (!strlen(temp)) {
             return;
         }
     }
-    thread_h = add_thread(thread_h, type, str, f);
+    thread_h = add_thread(thread_h, type, f);
     init_thread_helper(temp);
     if (num_of_jobs > 1) {
         print_info(thread_running, INFO_LINE);
@@ -234,28 +236,33 @@ static void free_bus(void)
  */
 static void init_thread_helper(const char *temp)
 {
-    char name[PATH_MAX];
+    char name[NAME_MAX];
 
-    switch (current_th->type) {
-    case RENAME_TH:
-        strcpy(name, ps[active].my_cwd);
-        sprintf(name + strlen(name), "/%s", temp);
-        current_th->selected_files = select_file(current_th->selected_files, name);
-        break;
-    case MOVE_TH: case PASTE_TH: case ARCHIVER_TH: case RM_TH:
-        copy_selected_files();
-        if (current_th->type == ARCHIVER_TH) {
-            ask_user(archiving_mesg, name, PATH_MAX, 0);
-            if (!strlen(name)) {
-                strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
-            }
-            sprintf(current_th->full_path + strlen(current_th->full_path), "/%s.tgz", name);
+    if (current_th->type >= RENAME_TH) {
+        strcpy(current_th->filename, ps[active].nl[ps[active].curr_pos]);
+        if (current_th->type == RENAME_TH) {
+            strcpy(name, ps[active].my_cwd);
+            sprintf(name + strlen(name), "/%s", temp);
+            current_th->selected_files = select_file(current_th->selected_files, name);
         }
-        break;
-    case NEW_FILE_TH: case CREATE_DIR_TH:
-        strcat(current_th->full_path, "/");
-        strcat(current_th->full_path, temp);
-        break;
+    } else {
+        if (current_th->type >= ARCHIVER_TH) {
+            strcpy(current_th->filename, current_th->full_path);
+            if ((current_th->type == NEW_FILE_TH) || (current_th->type == CREATE_DIR_TH)) {
+                strcat(current_th->filename, "/");
+                strcat(current_th->filename, temp);
+            }
+        }
+        if (current_th->type <= ARCHIVER_TH) {
+            copy_selected_files();
+            if (current_th->type == ARCHIVER_TH) {
+                ask_user(archiving_mesg, name, NAME_MAX, 0);
+                if (!strlen(name)) {
+                    strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
+                }
+                sprintf(current_th->filename + strlen(current_th->filename), "/%s.tgz", name);
+            }
+        }
     }
 }
 
@@ -284,14 +291,14 @@ static void *execute_thread(void *x)
     print_info(thread_m.str, thread_m.line);
     if (thread_h) {
         if (thread_h->f() == -1) {
-            thread_m.str = thread_fail_str[current_th->type];
+            thread_m.str = thread_fail_str[thread_h->type];
             thread_m.line = ERR_LINE;
         } else {
-            thread_m.str = thread_str[current_th->type];
+            thread_m.str = thread_str[thread_h->type];
             thread_m.line = INFO_LINE;
+            check_refresh();
         }
         free_running_h();
-        needs_refresh = REFRESH;
         return execute_thread(NULL);
     }
     num_of_jobs = 0;
@@ -302,6 +309,19 @@ static void *execute_thread(void *x)
 #endif
     pthread_detach(pthread_self()); // to avoid stupid valgrind errors
     return NULL;
+}
+
+static void check_refresh(void)
+{
+    int i;
+
+    for (i = 0; i < cont; i++) {
+        if (strcmp(ps[i].my_cwd, thread_h->full_path) == 0) {
+            ps[i].needs_refresh = FORCE_REFRESH;
+        } else {
+            ps[i].needs_refresh = REFRESH;
+        }
+    }
 }
 
 void free_copied_list(file_list *h)
@@ -349,7 +369,6 @@ file_list *select_file(file_list *h, const char *str)
 void free_everything(void)
 {
     quit_thread_func();
-    free_str(sv.found_searched);
     free(config.editor);
     free(config.starting_dir);
     if (selected) {

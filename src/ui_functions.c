@@ -28,7 +28,6 @@ static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
 static void initialize_tab_cwd(void);
 static void scroll_helper_func(int x, int direction);
-static void sync_changes(void);
 static void colored_folders(int win, const char *name);
 static void helper_print(void);
 static void create_helper_win(void);
@@ -38,7 +37,6 @@ static void erase_stat(void);
 
 static WINDOW *helper_win, *info_win, *fm[MAX_TABS];
 static int dim, width[MAX_TABS], asking_question, delta[MAX_TABS], stat_active[MAX_TABS];
-static char *namelist[PATH_MAX][MAX_TABS];
 
 /*
  * Initializes screen, create first tab, and create info_win
@@ -84,7 +82,6 @@ void screen_end(void)
 
 /*
  * Creates a list of strings from current win path's files.
- * It won't do anything if window 'win' is in search mode.
  * If needs_refresh is set to REFRESH (not FORCE_REFRESH),
  * it will check if number of files in current dir has changed.
  * If it changed, the function will create a new list of files and print them to screen (list_everything)
@@ -92,35 +89,33 @@ void screen_end(void)
  */
 static void generate_list(int win)
 {
-    int i = ps[win].number_of_files;
+    int i = ps[win].number_of_files, num_of_files, check = 0;
     struct dirent **files;
+    char str[PATH_MAX] = {};
 
-    if (sv.searching == 3 + win) {
-        return;
-    }
-    ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
-    if ((needs_refresh == FORCE_REFRESH) || (i != ps[win].number_of_files)) {
-        free_str(namelist[win]);
-        for (i = 0; i < ps[win].number_of_files && !quit; i++) {
-            if (!(namelist[win][i] = safe_malloc(sizeof(char) * PATH_MAX, fatal_mem_error))) {
-                quit = 1;
-            }
-            if (strcmp(ps[win].my_cwd, "/") != 0) {
-                sprintf(namelist[win][i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
-            } else {
-                sprintf(namelist[win][i], "/%s", files[i]->d_name);
-            }
+    num_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
+    if ((ps[win].needs_refresh == FORCE_REFRESH) || (i != num_of_files)) {
+        check = 1;
+        free_nl(win);
+        ps[win].number_of_files = num_of_files;
+        if (!(ps[win].nl = safe_malloc(sizeof(*(ps[win].nl)) * ps[win].number_of_files, fatal_mem_error))) {
+            quit = 1;
         }
-        if (!quit) {
-            reset_win(win);
-            ps[win].files_ptr = namelist[win];
-            list_everything(win, 0, 0);
+        if (strcmp(ps[win].my_cwd, "/") != 0) {
+            strcpy(str, ps[win].my_cwd);
         }
     }
-    for (i = ps[win].number_of_files - 1; i >= 0; i--) {
+    for (i = 0; i < ps[win].number_of_files; i++) {
+        if (!quit && check) {
+            sprintf(ps[win].nl[i], "%s/%s", str, files[i]->d_name);
+        }
         free(files[i]);
     }
     free(files);
+    if (!quit && check) {
+        reset_win(win);
+        list_everything(win, 0, 0);
+    }
 }
 
 void reset_win(int win)
@@ -140,17 +135,23 @@ void reset_win(int win)
 void list_everything(int win, int old_dim, int end)
 {
     int i;
+    char (*str_ptr)[PATH_MAX];
 
     if (end == 0) {
         end = dim - 2;
     }
+    if (sv.searching == 3 + win) {
+        str_ptr = sv.found_searched;
+    } else {
+        str_ptr = ps[win].nl;
+    }
     wattron(fm[win], A_BOLD);
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
-        colored_folders(win, ps[win].files_ptr[i]);
+        colored_folders(win, *(str_ptr + i));
         if (sv.searching == 3 + win) {
-            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, ps[win].files_ptr[i]);
+            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, *(str_ptr + i));
         } else {
-            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(ps[win].files_ptr[i], '/') + 1);
+            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr + i), '/') + 1);
         }
         wattroff(fm[win], COLOR_PAIR);
     }
@@ -227,7 +228,7 @@ static void initialize_tab_cwd(void)
     if (strlen(ps[cont - 1].my_cwd) == 0) {
         getcwd(ps[cont - 1].my_cwd, PATH_MAX);
     }
-    needs_refresh = FORCE_REFRESH;
+    ps[cont - 1].needs_refresh = FORCE_REFRESH;
 }
 
 /*
@@ -239,8 +240,7 @@ void delete_tab(void)
     wclear(fm[cont]);
     delwin(fm[cont]);
     fm[cont] = NULL;
-    free_str(namelist[cont]);
-    ps[cont].files_ptr = NULL;
+    free_nl(cont);
     ps[cont].number_of_files = 0;
     memset(ps[cont].my_cwd, 0, sizeof(ps[cont].my_cwd));
 }
@@ -290,20 +290,6 @@ static void scroll_helper_func(int x, int direction)
     wborder(fm[active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wscrl(fm[active], direction);
     delta[active] += direction;
-}
-
-/*
- * Calls generate_list for every tab present.
- * Put needs_refresh off.
- */
-static void sync_changes(void)
-{
-    int i;
-
-    for (i = 0; i < cont; i++) {
-        generate_list(i);
-    }
-    needs_refresh = NO_REFRESH;
 }
 
 /*
@@ -410,7 +396,7 @@ void show_stat(int init, int end, int win)
 
     if (init == 0) {
         for (i = 1; i < ps[win].number_of_files; i++) {
-            stat(namelist[win][i], &file_stat);
+            stat(ps[win].nl[i], &file_stat);
             total_size += file_stat.st_size;
         }
         change_unit(total_size, str);
@@ -418,7 +404,7 @@ void show_stat(int init, int end, int win)
         i = 1;
     }
     for (; ((i < init + end) && (i < ps[win].number_of_files)); i++) {
-        stat(namelist[win][i], &file_stat);
+        stat(ps[win].nl[i], &file_stat);
         change_unit(file_stat.st_size, str);
         mvwprintw(fm[win], i + INITIAL_POSITION - delta[win], STAT_COL, "%s", str);
         wprintw(fm[win], "\t");
@@ -480,7 +466,7 @@ static void erase_stat(void)
 void print_info(const char *str, int i)
 {
     int len = 0;
-    char st[PATH_MAX], search_str[20];
+    char st[100], search_str[20];
 
     // "quit_with_running_thread" is the longest question string i print. If asking a question (asking_question == 1), i won't clear the question being asked.
     wmove(info_win, INFO_LINE, strlen("I:") + 1 + (asking_question * strlen(quit_with_running_thread)));
@@ -533,8 +519,13 @@ void ask_user(const char *str, char *input, int dim, char c)
 
 int win_refresh_and_getch(void)
 {
-    if (needs_refresh != NO_REFRESH) {
-        sync_changes();
+    int i;
+
+    for (i = 0; i < cont; i++) {
+        if ((ps[i].needs_refresh != NO_REFRESH) && (sv.searching != 3 + i)) {
+            generate_list(i);
+        }
+        ps[i].needs_refresh = NO_REFRESH;
     }
     return wgetch(fm[active]);
 }

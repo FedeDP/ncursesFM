@@ -115,7 +115,7 @@
 * removed flock() calls
 * lots of other internal changes, have a look to commits since last changelog update
 
-12 / 9 / 2015 - 15 / 9 / 2015
+9 / 12 / 2015 - 9 / 15 / 2015
 * new option to lock powermanagement actions (eg: autosuspend after N minutes) while a job is being performed (eg: while pasting a large file) to avoid data loss.
 This uses sd-bus api, so it is meant for systemd systems only.
 * fixed a bug related to helper win while in search mode.
@@ -123,3 +123,15 @@ This uses sd-bus api, so it is meant for systemd systems only.
 * added ability to create new tab in search mode
 * removed stand-alone search_loop and using only main_loop.
 * lots of internal changes, some fixes.
+
+9 / 16 / 2015 - 9 / 18 / 2015
+* fixed some bugs
+* lots, lots, lots of internal changes.
+* list of files is now a pointer to char[PATH_MAX].
+* list of found files while searching is now capped to [MAX_NUMBER_OF_FOUND(100)][PATH_MAX], ie: it's a 2 dim array.
+* it should now be more memory friendly.
+* more accurate refresh of tabs.
+* fixed a memleak.
+* probably some little performance improvement.
+* do not enter switch case in main_loop if user doesn't press any key.
+* fixed (i hope) every valgrind error.

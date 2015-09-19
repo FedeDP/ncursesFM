@@ -32,6 +32,15 @@ static void parse_cmd(int argc, const char *argv[]);
 static void read_config_file(void);
 #endif
 static void main_loop(void);
+static int check_init(int index);
+
+/* pointers to file_operations functions, used in main loop;
+ * -2 because 2 operations (extract and isomount) are launched inside "enter press" event, not in main loop
+ */
+static int (*const func[FILE_OPERATIONS - 2])(void) = {
+    move_file, paste_file, remove_file,
+    create_archive, new_file, new_file, rename_file_folders
+};
 
 int main(int argc, const char *argv[])
 {
@@ -133,14 +142,17 @@ static void read_config_file(void)
 
 static void main_loop(void)
 {
-    int c, length;
-    char x;
+    int c, index;
+    const char table[FILE_OPERATIONS - 2] = "xvrbndo"; // x to move, v to paste, r to remove, b to compress, n/d to create new file/dir, o to rename.
+    char *ptr;
     struct stat current_file_stat;
 
     while (!quit) {
-        c = win_refresh_and_getch();
+        do {
+            c = win_refresh_and_getch();
+        } while (c == -1);
         if (sv.searching != 3 + active) {
-            stat(ps[active].files_ptr[ps[active].curr_pos], &current_file_stat);
+            stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
         }
         switch (tolower(c)) {
         case KEY_UP:
@@ -154,13 +166,13 @@ static void main_loop(void)
             break;
         case 10: // enter to change dir or open a file.
             if (sv.searching == 3 + active) {
-                length = search_enter_press(ps[active].files_ptr[ps[active].curr_pos]);
-                ps[active].files_ptr[ps[active].curr_pos][length] = '\0';
-                leave_search_mode(ps[active].files_ptr[ps[active].curr_pos]);
+                index = search_enter_press(sv.found_searched[ps[active].curr_pos]);
+                sv.found_searched[ps[active].curr_pos][index] = '\0';
+                leave_search_mode(sv.found_searched[ps[active].curr_pos]);
             } else if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
-                change_dir(ps[active].files_ptr[ps[active].curr_pos]);
+                change_dir(ps[active].nl[ps[active].curr_pos]);
             } else {
-                manage_file(ps[active].files_ptr[ps[active].curr_pos]);
+                manage_file(ps[active].nl[ps[active].curr_pos]);
             }
             break;
         case 't': // t to open second tab
@@ -182,32 +194,9 @@ static void main_loop(void)
                 change_tab();
             }
             break;
-        case 'n': // new file
-            if (sv.searching != 3 + active) {
-                init_thread(NEW_FILE_TH, new_file, ps[active].my_cwd);
-            }
-            break;
-        case 'r': //remove file
-            if ((sv.searching != 3 + active) && (selected)) {
-                ask_user(sure, &x, 1, 'n');
-                if (x == 'y') {
-                    init_thread(RM_TH, remove_file, ps[active].my_cwd);
-                }
-            }
-            break;
         case 32: // space to select files
-            if ((sv.searching != 3 + active) && (strcmp(strrchr(ps[active].files_ptr[ps[active].curr_pos], '/') + 1, "..") != 0)) {
-                manage_space_press(ps[active].files_ptr[ps[active].curr_pos]);
-            }
-            break;
-        case 'v': // paste files
-            if ((sv.searching != 3 + active) && (selected)) {
-                init_thread(PASTE_TH, paste_file, ps[active].my_cwd);
-            }
-            break;
-        case 'x': // move(cut) files
-            if ((sv.searching != 3 + active) && (selected)) {
-                init_thread(MOVE_TH, move_file, ps[active].my_cwd);
+            if ((sv.searching != 3 + active) && (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0)) {
+                manage_space_press(ps[active].nl[ps[active].curr_pos]);
             }
             break;
         case 'l':  // show helper mess
@@ -215,16 +204,6 @@ static void main_loop(void)
             break;
         case 's': // show stat about files (size and perms)
             show_stats();
-            break;
-        case 'o': // o to rename
-            if (sv.searching != 3 + active) {
-                init_thread(RENAME_TH, rename_file_folders, ps[active].files_ptr[ps[active].curr_pos]);
-            }
-            break;
-        case 'd': // d to create folder
-            if (sv.searching != 3 + active) {
-                init_thread(CREATE_DIR_TH, new_file, ps[active].my_cwd);
-            }
             break;
         case 'f': // f to search
             if (sv.searching == 0) {
@@ -237,16 +216,11 @@ static void main_loop(void)
             break;
 #ifdef LIBCUPS_PRESENT
         case 'p': // p to print
-            if ((sv.searching != 3 + active) && (S_ISREG(current_file_stat.st_mode)) && (!get_mimetype(ps[active].files_ptr[ps[active].curr_pos], "x-executable"))) {
-                print_support(ps[active].files_ptr[ps[active].curr_pos]);
+            if ((sv.searching != 3 + active) && (S_ISREG(current_file_stat.st_mode)) && (!get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable"))) {
+                print_support(ps[active].nl[ps[active].curr_pos]);
             }
             break;
 #endif
-        case 'b': //b to compress
-            if ((sv.searching != 3 + active) && (selected)) {
-                init_thread(ARCHIVER_TH, create_archive, ps[active].my_cwd);
-            }
-            break;
         case 'q': /* q to exit/leave search mode */
             if (sv.searching == 3 + active) {
                 leave_search_mode(ps[active].my_cwd);
@@ -254,6 +228,38 @@ static void main_loop(void)
                 quit = 1;
             }
             break;
+        default:
+            if (sv.searching != 3 + active) {
+                ptr = strchr(table, c);
+                if (ptr) {
+                    index = FILE_OPERATIONS - 2 - strlen(ptr);
+                    if (check_init(index)) {
+                        init_thread(index, func[index]);
+                    }
+                }
+            }
+            break;
         }
     }
+}
+
+static int check_init(int index)
+{
+    char x;
+
+    if ((index <= RM_TH) && (!selected)) {
+        print_info(no_selected_files, ERR_LINE);
+        return 0;
+    }
+    if ((index != RM_TH) && (access(ps[active].my_cwd, W_OK) != 0)) {
+        print_info(no_w_perm, ERR_LINE);
+        return 0;
+    }
+    if (index == RM_TH) {
+        ask_user(sure, &x, 1, 'n');
+        if (x == 'n') {
+            return 0;
+        }
+    }
+    return 1;
 }

@@ -7,6 +7,7 @@ const char *fatal_mem_error = "No more memory available. Program will exit.";
 const char *no_w_perm = "You do not have write permissions here.";
 
 const char *file_selected = "This file is already selected. Cancel its selection before.";
+const char *no_selected_files = "There are no selected files.";
 const char *file_sel[] = {"File selected.", "File deleted from selected list.", "File deleted from selected list. Selected list empty."};
 
 const char *sure = "Are you serious? y/N:> ";
@@ -31,12 +32,13 @@ const char *ask_name = "Insert new file name:> ";
 
 const char *extr_question = "Do you really want to extract this archive? Y/n:> ";
 
-const char *thread_job_mesg[] = {"Moving...", "Pasting...", "Archiving...", "Extracting...", "Removing...", "Renaming...",
-                                "Creating file...", "Creating dir...", "(Un)Mounting iso..."};
-const char *thread_str[] = {"Every file has been moved.", "Every files has been copied.", "The archive is ready.", "Succesfully extracted.",
-                            "File/dir removed.", "File renamed.", "File created.", "Dir created.", "ISO (un)mounted."};
-const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not archive.", "Could not extract.", "Could not remove.",
-                                "Could not rename.", "Could not create file.", "Could not create folder.", "Fuseiso missing."};
+const char *thread_job_mesg[] = {"Moving...", "Pasting...", "Removing...", "Archiving...", "Creating file...",
+                                "Creating dir...","Renaming...", "Extracting...", "(Un)Mounting iso..."};
+const char *thread_str[] = {"Every file has been moved.", "Every files has been copied.", "File/dir removed.", "The archive is ready.",
+                            "File created.", "Dir created.", "File renamed.", "Succesfully extracted.", "ISO (un)mounted."};
+const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not remove.", "Could not archive.", "Could not create file.",
+                                "Could not create folder.", "Could not rename.", "Could not extract.", "Fuseiso missing."};
+
 const char *selected_mess = "There are selected files.";
 
 const char *thread_running = "There's already a thread working. This thread will be queued.";
