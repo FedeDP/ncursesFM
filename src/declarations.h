@@ -29,9 +29,9 @@
 #define FORCE_REFRESH 2     // the win surely needs a refresh. Skip check, it is useless, and refresh.
 
 struct conf {
-    char *editor;
+    char editor[PATH_MAX];
     int show_hidden;
-    char *starting_dir;
+    char starting_dir[PATH_MAX];
     int second_tab_starting_dir;
     int inhibit;
 };

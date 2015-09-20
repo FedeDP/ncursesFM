@@ -127,7 +127,7 @@ static void open_file(const char *str)
 {
     pid_t pid;
 
-    if ((config.editor) && (access(config.editor, X_OK) != -1)) {
+    if ((strlen(config.editor)) && (access(config.editor, X_OK) != -1)) {
         if ((get_mimetype(str, "text/")) || (get_mimetype(str, "x-empty"))) {
             endwin();
             pid = vfork();

@@ -220,7 +220,7 @@ void new_tab(void)
  */
 static void initialize_tab_cwd(void)
 {
-    if (config.starting_dir) {
+    if (strlen(config.starting_dir)) {
         if ((cont == 1) || (config.second_tab_starting_dir != 0)){
             strcpy(ps[cont - 1].my_cwd, config.starting_dir);
         }

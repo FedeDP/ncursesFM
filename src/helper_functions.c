@@ -369,8 +369,6 @@ file_list *select_file(file_list *h, const char *str)
 void free_everything(void)
 {
     quit_thread_func();
-    free(config.editor);
-    free(config.starting_dir);
     if (selected) {
         free_copied_list(selected);
     }

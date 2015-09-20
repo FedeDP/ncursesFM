@@ -48,9 +48,8 @@ int main(int argc, const char *argv[])
 #ifdef LIBCONFIG_PRESENT
     read_config_file();
 #endif
-    if ((config.starting_dir) && (access(config.starting_dir, F_OK) == -1)) {
-        free(config.starting_dir);
-        config.starting_dir = NULL;
+    if ((strlen(config.starting_dir)) && (access(config.starting_dir, F_OK) == -1)) {
+        memset(config.starting_dir, 0, strlen(config.starting_dir));
     }
     screen_init();
     main_loop();
@@ -89,12 +88,12 @@ static void parse_cmd(int argc, const char *argv[])
 
     while (j < argc) {
         if (strncmp(cmd_switch[0], argv[j], strlen(cmd_switch[0])) == 0) {
-            if ((!config.editor) && (config.editor = safe_malloc((strlen(argv[j]) - strlen(cmd_switch[0])) * sizeof(char) + 1, generic_mem_error))) {
+            if (!strlen(config.editor)) {
                 strcpy(config.editor, argv[j] + strlen(cmd_switch[0]));
                 changed++;
             }
         } else if (strncmp(cmd_switch[1], argv[j], strlen(cmd_switch[1])) == 0) {
-            if ((!config.starting_dir) && (config.starting_dir = safe_malloc((strlen(argv[j]) - strlen(cmd_switch[1])) * sizeof(char) + 1, generic_mem_error))) {
+            if (!strlen(config.starting_dir)) {
                 strcpy(config.starting_dir, argv[j] + strlen(cmd_switch[1]));
                 changed++;
             }
@@ -115,20 +114,15 @@ static void read_config_file(void)
 {
     config_t cfg;
     const char *config_file_name = "/etc/default/ncursesFM.conf";
-    const char *str_editor, *str_starting_dir;
 
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
-        if (!config.editor && config_lookup_string(&cfg, "editor", &str_editor)) {
-            if ((config.editor = safe_malloc(strlen(str_editor) * sizeof(char) + 1, generic_mem_error))) {
-                strcpy(config.editor, str_editor);
-            }
+        if (!strlen(config.editor)) {
+            config_lookup_string(&cfg, "editor", &config.editor)
         }
         config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
-        if (!config.starting_dir && config_lookup_string(&cfg, "starting_directory", &str_starting_dir)) {
-            if ((config.starting_dir = safe_malloc(strlen(str_starting_dir) * sizeof(char) + 1, generic_mem_error))) {
-                strcpy(config.starting_dir, str_starting_dir);
-            }
+        if (!strlen(config.starting_dir)) {
+            config_lookup_string(&cfg, "starting_directory", &str_starting_dir);
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
         config_lookup_int(&cfg, "inhibit", &config.inhibit);
