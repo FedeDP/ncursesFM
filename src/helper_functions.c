@@ -87,15 +87,6 @@ void free_nl(int win)
     ps[win].nl = NULL;
 }
 
-void free_str(char str[][PATH_MAX])
-{
-    int i;
-
-    for (i = 0; i < sv.found_cont; i++) {
-        memset(sv.found_searched[i], 0, strlen(sv.found_searched[i]));
-    }
-}
-
 /*
  * Gived a full path searches the string test in the mimetype, and if found returns 1;
  */

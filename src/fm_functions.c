@@ -311,7 +311,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         return 0;
     }
     if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
-        free_str(sv.found_searched);
+        memset(sv.found_searched, 0, sizeof(char) * PATH_MAX * sv.found_cont);
         return 1;
     }
     if ((sv.search_archive) && (is_archive(strrchr(path, '/')))) {
@@ -410,7 +410,7 @@ void leave_search_mode(const char *str)
 {
     sv.searching = 0;
     change_dir(str);
-    free_str(sv.found_searched);
+    memset(sv.found_searched, 0, sizeof(char) * PATH_MAX * sv.found_cont);
 }
 
 int search_enter_press(const char *str)
