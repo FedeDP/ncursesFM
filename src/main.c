@@ -50,7 +50,6 @@ int main(int argc, const char *argv[])
 #endif
     if ((strlen(config.starting_dir)) && (access(config.starting_dir, F_OK) == -1)) {
         memset(config.starting_dir, 0, strlen(config.starting_dir));
-
     }
     screen_init();
     main_loop();
