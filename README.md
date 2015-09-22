@@ -44,7 +44,7 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 * libcups    -> print support
 * libconfig  -> config file parsing
 * libx11     -> check whether ncursesFM is started in a X environment or not.
-* systemd    -> to switch off powermanagement functions while a job list is running, through sd-bus.
+* libsystemd    -> to switch off powermanagement functions while a job list is running, through sd-bus.
 
 ## Runtime dependencies
 
