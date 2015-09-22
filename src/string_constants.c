@@ -47,7 +47,7 @@ const char *quit_with_running_thread = "A job is still running. Do you want to w
 const char *helper_string[] = { "Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.",
                                 "Enter will eventually ask to extract archives, or mount your ISO files.",
                                 "To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.",
-                                "Press h to trigger the showing of hide files. s to see stat about files in current folder.",
+                                "Press h to trigger the showing of hidden files. s to see stat about files in current folder.",
                                 "Space to select files. You can select as many files as you want.",
                                 "Space again on a file to remove it from selected files list.",
                                 "v/x to paste/cut(move), b to compress and r to remove selected files.",
