@@ -135,15 +135,13 @@ void reset_win(int win)
 void list_everything(int win, int old_dim, int end)
 {
     int i;
-    char (*str_ptr)[PATH_MAX];
+    char (*str_ptr)[PATH_MAX] = str_ptr = ps[win].nl;
 
     if (end == 0) {
         end = dim - 2;
     }
     if (sv.searching == 3 + win) {
         str_ptr = sv.found_searched;
-    } else {
-        str_ptr = ps[win].nl;
     }
     wattron(fm[win], A_BOLD);
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
