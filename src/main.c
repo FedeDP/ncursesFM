@@ -121,12 +121,10 @@ static void read_config_file(void)
     if (config_read_file(&cfg, config_file_name)) {
         if ((!strlen(config.editor)) && (config_lookup_string(&cfg, "editor", &str_editor))) {
             strcpy(config.editor, str_editor);
-//          free((char *)str_editor); // uncommenting would cause a segfault in screen_init during initscr()...wtf?
         }
         config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
         if ((!strlen(config.starting_dir)) && (config_lookup_string(&cfg, "starting_directory", &str_starting_dir))) {
             strcpy(config.starting_dir, str_starting_dir);
-//             free((char *)str_starting_dir);
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
         config_lookup_int(&cfg, "inhibit", &config.inhibit);
