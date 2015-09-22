@@ -8,12 +8,12 @@ pkgdesc="A FileManager written in c and ncurses library."
 arch=('i686' 'x86_64')
 url="https://github.com/FedeDP/${_gitname}"
 license=('GPL')
-depends=('ncurses' 'libconfig' 'libarchive' 'libcups' 'libx11')
+depends=('ncurses' 'libconfig' 'libarchive' 'libcups' 'libx11' 'libsystemd')
 optdepends=('fuseiso: for fuse archive/iso mounting support'
             'xdg-utils: xdg-open support')
-# libcups, libconfig and libx11 are optional build dep.
+# libcups, libconfig, libx11 and libsystemd are optional build dep.
 # If compiled without them, the program will run just fine;
-# but that would disable xdg-open, config file read, and printing support.
+# but that would disable xdg-open, config file read, printing and powermanagement inhibition support.
 makedepends=('git')
 source=("git://github.com/FedeDP/${_gitname}.git")
 backup=('etc/default/ncursesFM.conf')
