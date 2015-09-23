@@ -1,4 +1,7 @@
 /* TODO:
  * update DOC
- * extend to 2 searches
+ * filesystems tab + mount...udisks2 +sd-bus: busctl introspect org.freedesktop.UDisks2 /org/freedesktop/UDisks2/block_devices/sdaX
+ * http://0pointer.net/blog/the-new-sd-bus-api-of-systemd.html (same as inhibit!)
+ * install packages?
+ * server SFTP / SAMBA?
  */

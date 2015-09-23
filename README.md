@@ -7,7 +7,7 @@ Ncurses File Manager for linux
 * 2 tabs support.
 * ISO mount support -> you must have fuseiso installed.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
-* Otherwise, it will open (text and blank)files with $editor (ncursesFM.conf defined) var.
+* Otherwise, it will open (text and blank)files with $editor (ncursesFM.conf defined) var. Editor var fallbacks to environment $EDITOR if none is set.
 * Hidden files view support.
 * Stats support (permissions and sizes).
 * In-program helper message -> press 'l'.

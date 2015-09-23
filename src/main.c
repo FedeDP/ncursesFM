@@ -31,6 +31,7 @@ static void parse_cmd(int argc, const char *argv[]);
 #ifdef LIBCONFIG_PRESENT
 static void read_config_file(void);
 #endif
+static void config_checks(void);
 static void main_loop(void);
 static int check_init(int index);
 
@@ -48,9 +49,9 @@ int main(int argc, const char *argv[])
 #ifdef LIBCONFIG_PRESENT
     read_config_file();
 #endif
-    if ((strlen(config.starting_dir)) && (access(config.starting_dir, F_OK) == -1)) {
-        memset(config.starting_dir, 0, strlen(config.starting_dir));
-    }
+    config_checks();
+    printf("%s\n", config.editor);
+    sleep(1);
     screen_init();
     main_loop();
     free_everything();
@@ -134,6 +135,21 @@ static void read_config_file(void)
     config_destroy(&cfg);
 }
 #endif
+
+static void config_checks(void)
+{
+    const char *str;
+
+    if ((strlen(config.starting_dir)) && (access(config.starting_dir, F_OK) == -1)) {
+        memset(config.starting_dir, 0, strlen(config.starting_dir));
+    }
+    if (!strlen(config.editor) || (access(config.editor, X_OK) == -1)) {
+        memset(config.editor, 0, strlen(config.editor));
+        if ((str = getenv("EDITOR"))) {
+            strcpy(config.editor, str);
+        }
+    }
+}
 
 static void main_loop(void)
 {
