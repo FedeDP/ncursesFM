@@ -184,6 +184,7 @@ static void inhibit_suspend(void)
     sd_bus_error error = SD_BUS_ERROR_NULL;
     int r = sd_bus_open_system(&bus);
     if (r < 0) {
+        print_info(bus_error, ERR_LINE);
         return;
     }
     r = sd_bus_call_method(bus,
@@ -394,3 +395,72 @@ static void sig_handler(int signum)
     free_thread_job_list(thread_h);
     pthread_exit(NULL);
 }
+
+#ifdef LIBUDEV_PRESENT
+void mount_fs(const char *str)
+{
+    sd_bus_error error = SD_BUS_ERROR_NULL;
+    sd_bus_message *mess = NULL;
+    sd_bus *mount_bus = NULL;
+    const char *path;
+    char obj_path[80] = "/org/freedesktop/UDisks2/block_devices/";
+    char e[80] = "Failed to issue method call: ", success[PATH_MAX] = "Mounted in ";
+    char method[10], dev_path[15];
+    int r, mount;
+
+    sprintf(dev_path, "/dev/%s", str);
+    mount = is_mounted(dev_path);
+    if (!mount) {
+        strcpy(method, "Mount");
+    } else {
+        strcpy(method, "Unmount");
+    }
+    r = sd_bus_open_system(&mount_bus);
+    if (r < 0) {
+        print_info(bus_error, ERR_LINE);
+        return;
+    }
+    strcat(obj_path, str);
+    r = sd_bus_call_method(mount_bus,
+                       "org.freedesktop.UDisks2",
+                       obj_path,
+                       "org.freedesktop.UDisks2.Filesystem",
+                       method,
+                       &error,
+                       &mess,
+                       "a{sv}",
+                       NULL);
+    if (r < 0) {
+        strcat(e, error.message);
+        print_info(e, ERR_LINE);
+    } else {
+        if (!mount) {
+            sd_bus_message_read(mess, "s", &path);
+            strcat(success, path);
+            print_info(success, INFO_LINE);
+        } else {
+            print_info("Unmounted", INFO_LINE);
+        }
+    }
+    sd_bus_error_free(&error);
+    sd_bus_message_unref(mess);
+    sd_bus_unref(mount_bus);
+}
+
+int is_mounted(const char *dev_path)
+{
+    FILE *mtab = NULL;
+    struct mntent *part = NULL;
+    int is_mounted = 0;
+
+    if ((mtab = setmntent ("/etc/mtab", "r"))) {
+        while ((part = getmntent(mtab))) {
+            if ((part->mnt_fsname) && (!strcmp(part->mnt_fsname, dev_path))) {
+                is_mounted = 1;
+            }
+        }
+        endmntent ( mtab);
+    }
+    return is_mounted;
+}
+#endif

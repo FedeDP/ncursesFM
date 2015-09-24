@@ -167,11 +167,13 @@ void list_everything(int win, int old_dim, int end)
 static void print_border_and_title(int win)
 {
     wborder(fm[win], '|', '|', '-', '-', '+', '+', '+', '+');
-    if (sv.searching != 3 + win) {
-        mvwprintw(fm[win], 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
-    } else {
+    if (sv.searching == 3 + win) {
         mvwprintw(fm[win], 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_tab_title), sv.searched_string);
         mvwprintw(fm[win], 0, width[win] - (strlen(search_tab_title) + 1), search_tab_title);
+    } else if (device_mode == 1) {
+        mvwprintw(fm[win], 0, 0, device_mode_str);
+    } else {
+        mvwprintw(fm[win], 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
     }
     wrefresh(fm[win]);
 }
@@ -429,7 +431,7 @@ static void change_unit(float size, char *str)
     sprintf(str, "%.2f%s", size, unit[i]);
 }
 
-void show_stats(void)
+void trigger_stats(void)
 {
     stat_active[active] = !stat_active[active];
     if (stat_active[active]) {
@@ -527,3 +529,61 @@ int win_refresh_and_getch(void)
     }
     return wgetch(fm[active]);
 }
+
+#ifdef LIBUDEV_PRESENT
+int enumerate_usb_mass_storage(void)
+{
+    int clear = 0, i = 0;
+    struct udev *udev;
+    struct udev_enumerate *enumerate;
+    struct udev_list_entry *devices, *dev_list_entry;
+    struct udev_device *dev, *next_dev;
+
+    udev = udev_new();
+    if (!udev) {
+        print_info("Can't create udev", INFO_LINE);
+        return clear;
+    }
+    enumerate = udev_enumerate_new(udev);
+    udev_enumerate_add_match_subsystem(enumerate, "block");
+    udev_enumerate_scan_devices(enumerate);
+    devices = udev_enumerate_get_list_entry(enumerate);
+    udev_list_entry_foreach(dev_list_entry, devices) {
+        const char *path = udev_list_entry_get_name(dev_list_entry);
+        dev = udev_device_new_from_syspath(udev, path);
+        const char *name = udev_device_get_devnode(dev);
+        // just list really mountable fs (eg: if there is /dev/sdd1, do not list /dev/sdd)
+        if (udev_device_get_sysnum(dev) == 0) {
+            next_dev = udev_device_new_from_syspath(udev, udev_list_entry_get_name(udev_list_entry_get_next(dev_list_entry)));
+            if (next_dev && (strncmp(name, udev_device_get_devnode(next_dev), strlen(name)) == 0)) {
+                udev_device_unref(dev);
+                udev_device_unref(next_dev);
+                continue;
+            }
+        }
+        dev = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
+        if (dev) {
+            if (!clear) {
+                device_mode = 1;
+                reset_win(active);
+                clear = 1;
+            }
+            mvwprintw(fm[active], INITIAL_POSITION + i, 3, "block=%s, VID/PID: %s:%s, %s %s, Mounted: %d",
+                      name, udev_device_get_sysattr_value(dev, "idVendor"),
+                      udev_device_get_sysattr_value(dev, "idProduct"),
+                      udev_device_get_sysattr_value(dev,"manufacturer"),
+                      udev_device_get_sysattr_value(dev,"product"),
+                      is_mounted(name));
+            i++;
+            udev_device_unref(dev);
+        }
+    }
+    udev_enumerate_unref(enumerate);
+    udev_unref(udev);
+    if (clear) {
+        print_border_and_title(active);
+        device_mode = 0;
+    }
+    return clear;
+}
+#endif

@@ -53,4 +53,10 @@ const char *helper_string[] = { "Enter to surf between folders or to open files 
                                 "v/x to paste/cut(move), b to compress and r to remove selected files.",
                                 "o to rename current file/dir; n/d to create new file/dir. f to search (case sensitive) for a file.",
                                 "t to create new tab (at most one more). w to close tab. p to print a file.",
+                                "m to switch current tab to device tab. Enter your desired device name (asking the question) to (un)mount it.",
                                 "You can't close first tab. Use q to quit."};
+
+const char *device_mode_str =  "Device tab. Enter your desired device name below to (un)mount the device.";
+const char *mount_question = "Which device do you want to (un)mount (only the sdX(Y) part)?> ";
+
+const char *bus_error = "Failed to open system bus";

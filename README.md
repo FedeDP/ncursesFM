@@ -22,6 +22,7 @@ Ncurses File Manager for linux
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
 * Powermanagement inhibition while processing a job(eg: while pasting a file) to avoid data loss. It relies upon logind (sd-bud API), so it requires a systemd booted system.
 It is switched off by default. You can enable this feature from the config file or with "--inhibit=1" cmdline switch.
+* It can mount your external usb drives/sticks through sd-bus and udisks2. Press 'm' to get a list of mountable drives, then type your chosen drive to mount it.
 
 **IT DOES NOT SUPPORT TERMINAL RESIZE**. It is meant to be used maximized, or from a tty.
 
@@ -41,15 +42,16 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 
 ## Optional compile time dependencies
 
-* libcups    -> print support
-* libconfig  -> config file parsing
-* libx11     -> check whether ncursesFM is started in a X environment or not.
+* libcups   -> print support
+* libconfig -> config file parsing
+* libx11    -> check whether ncursesFM is started in a X environment or not.
 * libsystemd    -> to switch off powermanagement functions while a job list is running, through sd-bus.
+* libudev   -> needed to list mountable drives.
 
 ## Runtime dependencies
 
 * required: ncurses, libmagic, libarchive, plus every optional build dep if compiled with its support.
-* optional: fuseiso, xdg-utils (only if compiled with libx11 support)
+* optional: fuseiso, xdg-utils (if compiled with libx11 support), a message bus (dbus/kdbus) and udisks2 (if compiled with libsystemd support)
 
 ## Install instructions:
 

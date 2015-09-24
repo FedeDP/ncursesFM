@@ -36,6 +36,11 @@ LIBS+=-lsystemd
 $(info logind support enabled.)
 endif
 
+ifneq ("$(wildcard /usr/include/libudev.h)","")
+CFLAGS+=-DLIBUDEV_PRESENT
+LIBS+=-ludev
+$(info libudev support enabled.)
+endif
 endif
 
 all: ncursesFM clean

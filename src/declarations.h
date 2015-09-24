@@ -72,4 +72,4 @@ file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
-int active, quit, num_of_jobs, cont;
+int active, quit, num_of_jobs, cont, device_mode;

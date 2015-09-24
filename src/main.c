@@ -50,8 +50,6 @@ int main(int argc, const char *argv[])
     read_config_file();
 #endif
     config_checks();
-    printf("%s\n", config.editor);
-    sleep(1);
     screen_init();
     main_loop();
     free_everything();
@@ -214,7 +212,7 @@ static void main_loop(void)
             trigger_show_helper_message();
             break;
         case 's': // show stat about files (size and perms)
-            show_stats();
+            trigger_stats();
             break;
         case 'f': // f to search
             if (sv.searching == 0) {
@@ -230,6 +228,11 @@ static void main_loop(void)
             if ((sv.searching != 3 + active) && (S_ISREG(current_file_stat.st_mode)) && (!get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable"))) {
                 print_support(ps[active].nl[ps[active].curr_pos]);
             }
+            break;
+#endif
+#ifdef LIBUDEV_PRESENT
+        case 'm': // m to mount/unmount fs
+            devices_tab();
             break;
 #endif
         case 'q': /* q to exit/leave search mode */

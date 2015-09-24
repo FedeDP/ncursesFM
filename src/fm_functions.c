@@ -551,3 +551,19 @@ void change_tab(void)
     active = (!active + cont) % MAX_TABS;
     chdir(ps[active].my_cwd);
 }
+
+#ifdef LIBUDEV_PRESENT
+void devices_tab(void)
+{
+    char dev[10];
+
+    if (enumerate_usb_mass_storage()) {
+        ask_user(mount_question, dev, 20, 0);
+        if (strlen(dev)) {
+            mount_fs(dev);
+        }
+        reset_win(active);
+        list_everything(active, 0, 0);
+    }
+}
+#endif
