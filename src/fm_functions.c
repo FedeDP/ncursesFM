@@ -552,7 +552,7 @@ void change_tab(void)
     chdir(ps[active].my_cwd);
 }
 
-#ifdef LIBUDEV_PRESENT
+#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
 void devices_tab(void)
 {
     char dev[10];

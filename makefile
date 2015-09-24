@@ -30,7 +30,7 @@ LIBS+=-lconfig
 $(info libconfig support enabled.)
 endif
 
-ifneq ("$(wildcard /proc/1/comm)","systemd")
+ifneq ("$(wildcard /usr/include/systemd/sd-bus.h)","")
 CFLAGS+=-DSYSTEMD_PRESENT
 LIBS+=-lsystemd
 $(info logind support enabled.)

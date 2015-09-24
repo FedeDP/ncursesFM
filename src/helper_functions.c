@@ -396,7 +396,7 @@ static void sig_handler(int signum)
     pthread_exit(NULL);
 }
 
-#ifdef LIBUDEV_PRESENT
+#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
 void mount_fs(const char *str)
 {
     sd_bus_error error = SD_BUS_ERROR_NULL;

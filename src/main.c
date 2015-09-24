@@ -230,7 +230,7 @@ static void main_loop(void)
             }
             break;
 #endif
-#ifdef LIBUDEV_PRESENT
+#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
         case 'm': // m to mount/unmount fs
             devices_tab();
             break;

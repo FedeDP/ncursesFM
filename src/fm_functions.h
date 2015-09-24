@@ -32,6 +32,6 @@ void print_support(char *str);
 #endif
 int create_archive(void);
 void change_tab(void);
-#ifdef LIBUDEV_PRESENT
+#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
 void devices_tab(void);
 #endif
