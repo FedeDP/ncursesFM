@@ -81,12 +81,6 @@ void *safe_malloc(ssize_t size, const char *str)
     return ptr;
 }
 
-void free_nl(int win)
-{
-    free(ps[win].nl);
-    ps[win].nl = NULL;
-}
-
 /*
  * Gived a full path searches the string test in the mimetype, and if found returns 1;
  */
@@ -405,11 +399,10 @@ void mount_fs(const char *str)
     const char *path;
     char obj_path[80] = "/org/freedesktop/UDisks2/block_devices/";
     char e[80] = "Failed to issue method call: ", success[PATH_MAX] = "Mounted in ";
-    char method[10], dev_path[15];
+    char method[10];
     int r, mount;
 
-    sprintf(dev_path, "/dev/%s", str);
-    mount = is_mounted(dev_path);
+    mount = is_mounted(str);
     if (!mount) {
         strcpy(method, "Mount");
     } else {
@@ -420,7 +413,7 @@ void mount_fs(const char *str)
         print_info(bus_error, ERR_LINE);
         return;
     }
-    strcat(obj_path, str);
+    strcat(obj_path, strrchr(str, '/') + 1);
     r = sd_bus_call_method(mount_bus,
                        "org.freedesktop.UDisks2",
                        obj_path,

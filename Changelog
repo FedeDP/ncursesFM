@@ -135,3 +135,12 @@ This uses sd-bus api, so it is meant for systemd systems only.
 * probably some little performance improvement.
 * do not enter switch case in main_loop if user doesn't press any key.
 * fixed (i hope) every valgrind error.
+
+9 / 24 / 2015
+* added ability to mount external usb drives through udisks2 and sd-bus.
+* fixed some bugs
+* now any message printed inside info_win will last until a new message is sent.
+* better README, update pkgbuild.
+* better makefile checks.
+* better sd-bus api checks
+* probably other improvements i now forgot

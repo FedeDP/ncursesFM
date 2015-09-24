@@ -1,6 +1,5 @@
 /* TODO:
  * update DOC
- * better mount/unmount? It is kind of hard to understand at first glance. But it is the simpliest way to achieve that...
  * fix little memleaks in libudev (udev_device_new_from_syspath) and sd-bus (sd_bus_open_system) ...but i think it is not my fault
  * install packages?
  * server SFTP / SAMBA?

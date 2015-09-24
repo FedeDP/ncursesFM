@@ -96,7 +96,8 @@ static void generate_list(int win)
     num_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
     if ((ps[win].needs_refresh == FORCE_REFRESH) || (i != num_of_files)) {
         check = 1;
-        free_nl(win);
+        free(ps[win].nl);
+        ps[win].nl = NULL;
         ps[win].number_of_files = num_of_files;
         if (!(ps[win].nl = safe_malloc(sizeof(*(ps[win].nl)) * ps[win].number_of_files, fatal_mem_error))) {
             quit = 1;
@@ -143,10 +144,17 @@ void list_everything(int win, int old_dim, int end)
     if (sv.searching == 3 + win) {
         str_ptr = sv.found_searched;
     }
+#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+    else if (device_mode) {
+        str_ptr = usb_devices;
+    }
+#endif
     wattron(fm[win], A_BOLD);
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
-        colored_folders(win, *(str_ptr + i));
-        if (sv.searching == 3 + win) {
+        if (!device_mode) {
+            colored_folders(win, *(str_ptr + i));
+        }
+        if ((sv.searching == 3 + win) || (device_mode)) {
             mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, *(str_ptr + i));
         } else {
             mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr + i), '/') + 1);
@@ -240,7 +248,8 @@ void delete_tab(void)
     wclear(fm[cont]);
     delwin(fm[cont]);
     fm[cont] = NULL;
-    free_nl(cont);
+    free(ps[cont].nl);
+    ps[cont].nl = NULL;
     ps[cont].number_of_files = 0;
     memset(ps[cont].my_cwd, 0, sizeof(ps[cont].my_cwd));
 }
@@ -529,61 +538,3 @@ int win_refresh_and_getch(void)
     }
     return wgetch(fm[active]);
 }
-
-#ifdef LIBUDEV_PRESENT
-int enumerate_usb_mass_storage(void)
-{
-    int clear = 0, i = 0;
-    struct udev *udev;
-    struct udev_enumerate *enumerate;
-    struct udev_list_entry *devices, *dev_list_entry;
-    struct udev_device *dev, *next_dev;
-
-    udev = udev_new();
-    if (!udev) {
-        print_info("Can't create udev", INFO_LINE);
-        return clear;
-    }
-    enumerate = udev_enumerate_new(udev);
-    udev_enumerate_add_match_subsystem(enumerate, "block");
-    udev_enumerate_scan_devices(enumerate);
-    devices = udev_enumerate_get_list_entry(enumerate);
-    udev_list_entry_foreach(dev_list_entry, devices) {
-        const char *path = udev_list_entry_get_name(dev_list_entry);
-        dev = udev_device_new_from_syspath(udev, path);
-        const char *name = udev_device_get_devnode(dev);
-        // just list really mountable fs (eg: if there is /dev/sdd1, do not list /dev/sdd)
-        if (udev_device_get_sysnum(dev) == 0) {
-            next_dev = udev_device_new_from_syspath(udev, udev_list_entry_get_name(udev_list_entry_get_next(dev_list_entry)));
-            if (next_dev && (strncmp(name, udev_device_get_devnode(next_dev), strlen(name)) == 0)) {
-                udev_device_unref(dev);
-                udev_device_unref(next_dev);
-                continue;
-            }
-        }
-        dev = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
-        if (dev) {
-            if (!clear) {
-                device_mode = 1;
-                reset_win(active);
-                clear = 1;
-            }
-            mvwprintw(fm[active], INITIAL_POSITION + i, 3, "block=%s, VID/PID: %s:%s, %s %s, Mounted: %d",
-                      name, udev_device_get_sysattr_value(dev, "idVendor"),
-                      udev_device_get_sysattr_value(dev, "idProduct"),
-                      udev_device_get_sysattr_value(dev,"manufacturer"),
-                      udev_device_get_sysattr_value(dev,"product"),
-                      is_mounted(name));
-            i++;
-            udev_device_unref(dev);
-        }
-    }
-    udev_enumerate_unref(enumerate);
-    udev_unref(udev);
-    if (clear) {
-        print_border_and_title(active);
-        device_mode = 0;
-    }
-    return clear;
-}
-#endif

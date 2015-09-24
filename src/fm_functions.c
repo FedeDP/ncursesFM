@@ -42,6 +42,9 @@ static void archiver_func(void);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int try_extractor(void);
 static void extractor_thread(struct archive *a);
+#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+static void enumerate_usb_mass_storage(void);
+#endif
 
 static struct archive *archive;
 static int distance_from_root;
@@ -50,7 +53,6 @@ void change_dir(const char *str)
 {
     if (chdir(str) != -1) {
         getcwd(ps[active].my_cwd, PATH_MAX);
-        print_info(NULL, INFO_LINE);
         ps[active].needs_refresh = FORCE_REFRESH;
     } else {
         print_info(strerror(errno), ERR_LINE);
@@ -399,7 +401,8 @@ static void *search_thread(void *x)
 void list_found(void)
 {
     sv.searching = 3 + active;
-    free_nl(active);
+    free(ps[active].nl);
+    ps[active].nl = NULL;
     ps[active].number_of_files = sv.found_cont;
     reset_win(active);
     list_everything(active, 0, 0);
@@ -409,6 +412,7 @@ void list_found(void)
 void leave_search_mode(const char *str)
 {
     sv.searching = 0;
+    print_info(NULL, INFO_LINE);
     change_dir(str);
     memset(sv.found_searched, 0, sizeof(char) * PATH_MAX * sv.found_cont);
 }
@@ -555,15 +559,79 @@ void change_tab(void)
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
 void devices_tab(void)
 {
-    char dev[10];
-
-    if (enumerate_usb_mass_storage()) {
-        ask_user(mount_question, dev, 20, 0);
-        if (strlen(dev)) {
-            mount_fs(dev);
-        }
+    enumerate_usb_mass_storage();
+    if (device_mode) {
         reset_win(active);
         list_everything(active, 0, 0);
+    } else {
+        print_info("No mountable devices found.", ERR_LINE);
     }
+}
+
+static void enumerate_usb_mass_storage(void)
+{
+    int i = 0;
+    struct udev *udev;
+    struct udev_enumerate *enumerate;
+    struct udev_list_entry *devices, *dev_list_entry;
+    struct udev_device *dev, *next_dev;
+
+    udev = udev_new();
+    if (!udev) {
+        print_info("Can't create udev", INFO_LINE);
+        return;
+    }
+    enumerate = udev_enumerate_new(udev);
+    udev_enumerate_add_match_subsystem(enumerate, "block");
+    udev_enumerate_scan_devices(enumerate);
+    devices = udev_enumerate_get_list_entry(enumerate);
+    udev_list_entry_foreach(dev_list_entry, devices) {
+        const char *path = udev_list_entry_get_name(dev_list_entry);
+        dev = udev_device_new_from_syspath(udev, path);
+        const char *name = udev_device_get_devnode(dev);
+        // just list really mountable fs (eg: if there is /dev/sdd1, do not list /dev/sdd)
+        if (udev_device_get_sysnum(dev) == 0) {
+            next_dev = udev_device_new_from_syspath(udev, udev_list_entry_get_name(udev_list_entry_get_next(dev_list_entry)));
+            if (next_dev && (strncmp(name, udev_device_get_devnode(next_dev), strlen(name)) == 0)) {
+                udev_device_unref(dev);
+                udev_device_unref(next_dev);
+                continue;
+            }
+        }
+        dev = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
+        if (dev) {
+            device_mode = 1;
+            usb_devices = realloc(usb_devices, sizeof(*(usb_devices)) * (i + 1));
+            sprintf(usb_devices[i], "%s, VID/PID: %s:%s, %s %s, Mounted: %d",
+                    name, udev_device_get_sysattr_value(dev, "idVendor"),
+                    udev_device_get_sysattr_value(dev, "idProduct"),
+                    udev_device_get_sysattr_value(dev,"manufacturer"),
+                    udev_device_get_sysattr_value(dev,"product"),
+                    is_mounted(name));
+            i++;
+            udev_device_unref(dev);
+        }
+    }
+    if (device_mode) {
+        ps[active].number_of_files = i;
+    }
+    udev_enumerate_unref(enumerate);
+    udev_unref(udev);
+}
+
+void leave_device_mode(void)
+{
+    free(usb_devices);
+    usb_devices = NULL;
+    device_mode = 0;
+    change_dir(ps[active].my_cwd);
+}
+
+void manage_enter_device(void)
+{
+    char *ptr = strchr(usb_devices[ps[active].curr_pos], ',');
+    usb_devices[ps[active].curr_pos][strlen(usb_devices[ps[active].curr_pos]) - strlen(ptr)] = '\0';
+    mount_fs(usb_devices[ps[active].curr_pos]);
+    leave_device_mode();
 }
 #endif

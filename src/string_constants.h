@@ -46,6 +46,5 @@ const char *quit_with_running_thread;
 const char *helper_string[HELPER_HEIGHT - 2];
 
 const char *device_mode_str;
-const char *mount_question;
 
 const char *bus_error;

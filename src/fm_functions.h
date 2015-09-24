@@ -34,4 +34,6 @@ int create_archive(void);
 void change_tab(void);
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
 void devices_tab(void);
+void leave_device_mode(void);
+void manage_enter_device(void);
 #endif

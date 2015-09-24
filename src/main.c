@@ -171,32 +171,40 @@ static void main_loop(void)
             scroll_down();
             break;
         case 'h': // h to show hidden files
-            switch_hidden();
+            if (!device_mode) {
+                switch_hidden();
+            }
             break;
         case 10: // enter to change dir or open a file.
             if (sv.searching == 3 + active) {
                 index = search_enter_press(sv.found_searched[ps[active].curr_pos]);
                 sv.found_searched[ps[active].curr_pos][index] = '\0';
                 leave_search_mode(sv.found_searched[ps[active].curr_pos]);
-            } else if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
+            }
+#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+            else if (device_mode) {
+                manage_enter_device();
+            }
+#endif
+            else if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
                 change_dir(ps[active].nl[ps[active].curr_pos]);
             } else {
                 manage_file(ps[active].nl[ps[active].curr_pos]);
             }
             break;
         case 't': // t to open second tab
-            if (cont < MAX_TABS) {
+            if ((cont < MAX_TABS) && (!device_mode)) {
                 new_tab();
                 change_tab();
             }
             break;
         case 9: // tab to change tab
-            if (cont == MAX_TABS) {
+            if ((cont == MAX_TABS) && (!device_mode)) {
                 change_tab();
             }
             break;
         case 'w': // w to close second tab
-            if ((active) && (sv.searching != 3 + active)) {
+            if ((active) && (sv.searching != 3 + active) && (!device_mode)) {
                 active = 0;
                 delete_tab();
                 enlarge_first_tab();
@@ -204,7 +212,7 @@ static void main_loop(void)
             }
             break;
         case 32: // space to select files
-            if ((sv.searching != 3 + active) && (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0)) {
+            if ((sv.searching != 3 + active) && (!device_mode) && (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0)) {
                 manage_space_press(ps[active].nl[ps[active].curr_pos]);
             }
             break;
@@ -212,38 +220,51 @@ static void main_loop(void)
             trigger_show_helper_message();
             break;
         case 's': // show stat about files (size and perms)
-            trigger_stats();
+            if ((sv.searching != 3 + active) && (!device_mode)) {
+                trigger_stats();
+            }
             break;
         case 'f': // f to search
-            if (sv.searching == 0) {
-                search();
-            } else if (sv.searching == 1) {
-                print_info(already_searching, INFO_LINE);
-            } else if (sv.searching == 2) {
-                list_found();
+            if (!device_mode) {
+                if (sv.searching == 0) {
+                    search();
+                } else if (sv.searching == 1) {
+                    print_info(already_searching, INFO_LINE);
+                } else if (sv.searching == 2) {
+                    list_found();
+                }
             }
             break;
 #ifdef LIBCUPS_PRESENT
         case 'p': // p to print
-            if ((sv.searching != 3 + active) && (S_ISREG(current_file_stat.st_mode)) && (!get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable"))) {
+            if ((sv.searching != 3 + active) && (!device_mode)
+                && (S_ISREG(current_file_stat.st_mode)) && (!get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable"))) {
                 print_support(ps[active].nl[ps[active].curr_pos]);
             }
             break;
 #endif
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
         case 'm': // m to mount/unmount fs
-            devices_tab();
+            if ((sv.searching != 3 + active) && (!device_mode)) {
+                devices_tab();
+            }
             break;
 #endif
         case 'q': /* q to exit/leave search mode */
             if (sv.searching == 3 + active) {
                 leave_search_mode(ps[active].my_cwd);
-            } else {
+            }
+#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+            else if (device_mode) {
+                leave_device_mode();
+            }
+#endif
+            else {
                 quit = 1;
             }
             break;
         default:
-            if (sv.searching != 3 + active) {
+            if ((sv.searching != 3 + active) && (!device_mode)) {
                 ptr = strchr(table, c);
                 if (ptr) {
                     index = FILE_OPERATIONS - 2 - strlen(ptr);

@@ -20,6 +20,3 @@ void trigger_show_helper_message(void);
 void show_stat(int init, int end, int win);
 void trigger_stats(void);
 int win_refresh_and_getch(void);
-#ifdef LIBUDEV_PRESENT
-int enumerate_usb_mass_storage(void);
-#endif
