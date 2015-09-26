@@ -49,15 +49,15 @@ const char *thread_running = "There's already a thread working. This thread will
 const char *quit_with_running_thread = "A job is still running. Do you want to wait for it?(You should!) Y/n:> ";
 
 const char *helper_string[] = { "Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.",
-                                "Enter will eventually ask to extract archives, or mount your ISO files.",
-                                "To mount ISO you must have isomount installed. To unmount, simply press again enter on the same iso file.",
+                                "Enter will eventually ask to extract archives, mount your ISO files or install your distro downloaded packages.",
+                                "To unmount ISO, simply press again enter on the same iso file.",
                                 "Press h to trigger the showing of hidden files. s to see stat about files in current folder.",
                                 "Space to select files. You can select as many files as you want.",
                                 "Space again on a file to remove it from selected files list.",
                                 "v/x to paste/cut(move), b to compress and r to remove selected files.",
                                 "o to rename current file/dir; n/d to create new file/dir. f to search (case sensitive) for a file.",
                                 "t to create new tab (at most one more). w to close tab. p to print a file.",
-                                "m to switch current tab to device tab. Enter your desired device name (asking the question) to (un)mount it.",
+                                "m to switch current tab to device tab. Press enter on your desired device to (un)mount it.",
                                 "You can't close first tab. Use q to quit."};
 
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
