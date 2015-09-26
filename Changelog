@@ -144,3 +144,11 @@ This uses sd-bus api, so it is meant for systemd systems only.
 * better makefile checks.
 * better sd-bus api checks
 * probably other improvements i now forgot
+
+9 / 26 / 2015
+* added ability to install packages by pressing enter on them, through packagekit; so it should be distro independent.
+* The installation process is done in another thread. Before exiting, main thread will wait for the installation thread to finish its job, to avoid damages.
+* fixed a bug: i forgot to change_dir() in current dir when ncursesfm starts.
+* fixed a bug: when a call to generate_list is done during device_mode, update only the win in normal mode (before i did not update anything)
+* fixed some valgrind issues/errors
+* string_constants now only declared if correspondent LIB symbols are defined

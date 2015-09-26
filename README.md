@@ -23,6 +23,7 @@ Ncurses File Manager for linux
 * Powermanagement inhibition while processing a job(eg: while pasting a file) to avoid data loss. It relies upon systemd/logind (sd-bud API), so it requires a systemd booted system.
 It is switched off by default. You can enable this feature from the config file or with "--inhibit=1" cmdline switch.
 * It can mount your external usb drives/sticks through sd-bus and udisks2. Press 'm' to get a list of mountable drives (if any), then type your chosen drive to mount it.
+* It can install your distro package file: pressing enter on a package file will ask user if he wants to install the package. It relies upon packagekit.
 
 **IT DOES NOT SUPPORT TERMINAL RESIZE**. It is meant to be used maximized, or from a tty.
 
@@ -50,8 +51,13 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 
 ## Runtime dependencies
 
-* required: ncurses, libmagic, libarchive, plus every optional build dep if compiled with its support.
-* optional: fuseiso, xdg-utils (if compiled with libx11 support), a message bus (dbus/kdbus) + logind (for inhibition support), or udisks2 (for mount support)
+**required:** 
+* ncurses, libmagic, libarchive, plus every optional build dep if compiled with its support.
+
+**optional:**
+* fuseiso, xdg-utils (if compiled with libx11 support)
+* a message bus (dbus/kdbus) and:
+** logind (for inhibition support), or udisks2 (for mount support), or packagekit (for package installation support).
 
 ## Install instructions:
 

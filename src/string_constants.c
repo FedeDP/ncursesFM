@@ -1,4 +1,6 @@
+#ifdef LIBCONFIG_PRESENT
 const char *config_file_missing = "Config file (/etc/default/ncursesFM.conf) not found. Using default values.\n";
+#endif
 const char *editor_missing = "You have to specify a valid editor in config file.";
 
 const char *generic_mem_error = "Memory allocation failed.";
@@ -22,9 +24,11 @@ const char *no_found = "No files found.";
 const char *search_tab_title = "q to leave search win";
 const char *searching_mess[] = {"Searching...", "Search finished. Press f anytime to view the results."};
 
+#ifdef LIBCUPS_PRESENT
 const char *print_question = "Do you really want to print this file? Y/n:> ";
 const char *print_ok = "Print job done.";
 const char *print_fail = "No printers available.";
+#endif
 
 const char *archiving_mesg = "Insert new file name (defaults to first entry name):> ";
 
@@ -56,6 +60,12 @@ const char *helper_string[] = { "Enter to surf between folders or to open files 
                                 "m to switch current tab to device tab. Enter your desired device name (asking the question) to (un)mount it.",
                                 "You can't close first tab. Use q to quit."};
 
-const char *device_mode_str =  "Device tab. Choose your desired device to (un)mount it";
-
+#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+const char *device_mode_str =  "Device tab. Choose your desired device to (un)mount it. q to quit.";
+#endif
+#ifdef SYSTEMD_PRESENT
 const char *bus_error = "Failed to open system bus";
+
+const char *pkg_quest = "Do you really want to install this package? y/N:> ";
+const char *install_th_wait = "Waiting for package installation to finish before exiting. It can really harm your OS otherwise.";
+#endif

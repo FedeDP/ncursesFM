@@ -76,3 +76,6 @@ int active, quit, num_of_jobs, cont, device_mode;
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
 char (*usb_devices)[PATH_MAX];
 #endif
+#ifdef SYSTEMD_PRESENT
+pthread_t install_th;
+#endif

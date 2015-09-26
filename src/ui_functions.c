@@ -145,16 +145,16 @@ void list_everything(int win, int old_dim, int end)
         str_ptr = sv.found_searched;
     }
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-    else if (device_mode) {
+    else if (device_mode == 1 + win) {
         str_ptr = usb_devices;
     }
 #endif
     wattron(fm[win], A_BOLD);
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
-        if (!device_mode) {
+        if (device_mode != 1 + win) {
             colored_folders(win, *(str_ptr + i));
         }
-        if ((sv.searching == 3 + win) || (device_mode)) {
+        if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
             mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, *(str_ptr + i));
         } else {
             mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr + i), '/') + 1);
@@ -178,9 +178,13 @@ static void print_border_and_title(int win)
     if (sv.searching == 3 + win) {
         mvwprintw(fm[win], 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_tab_title), sv.searched_string);
         mvwprintw(fm[win], 0, width[win] - (strlen(search_tab_title) + 1), search_tab_title);
-    } else if (device_mode == 1) {
+    }
+#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+    else if (device_mode == 1 + win) {
         mvwprintw(fm[win], 0, 0, device_mode_str);
-    } else {
+    }
+#endif
+    else {
         mvwprintw(fm[win], 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
     }
     wrefresh(fm[win]);
@@ -229,7 +233,7 @@ void new_tab(void)
 static void initialize_tab_cwd(void)
 {
     if (strlen(config.starting_dir)) {
-        if ((cont == 1) || (config.second_tab_starting_dir != 0)){
+        if ((cont == 1) || (config.second_tab_starting_dir)) {
             strcpy(ps[cont - 1].my_cwd, config.starting_dir);
         }
     }
@@ -315,8 +319,6 @@ static void colored_folders(int win, const char *name)
             wattron(fm[win], COLOR_PAIR(1));
         } else if (S_ISLNK(file_stat.st_mode)) {
             wattron(fm[win], COLOR_PAIR(3));
-        } else if (is_archive(name)) {
-            wattron(fm[win], COLOR_PAIR(4));
         } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
             wattron(fm[win], COLOR_PAIR(2));
         }
@@ -531,7 +533,7 @@ int win_refresh_and_getch(void)
     int i;
 
     for (i = 0; i < cont; i++) {
-        if ((ps[i].needs_refresh != NO_REFRESH) && (sv.searching != 3 + i)) {
+        if ((ps[i].needs_refresh != NO_REFRESH) && (sv.searching != 3 + i) && (device_mode != 1 + i)) {
             generate_list(i);
         }
         ps[i].needs_refresh = NO_REFRESH;

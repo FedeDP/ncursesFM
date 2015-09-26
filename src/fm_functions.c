@@ -48,6 +48,10 @@ static void enumerate_usb_mass_storage(void);
 
 static struct archive *archive;
 static int distance_from_root;
+static const char *arch_ext[6] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
+#ifdef SYSTEMD_PRESENT
+static const char *pkg_ext[3] = {".pkg.tar.xz", ".deb", ".rpm"};
+#endif
 
 void change_dir(const char *str)
 {
@@ -82,7 +86,21 @@ void manage_file(const char *str)
     if (get_mimetype(str, "iso")) {
         return init_thread(FUSEISO_TH, iso_mount_service);
     }
-    if (is_archive(str)) {
+#ifdef SYSTEMD_PRESENT
+    if (is_ext(str, pkg_ext, 3)) {
+        ask_user(pkg_quest, &c, 1, 'n');
+        if (c == 'y') {
+            if (access("/usr/lib/PackageKit/", F_OK)) {
+                print_info("You need packagekit for package installation support.", ERR_LINE);
+                return;
+            }
+            pthread_create(&install_th, NULL, install_package, (void *)str);
+            return;
+        }
+        return;
+    }
+#endif
+    if (is_ext(str, arch_ext, 6)) {
         ask_user(extr_question, &c, 1, 'y');
         if (c == 'y') {
             return init_thread(EXTRACTOR_TH, try_extractor);
@@ -316,7 +334,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         memset(sv.found_searched, 0, sizeof(char) * PATH_MAX * sv.found_cont);
         return 1;
     }
-    if ((sv.search_archive) && (is_archive(strrchr(path, '/')))) {
+    if ((sv.search_archive) && (is_ext(strrchr(path, '/'), arch_ext, 6))) {
         return search_inside_archive(path);
     }
     strcpy(fixed_str, strrchr(path, '/') + 1);
@@ -423,7 +441,7 @@ int search_enter_press(const char *str)
 
     if (sv.search_archive) {    // check if the current path is inside an archive
         strcpy(arch_str, str);
-        while (strlen(arch_str) && !is_archive(strrchr(arch_str, '/'))) {
+        while (strlen(arch_str) && !is_ext(strrchr(arch_str, '/'), arch_ext, 6)) {
             arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
         }
     }
@@ -559,8 +577,16 @@ void change_tab(void)
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
 void devices_tab(void)
 {
+    if (access("/usr/lib/udisk2/", F_OK)) {
+        print_info("You need udisks2 for mount support.", ERR_LINE);
+        return;
+    }
     enumerate_usb_mass_storage();
     if (device_mode) {
+        free(ps[active].nl);
+        ps[active].nl = NULL;
+        ps[active].number_of_files = device_mode;
+        device_mode = 1 + active;
         reset_win(active);
         list_everything(active, 0, 0);
     } else {
@@ -570,11 +596,10 @@ void devices_tab(void)
 
 static void enumerate_usb_mass_storage(void)
 {
-    int i = 0;
     struct udev *udev;
     struct udev_enumerate *enumerate;
     struct udev_list_entry *devices, *dev_list_entry;
-    struct udev_device *dev, *next_dev;
+    struct udev_device *dev, *next_dev, *parent;
 
     udev = udev_new();
     if (!udev) {
@@ -597,23 +622,20 @@ static void enumerate_usb_mass_storage(void)
                 udev_device_unref(next_dev);
                 continue;
             }
+            udev_device_unref(next_dev);
         }
-        dev = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
-        if (dev) {
-            device_mode = 1;
-            usb_devices = realloc(usb_devices, sizeof(*(usb_devices)) * (i + 1));
-            sprintf(usb_devices[i], "%s, VID/PID: %s:%s, %s %s, Mounted: %d",
-                    name, udev_device_get_sysattr_value(dev, "idVendor"),
-                    udev_device_get_sysattr_value(dev, "idProduct"),
-                    udev_device_get_sysattr_value(dev,"manufacturer"),
-                    udev_device_get_sysattr_value(dev,"product"),
+        parent = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
+        if (parent) {
+            usb_devices = realloc(usb_devices, sizeof(*(usb_devices)) * (device_mode + 1));
+            sprintf(usb_devices[device_mode], "%s, VID/PID: %s:%s, %s %s, Mounted: %d",
+                    name, udev_device_get_sysattr_value(parent, "idVendor"),
+                    udev_device_get_sysattr_value(parent, "idProduct"),
+                    udev_device_get_sysattr_value(parent,"manufacturer"),
+                    udev_device_get_sysattr_value(parent,"product"),
                     is_mounted(name));
-            i++;
-            udev_device_unref(dev);
+            device_mode++;
         }
-    }
-    if (device_mode) {
-        ps[active].number_of_files = i;
+        udev_device_unref(dev);
     }
     udev_enumerate_unref(enumerate);
     udev_unref(udev);

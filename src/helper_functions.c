@@ -41,6 +41,10 @@ static void check_refresh(void);
 static void free_thread_job_list(thread_job_list *h);
 static void quit_thread_func(void);
 static void sig_handler(int signum);
+#ifdef SYSTEMD_PRESENT
+static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+static void close_bus(sd_bus_error error, sd_bus_message *mess, sd_bus *bus);
+#endif
 
 static pthread_t th;
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
@@ -55,13 +59,12 @@ static sd_bus_message *m;
  * 1) if there is a '.' starting substring in it (else it returns 0)
  * 2) for each of the *ext strings, checks if last "strlen(*ext)" chars in filename are equals to *ext. If yes, returns 1.
  */
-int is_archive(const char *filename)
+int is_ext(const char *filename, const char *ext[], int size)
 {
-    const char *ext[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
     int i = 0, len = strlen(filename);
 
     if (strrchr(filename, '.')) {
-        while (i < 6) {
+        while (i < size) {
             if (strcmp(filename + len - strlen(ext[i]), ext[i]) == 0) {
                 return 1;
             }
@@ -211,7 +214,7 @@ static void free_bus(void)
         m = NULL;
     }
     if (bus) {
-        sd_bus_unref(bus);
+        sd_bus_flush_close_unref(bus);
         bus = NULL;
     }
 }
@@ -372,6 +375,14 @@ void quit_thread_func(void)
             pthread_kill(th, SIGINT);
         }
     }
+#ifdef SYSTEMD_PRESENT
+    if (install_th) {
+        if (pthread_kill(install_th, 0) != ESRCH) {
+            print_info(install_th_wait, INFO_LINE);
+        }
+        pthread_join(install_th, NULL);
+    }
+#endif
 }
 
 void free_thread_job_list(thread_job_list *h)
@@ -435,9 +446,7 @@ void mount_fs(const char *str)
             print_info("Unmounted", INFO_LINE);
         }
     }
-    sd_bus_error_free(&error);
-    sd_bus_message_unref(mess);
-    sd_bus_unref(mount_bus);
+    close_bus(error, mess, mount_bus);
 }
 
 int is_mounted(const char *dev_path)
@@ -455,5 +464,91 @@ int is_mounted(const char *dev_path)
         endmntent ( mtab);
     }
     return is_mounted;
+}
+#endif
+
+#ifdef SYSTEMD_PRESENT
+void *install_package(void *str)
+{
+    sd_bus_error error = SD_BUS_ERROR_NULL;
+    sd_bus_message *mess = NULL;
+    sd_bus *install_bus = NULL;
+    const char *path;
+    int r, finished = 0;
+
+    r = sd_bus_open_system(&install_bus);
+    if (r < 0) {
+        print_info(bus_error, ERR_LINE);
+        return NULL;
+    }
+    r = sd_bus_call_method(install_bus,
+                           "org.freedesktop.PackageKit",
+                           "/org/freedesktop/PackageKit",
+                           "org.freedesktop.PackageKit",
+                           "CreateTransaction",
+                           &error,
+                           &mess,
+                           NULL);
+    if (r < 0) {
+        print_info(error.message, ERR_LINE);
+        close_bus(error, mess, install_bus);
+        return NULL;
+    }
+    sd_bus_message_read(mess, "o", &path);
+    r = sd_bus_add_match(install_bus, NULL, "type='signal',interface='org.freedesktop.PackageKit.Transaction',member='Finished'", match_callback, &finished);
+    if (r < 0) {
+        print_info(strerror(-r), ERR_LINE);
+    } else {
+        sd_bus_flush(install_bus);
+        r = sd_bus_call_method(install_bus,
+                           "org.freedesktop.PackageKit",
+                           path,
+                           "org.freedesktop.PackageKit.Transaction",
+                           "InstallFiles",
+                           &error,
+                           NULL,
+                           "tas",
+                           0,
+                           1,
+                           (char *)str);
+        if (r < 0) {
+            print_info(error.message, ERR_LINE);
+        } else {
+            while (!finished) {
+                r = sd_bus_process(install_bus, NULL);
+                if (r > 0) {
+                    continue;
+                }
+                r = sd_bus_wait(install_bus, (uint64_t) -1);
+                if (r < 0) {
+                    break;
+                }
+            }
+        }
+    }
+    close_bus(error, mess, install_bus);
+    return NULL;
+}
+
+static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    const char *success = "Installed.", *install_failed = "Could not install.";
+    unsigned int ret;
+
+    *(int *)userdata = 1;
+    sd_bus_message_read(m, "u", &ret);
+    if (ret == 1) {
+        print_info(success, INFO_LINE);
+    } else {
+        print_info(install_failed, ERR_LINE);
+    }
+    return 0;
+}
+
+static void close_bus(sd_bus_error error, sd_bus_message *mess, sd_bus *bus)
+{
+    sd_bus_message_unref(mess);
+    sd_bus_error_free(&error);
+    sd_bus_flush_close_unref(bus);
 }
 #endif
