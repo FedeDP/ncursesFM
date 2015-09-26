@@ -61,7 +61,7 @@ const char *helper_string[] = { "Enter to surf between folders or to open files 
                                 "You can't close first tab. Use q to quit."};
 
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-const char *device_mode_str =  "Device tab. Choose your desired device to (un)mount it. q to quit.";
+const char *device_mode_str =  "Choose your desired device to (un)mount it. q to quit.";
 #endif
 #ifdef SYSTEMD_PRESENT
 const char *bus_error = "Failed to open system bus";

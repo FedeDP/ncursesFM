@@ -176,12 +176,12 @@ static void print_border_and_title(int win)
 {
     wborder(fm[win], '|', '|', '-', '-', '+', '+', '+', '+');
     if (sv.searching == 3 + win) {
-        mvwprintw(fm[win], 0, 0, "Found file searching %.*s: ", width[active] - 1 - strlen("Found file searching : ") - strlen(search_tab_title), sv.searched_string);
+        mvwprintw(fm[win], 0, 0, "Found file searching %.*s: ", width[win] - 1 - strlen("Found file searching : ") - strlen(search_tab_title), sv.searched_string);
         mvwprintw(fm[win], 0, width[win] - (strlen(search_tab_title) + 1), search_tab_title);
     }
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
     else if (device_mode == 1 + win) {
-        mvwprintw(fm[win], 0, 0, device_mode_str);
+        mvwprintw(fm[win], 0, 0, "%.*s", width[win] - 1, device_mode_str);
     }
 #endif
     else {
