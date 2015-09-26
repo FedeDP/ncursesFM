@@ -577,7 +577,7 @@ void change_tab(void)
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
 void devices_tab(void)
 {
-    if (access("/usr/lib/udisk2/", F_OK)) {
+    if (access("/usr/lib/udisks2/", F_OK)) {
         print_info("You need udisks2 for mount support.", ERR_LINE);
         return;
     }
