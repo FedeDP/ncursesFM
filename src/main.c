@@ -34,6 +34,7 @@ static void read_config_file(void);
 static void config_checks(void);
 static void main_loop(void);
 static int check_init(int index);
+static int is_present(int c);
 
 /* pointers to file_operations functions, used in main loop;
  * -2 because 2 operations (extract and isomount) are launched inside "enter press" event, not in main loop
@@ -152,7 +153,7 @@ static void config_checks(void)
 
 static void main_loop(void)
 {
-    int c, index;
+    int c, index, fast_browse_mode = 0;
     const char *table = "xvrbndo"; // x to move, v to paste, r to remove, b to compress, n/d to create new file/dir, o to rename.
     char *ptr;
     struct stat current_file_stat;
@@ -160,7 +161,11 @@ static void main_loop(void)
     while (!quit) {
         do {
             c = win_refresh_and_getch();
-        } while ((c == -1) || ((device_mode && c != KEY_UP && c != KEY_DOWN && c != 10 && c != 'q' && c != 'l')));
+        } while ((c == -1) || (device_mode && !is_present(tolower(c))));
+        if (fast_browse_mode && isalpha(c)) {
+            fast_browse(c);
+            continue;
+        }
         if ((sv.searching != 3 + active) && (!device_mode)) {
             stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
         }
@@ -246,6 +251,10 @@ static void main_loop(void)
             }
             break;
 #endif
+        case ',': // , to enable/disable fast browse mode
+            fast_browse_mode = !fast_browse_mode;
+            fast_browse_mode ? (print_info("Fast browse mode enabled.", INFO_LINE)) : (print_info("Fast browse mode disabled.", INFO_LINE));
+            break;
         case 'q': /* q to exit/leave search mode/leave device_mode */
             if (sv.searching == 3 + active) {
                 leave_search_mode(ps[active].my_cwd);
@@ -293,4 +302,18 @@ static int check_init(int index)
         }
     }
     return 1;
+}
+
+static int is_present(int c)
+{
+    const int device_keys[5] = {KEY_UP, KEY_DOWN, 10, 'q', 'l'};
+    int i;
+
+    for (i = 0; i < 5; i++) {
+        if (device_keys[i] == c) {
+            return 1;
+        }
+    }
+    return 0;
+
 }

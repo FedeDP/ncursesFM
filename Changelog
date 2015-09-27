@@ -152,3 +152,7 @@ This uses sd-bus api, so it is meant for systemd systems only.
 * fixed a bug: when a call to generate_list is done during device_mode, update only the win in normal mode (before i did not update anything)
 * fixed some valgrind issues/errors
 * string_constants now only declared if correspondent LIB symbols are defined
+
+9/ 27 / 2015
+* added fast browse mode: when enabled (with ','), pressing a letter will move the cursor to the first elem that begins with that letter, and so on (second letter, etc etc)
+if letter are pressed fast enough

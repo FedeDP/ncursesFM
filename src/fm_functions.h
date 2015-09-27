@@ -13,6 +13,7 @@
 #endif
 
 #define BUFF_SIZE 8192
+#define FAST_BROWSE_THRESHOLD 500
 
 void change_dir(const char *str);
 void switch_hidden(void);
@@ -37,3 +38,4 @@ void devices_tab(void);
 void leave_device_mode(void);
 void manage_enter_device(void);
 #endif
+void fast_browse(int c);

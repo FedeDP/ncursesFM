@@ -501,7 +501,7 @@ void print_info(const char *str, int i)
         }
     }
     if (str && (!asking_question || i == ERR_LINE)) {
-        mvwprintw(info_win, i, strlen("I: ") + 1, str);
+        mvwprintw(info_win, i, strlen("I: ") + 1, "%.*s", COLS - (strlen("I: ") + 1), str);
     }
     wrefresh(info_win);
 }

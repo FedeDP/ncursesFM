@@ -5,6 +5,7 @@ Ncurses File Manager for linux
 
 * File/dir functions support: copy/paste/cut (cut = move, if on the same FS), new/remove, rename.
 * 2 tabs support.
+* Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
 * ISO mount support -> you must have fuseiso installed.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
 * Otherwise, it will open (text and blank)files with $editor (ncursesFM.conf defined) var. Editor var fallbacks to environment $EDITOR if none is set.
