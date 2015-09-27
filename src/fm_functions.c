@@ -53,6 +53,7 @@ static const char *arch_ext[6] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar
 static const char *pkg_ext[3] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
 static struct timeval timer;
+static char fast_browse_str[NAME_MAX];
 
 void change_dir(const char *str)
 {
@@ -673,28 +674,26 @@ void fast_browse(int c)
         i = ps[active].curr_pos;
         end = i + num_files;
     } else {
+        memset(fast_browse_str, 0, strlen(fast_browse_str));
         fast_browse_index = 0;
     }
+    sprintf(fast_browse_str + strlen(fast_browse_str), "%c", c);
+    print_info(fast_browse_str, INFO_LINE);
     for (num_files = 0; i < end; i++) {
-        ptr = strrchr(ps[active].nl[i], '/') + 1;
-        if (ptr) {
-            if (*(ptr) == '.') {
-                ptr++;
-            }
-            if (*(ptr + fast_browse_index) == c) {
-                if (!found) {
-                    found = 1;
-                    if (i < ps[active].curr_pos) {
-                        f = scroll_up;
-                    } else {
-                        f = scroll_down;
-                    }
-                    while (ps[active].curr_pos != i) {
-                        f();
-                    }
+        ptr = strrchr(ps[active].nl[i], '/') + 1 + fast_browse_index;
+        if ((ptr) && (*(ptr) == c)) {
+            if (!found) {
+                found = 1;
+                if (i < ps[active].curr_pos) {
+                    f = scroll_up;
+                } else {
+                    f = scroll_down;
                 }
-                num_files++;
+                while (ps[active].curr_pos != i) {
+                    f();
+                }
             }
+            num_files++;
         }
     }
 }

@@ -162,7 +162,7 @@ static void main_loop(void)
         do {
             c = win_refresh_and_getch();
         } while ((c == -1) || (device_mode && !is_present(tolower(c))));
-        if (fast_browse_mode && isalpha(c)) {
+        if ((fast_browse_mode) && (c != ',') && (isprint(c))) {
             fast_browse(c);
             continue;
         }
