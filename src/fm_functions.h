@@ -13,7 +13,8 @@
 #endif
 
 #define BUFF_SIZE 8192
-#define FAST_BROWSE_THRESHOLD 500
+#define FAST_BROWSE_THRESHOLD 500000
+#define MILLION 1000000
 
 void change_dir(const char *str);
 void switch_hidden(void);

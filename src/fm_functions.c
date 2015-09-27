@@ -663,13 +663,12 @@ void fast_browse(int c)
 {
     int i = 1, found = 0, end = ps[active].number_of_files;
     char *ptr;
-    uint64_t msec_diff = timer.tv_usec, sec_diff = timer.tv_sec;
+    uint64_t diff = (MILLION * timer.tv_sec) + timer.tv_usec;
     void (*f)(void);
 
-    gettimeofday (&timer, NULL);
-    msec_diff = (timer.tv_usec - msec_diff) / 1000;
-    sec_diff = timer.tv_sec - sec_diff;
-    if (sec_diff < 1 && msec_diff < FAST_BROWSE_THRESHOLD) {
+    gettimeofday(&timer, NULL);
+    diff = MILLION * (timer.tv_sec) + timer.tv_usec - diff;
+    if (diff < FAST_BROWSE_THRESHOLD) { // 0,5s
         fast_browse_index++;
         i = ps[active].curr_pos;
         end = i + num_files;
@@ -698,5 +697,4 @@ void fast_browse(int c)
             }
         }
     }
-
 }
