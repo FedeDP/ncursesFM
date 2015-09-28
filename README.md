@@ -43,13 +43,14 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * libmagic   -> internal mimetype support
+* pkg-config -> to manage library link in makefile
 
 ## Optional compile time dependencies
 
 * libcups   -> print support
 * libconfig -> config file parsing
 * libx11    -> check whether ncursesFM is started in a X environment or not.
-* sd-bus    -> to switch off powermanagement functions while a job list is running.
+* sd-bus    -> to switch off powermanagement functions, devices mount and packages installation.
 * libudev  -> needed to list mountable drives.
 
 ## Runtime dependencies

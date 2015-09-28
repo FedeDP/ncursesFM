@@ -5,6 +5,7 @@
 #include <sys/file.h>
 #include <archive.h>
 #include <archive_entry.h>
+#include <sys/time.h>
 #ifdef LIBX11_PRESENT
 #include <X11/Xlib.h>
 #endif

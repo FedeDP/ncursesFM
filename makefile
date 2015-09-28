@@ -1,5 +1,5 @@
 CC = gcc
-LIBS = -lncurses -lpthread -larchive -lmagic
+LIBS =-lpthread -lmagic $(shell pkg-config --silence-errors --libs libarchive ncurses)
 CFLAGS =
 RM = rm
 INSTALL = install -p
@@ -12,9 +12,15 @@ BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
 
 ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
-ifneq ("$(wildcard /usr/include/X11/Xlib.h)","")
+LIBX11=$(shell pkg-config --silence-errors --libs x11)
+LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
+LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
+LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
+
+LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBUDEV)
+
+ifneq ("$(LIBX11)","")
 CFLAGS+=-DLIBX11_PRESENT
-LIBS+=-lX11
 $(info libX11 support enabled.)
 endif
 
@@ -24,21 +30,18 @@ LIBS+=-lcups
 $(info libcups support enabled.)
 endif
 
-ifneq ("$(wildcard /usr/include/libconfig.h)","")
+ifneq ("$(LIBCONFIG)","")
 CFLAGS+=-DLIBCONFIG_PRESENT
-LIBS+=-lconfig
 $(info libconfig support enabled.)
 endif
 
-ifneq ("$(wildcard /usr/include/systemd/sd-bus.h)","")
+ifneq ("$(LIBSYSTEMD)","")
 CFLAGS+=-DSYSTEMD_PRESENT
-LIBS+=-lsystemd
 $(info logind support enabled.)
 endif
 
-ifneq ("$(wildcard /usr/include/libudev.h)","")
+ifneq ("$(LIBUDEV)","")
 CFLAGS+=-DLIBUDEV_PRESENT
-LIBS+=-ludev
 $(info libudev support enabled.)
 endif
 endif
