@@ -68,12 +68,10 @@ If built with libconfig support, it reads following variables from /etc/default/
 Clone the repo and move inside new dir, then:
 
     $ make
-    $ make install
+    `# make install`
 
 To remove, just move inside the folder and run:
 
-    $ make uninstall
-
-make {install/uninstall) require root privileges.
+    `# make uninstall`
 
 ![Alt text](ncursesfm.png?raw=true)
