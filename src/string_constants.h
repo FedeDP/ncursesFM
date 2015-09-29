@@ -1,5 +1,5 @@
 #define HELPER_HEIGHT 14
-#define FILE_OPERATIONS 9
+#define FILE_OPERATIONS 8
 
 #ifdef LIBCONFIG_PRESENT
 const char *config_file_missing;

@@ -156,3 +156,8 @@ This uses sd-bus api, so it is meant for systemd systems only.
 9/ 27 / 2015
 * added fast browse mode: when enabled (with ','), pressing a letter will move the cursor to the first elem that begins with that letter, and so on (second letter, etc etc)
 if letter are pressed fast enough
+
+9 / 29 / 2015
+* some work on makefile. Now using pkg-config to be as distro agnostic as possible when building.
+* libudev support in makefile is now checked only if libsystemd support is enabled.
+* removed fuseiso optdep. Using udisks2 and sd-bus for mounting iso too.

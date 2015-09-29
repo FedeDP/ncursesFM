@@ -6,12 +6,11 @@ Ncurses File Manager for linux
 * File/dir functions support: copy/paste/cut (cut = move, if on the same FS), new/remove, rename.
 * 2 tabs support.
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
-* ISO mount support -> you must have fuseiso installed.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
 * Otherwise, it will open (text and blank)files with $editor (ncursesFM.conf defined) var. Editor var fallbacks to environment $EDITOR if none is set.
 * Hidden files view support.
 * Stats support (permissions and sizes).
-* In-program helper message -> press 'l'.
+* Detailed in-program helper message -> press 'l'.
 * Sync between tabs.
 * Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to move to its folder.
 * It can search your string inside archives too. Then, if found, you can go to the folder of the archive, to extract it.
@@ -24,7 +23,8 @@ Ncurses File Manager for linux
 * If no editor variable is defined, it tries to load the environment editor variable as a fallback.
 * Powermanagement inhibition while processing a job(eg: while pasting a file) to avoid data loss. It relies upon systemd/logind (sd-bud API), so it requires a systemd booted system.
 It is switched off by default. You can enable this feature from the config file or with "--inhibit=1" cmdline switch.
-* It can mount your external usb drives/sticks through sd-bus and udisks2. Press 'm' to get a list of mountable drives (if any), then type your chosen drive to mount it.
+* It can mount your external usb drives/ISO files through sd-bus and udisks2. For usb drives mount, you also need libudev to list all mountable drives.
+* ISO files cannot be unmounted from within ncursesFM: they will be automagically unmounted and removed by udev when no more in use (eg after a reboot).
 * It can install your distro package files: pressing enter on a package file will ask user if he wants to install the package. It relies upon packagekit, so it should be distro agnostic.
 
 **IT DOES NOT SUPPORT TERMINAL RESIZE**. It is meant to be used maximized, or from a tty.
@@ -49,7 +49,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 * libcups   -> print support
 * libconfig -> config file parsing
 * libx11    -> check whether ncursesFM is started in a X environment or not.
-* sd-bus    -> to switch off powermanagement functions, devices mount and packages installation.
+* sd-bus    -> to switch off powermanagement functions, devices/iso mount and packages installation.
 * libudev  -> needed to list mountable drives.
 
 ## Runtime dependencies
@@ -58,8 +58,8 @@ If built with libconfig support, it reads following variables from /etc/default/
 * ncurses, libmagic, libarchive, plus every optional build dep if compiled with its support.
 
 **optional:**
-* fuseiso, xdg-utils (if compiled with libx11 support)
-* a message bus (dbus/kdbus) and: logind (for inhibition support), or udisks2 (for mount support), or packagekit (for package installation support).
+* xdg-utils (if compiled with libx11 support)
+* a message bus (dbus/kdbus) plus: logind (for inhibition support), or udisks2 (for mount support), or packagekit (for packages installation support).
 
 ## Install instructions:
 

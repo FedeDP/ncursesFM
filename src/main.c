@@ -36,10 +36,11 @@ static void main_loop(void);
 static int check_init(int index);
 static int is_present(int c);
 
-/* pointers to file_operations functions, used in main loop;
- * -2 because 2 operations (extract and isomount) are launched inside "enter press" event, not in main loop
+/*
+ * pointers to file_operations functions, used in main loop;
+ * -1 because extract operation is called inside "enter press" event, not in main loop
  */
-static int (*const func[FILE_OPERATIONS - 2])(void) = {
+static int (*const func[FILE_OPERATIONS - 1])(void) = {
     move_file, paste_file, remove_file,
     create_archive, new_file, new_file, rename_file_folders
 };
@@ -272,7 +273,7 @@ static void main_loop(void)
             if (sv.searching != 3 + active) {
                 ptr = strchr(table, c);
                 if (ptr) {
-                    index = FILE_OPERATIONS - 2 - strlen(ptr);
+                    index = FILE_OPERATIONS - 1 - strlen(ptr);
                     if (check_init(index)) {
                         init_thread(index, func[index]);
                     }

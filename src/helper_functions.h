@@ -18,10 +18,9 @@ void free_copied_list(file_list *h);
 int remove_from_list(const char *name);
 file_list *select_file(file_list *h, const char *str);
 void free_everything(void);
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-void mount_fs(const char *str);
-int is_mounted(const char *dev_path);
-#endif
 #ifdef SYSTEMD_PRESENT
+void mount_fs(const char *str, const char *method, int mount);
+int is_mounted(const char *dev_path);
+void isomount(const char *str);
 void *install_package(void *str);
 #endif

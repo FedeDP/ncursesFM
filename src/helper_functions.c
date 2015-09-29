@@ -401,24 +401,17 @@ static void sig_handler(int signum)
     pthread_exit(NULL);
 }
 
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-void mount_fs(const char *str)
+#ifdef SYSTEMD_PRESENT
+void mount_fs(const char *str, const char *method, int mount)
 {
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_bus_message *mess = NULL;
     sd_bus *mount_bus = NULL;
     const char *path;
-    char obj_path[80] = "/org/freedesktop/UDisks2/block_devices/";
-    char e[80] = "Failed to issue method call: ", success[PATH_MAX] = "Mounted in ";
-    char method[10];
-    int r, mount;
+    char obj_path[PATH_MAX] = "/org/freedesktop/UDisks2/block_devices/";
+    char success[PATH_MAX] = "Mounted in ";
+    int r;
 
-    mount = is_mounted(str);
-    if (!mount) {
-        strcpy(method, "Mount");
-    } else {
-        strcpy(method, "Unmount");
-    }
     r = sd_bus_open_system(&mount_bus);
     if (r < 0) {
         print_info(bus_error, ERR_LINE);
@@ -435,8 +428,7 @@ void mount_fs(const char *str)
                        "a{sv}",
                        NULL);
     if (r < 0) {
-        strcat(e, error.message);
-        print_info(e, ERR_LINE);
+        print_info(error.message, ERR_LINE);
     } else {
         if (!mount) {
             sd_bus_message_read(mess, "s", &path);
@@ -465,9 +457,54 @@ int is_mounted(const char *dev_path)
     }
     return is_mounted;
 }
-#endif
 
-#ifdef SYSTEMD_PRESENT
+void isomount(const char *str)
+{
+    sd_bus_error error = SD_BUS_ERROR_NULL;
+    sd_bus_message *mess = NULL;
+    sd_bus *iso_bus = NULL;
+    const char *obj_path;
+    int r, fd;
+
+    fd = open(str, O_RDONLY);
+    r = sd_bus_open_system(&iso_bus);
+    if (r < 0) {
+        print_info(bus_error, ERR_LINE);
+        return;
+    }
+    r = sd_bus_call_method(iso_bus,
+                           "org.freedesktop.UDisks2",
+                           "/org/freedesktop/UDisks2/Manager",
+                           "org.freedesktop.UDisks2.Manager",
+                           "LoopSetup",
+                           &error,
+                           &mess,
+                           "ha{sv}",
+                           fd,
+                           NULL);
+    close(fd);
+    if (r < 0) {
+        print_info(error.message, ERR_LINE);
+    } else {
+        sd_bus_message_read(mess, "o", &obj_path);
+        mount_fs(obj_path, "Mount", 0);
+        r = sd_bus_call_method(iso_bus,
+                               "org.freedesktop.UDisks2",
+                               obj_path,
+                               "org.freedesktop.UDisks2.Loop",
+                               "SetAutoclear",
+                               &error,
+                               NULL,
+                               "ba{sv}",
+                               TRUE,
+                               NULL);
+        if (r < 0) {
+            print_info(error.message, ERR_LINE);
+        }
+    }
+    close_bus(error, mess, iso_bus);
+}
+
 void *install_package(void *str)
 {
     sd_bus_error error = SD_BUS_ERROR_NULL;

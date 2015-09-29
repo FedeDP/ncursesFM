@@ -15,9 +15,8 @@ ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 LIBX11=$(shell pkg-config --silence-errors --libs x11)
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
-LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
 
-LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBUDEV)
+LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD)
 
 ifneq ("$(LIBX11)","")
 CFLAGS+=-DLIBX11_PRESENT
@@ -35,14 +34,16 @@ CFLAGS+=-DLIBCONFIG_PRESENT
 $(info libconfig support enabled.)
 endif
 
+# Udev support is useful only if libsystemd support is enabled!
 ifneq ("$(LIBSYSTEMD)","")
 CFLAGS+=-DSYSTEMD_PRESENT
-$(info logind support enabled.)
-endif
-
+$(info libsystemd support enabled.)
+LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
 ifneq ("$(LIBUDEV)","")
 CFLAGS+=-DLIBUDEV_PRESENT
+LIBS+=$(LIBUDEV)
 $(info libudev support enabled.)
+endif
 endif
 endif
 

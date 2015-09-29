@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <ctype.h>
+#include <sys/file.h>
 #include "string_constants.h"
 
 #define INITIAL_POSITION 1
@@ -22,7 +23,6 @@
 #define CREATE_DIR_TH 5
 #define RENAME_TH 6
 #define EXTRACTOR_TH 7
-#define FUSEISO_TH 8
 
 #define NO_REFRESH 0
 #define REFRESH 1   // the win may need a refresh, but we have to check whether it is really needed before.

@@ -27,7 +27,6 @@
 static void xdg_open(const char *str);
 #endif
 static void open_file(const char *str);
-static int iso_mount_service(void);
 static void cpr(file_list *tmp);
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
@@ -77,18 +76,22 @@ void switch_hidden(void)
 
 /*
  * Check if it is an iso, then try to mount it.
- * If is an archive, initialize a thread job to extract it.
+ * If it is a package, ask user to mount it.
+ * If it is an archive, initialize a thread job to extract it.
  * if compiled with X11 support, and xdg-open is found, open the file,
  * else open the file with $config.editor.
  */
 void manage_file(const char *str)
 {
     char c;
-
-    if (get_mimetype(str, "iso")) {
-        return init_thread(FUSEISO_TH, iso_mount_service);
-    }
 #ifdef SYSTEMD_PRESENT
+    if (get_mimetype(str, "iso")) {
+        if (access("/usr/lib/udisks2/", F_OK)) {
+            print_info("You need udisks2 for iso mount support.", ERR_LINE);
+            return;
+        }
+        return isomount(str);
+    }
     if (is_ext(str, pkg_ext, 3)) {
         ask_user(pkg_quest, &c, 1, 'n');
         if (c == 'y') {
@@ -118,7 +121,8 @@ void manage_file(const char *str)
 }
 
 /*
- * If we're on a X screen, open the file with xdg-open.
+ * If we're on a X screen, open the file with xdg-open, and redirect its output to /dev/null
+ * not to dirty my ncurses screen.
  */
 #ifdef LIBX11_PRESENT
 static void xdg_open(const char *str)
@@ -163,34 +167,6 @@ static void open_file(const char *str)
     } else {
         print_info(editor_missing, ERR_LINE);
     }
-}
-
-/*
- * Create a dir with the file.iso name without extension, and mount there the iso through fuseiso.
- * If mkdir fails, it means folder is already present, so unmount the iso.
- */
-static int iso_mount_service(void)
-{
-    pid_t pid;
-    char mount_point[strlen(thread_h->filename)];
-
-    if ((access("/usr/bin/fuseiso", F_OK) == -1) || (access(thread_h->filename, F_OK) == -1)) {
-        return -1;
-    }
-    strcpy(mount_point, thread_h->filename);
-    mount_point[strlen(mount_point) - strlen(strrchr(mount_point, '.'))] = '\0';
-    pid = vfork();
-    if (pid == 0) {
-        if (mkdir(mount_point, ACCESSPERMS) == -1) {
-            execl("/usr/bin/fusermount", "/usr/bin/fusermount", "-u", mount_point, NULL);
-        } else {
-            execl("/usr/bin/fuseiso", "/usr/bin/fuseiso", thread_h->filename, mount_point, NULL);
-        }
-    } else {
-        waitpid(pid, NULL, 0);
-        rmdir(mount_point);
-    }
-    return 0;
 }
 
 int new_file(void)
@@ -576,7 +552,7 @@ void change_tab(void)
     chdir(ps[active].my_cwd);
 }
 
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
 void devices_tab(void)
 {
     if (access("/usr/lib/udisks2/", F_OK)) {
@@ -653,9 +629,16 @@ void leave_device_mode(void)
 
 void manage_enter_device(void)
 {
+    int mount;
     char *ptr = strchr(usb_devices[ps[active].curr_pos], ',');
+
+    mount = usb_devices[ps[active].curr_pos][strlen(usb_devices[ps[active].curr_pos]) - 1] - '0';
     usb_devices[ps[active].curr_pos][strlen(usb_devices[ps[active].curr_pos]) - strlen(ptr)] = '\0';
-    mount_fs(usb_devices[ps[active].curr_pos]);
+    if (mount) {
+        mount_fs(usb_devices[ps[active].curr_pos], "Unmount", mount);
+    } else {
+        mount_fs(usb_devices[ps[active].curr_pos], "Mount", mount);
+    }
     leave_device_mode();
 }
 #endif

@@ -2,7 +2,6 @@
 #include <ftw.h>
 #include "ui_functions.h"
 #include <sys/wait.h>
-#include <sys/file.h>
 #include <archive.h>
 #include <archive_entry.h>
 #include <sys/time.h>
