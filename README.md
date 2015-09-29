@@ -4,14 +4,12 @@ Ncurses File Manager for linux
 ## Features:
 
 * File/dir functions support: copy/paste/cut (cut = move, if on the same FS), new/remove, rename.
-* 2 tabs support.
+* 2 tabs support. Their content is kept in sync.
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
 * Otherwise, it will open (text and blank)files with $editor (ncursesFM.conf defined) var. Editor var fallbacks to environment $EDITOR if none is set.
-* Hidden files view support.
 * Stats support (permissions and sizes).
 * Detailed in-program helper message -> press 'l'.
-* Sync between tabs.
 * Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to move to its folder.
 * It can search your string inside archives too. Then, if found, you can go to the folder of the archive, to extract it.
 * Basic print support: you need libcups for this to work.
