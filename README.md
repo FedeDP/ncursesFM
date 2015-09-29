@@ -15,11 +15,10 @@ Ncurses File Manager for linux
 * Sync between tabs.
 * Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to move to its folder.
 * It can search your string inside archives too. Then, if found, you can go to the folder of the archive, to extract it.
-* Basic print support: you need "libcups" for this to work.
-* Extract (compressed) archive through libarchive.
-* Compress files/folders through libarchive.
+* Basic print support: you need libcups for this to work.
+* Extract/compress files/folders through libarchive.
 * File operations are performed in a different thread. You'll get a notification when the job is done.
-* If you try to quit while a thread is still running, you'll be asked if ncursesFM must wait for the thread to finish its work. (Printing thread and search thread are safer, no data corruption is possible; so it won't ask anything)
+* If you try to quit while a job is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
 * It supports following command line switched: "--editor=", "--starting-dir=" and "--inhibit={0/1}".
 * If no editor variable is defined, it tries to load the environment editor variable as a fallback.
@@ -30,7 +29,7 @@ It is switched off by default. You can enable this feature from the config file 
 
 **IT DOES NOT SUPPORT TERMINAL RESIZE**. It is meant to be used maximized, or from a tty.
 
-It reads following variables from /etc/default/ncursesFM.conf (using libconfig)...remember to set them!
+If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf (using libconfig)...remember to set them!
 * editor -> editor used to open files, in non X environment (or when xdg-open is not available)
 * show_hidden -> whether to show hidden files by default or not.
 * starting_directory -> default starting directory.
@@ -43,7 +42,7 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * libmagic   -> internal mimetype support
-* pkg-config -> to manage library link in makefile
+* pkg-config -> to manage libraries link in makefile
 
 ## Optional compile time dependencies
 
@@ -66,10 +65,15 @@ It reads following variables from /etc/default/ncursesFM.conf (using libconfig).
 
 *Archlinux users can install ncursesFM from aur*: https://aur.archlinux.org/packages/ncursesfm-git/
 
-* clone the repo
-* cd inside the new dir
-* "make"
-* "make install" (as root)
-* To remove, just run "make uninstall" (as root).
+Clone the repo and move inside new dir, then:
+
+    $ make
+    $ make install
+
+To remove, just move inside the folder and run:
+
+    $ make uninstall
+
+make {install/uninstall) require root privileges.
 
 ![Alt text](ncursesfm.png?raw=true)
