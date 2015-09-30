@@ -34,7 +34,6 @@ static void read_config_file(void);
 static void config_checks(void);
 static void main_loop(void);
 static int check_init(int index);
-static int is_present(int c);
 
 /*
  * pointers to file_operations functions, used in main loop;
@@ -162,7 +161,10 @@ static void main_loop(void)
     while (!quit) {
         do {
             c = win_refresh_and_getch();
-        } while ((c == -1) || (device_mode && !is_present(tolower(c))));
+        } while (c == -1);
+        if (device_mode && isprint(c) && (tolower(c) != 'q') && (tolower(c) != 'l')) {
+            continue;
+        }
         if ((fast_browse_mode) && (c != ',') && (isprint(c))) {
             fast_browse(c);
             continue;
@@ -315,18 +317,4 @@ static int check_init(int index)
         }
     }
     return 1;
-}
-
-static int is_present(int c)
-{
-    const int device_keys[6] = {KEY_UP, KEY_DOWN, KEY_RESIZE, 10, 'q', 'l'};
-    int i;
-
-    for (i = 0; i < 6; i++) {
-        if (device_keys[i] == c) {
-            return 1;
-        }
-    }
-    return 0;
-
 }
