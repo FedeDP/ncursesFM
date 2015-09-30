@@ -154,7 +154,7 @@ static void config_checks(void)
 
 static void main_loop(void)
 {
-    int c, index, fast_browse_mode = 0;
+    int c, index, fast_browse_mode = 0, help = 0;
     const char *table = "xvrbndo"; // x to move, v to paste, r to remove, b to compress, n/d to create new file/dir, o to rename.
     char *ptr;
     struct stat current_file_stat;
@@ -226,7 +226,8 @@ static void main_loop(void)
             }
             break;
         case 'l':  // show helper mess
-            trigger_show_helper_message();
+            help = !help;
+            trigger_show_helper_message(help);
             break;
         case 's': // show stat about files (size and perms)
             if (sv.searching != 3 + active) {
@@ -277,6 +278,7 @@ static void main_loop(void)
             resizing = 1;
             screen_end();
             fm_scr_init();
+            trigger_show_helper_message(help);
             resizing = 0;
             break;
         default:
@@ -317,10 +319,10 @@ static int check_init(int index)
 
 static int is_present(int c)
 {
-    const int device_keys[5] = {KEY_UP, KEY_DOWN, 10, 'q', 'l'};
+    const int device_keys[6] = {KEY_UP, KEY_DOWN, KEY_RESIZE, 10, 'q', 'l'};
     int i;
 
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < 6; i++) {
         if (device_keys[i] == c) {
             return 1;
         }

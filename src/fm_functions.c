@@ -568,7 +568,7 @@ void devices_tab(void)
         reset_win(active);
         list_everything(active, 0, 0);
     } else {
-        print_info("No mountable devices found.", ERR_LINE);
+        print_info("No mountable devices found.", INFO_LINE);
     }
 }
 

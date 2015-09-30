@@ -21,7 +21,6 @@ const char *search_archives = "Do you want to search in archives too? y/N:> ";
 const char *searched_string_minimum = "At least 5 chars...";
 const char *too_many_found = "Too many files found; try with a larger string.";
 const char *no_found = "No files found.";
-const char *search_tab_title = "q to leave search win";
 const char *searching_mess[] = {"Searching...", "Search finished. Press f anytime to view the results."};
 
 #ifdef LIBCUPS_PRESENT
@@ -61,7 +60,7 @@ const char *helper_string[] = { "Enter to surf between folders or to open files 
                                 "You can't close first tab. Use q to quit/leave current mode."};
 
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-const char *device_mode_str =  "Choose your desired device to (un)mount it. q to quit.";
+const char *device_mode_str =  "Choose your desired device to (un)mount it.";
 #endif
 #ifdef SYSTEMD_PRESENT
 const char *bus_error = "Failed to open system bus";

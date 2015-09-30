@@ -196,8 +196,7 @@ static void print_border_and_title(int win)
 {
     wborder(fm[win], '|', '|', '-', '-', '+', '+', '+', '+');
     if (sv.searching == 3 + win) {
-        mvwprintw(fm[win], 0, 0, "Found file searching %.*s: ", width[win] - 1 - strlen("Found file searching : ") - strlen(search_tab_title), sv.searched_string);
-        mvwprintw(fm[win], 0, width[win] - (strlen(search_tab_title) + 1), search_tab_title);
+        mvwprintw(fm[win], 0, 0, "Found file searching %.*s: ", width[win] - 1, sv.searched_string);
     }
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
     else if (device_mode == 1 + win) {
@@ -350,9 +349,9 @@ static void colored_folders(int win, const char *name)
     }
 }
 
-void trigger_show_helper_message(void)
+void trigger_show_helper_message(int help)
 {
-    if (!helper_win) {
+    if (help) {
         create_helper_win();
     } else {
         remove_helper_win();

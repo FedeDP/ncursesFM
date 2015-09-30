@@ -24,7 +24,6 @@ const char *search_archives;
 const char *searched_string_minimum;
 const char *too_many_found;
 const char *no_found;
-const char *search_tab_title;
 const char *searching_mess[2];
 
 #ifdef LIBCUPS_PRESENT
