@@ -26,7 +26,7 @@
 static void generate_list(int win);
 static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
-static void initialize_tab_cwd(void);
+static void initialize_tab_cwd(int win);
 static void scroll_helper_func(int x, int direction);
 static void colored_folders(int win, const char *name);
 static void helper_print(void);
@@ -52,8 +52,25 @@ void screen_init(void)
     raw();
     noecho();
     curs_set(0);
+    fm_scr_init();
+}
+
+void fm_scr_init(void)
+{
+    int i;
+
     dim = LINES - INFO_HEIGHT;
-    new_tab();
+    for (i = 0; i < cont; i++) {
+        new_tab(i);
+        if (resizing) {
+            if (ps[i].curr_pos > dim - 2 - INITIAL_POSITION) {
+                delta[i] = ps[i].curr_pos - (dim - 2 - INITIAL_POSITION);
+            } else {
+                delta[i] = 0;
+            }
+            list_everything(i, delta[i], 0);
+        }
+    }
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
     mvwprintw(info_win, INFO_LINE, 1, "I: ");
     mvwprintw(info_win, ERR_LINE, 1, "E: ");
@@ -68,7 +85,7 @@ void screen_end(void)
     int i;
 
     for (i = 0; i < cont; i++) {
-        delete_tab();
+        delete_tab(i);
     }
     if (helper_win) {
         wclear(helper_win);
@@ -77,7 +94,9 @@ void screen_end(void)
     wclear(info_win);
     delwin(info_win);
     endwin();
-    delwin(stdscr);
+    if (quit) {
+        delwin(stdscr);
+    }
 }
 
 /*
@@ -205,57 +224,60 @@ static int is_hidden(const struct dirent *current_file)
 }
 
 /*
- * Creates a new tab and gives new tab the active flag.
+ * Creates a new tab.
  * Then calculates new tab cwd, chdir there, and generate its list of files.
  */
-void new_tab(void)
+void new_tab(int win)
 {
-    cont++;
-    if (cont == MAX_TABS) {
-        width[active] = COLS / cont;
-        wresize(fm[active], dim, width[active]);
-        print_border_and_title(active);
+    width[win] = COLS / cont + COLS % cont;
+    fm[win] = subwin(stdscr, dim, width[win], 0, (COLS * (win)) / cont);
+    keypad(fm[win], TRUE);
+    scrollok(fm[win], TRUE);
+    idlok(fm[win], TRUE);
+    wtimeout(fm[win], 100);
+    stat_active[win] = 0;
+    if (!resizing) {
+        initialize_tab_cwd(win);
     }
-    width[cont - 1] = COLS / cont + COLS % cont;
-    fm[cont - 1] = subwin(stdscr, dim, width[cont - 1], 0, (COLS * (cont - 1)) / cont);
-    keypad(fm[cont - 1], TRUE);
-    scrollok(fm[cont - 1], TRUE);
-    idlok(fm[cont - 1], TRUE);
-    wtimeout(fm[cont - 1], 100);
-    stat_active[cont - 1] = 0;
-    initialize_tab_cwd();
+}
+
+void restrict_first_tab(void)
+{
+    width[active] = COLS / cont;
+    wresize(fm[active], dim, width[active]);
+    print_border_and_title(active);
 }
 
 /*
  * Helper function for new_tab().
  * Saves new tab's cwd, chdir the process inside there, and put flag "needs_refresh" to FORCE_REFRESH.
  */
-static void initialize_tab_cwd(void)
+static void initialize_tab_cwd(int win)
 {
-    if (strlen(config.starting_dir)) {
+    if (strlen(config.starting_dir) && (!strlen(ps[win].my_cwd))) {
         if ((cont == 1) || (config.second_tab_starting_dir)) {
-            strcpy(ps[cont - 1].my_cwd, config.starting_dir);
+            strcpy(ps[win].my_cwd, config.starting_dir);
         }
     }
-    if (strlen(ps[cont - 1].my_cwd) == 0) {
-        getcwd(ps[cont - 1].my_cwd, PATH_MAX);
+    if (!strlen(ps[win].my_cwd)) {
+        getcwd(ps[win].my_cwd, PATH_MAX);
     }
-    ps[cont - 1].needs_refresh = FORCE_REFRESH;
+    ps[win].needs_refresh = FORCE_REFRESH;
 }
 
 /*
  * Removes a tab and resets its cwd
  */
-void delete_tab(void)
+void delete_tab(int win)
 {
-    cont--;
-    wclear(fm[cont]);
-    delwin(fm[cont]);
-    fm[cont] = NULL;
-    free(ps[cont].nl);
-    ps[cont].nl = NULL;
-    ps[cont].number_of_files = 0;
-    memset(ps[cont].my_cwd, 0, sizeof(ps[cont].my_cwd));
+    wclear(fm[win]);
+    delwin(fm[win]);
+    fm[win] = NULL;
+    if (!resizing) {
+        free(ps[win].nl);
+        ps[win].nl = NULL;
+        ps[win].number_of_files = 0;
+    }
 }
 
 /*

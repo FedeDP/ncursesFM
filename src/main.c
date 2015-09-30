@@ -52,6 +52,7 @@ int main(int argc, const char *argv[])
     read_config_file();
 #endif
     config_checks();
+    cont = 1;
     screen_init();
     change_tab();
     main_loop();
@@ -199,7 +200,9 @@ static void main_loop(void)
             break;
         case 't': // t to open second tab
             if (cont < MAX_TABS) {
-                new_tab();
+                cont++;
+                restrict_first_tab();
+                new_tab(cont - 1);
                 change_tab();
             }
             break;
@@ -210,8 +213,10 @@ static void main_loop(void)
             break;
         case 'w': // w to close second tab
             if ((active) && (sv.searching != 3 + active)) {
+                cont--;
                 active = 0;
-                delete_tab();
+                delete_tab(cont);
+                memset(ps[cont].my_cwd, 0, sizeof(ps[cont].my_cwd));
                 enlarge_first_tab();
                 change_tab();
             }
@@ -268,6 +273,12 @@ static void main_loop(void)
             else {
                 quit = 1;
             }
+            break;
+        case KEY_RESIZE:
+            resizing = 1;
+            screen_end();
+            fm_scr_init();
+            resizing = 0;
             break;
         default:
             if (sv.searching != 3 + active) {

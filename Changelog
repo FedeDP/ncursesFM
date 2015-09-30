@@ -161,3 +161,6 @@ if letter are pressed fast enough
 * some work on makefile. Now using pkg-config to be as distro agnostic as possible when building.
 * libudev support in makefile is now checked only if libsystemd support is enabled.
 * removed fuseiso optdep. Using udisks2 and sd-bus for mounting iso too.
+
+9 / 30 / 2015
+* finally support terminal resize :)

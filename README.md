@@ -10,6 +10,7 @@ Ncurses File Manager for linux
 * Otherwise, it will open (text and blank)files with $editor (ncursesFM.conf defined) var. Editor var fallbacks to environment $EDITOR if none is set.
 * Stats support (permissions and sizes).
 * Detailed in-program helper message -> press 'l'.
+* It supports terminal resize.
 * Search support: it will search your string in current directory tree, and, if anything was found, you'll be able to move to its folder.
 * It can search your string inside archives too. Then, if found, you can go to the folder of the archive, to extract it.
 * Basic print support: you need libcups for this to work.
@@ -24,8 +25,6 @@ It is switched off by default. You can enable this feature from the config file 
 * It can mount your external usb drives/ISO files through sd-bus and udisks2. For usb drives mount, you also need libudev to list all mountable drives.
 * ISO files cannot be unmounted from within ncursesFM: they will be automagically unmounted and removed by udev when no more in use (eg after a reboot).
 * It can install your distro package files: pressing enter on a package file will ask user if he wants to install the package. It relies upon packagekit, so it should be distro agnostic.
-
-**IT DOES NOT SUPPORT TERMINAL RESIZE**. It is meant to be used maximized, or from a tty.
 
 If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf (using libconfig)...remember to set them!
 * editor -> editor used to open files, in non X environment (or when xdg-open is not available)
