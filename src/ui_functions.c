@@ -407,7 +407,7 @@ static void helper_print(void)
 
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
     for (i = HELPER_HEIGHT - INFO_HEIGHT - 1; i >= 0; i--) {
-        mvwprintw(helper_win, i + 1, 0, "| * %s", helper_string[i]);
+        mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, helper_string[i]);
     }
     mvwprintw(helper_win, 0, 0, "Helper");
     wrefresh(helper_win);
