@@ -361,6 +361,9 @@ void free_everything(void)
     if (selected) {
         free_copied_list(selected);
     }
+    if (usb_devices) {
+        free(usb_devices);
+    }
 }
 
 void quit_thread_func(void)

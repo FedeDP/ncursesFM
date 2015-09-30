@@ -162,14 +162,14 @@ static void main_loop(void)
         do {
             c = win_refresh_and_getch();
         } while (c == -1);
-        if (device_mode && isprint(c) && (tolower(c) != 'q') && (tolower(c) != 'l')) {
+        if ((device_mode == 1 + active) && isprint(c) && (tolower(c) != 'q') && (tolower(c) != 'l')) {
             continue;
         }
-        if ((fast_browse_mode) && (c != ',') && (isprint(c))) {
+        if ((fast_browse_mode == 1 + active) && isprint(c) && (c != ',')) {
             fast_browse(c);
             continue;
         }
-        if ((sv.searching != 3 + active) && (!device_mode)) {
+        if ((sv.searching != 3 + active) && (device_mode != 1 + active)) {
             stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
         }
         switch (tolower(c)) {
@@ -189,7 +189,7 @@ static void main_loop(void)
                 leave_search_mode(sv.found_searched[ps[active].curr_pos]);
             }
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-            else if (device_mode) {
+            else if (device_mode == 1 + active) {
                 manage_enter_device();
             }
 #endif
@@ -254,21 +254,26 @@ static void main_loop(void)
 #endif
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
         case 'm': // m to mount/unmount fs
-            if (sv.searching != 3 + active) {
+            if ((sv.searching != 3 + active) && (!device_mode)) {
                 devices_tab();
             }
             break;
 #endif
         case ',': // , to enable/disable fast browse mode
-            fast_browse_mode = !fast_browse_mode;
-            fast_browse_mode ? (print_info("Fast browse mode enabled.", INFO_LINE)) : (print_info("Fast browse mode disabled.", INFO_LINE));
+            if (!fast_browse_mode) {
+                fast_browse_mode = 1 + active;
+                print_info("Fast browse mode enabled.", INFO_LINE);
+            } else {
+                fast_browse_mode = 0;
+                print_info("Fast browse mode disabled.", INFO_LINE);
+            }
             break;
         case 'q': /* q to exit/leave search mode/leave device_mode */
             if (sv.searching == 3 + active) {
                 leave_search_mode(ps[active].my_cwd);
             }
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-            else if (device_mode) {
+            else if (device_mode == 1 + active) {
                 leave_device_mode();
             }
 #endif
