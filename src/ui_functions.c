@@ -255,7 +255,7 @@ void restrict_first_tab(void)
  */
 static void initialize_tab_cwd(int win)
 {
-    if (strlen(config.starting_dir) && (!strlen(ps[win].my_cwd))) {
+    if (strlen(config.starting_dir)) {
         if ((cont == 1) || (config.second_tab_starting_dir)) {
             strcpy(ps[win].my_cwd, config.starting_dir);
         }

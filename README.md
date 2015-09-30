@@ -26,7 +26,7 @@ It is switched off by default. You can enable this feature from the config file 
 * ISO files cannot be unmounted from within ncursesFM: they will be automagically unmounted and removed by udev when no more in use (eg after a reboot).
 * It can install your distro package files: pressing enter on a package file will ask user if he wants to install the package. It relies upon packagekit, so it should be distro agnostic.
 
-If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf (using libconfig)...remember to set them!
+If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf...remember to set them!
 * editor -> editor used to open files, in non X environment (or when xdg-open is not available)
 * show_hidden -> whether to show hidden files by default or not.
 * starting_directory -> default starting directory.
