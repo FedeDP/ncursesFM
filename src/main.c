@@ -52,7 +52,6 @@ int main(int argc, const char *argv[])
     read_config_file();
 #endif
     config_checks();
-    cont = 1;
     screen_init();
     change_tab();
     main_loop();

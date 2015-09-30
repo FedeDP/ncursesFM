@@ -52,6 +52,7 @@ void screen_init(void)
     raw();
     noecho();
     curs_set(0);
+    cont = 1;
     fm_scr_init();
 }
 
