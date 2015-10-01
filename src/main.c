@@ -46,6 +46,7 @@ static int (*const func[FILE_OPERATIONS - 1])(void) = {
 
 int main(int argc, const char *argv[])
 {
+    main_id = pthread_self();
     helper_function(argc, argv);
 #ifdef LIBCONFIG_PRESENT
     read_config_file();
@@ -159,20 +160,19 @@ static void main_loop(void)
     struct stat current_file_stat;
 
     while (!quit) {
-        do {
-            c = win_refresh_and_getch();
-        } while (c == -1);
-        if ((device_mode == 1 + active) && isprint(c) && (tolower(c) != 'q') && (tolower(c) != 'l')) {
-            continue;
-        }
+        c = win_refresh_and_getch();
         if ((fast_browse_mode == 1 + active) && isprint(c) && (c != ',')) {
             fast_browse(c);
+            continue;
+        }
+        c = tolower(c);
+        if ((device_mode == 1 + active) && isprint(c) && (c != 'q') && (c != 'l')) {
             continue;
         }
         if ((sv.searching != 3 + active) && (device_mode != 1 + active)) {
             stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
         }
-        switch (tolower(c)) {
+        switch (c) {
         case KEY_UP:
             scroll_up();
             break;

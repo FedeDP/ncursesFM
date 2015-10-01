@@ -34,6 +34,8 @@ static void create_helper_win(void);
 static void remove_helper_win(void);
 static void change_unit(float size, char *str);
 static void erase_stat(void);
+static void tabs_refresh(void);
+static void sig_handler(int sig_num);
 
 static WINDOW *helper_win, *info_win, *fm[MAX_TABS];
 static int dim, width[MAX_TABS], asking_question, delta[MAX_TABS], stat_active[MAX_TABS];
@@ -234,7 +236,6 @@ void new_tab(int win)
     keypad(fm[win], TRUE);
     scrollok(fm[win], TRUE);
     idlok(fm[win], TRUE);
-    wtimeout(fm[win], 100);
     stat_active[win] = 0;
     if (!resizing) {
         initialize_tab_cwd(win);
@@ -552,6 +553,13 @@ void ask_user(const char *str, char *input, int dim, char c)
 
 int win_refresh_and_getch(void)
 {
+    tabs_refresh();
+    signal(SIGUSR2, sig_handler);
+    return wgetch(fm[active]);
+}
+
+static void tabs_refresh(void)
+{
     int i;
 
     for (i = 0; i < cont; i++) {
@@ -560,5 +568,9 @@ int win_refresh_and_getch(void)
         }
         ps[i].needs_refresh = NO_REFRESH;
     }
-    return wgetch(fm[active]);
+}
+
+static void sig_handler(int sig_num)
+{
+    return tabs_refresh();
 }

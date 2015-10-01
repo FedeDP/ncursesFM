@@ -79,3 +79,4 @@ char (*usb_devices)[PATH_MAX];
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;
 #endif
+pthread_t main_id;

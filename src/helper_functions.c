@@ -276,7 +276,7 @@ static void copy_selected_files(void)
  */
 static void *execute_thread(void *x)
 {
-    signal(SIGINT, sig_handler);
+    signal(SIGUSR1, sig_handler);
     print_info(thread_m.str, thread_m.line);
     if (thread_h) {
         if (thread_h->f() == -1) {
@@ -309,6 +309,9 @@ static void check_refresh(void)
             ps[i].needs_refresh = FORCE_REFRESH;
         } else {
             ps[i].needs_refresh = REFRESH;
+        }
+        if (ps[i].needs_refresh != NO_REFRESH) {
+            pthread_kill(main_id, SIGUSR2);
         }
     }
 }
@@ -375,7 +378,7 @@ void quit_thread_func(void)
         if (c == 'y') {
             pthread_join(th, NULL);
         } else {
-            pthread_kill(th, SIGINT);
+            pthread_kill(th, SIGUSR1);
         }
     }
 #ifdef SYSTEMD_PRESENT

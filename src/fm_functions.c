@@ -46,7 +46,7 @@ static void enumerate_usb_mass_storage(void);
 #endif
 
 static struct archive *archive;
-static int distance_from_root, fast_browse_index, num_files;
+static int distance_from_root, num_files;
 static const char *arch_ext[6] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
 #ifdef SYSTEMD_PRESENT
 static const char *pkg_ext[3] = {".pkg.tar.xz", ".deb", ".rpm"};
@@ -646,25 +646,21 @@ void manage_enter_device(void)
 void fast_browse(int c)
 {
     int i = 1, found = 0, end = ps[active].number_of_files;
-    char *ptr;
     uint64_t diff = (MILLION * timer.tv_sec) + timer.tv_usec;
     void (*f)(void);
 
     gettimeofday(&timer, NULL);
     diff = MILLION * (timer.tv_sec) + timer.tv_usec - diff;
-    if (diff < FAST_BROWSE_THRESHOLD) { // 0,5s
-        fast_browse_index++;
+    if ((diff < FAST_BROWSE_THRESHOLD) && (num_files)) { // 0,5s
         i = ps[active].curr_pos;
         end = i + num_files;
     } else {
         memset(fast_browse_str, 0, strlen(fast_browse_str));
-        fast_browse_index = 0;
     }
     sprintf(fast_browse_str + strlen(fast_browse_str), "%c", c);
     print_info(fast_browse_str, INFO_LINE);
     for (num_files = 0; i < end; i++) {
-        ptr = strrchr(ps[active].nl[i], '/') + 1 + fast_browse_index;
-        if ((ptr) && (*(ptr) == c)) {
+        if (strncmp(fast_browse_str, strrchr(ps[active].nl[i], '/') + 1, strlen(fast_browse_str)) == 0) {
             if (!found) {
                 found = 1;
                 if (i < ps[active].curr_pos) {
@@ -678,5 +674,9 @@ void fast_browse(int c)
             }
             num_files++;
         }
+    }
+    if ((!found) && (strlen(fast_browse_str) > 1)) {
+        memset(fast_browse_str, 0, strlen(fast_browse_str));
+        print_info(fast_browse_str, INFO_LINE);
     }
 }
