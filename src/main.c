@@ -282,12 +282,7 @@ static void main_loop(void)
             }
             break;
         case KEY_RESIZE:
-            resizing = 1;
-            screen_end();
-            fm_scr_init();
-            trigger_show_helper_message(help);
-            print_info(NULL, INFO_LINE);
-            resizing = 0;
+            resize_win(help);
             break;
         default:
             if (sv.searching != 3 + active) {

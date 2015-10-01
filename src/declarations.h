@@ -72,7 +72,7 @@ file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
-int active, quit, num_of_jobs, cont, device_mode, resizing;
+int active, quit, num_of_jobs, cont, device_mode;
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
 char (*usb_devices)[PATH_MAX];
 #endif

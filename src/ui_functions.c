@@ -23,6 +23,7 @@
 
 #include "ui_functions.h"
 
+static void fm_scr_init(void);
 static void generate_list(int win);
 static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
@@ -38,7 +39,7 @@ static void tabs_refresh(void);
 static void sig_handler(int sig_num);
 
 static WINDOW *helper_win, *info_win, *fm[MAX_TABS];
-static int dim, width[MAX_TABS], asking_question, delta[MAX_TABS], stat_active[MAX_TABS];
+static int dim, width[MAX_TABS], asking_question, delta[MAX_TABS], stat_active[MAX_TABS], resizing;
 
 /*
  * Initializes screen, create first tab, and create info_win
@@ -58,7 +59,7 @@ void screen_init(void)
     fm_scr_init();
 }
 
-void fm_scr_init(void)
+static void fm_scr_init(void)
 {
     int i;
 
@@ -573,4 +574,14 @@ static void tabs_refresh(void)
 static void sig_handler(int sig_num)
 {
     return tabs_refresh();
+}
+
+void resize_win(int help)
+{
+    resizing = 1;
+    screen_end();
+    fm_scr_init();
+    trigger_show_helper_message(help);
+    print_info(NULL, INFO_LINE);
+    resizing = 0;
 }
