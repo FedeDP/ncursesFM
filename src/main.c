@@ -286,6 +286,7 @@ static void main_loop(void)
             screen_end();
             fm_scr_init();
             trigger_show_helper_message(help);
+            print_info(NULL, INFO_LINE);
             resizing = 0;
             break;
         default:
