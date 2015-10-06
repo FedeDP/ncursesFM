@@ -190,7 +190,9 @@ void fast_file_operations(const int index)
         str = short_msg[index];
         line = INFO_LINE;
         for (i = 0; i < cont; i++) {
-            ps[i].needs_refresh = FORCE_REFRESH;
+            if (strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) {
+                ps[i].needs_refresh = FORCE_REFRESH;
+            }
         }
     }
     print_info(str, line);
