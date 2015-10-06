@@ -27,6 +27,9 @@
 static void xdg_open(const char *str);
 #endif
 static void open_file(const char *str);
+static int new_file(void);
+static int new_dir(void);
+static int rename_file_folders(void);
 static void cpr(file_list *tmp);
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
@@ -52,7 +55,12 @@ static const char *arch_ext[6] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar
 static const char *pkg_ext[3] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
 static struct timeval timer;
-static char fast_browse_str[NAME_MAX];
+static char fast_browse_str[NAME_MAX], new_name[NAME_MAX];
+static int (*const short_func[SHORT_FILE_OPERATIONS])(void) = {
+    new_file, new_dir, rename_file_folders
+};
+
+
 
 void change_dir(const char *str)
 {
@@ -169,17 +177,46 @@ static void open_file(const char *str)
     }
 }
 
+void fast_file_operations(const int index)
+{
+    const char *str = short_fail_msg[index];
+    int line = ERR_LINE, i;
+
+    ask_user(ask_name, new_name, NAME_MAX, 0);
+    if (!strlen(new_name)) {
+        return;
+    }
+    if  (short_func[index]() == 0) {
+        str = short_msg[index];
+        line = INFO_LINE;
+        for (i = 0; i < cont; i++) {
+            ps[i].needs_refresh = FORCE_REFRESH;
+        }
+    }
+    print_info(str, line);
+    memset(new_name, 0, strlen(new_name));
+}
+
 int new_file(void)
 {
-    FILE *f;
+    int fd;
 
-    if (thread_h->type == NEW_FILE_TH) {
-        f = fopen(thread_h->filename, "w");
-        fclose(f);
-    } else {
-        mkdir(thread_h->filename, 0700);
+    fd = open(new_name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (fd != -1) {
+        close(fd);
+        return 0;
     }
-    return 0;
+    return -1;
+}
+
+static int new_dir(void)
+{
+    return mkdir(new_name, 0700);
+}
+
+static int rename_file_folders(void)
+{
+    return rename(ps[active].nl[ps[active].curr_pos], new_name);
 }
 
 int remove_file(void)
@@ -284,11 +321,6 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
         }
     }
     return 0;
-}
-
-int rename_file_folders(void)
-{
-    return rename(thread_h->filename, thread_h->selected_files->name);
 }
 
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf)

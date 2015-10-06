@@ -19,14 +19,16 @@
 #define PASTE_TH 1
 #define RM_TH 2
 #define ARCHIVER_TH 3
-#define NEW_FILE_TH 4
-#define CREATE_DIR_TH 5
-#define RENAME_TH 6
-#define EXTRACTOR_TH 7
+#define EXTRACTOR_TH 4
+
+#define NEW_FILE_TH 0
+#define CREATE_DIR_TH 1
+#define RENAME_TH 2
+
 
 #define NO_REFRESH 0
 #define REFRESH 1   // the win may need a refresh, but we have to check whether it is really needed before.
-#define FORCE_REFRESH 2     // the win surely needs a refresh. Skip check, it is useless, and refresh.
+#define FORCE_REFRESH 2     // the win surely needs a refresh. Skip check because it is useless, and refresh.
 
 struct conf {
     char editor[PATH_MAX];

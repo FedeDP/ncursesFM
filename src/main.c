@@ -34,14 +34,14 @@ static void read_config_file(void);
 static void config_checks(void);
 static void main_loop(void);
 static int check_init(int index);
+static int check_access(void);
 
 /*
- * pointers to file_operations functions, used in main loop;
+ * pointers to long_file_operations functions, used in main loop;
  * -1 because extract operation is called inside "enter press" event, not in main loop
  */
-static int (*const func[FILE_OPERATIONS - 1])(void) = {
-    move_file, paste_file, remove_file,
-    create_archive, new_file, new_file, rename_file_folders
+static int (*const long_func[LONG_FILE_OPERATIONS - 1])(void) = {
+    move_file, paste_file, remove_file, create_archive
 };
 
 int main(int argc, const char *argv[])
@@ -155,7 +155,8 @@ static void config_checks(void)
 static void main_loop(void)
 {
     int c, index, fast_browse_mode = 0, help = 0;
-    const char *table = "xvrbndo"; // x to move, v to paste, r to remove, b to compress, n/d to create new file/dir, o to rename.
+    const char *long_table = "xvrb"; // x to move, v to paste, r to remove, b to compress
+    const char *short_table = "ndo";  //n, d to create new file/dir, o to rename.
     char *ptr;
     struct stat current_file_stat;
 
@@ -284,13 +285,20 @@ static void main_loop(void)
         case KEY_RESIZE:
             resize_win(help);
             break;
+        case 'n': case 'd': case 'o':   // fast operations do not require another thread.
+            if ((sv.searching != 3 + active) && (check_access())) {
+                ptr = strchr(short_table, c);
+                index = SHORT_FILE_OPERATIONS - strlen(ptr);
+                fast_file_operations(index);
+            }
+            break;
         default:
             if (sv.searching != 3 + active) {
-                ptr = strchr(table, c);
+                ptr = strchr(long_table, c);
                 if (ptr) {
-                    index = FILE_OPERATIONS - 1 - strlen(ptr);
+                    index = LONG_FILE_OPERATIONS - 1 - strlen(ptr);
                     if (check_init(index)) {
-                        init_thread(index, func[index]);
+                        init_thread(index, long_func[index]);
                     }
                 }
             }
@@ -303,19 +311,22 @@ static int check_init(int index)
 {
     char x;
 
-    if ((index <= ARCHIVER_TH) && (!selected)) {
+    if (!selected) {
         print_info(no_selected_files, ERR_LINE);
         return 0;
     }
-    if ((index != RM_TH) && (access(ps[active].my_cwd, W_OK) != 0)) {
+    if (index != RM_TH) {
+        return check_access();
+    }
+    ask_user(sure, &x, 1, 'n');
+    return (x == 'n') ? 0 : 1;
+}
+
+static int check_access(void)
+{
+    if (access(ps[active].my_cwd, W_OK) != 0) {
         print_info(no_w_perm, ERR_LINE);
         return 0;
-    }
-    if (index == RM_TH) {
-        ask_user(sure, &x, 1, 'n');
-        if (x == 'n') {
-            return 0;
-        }
     }
     return 1;
 }

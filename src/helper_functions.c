@@ -34,7 +34,7 @@ static thread_job_list *add_thread(thread_job_list *h, int type, int (*f)(void))
 static void inhibit_suspend(void);
 static void free_bus(void);
 #endif
-static void init_thread_helper(const char *temp);
+static void init_thread_helper(void);
 static void copy_selected_files(void);
 static void *execute_thread(void *x);
 static void check_refresh(void);
@@ -149,18 +149,10 @@ void free_running_h(void)
  * - Initializes the new job
  * - if there's a thread running, prints a message that the job will be queued, else starts the th to execute the job.
  */
-void init_thread(int type, int (*f)(void))
+void init_thread(int type, int (* const f)(void))
 {
-    char temp[NAME_MAX];
-
-    if ((type >= NEW_FILE_TH) && (type <= RENAME_TH)) {
-        ask_user(ask_name, temp, NAME_MAX, 0);
-        if (!strlen(temp)) {
-            return;
-        }
-    }
     thread_h = add_thread(thread_h, type, f);
-    init_thread_helper(temp);
+    init_thread_helper();
     if (num_of_jobs > 1) {
         print_info(thread_running, INFO_LINE);
     } else {
@@ -169,9 +161,7 @@ void init_thread(int type, int (*f)(void))
             inhibit_suspend();
         }
 #endif
-        thread_m.str = NULL;
-        thread_m.line = INFO_LINE;
-        pthread_create(&th, NULL, execute_thread, NULL);
+    pthread_create(&th, NULL, execute_thread, NULL);
     }
 }
 
@@ -223,34 +213,20 @@ static void free_bus(void)
 /*
  * Just a helper thread for init_thread(); it sets some members of thread_job_list struct depending of current_th->type
  */
-static void init_thread_helper(const char *temp)
+static void init_thread_helper(void)
 {
     char name[NAME_MAX];
 
-    if (current_th->type >= RENAME_TH) {
+    if (current_th->type == EXTRACTOR_TH) {
         strcpy(current_th->filename, ps[active].nl[ps[active].curr_pos]);
-        if (current_th->type == RENAME_TH) {
-            strcpy(name, ps[active].my_cwd);
-            sprintf(name + strlen(name), "/%s", temp);
-            current_th->selected_files = select_file(current_th->selected_files, name);
-        }
     } else {
-        if (current_th->type >= ARCHIVER_TH) {
-            strcpy(current_th->filename, current_th->full_path);
-            if ((current_th->type == NEW_FILE_TH) || (current_th->type == CREATE_DIR_TH)) {
-                strcat(current_th->filename, "/");
-                strcat(current_th->filename, temp);
+        copy_selected_files();
+        if (current_th->type == ARCHIVER_TH) {
+            ask_user(archiving_mesg, name, NAME_MAX, 0);
+            if (!strlen(name)) {
+                strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
             }
-        }
-        if (current_th->type <= ARCHIVER_TH) {
-            copy_selected_files();
-            if (current_th->type == ARCHIVER_TH) {
-                ask_user(archiving_mesg, name, NAME_MAX, 0);
-                if (!strlen(name)) {
-                    strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
-                }
-                sprintf(current_th->filename + strlen(current_th->filename), "/%s.tgz", name);
-            }
+            sprintf(current_th->filename, "%s/%s.tgz", current_th->full_path, name);
         }
     }
 }
@@ -291,6 +267,8 @@ static void *execute_thread(void *x)
         return execute_thread(NULL);
     }
     num_of_jobs = 0;
+    thread_m.str = NULL;
+    thread_m.line = INFO_LINE;
 #ifdef SYSTEMD_PRESENT
     if (config.inhibit) {
         free_bus();
@@ -302,7 +280,7 @@ static void *execute_thread(void *x)
 
 static void check_refresh(void)
 {
-    int i;
+    int i, refresh = 0;
 
     for (i = 0; i < cont; i++) {
         if (strcmp(ps[i].my_cwd, thread_h->full_path) == 0) {
@@ -310,9 +288,10 @@ static void check_refresh(void)
         } else {
             ps[i].needs_refresh = REFRESH;
         }
-        if (ps[i].needs_refresh != NO_REFRESH) {
-            pthread_kill(main_id, SIGUSR2);
-        }
+        refresh = 1;
+    }
+    if (refresh) {
+        pthread_kill(main_id, SIGUSR2);
     }
 }
 

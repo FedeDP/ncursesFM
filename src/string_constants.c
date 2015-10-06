@@ -35,12 +35,11 @@ const char *ask_name = "Insert new file name:> ";
 
 const char *extr_question = "Do you really want to extract this archive? Y/n:> ";
 
-const char *thread_job_mesg[] = {"Moving...", "Pasting...", "Removing...", "Archiving...", "Creating file...",
-                                "Creating dir...","Renaming...", "Extracting..."};
-const char *thread_str[] = {"Every file has been moved.", "Every files has been copied.", "File/dir removed.", "The archive is ready.",
-                            "File created.", "Dir created.", "File renamed.", "Succesfully extracted."};
-const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not remove every file.", "Could not archive.", "Could not create file.",
-                                "Could not create folder.", "Could not rename.", "Could not extract."};
+const char *thread_job_mesg[] = {"Moving...", "Pasting...", "Removing...", "Archiving...", "Extracting..."};
+const char *thread_str[] = {"Every file has been moved.", "Every files has been copied.", "File/dir removed.", "The archive is ready.", "Succesfully extracted."};
+const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not remove every file.", "Could not archive.", "Could not extract."};
+const char *short_msg[] = {"File created.", "Dir created.", "File renamed."};
+const char *short_fail_msg[] = {"Could not create file.", "Could not create folder.", "Could not rename."};
 
 const char *selected_mess = "There are selected files.";
 

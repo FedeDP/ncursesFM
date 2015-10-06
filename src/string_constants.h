@@ -1,5 +1,6 @@
 #define HELPER_HEIGHT 13
-#define FILE_OPERATIONS 8
+#define LONG_FILE_OPERATIONS 5
+#define SHORT_FILE_OPERATIONS 3
 
 #ifdef LIBCONFIG_PRESENT
 const char *config_file_missing;
@@ -38,9 +39,11 @@ const char *ask_name;
 
 const char *extr_question;
 
-const char *thread_job_mesg[FILE_OPERATIONS];
-const char *thread_str[FILE_OPERATIONS];
-const char *thread_fail_str[FILE_OPERATIONS];
+const char *thread_job_mesg[LONG_FILE_OPERATIONS];
+const char *thread_str[LONG_FILE_OPERATIONS];
+const char *thread_fail_str[LONG_FILE_OPERATIONS];
+const char *short_msg[SHORT_FILE_OPERATIONS];
+const char *short_fail_msg[SHORT_FILE_OPERATIONS];
 const char *selected_mess;
 
 const char *thread_running;

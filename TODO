@@ -1,5 +1,6 @@
 /* TODO:
  * update DOC
  * install_packages segfaults on my netbook with xfce4...why? It may be caused by systemd 226 and archlinux switching to user buses? -> check later
+ * linux > 4.3 -> strscpy? -> http://linux.die.net/man/2/uname
  * server SFTP / SAMBA mount?
  */

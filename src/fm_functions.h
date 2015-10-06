@@ -19,12 +19,11 @@
 void change_dir(const char *str);
 void switch_hidden(void);
 void manage_file(const char *str);
-int new_file(void);
+void fast_file_operations(const int index);
 int remove_file(void);
 void manage_space_press(const char *str);
 int paste_file(void);
 int move_file(void);
-int rename_file_folders(void);
 void search(void);
 void list_found(void);
 int search_enter_press(const char *str);
