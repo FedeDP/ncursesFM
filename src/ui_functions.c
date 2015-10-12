@@ -77,9 +77,8 @@ static void fm_scr_init(void)
         }
     }
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
-    mvwprintw(info_win, INFO_LINE, 1, "I: ");
-    mvwprintw(info_win, ERR_LINE, 1, "E: ");
-    wrefresh(info_win);
+    keypad(info_win, TRUE);
+//     wrefresh(info_win);
 }
 
 /*
@@ -505,9 +504,9 @@ void print_info(const char *str, int i)
     char st[100], search_str[20];
 
     // "quit_with_running_thread" is the longest question string i print. If asking a question (asking_question == 1), i won't clear the question being asked.
-    wmove(info_win, INFO_LINE, strlen("I:") + 1 + (asking_question * strlen(quit_with_running_thread)));
+    wmove(info_win, INFO_LINE, 1 + (asking_question * strlen(quit_with_running_thread)));
     wclrtoeol(info_win);
-    wmove(info_win, ERR_LINE, strlen("E:") + 1);
+    wmove(info_win, ERR_LINE, 1);
     wclrtoeol(info_win);
     if (thread_h) {
         sprintf(st, "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type]);
@@ -526,7 +525,7 @@ void print_info(const char *str, int i)
         }
     }
     if (str && (!asking_question || i == ERR_LINE)) {
-        mvwprintw(info_win, i, strlen("I: ") + 1, "%.*s", COLS - (strlen("I: ") + 1), str);
+        mvwprintw(info_win, i, 1, "%.*s", COLS - (strlen("I: ") + 1), str);
     }
     wrefresh(info_win);
 }
