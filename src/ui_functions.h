@@ -2,6 +2,7 @@
 #ifdef LIBUDEV_PRESENT
 #include <libudev.h>
 #endif
+#include <locale.h>
 
 #define INFO_HEIGHT 2
 #define STAT_COL 30

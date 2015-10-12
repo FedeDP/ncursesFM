@@ -40,6 +40,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 * libarchive -> archiving/extracting support
 * libmagic   -> internal mimetype support
 * pkg-config -> to manage libraries link in makefile
+* glibc      -> for locale config
 
 ## Optional compile time dependencies
 

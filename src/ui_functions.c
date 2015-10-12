@@ -46,6 +46,7 @@ static int dim, width[MAX_TABS], asking_question, delta[MAX_TABS], stat_active[M
  */
 void screen_init(void)
 {
+    setlocale(LC_ALL, "");
     initscr();
     start_color();
     init_pair(1, COLOR_BLUE, COLOR_BLACK);
@@ -545,7 +546,7 @@ void ask_user(const char *str, char *input, int dim, char c)
             *input = c;
         }
     } else {
-        wgetstr(info_win, input);
+        wgetnstr(info_win, input, NAME_MAX);
     }
     noecho();
     asking_question = 0;

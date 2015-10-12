@@ -8,7 +8,7 @@ pkgdesc="A FileManager written in c and ncurses library."
 arch=('i686' 'x86_64')
 url="https://github.com/FedeDP/${_gitname}"
 license=('GPL')
-depends=('ncurses' 'libconfig' 'libarchive' 'libcups' 'libx11' 'systemd')
+depends=('ncurses' 'libconfig' 'libarchive' 'glibc' 'libcups' 'libx11' 'systemd')
 optdepends=('xdg-utils: xdg-open support'
             'udisks2: external usb drives and ISO mount support'
             'packagekit: package installation support')
