@@ -319,7 +319,7 @@ static int check_init(int index)
         return check_access();
     }
     ask_user(sure, &x, 1, 'n');
-    return (x == 'n') ? 0 : 1;
+    return (x == 'y') ? 1 : 0;
 }
 
 static int check_access(void)
