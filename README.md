@@ -53,7 +53,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 ## Runtime dependencies
 
 **required:**
-* ncurses, libmagic, libarchive, plus every optional build dep if compiled with its support.
+* ncurses, libmagic, libarchive, glibc plus every optional build dep if compiled with its support.
 
 **optional:**
 * xdg-utils (if compiled with libx11 support)
