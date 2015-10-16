@@ -18,7 +18,7 @@ Ncurses File Manager for linux
 * File operations are performed in a different thread. You'll get a notification when the job is done.
 * If you try to quit while a job is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
-* It supports following command line switched: "--editor=", "--starting-dir=" and "--inhibit={0/1}".
+* It supports following command line switches: "--editor=", "--starting-dir=" and "--inhibit={0/1}".
 * If no editor variable is defined, it tries to load the environment editor variable as a fallback.
 * Powermanagement inhibition while processing a job(eg: while pasting a file) to avoid data loss. It relies upon systemd/logind (sd-bud API), so it requires a systemd booted system.
 It is switched off by default. You can enable this feature from the config file or with "--inhibit=1" cmdline switch.
