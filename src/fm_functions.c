@@ -52,6 +52,7 @@ static struct archive *archive;
 static int distance_from_root, num_files;
 static const char *arch_ext[6] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
 #ifdef SYSTEMD_PRESENT
+static const char *iso_ext[5] = {".iso", ".nrg", ".bin", ".mdf", ".img"};
 static const char *pkg_ext[3] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
 static struct timeval timer;
@@ -93,7 +94,7 @@ void manage_file(const char *str)
 {
     char c;
 #ifdef SYSTEMD_PRESENT
-    if (get_mimetype(str, "iso")) {
+    if (is_ext(str, iso_ext, 5)) {
         if (access("/usr/lib/udisks2/", F_OK)) {
             print_info("You need udisks2 for iso mount support.", ERR_LINE);
             return;

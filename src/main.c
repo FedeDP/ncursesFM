@@ -248,7 +248,7 @@ static void main_loop(void)
             break;
 #ifdef LIBCUPS_PRESENT
         case 'p': // p to print
-            if ((sv.searching != 3 + active) && (S_ISREG(current_file_stat.st_mode)) && (!get_mimetype(ps[active].nl[ps[active].curr_pos], "x-executable"))) {
+            if ((sv.searching != 3 + active) && (S_ISREG(current_file_stat.st_mode)) && !(current_file_stat.st_mode & S_IXUSR)) {
                 print_support(ps[active].nl[ps[active].curr_pos]);
             }
             break;

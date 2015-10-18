@@ -1,6 +1,7 @@
 /* TODO:
  * update DOC
- * install_packages segfaults on my netbook with xfce4...why? It may be caused by systemd 226 and archlinux switching to user buses? -> check later
+ * install_packages segfaults on my netbook...
  * linux > 4.3 -> strscpy? -> http://linux.die.net/man/2/uname
  * server SFTP / SAMBA mount?
+ * drop libmagic and get_mimetype() function support. -> L 166...
  */
