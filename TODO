@@ -3,4 +3,5 @@
  * install_packages segfaults on my netbook...
  * linux > 4.3 -> strscpy? -> http://linux.die.net/man/2/uname
  * server SFTP / SAMBA mount?
+ * check packages architecture in install_packages
  */
