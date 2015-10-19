@@ -43,6 +43,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 
 ## Optional compile time dependencies
 
+* libmagic  -> to avoid (in a not X environment) opening every kind of file with $EDITOR (eg: images/videos), and only open text files.
 * libcups   -> print support
 * libconfig -> config file parsing
 * libx11    -> check whether ncursesFM is started in a X environment or not.
@@ -56,7 +57,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 
 **optional:**
 * xdg-utils (if compiled with libx11 support)
-* a message bus (dbus/kdbus) plus: logind (for inhibition support), or udisks2 (for mount support), or packagekit (for packages installation support).
+* a message bus (dbus/kdbus) plus: logind (for inhibition support), udisks2 (for mount support), packagekit (for packages installation support).
 
 ## Install instructions:
 

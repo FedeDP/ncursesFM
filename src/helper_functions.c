@@ -84,6 +84,7 @@ void *safe_malloc(ssize_t size, const char *str)
     return ptr;
 }
 
+#ifdef LIBMAGIC_PRESENT
 /*
  * Gived a full path searches the string test in the mimetype, and if found returns 1;
  */
@@ -102,6 +103,7 @@ int get_mimetype(const char *path, const char *test)
     magic_close(magic_cookie);
     return ret;
 }
+#endif
 
 /*
  * Adds a job to the thread_job_list (thread_job_list list).

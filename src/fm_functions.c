@@ -162,17 +162,20 @@ static void open_file(const char *str)
 {
     pid_t pid;
 
+#ifdef LIBMAGIC_PRESENT
+    if ((!get_mimetype(str, "text/")) && (!get_mimetype(str, "x-empty"))) {
+        return;
+    }
+#endif
     if (strlen(config.editor)) {
-        if ((get_mimetype(str, "text/")) || (get_mimetype(str, "x-empty"))) {
-            endwin();
-            pid = vfork();
-            if (pid == 0) {
-                execl(config.editor, config.editor, str, NULL);
-            } else {
-                waitpid(pid, NULL, 0);
-            }
-            refresh();
+        endwin();
+        pid = vfork();
+        if (pid == 0) {
+            execl(config.editor, config.editor, str, NULL);
+        } else {
+            waitpid(pid, NULL, 0);
         }
+        refresh();
     } else {
         print_info(editor_missing, ERR_LINE);
     }

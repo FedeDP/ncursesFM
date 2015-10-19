@@ -1,13 +1,16 @@
 #define _GNU_SOURCE
 #include <ftw.h>
+
 #include "ui_functions.h"
 #include <sys/wait.h>
 #include <archive.h>
 #include <archive_entry.h>
 #include <sys/time.h>
+
 #ifdef LIBX11_PRESENT
 #include <X11/Xlib.h>
 #endif
+
 #ifdef LIBCUPS_PRESENT
 #include <cups/cups.h>
 #endif

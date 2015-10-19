@@ -1,5 +1,5 @@
 CC = gcc
-LIBS =-lpthread -lmagic $(shell pkg-config --silence-errors --libs libarchive ncurses)
+LIBS =-lpthread $(shell pkg-config --silence-errors --libs libarchive ncurses)
 CFLAGS =
 RM = rm
 INSTALL = install -p
@@ -12,6 +12,7 @@ BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
 
 ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
+
 LIBX11=$(shell pkg-config --silence-errors --libs x11)
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
@@ -21,6 +22,12 @@ LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD)
 ifneq ("$(LIBX11)","")
 CFLAGS+=-DLIBX11_PRESENT
 $(info libX11 support enabled.)
+endif
+
+ifneq ("$(wildcard /usr/include/magic.h)","")
+CFLAGS+=-DLIBMAGIC_PRESENT
+LIBS+=-lmagic
+$(info libmagic support enabled.)
 endif
 
 ifneq ("$(wildcard /usr/include/cups/cups.h)","")
@@ -45,6 +52,7 @@ LIBS+=$(LIBUDEV)
 $(info libudev support enabled.)
 endif
 endif
+
 endif
 
 all: ncursesFM clean
