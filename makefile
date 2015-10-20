@@ -45,12 +45,14 @@ endif
 ifneq ("$(LIBSYSTEMD)","")
 CFLAGS+=-DSYSTEMD_PRESENT
 $(info libsystemd support enabled.)
+
 LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
 ifneq ("$(LIBUDEV)","")
 CFLAGS+=-DLIBUDEV_PRESENT
 LIBS+=$(LIBUDEV)
 $(info libudev support enabled.)
 endif
+
 endif
 
 endif

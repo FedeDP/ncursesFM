@@ -95,19 +95,11 @@ void manage_file(const char *str)
     char c;
 #ifdef SYSTEMD_PRESENT
     if (is_ext(str, iso_ext, 5)) {
-        if (access("/usr/lib/udisks2/", F_OK)) {
-            print_info("You need udisks2 for iso mount support.", ERR_LINE);
-            return;
-        }
         return isomount(str);
     }
     if (is_ext(str, pkg_ext, 3)) {
         ask_user(pkg_quest, &c, 1, 'n');
         if (c == 'y') {
-            if (access("/usr/lib/PackageKit/", F_OK)) {
-                print_info("You need packagekit for package installation support.", ERR_LINE);
-                return;
-            }
             pthread_create(&install_th, NULL, install_package, (void *)str);
             return;
         }
@@ -593,10 +585,6 @@ void change_tab(void)
 #if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
 void devices_tab(void)
 {
-    if (access("/usr/lib/udisks2/", F_OK)) {
-        print_info("You need udisks2 for mount support.", ERR_LINE);
-        return;
-    }
     enumerate_usb_mass_storage();
     if (device_mode) {
         free(ps[active].nl);

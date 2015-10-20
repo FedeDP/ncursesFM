@@ -1,5 +1,6 @@
 #include "declarations.h"
 #include <sys/stat.h>
+#include <sys/utsname.h>
 
 #ifdef LIBMAGIC_PRESENT
 #include <magic.h>

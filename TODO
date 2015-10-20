@@ -1,7 +1,6 @@
 /* TODO:
  * update DOC
  * install_packages segfaults on my netbook...
- * linux > 4.3 -> strscpy? -> http://linux.die.net/man/2/uname
- * server SFTP / SAMBA mount?
- * check packages architecture in install_packages
+ * linux > 4.3 -> strscpy? -> http://linux.die.net/man/2/uname -> kernel version 
+ * check_arch() will work on archlinux (in which package name has x86_64 or i686 inside. But it won't work on ubuntu for example, because it uses "amd64"...
  */
