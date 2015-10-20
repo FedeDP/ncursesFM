@@ -37,7 +37,6 @@ If built with libconfig support, it reads following variables from /etc/default/
 
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
-* libmagic   -> internal mimetype support
 * pkg-config -> to manage libraries link in makefile
 * glibc      -> for locale config
 
@@ -48,12 +47,12 @@ If built with libconfig support, it reads following variables from /etc/default/
 * libconfig -> config file parsing
 * libx11    -> check whether ncursesFM is started in a X environment or not.
 * sd-bus    -> to switch off powermanagement functions, devices/iso mount and packages installation.
-* libudev  -> needed to list mountable drives.
+* libudev   -> needed to list mountable drives.
 
 ## Runtime dependencies
 
 **required:**
-* ncurses, libmagic, libarchive, glibc plus every optional build dep if compiled with its support.
+* ncurses, libarchive, glibc plus every optional build dep if compiled with its support.
 
 **optional:**
 * xdg-utils (if compiled with libx11 support)
