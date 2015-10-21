@@ -3,7 +3,7 @@ Ncurses File Manager for linux
 
 ## Features:
 
-* Copy/paste/cut( = move, if on the same FS), new/remove, rename.
+* Every feature you would expect by a fm.
 * 2 tabs support. Their content is kept in sync.
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
@@ -11,21 +11,21 @@ Ncurses File Manager for linux
 * Stats support (permissions and sizes).
 * Detailed in-program helper message -> press 'l'.
 * It supports terminal resize.
-* Search support: it will search your string in current directory tree.
-* It can search your string inside archives too.
-* Basic print support: you need libcups for this to work.
+* Search support: it will search your string in current directory tree. It can search your string inside archives too.
+* Basic print support through libcups.
 * Extract/compress files/folders through libarchive.
 * File operations are performed in a different thread. You'll get a notification when the job is done.
 * If you try to quit while a job is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
 * It supports following command line switches: "--editor=", "--starting-dir=" and "--inhibit={0/1}".
-* Powermanagement inhibition while processing a job(eg: while pasting a file) to avoid data loss. It relies upon systemd/logind (sd-bud API), so it requires a systemd booted system.
-It is switched off by default. You can enable this feature from the config file or with "--inhibit=1" cmdline switch.
-* It can mount your external usb drives/ISO files through sd-bus and udisks2. For usb drives mount, you also need libudev to list all mountable drives.
+
+### Feature that requires sd-bus API (systemd)
+* Powermanagement inhibition while processing a job(eg: while pasting a file) to avoid data loss. It is switched off by default. Enable this feature from the config file or with "--inhibit=1" cmdline switch.
+* It can mount your external usb drives/ISO files through udisks2. For usb drives mount, you also need libudev to list all mountable drives.
 * ISO files cannot be unmounted from within ncursesFM: they will be automagically unmounted and removed by udev when no more in use (eg after a reboot).
 * It can install your distro package files: pressing enter on a package file will ask user if he wants to install the package. It relies upon packagekit, so it should be distro agnostic.
 
-If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf...remember to set them!
+### If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf...remember to set them!
 * editor -> editor used to open files, in non X environment (or when xdg-open is not available)
 * show_hidden -> whether to show hidden files by default or not.
 * starting_directory -> default starting directory.
