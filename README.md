@@ -19,13 +19,13 @@ Ncurses File Manager for linux
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
 * It supports following command line switches: "--editor=", "--starting-dir=" and "--inhibit={0/1}".
 
-### Optional (compile time) features that require sd-bus API (systemd)
+**Optional (compile time) features that require sd-bus API (systemd)**
 * Powermanagement inhibition while processing a job(eg: while pasting a file) to avoid data loss. It is switched off by default. Enable this feature from the config file or with "--inhibit=1" cmdline switch.
 * It can mount your external usb drives/ISO files through udisks2. For usb drives mount, you also need libudev to list all mountable drives.
 * ISO files cannot be unmounted from within ncursesFM: they will be automagically unmounted and removed by udev when no more in use (eg after a reboot).
 * It can install your distro package files: pressing enter on a package file will ask user if he wants to install the package. It relies upon packagekit, so it should be distro agnostic.
 
----
+----
 
 If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf...remember to set them!
 * editor -> editor used to open files, in non X environment (or when xdg-open is not available)
