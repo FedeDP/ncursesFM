@@ -31,7 +31,7 @@ const char *print_fail = "No printers available.";
 
 const char *archiving_mesg = "Insert new file name (defaults to first entry name):> ";
 
-const char *ask_name = "Insert new file name:> ";
+const char *ask_name = "Insert new name:> ";
 
 const char *extr_question = "Do you really want to extract this archive? Y/n:> ";
 

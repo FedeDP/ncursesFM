@@ -27,9 +27,9 @@
 static void xdg_open(const char *str);
 #endif
 static void open_file(const char *str);
-static int new_file(void);
-static int new_dir(void);
-static int rename_file_folders(void);
+static int new_file(const char *name);
+static int new_dir(const char *name);
+static int rename_file_folders(const char *name);
 static void cpr(file_list *tmp);
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
@@ -56,8 +56,8 @@ static const char *iso_ext[5] = {".iso", ".nrg", ".bin", ".mdf", ".img"};
 static const char *pkg_ext[3] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
 static struct timeval timer;
-static char fast_browse_str[NAME_MAX], new_name[NAME_MAX];
-static int (*const short_func[SHORT_FILE_OPERATIONS])(void) = {
+static char fast_browse_str[NAME_MAX];
+static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
     new_file, new_dir, rename_file_folders
 };
 
@@ -175,6 +175,7 @@ static void open_file(const char *str)
 
 void fast_file_operations(const int index)
 {
+    char new_name[NAME_MAX] = {};
     const char *str = short_fail_msg[index];
     int line = ERR_LINE, i;
 
@@ -182,7 +183,7 @@ void fast_file_operations(const int index)
     if (!strlen(new_name)) {
         return;
     }
-    if  (short_func[index]() == 0) {
+    if  (short_func[index](new_name) == 0) {
         str = short_msg[index];
         line = INFO_LINE;
         for (i = 0; i < cont; i++) {
@@ -192,14 +193,13 @@ void fast_file_operations(const int index)
         }
     }
     print_info(str, line);
-    memset(new_name, 0, strlen(new_name));
 }
 
-int new_file(void)
+int new_file(const char *name)
 {
     int fd;
 
-    fd = open(new_name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    fd = open(name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd != -1) {
         close(fd);
         return 0;
@@ -207,14 +207,14 @@ int new_file(void)
     return -1;
 }
 
-static int new_dir(void)
+static int new_dir(const char *name)
 {
-    return mkdir(new_name, 0700);
+    return mkdir(name, 0700);
 }
 
-static int rename_file_folders(void)
+static int rename_file_folders(const char *name)
 {
-    return rename(ps[active].nl[ps[active].curr_pos], new_name);
+    return rename(ps[active].nl[ps[active].curr_pos], name);
 }
 
 int remove_file(void)
