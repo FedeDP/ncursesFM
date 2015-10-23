@@ -194,7 +194,7 @@ static void main_loop(void)
                 manage_enter_device();
             }
 #endif
-            else if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
+            else if (S_ISDIR(current_file_stat.st_mode)) {
                 change_dir(ps[active].nl[ps[active].curr_pos]);
             } else {
                 manage_file(ps[active].nl[ps[active].curr_pos], current_file_stat.st_size);
