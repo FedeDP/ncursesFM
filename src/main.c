@@ -197,7 +197,7 @@ static void main_loop(void)
             else if (S_ISDIR(current_file_stat.st_mode) || S_ISLNK(current_file_stat.st_mode)) {
                 change_dir(ps[active].nl[ps[active].curr_pos]);
             } else {
-                manage_file(ps[active].nl[ps[active].curr_pos]);
+                manage_file(ps[active].nl[ps[active].curr_pos], current_file_stat.st_size);
             }
             break;
         case 't': // t to open second tab

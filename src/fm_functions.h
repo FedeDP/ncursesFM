@@ -18,10 +18,11 @@
 #define BUFF_SIZE 8192
 #define FAST_BROWSE_THRESHOLD 500000
 #define MILLION 1000000
+#define BIG_FILE_THRESHOLD 5000000
 
 void change_dir(const char *str);
 void switch_hidden(void);
-void manage_file(const char *str);
+void manage_file(const char *str, float size);
 void fast_file_operations(const int index);
 int remove_file(void);
 void manage_space_press(const char *str);

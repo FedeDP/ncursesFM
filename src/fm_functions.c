@@ -24,9 +24,9 @@
 #include "fm_functions.h"
 
 #ifdef LIBX11_PRESENT
-static void xdg_open(const char *str);
+static void xdg_open(const char *str, float size);
 #endif
-static void open_file(const char *str);
+static void open_file(const char *str, float size);
 static int new_file(const char *name);
 static int new_dir(const char *name);
 static int rename_file_folders(const char *name);
@@ -90,7 +90,7 @@ void switch_hidden(void)
  * if compiled with X11 support, and xdg-open is found, open the file,
  * else open the file with $config.editor.
  */
-void manage_file(const char *str)
+void manage_file(const char *str, float size)
 {
     char c;
 #ifdef SYSTEMD_PRESENT
@@ -115,10 +115,10 @@ void manage_file(const char *str)
     }
 #ifdef LIBX11_PRESENT
     if (access("/usr/bin/xdg-open", X_OK) != -1) {
-        return xdg_open(str);
+        return xdg_open(str, size);
     }
 #endif
-    return open_file(str);
+    return open_file(str, size);
 }
 
 /*
@@ -126,7 +126,7 @@ void manage_file(const char *str)
  * not to dirty my ncurses screen.
  */
 #ifdef LIBX11_PRESENT
-static void xdg_open(const char *str)
+static void xdg_open(const char *str, float size)
 {
     pid_t pid;
     Display* display = XOpenDisplay(NULL);
@@ -142,23 +142,22 @@ static void xdg_open(const char *str)
             execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, NULL);
         }
     } else {
-        return open_file(str);
+        return open_file(str, size);
     }
 }
 #endif
 
-/*
- * If file mimetype contains "text" or "x-empty" (empty file), open it with config.editor.
- */
-static void open_file(const char *str)
+static void open_file(const char *str, float size)
 {
     pid_t pid;
+    char c;
 
-#ifdef LIBMAGIC_PRESENT
-    if ((!get_mimetype(str, "text/")) && (!get_mimetype(str, "x-empty"))) {
-        return;
+    if (size > BIG_FILE_THRESHOLD) { // 5 Mb
+        ask_user(big_file, &c, 1, 'y');
+        if (c == 'n') {
+            return;
+        }
     }
-#endif
     if (strlen(config.editor)) {
         endwin();
         pid = vfork();

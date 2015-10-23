@@ -18,6 +18,8 @@ const char *file_sel[3];
 
 const char *sure;
 
+const char *big_file;
+
 const char *already_searching;
 const char *search_mem_fail;
 const char *search_insert_name;

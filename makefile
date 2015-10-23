@@ -24,12 +24,6 @@ CFLAGS+=-DLIBX11_PRESENT
 $(info libX11 support enabled.)
 endif
 
-ifneq ("$(wildcard /usr/include/magic.h)","")
-CFLAGS+=-DLIBMAGIC_PRESENT
-LIBS+=-lmagic
-$(info libmagic support enabled.)
-endif
-
 ifneq ("$(wildcard /usr/include/cups/cups.h)","")
 CFLAGS+=-DLIBCUPS_PRESENT
 LIBS+=-lcups

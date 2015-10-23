@@ -1,11 +1,6 @@
 #include "declarations.h"
 #include <sys/stat.h>
 #include <sys/utsname.h>
-
-#ifdef LIBMAGIC_PRESENT
-#include <magic.h>
-#endif
-
 #include <unistd.h>
 #include <signal.h>
 
@@ -18,9 +13,6 @@ int is_ext(const char *filename, const char *ext[], int size);
 void ask_user(const char *str, char *input, int dim, char c);
 void print_info(const char *str, int i);
 void *safe_malloc(ssize_t size, const char *str);
-#ifdef LIBMAGIC_PRESENT
-int get_mimetype(const char *path, const char *test);
-#endif
 void init_thread(int type, int (* const f)(void));
 void free_copied_list(file_list *h);
 int remove_from_list(const char *name);
