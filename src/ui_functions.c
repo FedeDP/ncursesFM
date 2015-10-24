@@ -278,7 +278,6 @@ static void initialize_tab_cwd(int win)
     if (!strlen(ps[win].my_cwd)) {
         getcwd(ps[win].my_cwd, PATH_MAX);
     }
-    memset(ps[win].title, 0, strlen(ps[win].title));
     sprintf(ps[win].title, "Current: %s", ps[win].my_cwd);
     ps[win].needs_refresh = FORCE_REFRESH;
 }
@@ -457,7 +456,6 @@ void show_stat(int init, int end, int win)
         }
     }
     change_unit(total_size, str);
-    memset(tot_size[win], 0, strlen(tot_size[win]));
     sprintf(tot_size[win], "Total size: %s", str);
 }
 

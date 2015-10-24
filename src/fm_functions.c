@@ -68,7 +68,6 @@ void change_dir(const char *str)
     if (chdir(str) != -1) {
         getcwd(ps[active].my_cwd, PATH_MAX);
         ps[active].needs_refresh = FORCE_REFRESH;
-        memset(ps[active].title, 0, strlen(ps[active].title));
         sprintf(ps[active].title, "Current: %s", ps[active].my_cwd);
     } else {
         print_info(strerror(errno), ERR_LINE);
@@ -432,7 +431,6 @@ void list_found(void)
     ps[active].nl = NULL;
     ps[active].number_of_files = sv.found_cont;
     reset_win(active);
-    memset(ps[active].title, 0, strlen(ps[active].title));
     sprintf(ps[active].title, "Found file searching %s:", sv.searched_string);
     list_everything(active, 0, 0);
     print_info(NULL, INFO_LINE);
@@ -595,7 +593,6 @@ void devices_tab(void)
         ps[active].number_of_files = device_mode;
         device_mode = 1 + active;
         reset_win(active);
-        memset(ps[active].title, 0, strlen(ps[active].title));
         sprintf(ps[active].title, device_mode_str);
         list_everything(active, 0, 0);
     } else {
