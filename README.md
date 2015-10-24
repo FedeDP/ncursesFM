@@ -3,11 +3,12 @@ Ncurses File Manager for linux
 
 ## Features:
 
-* Every feature you would expect by a fm.
-* 2 tabs support. Their content is kept in sync.
+* Every feature you would expect by a FM.
+* 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
+* '.' to change files/dirs sorting: alphabetically (default), by size or by last modified.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
-* Otherwise, it will open files with $editor (ncursesFM.conf defined) var. Editor var fallbacks to environment $EDITOR if none is set.
+* Otherwise, it will use $editor (config file defined) var. Editor var fallbacks to environment $EDITOR if none is set.
 * Stats support (permissions and sizes).
 * Detailed in-program helper message -> press 'l'.
 * It supports terminal resize.
@@ -33,7 +34,6 @@ If built with libconfig support, it reads following variables from /etc/default/
 * starting_directory -> default starting directory.
 * use_default_starting_dir_second_tab -> whether to use "starting_directory" when opening second tab. Otherwise current tab will be used.
 * inhibit -> whether to inhibit powermanagement functions. Defaults to 0.
-
 
 ## Build requirements
 

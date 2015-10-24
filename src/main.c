@@ -180,6 +180,16 @@ static void main_loop(void)
         case KEY_DOWN:
             scroll_down();
             break;
+        case KEY_RIGHT:
+            if (active == 0 && cont == MAX_TABS) {
+                change_tab();
+            }
+            break;
+        case KEY_LEFT:
+            if (active == 1) {
+                change_tab();
+            }
+            break;
         case 'h': // h to show hidden files
             switch_hidden();
             break;
@@ -205,11 +215,6 @@ static void main_loop(void)
                 cont++;
                 restrict_first_tab();
                 new_tab(cont - 1);
-                change_tab();
-            }
-            break;
-        case 9: // tab to change tab
-            if (cont == MAX_TABS) {
                 change_tab();
             }
             break;
@@ -284,6 +289,9 @@ static void main_loop(void)
             break;
         case KEY_RESIZE:
             resize_win(help);
+            break;
+        case '.': // . to change sorting function
+            change_sort();
             break;
         case 'n': case 'd': case 'o':   // fast operations do not require another thread.
             if ((sv.searching != 3 + active) && (check_access())) {

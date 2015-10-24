@@ -40,6 +40,8 @@ static void sig_handler(int sig_num);
 
 static WINDOW *helper_win, *info_win, *fm[MAX_TABS];
 static int dim, width[MAX_TABS], asking_question, delta[MAX_TABS], stat_active[MAX_TABS], resizing;
+static char tot_size[MAX_TABS][50];
+static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) = alphasort; // file list sorting function, defaults to alphasort
 
 /*
  * Initializes screen, create first tab, and create info_win
@@ -78,7 +80,6 @@ static void fm_scr_init(void)
     }
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
     keypad(info_win, TRUE);
-//     wrefresh(info_win);
 }
 
 /*
@@ -115,8 +116,8 @@ static void generate_list(int win)
     int i = ps[win].number_of_files, num_of_files, check = 0;
     struct dirent **files;
     char str[PATH_MAX] = {};
-
-    num_of_files = scandir(ps[win].my_cwd, &files, is_hidden, alphasort);
+    
+    num_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func);
     if ((ps[win].needs_refresh == FORCE_REFRESH) || (i != num_of_files)) {
         check = 1;
         free(ps[win].nl);
@@ -140,6 +141,26 @@ static void generate_list(int win)
         reset_win(win);
         list_everything(win, 0, 0);
     }
+}
+
+int sizesort(const struct dirent **d1, const struct dirent **d2)
+{
+    struct stat stat1, stat2;
+    float result;
+    
+    stat((*d1)->d_name, &stat1);
+    stat((*d2)->d_name, &stat2);
+    result = stat1.st_size - stat2.st_size;
+    return (result > 0) ? -1 : 1;
+}
+
+int last_mod_sort(const struct dirent **d1, const struct dirent **d2)
+{
+    struct stat stat1, stat2;
+    
+    stat((*d1)->d_name, &stat1);
+    stat((*d2)->d_name, &stat2);
+    return (stat2.st_mtime - stat1.st_mtime);
 }
 
 void reset_win(int win)
@@ -198,16 +219,9 @@ void list_everything(int win, int old_dim, int end)
 static void print_border_and_title(int win)
 {
     wborder(fm[win], '|', '|', '-', '-', '+', '+', '+', '+');
-    if (sv.searching == 3 + win) {
-        mvwprintw(fm[win], 0, 0, "Found file searching %.*s: ", width[win] - 1, sv.searched_string);
-    }
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-    else if (device_mode == 1 + win) {
-        mvwprintw(fm[win], 0, 0, "%.*s", width[win] - 1, device_mode_str);
-    }
-#endif
-    else {
-        mvwprintw(fm[win], 0, 0, "Current:%.*s", width[win] - 1 - strlen("Current:"), ps[win].my_cwd);
+    mvwprintw(fm[win], 0, 0, "%.*s", width[win] - 1, ps[win].title);
+    if (stat_active[win] == 1) {
+        mvwprintw(fm[win], 0, width[win] - strlen(tot_size[win]), tot_size[win]);
     }
     wrefresh(fm[win]);
 }
@@ -264,6 +278,8 @@ static void initialize_tab_cwd(int win)
     if (!strlen(ps[win].my_cwd)) {
         getcwd(ps[win].my_cwd, PATH_MAX);
     }
+    memset(ps[win].title, 0, strlen(ps[win].title));
+    sprintf(ps[win].title, "Current: %s", ps[win].my_cwd);
     ps[win].needs_refresh = FORCE_REFRESH;
 }
 
@@ -423,30 +439,26 @@ static void helper_print(void)
  */
 void show_stat(int init, int end, int win)
 {
-    int i = init, j;
+    int i , j;
     int perm_bit[9] = {S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, S_IROTH, S_IWOTH, S_IXOTH};
     char perm_sign[3] = {'r', 'w', 'x'}, str[20];
     float total_size = 0;
     struct stat file_stat;
 
-    if (init == 0) {
-        for (i = 1; i < ps[win].number_of_files; i++) {
-            stat(ps[win].nl[i], &file_stat);
-            total_size += file_stat.st_size;
-        }
-        change_unit(total_size, str);
-        mvwprintw(fm[win], INITIAL_POSITION, STAT_COL, "Total size: %s", str);
-        i = 1;
-    }
-    for (; ((i < init + end) && (i < ps[win].number_of_files)); i++) {
+    for (i = 0; i < ps[win].number_of_files; i++) {
         stat(ps[win].nl[i], &file_stat);
-        change_unit(file_stat.st_size, str);
-        mvwprintw(fm[win], i + INITIAL_POSITION - delta[win], STAT_COL, "%s", str);
-        wprintw(fm[win], "\t");
-        for (j = 0; j < 9; j++) {
-            wprintw(fm[win], (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
+        total_size += file_stat.st_size;
+        if (i < init + end) {
+            change_unit(file_stat.st_size, str);
+            mvwprintw(fm[win], i + INITIAL_POSITION - delta[win], STAT_COL, "%s\t", str);
+            for (j = 0; j < 9; j++) {
+                wprintw(fm[win], (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
+            }
         }
     }
+    change_unit(total_size, str);
+    memset(tot_size[win], 0, strlen(tot_size[win]));
+    sprintf(tot_size[win], "Total size: %s", str);
 }
 
 /*
@@ -584,4 +596,23 @@ void resize_win(int help)
     trigger_show_helper_message(help);
     print_info(NULL, INFO_LINE);
     resizing = 0;
+}
+
+void change_sort(void)
+{
+    int i;
+    
+    if (sorting_func == alphasort) {
+        sorting_func = sizesort;
+        print_info("Files will be sorted by size now.", INFO_LINE);
+    } else if (sorting_func == sizesort) {
+        sorting_func = last_mod_sort;
+        print_info("Files will be sorted by last access now.", INFO_LINE);
+    } else {
+        sorting_func = alphasort;
+        print_info("Files will be sorted alphabetically now.", INFO_LINE);
+    }
+    for (i = 0; i < cont; i++) {
+        ps[i].needs_refresh = FORCE_REFRESH;
+    }
 }

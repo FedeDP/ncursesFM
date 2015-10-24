@@ -49,6 +49,7 @@ struct vars {
     char (*nl)[PATH_MAX];
     int number_of_files;
     int needs_refresh;
+    char title[PATH_MAX];
 };
 
 struct search_vars {

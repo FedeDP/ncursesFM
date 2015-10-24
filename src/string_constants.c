@@ -48,15 +48,15 @@ const char *selected_mess = "There are selected files.";
 const char *thread_running = "There's already a thread working. This thread will be queued.";
 const char *quit_with_running_thread = "A job is still running. Do you want to wait for it?(You should!) Y/n:> ";
 
-const char *helper_string[] = { "Enter to surf between folders or to open files with either xdg-open (if in a X session) or (text only) $editor var.",
+const char *helper_string[] = { "Enter to surf between folders or to open files.",
                                 "Enter will eventually ask to extract archives, mount your ISO files or install your distro downloaded packages.",
                                 "Press ',' to enable fast browse mode. Now move between files by just typing your desired file name.",
                                 "Press h to trigger the showing of hidden files. s to see stat about files in current folder.",
-                                "Space to select files. You can select as many files as you want.",
-                                "Space again on a file to remove it from selected files list.",
-                                "v/x to paste/cut(move), b to compress and r to remove selected files.",
+                                "Press '.' to change files/dirs sorting function: alphabetically (default), by size or by last modified.",
+                                "Space to select files. Space again to remove the file from selected files.",
+                                "v/x to paste/cut(move), b to compress and r to remove selected files. p to print a file.",
                                 "o to rename current file/dir; n/d to create new file/dir. f to search (case sensitive) for a file.",
-                                "t to create new tab (at most one more). w to close tab. p to print a file.",
+                                "t to create new tab (at most one more). w to close tab. Arrow left or right to switch between tabs.",
                                 "m to switch current tab to device tab. Press enter on your desired device to (un)mount it.",
                                 "You can't close first tab. Use q to quit/leave current mode."};
 
