@@ -265,12 +265,14 @@ static void check_refresh(void)
     int i, refresh = 0;
 
     for (i = 0; i < cont; i++) {
-        if (strcmp(ps[i].my_cwd, thread_h->full_path) == 0) {
-            ps[i].needs_refresh = FORCE_REFRESH;
-        } else {
-            ps[i].needs_refresh = REFRESH;
+        if (ps[i].needs_refresh != DONT_REFRESH) {
+            if (strcmp(ps[i].my_cwd, thread_h->full_path) == 0) {
+                ps[i].needs_refresh = FORCE_REFRESH;
+            } else {
+                ps[i].needs_refresh = REFRESH;
+            }
+            refresh = 1;
         }
-        refresh = 1;
     }
     if (refresh) {
         pthread_kill(main_id, SIGUSR2);
@@ -325,9 +327,11 @@ void free_everything(void)
     if (selected) {
         free_copied_list(selected);
     }
+#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
     if (usb_devices) {
         free(usb_devices);
     }
+#endif
 }
 
 void quit_thread_func(void)

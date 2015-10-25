@@ -80,7 +80,9 @@ void switch_hidden(void)
 
     config.show_hidden = !config.show_hidden;
     for (i = 0; i < cont; i++) {
-        ps[i].needs_refresh = REFRESH;
+        if (ps[i].needs_refresh != DONT_REFRESH) {
+            ps[i].needs_refresh = REFRESH;
+        }
     }
 }
 
@@ -187,7 +189,7 @@ void fast_file_operations(const int index)
         str = short_msg[index];
         line = INFO_LINE;
         for (i = 0; i < cont; i++) {
-            if (strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) {
+            if ((strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) && (ps[i].needs_refresh != DONT_REFRESH)) {
                 ps[i].needs_refresh = FORCE_REFRESH;
             }
         }
@@ -427,6 +429,7 @@ static void *search_thread(void *x)
 void list_found(void)
 {
     sv.searching = 3 + active;
+    ps[active].needs_refresh = DONT_REFRESH;
     free(ps[active].nl);
     ps[active].nl = NULL;
     ps[active].number_of_files = sv.found_cont;
@@ -592,6 +595,7 @@ void devices_tab(void)
         ps[active].nl = NULL;
         ps[active].number_of_files = device_mode;
         device_mode = 1 + active;
+        ps[active].needs_refresh = DONT_REFRESH;
         reset_win(active);
         sprintf(ps[active].title, device_mode_str);
         list_everything(active, 0, 0);

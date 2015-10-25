@@ -25,7 +25,7 @@
 #define CREATE_DIR_TH 1
 #define RENAME_TH 2
 
-
+#define DONT_REFRESH -1
 #define NO_REFRESH 0
 #define REFRESH 1   // the win may need a refresh, but we have to check whether it is really needed before.
 #define FORCE_REFRESH 2     // the win surely needs a refresh. Skip check because it is useless, and refresh.
@@ -35,7 +35,9 @@ struct conf {
     int show_hidden;
     char starting_dir[PATH_MAX];
     int second_tab_starting_dir;
+#ifdef SYSTEMD_PRESENT
     int inhibit;
+#endif
 };
 
 typedef struct list {
@@ -75,11 +77,12 @@ file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
-int active, quit, num_of_jobs, cont, device_mode;
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-char (*usb_devices)[PATH_MAX];
-#endif
-#ifdef SYSTEMD_PRESENT
+int active, quit, num_of_jobs, cont;
+#ifdef SYSTEMD_PRESENT 
 pthread_t install_th;
+#ifdef LIBUDEV_PRESENT
+char (*usb_devices)[PATH_MAX];
+int device_mode;
+#endif
 #endif
 pthread_t main_id;

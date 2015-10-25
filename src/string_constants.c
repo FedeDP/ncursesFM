@@ -60,12 +60,12 @@ const char *helper_string[] = { "Enter to surf between folders or to open files.
                                 "m to switch current tab to device tab. Press enter on your desired device to (un)mount it.",
                                 "You can't close first tab. Use q to quit/leave current mode."};
 
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-const char *device_mode_str =  "Choose your desired device to (un)mount it.";
-#endif
+
 #ifdef SYSTEMD_PRESENT
 const char *bus_error = "Failed to open system bus";
-
 const char *pkg_quest = "Do you really want to install this package? y/N:> ";
 const char *install_th_wait = "Waiting for package installation to finish before exiting. It can really harm your OS otherwise.";
+#ifdef LIBUDEV_PRESENT
+const char *device_mode_str =  "Choose your desired device to (un)mount it.";
+#endif
 #endif

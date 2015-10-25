@@ -52,12 +52,12 @@ const char *thread_running;
 const char *quit_with_running_thread;
 
 const char *helper_string[HELPER_HEIGHT - 2];
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
-const char *device_mode_str;
-#endif
+
 #ifdef SYSTEMD_PRESENT
 const char *bus_error;
-
 const char *pkg_quest;
 const char *install_th_wait;
+#ifdef LIBUDEV_PRESENT
+const char *device_mode_str;
+#endif
 #endif

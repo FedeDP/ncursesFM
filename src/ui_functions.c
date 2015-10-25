@@ -188,17 +188,15 @@ void list_everything(int win, int old_dim, int end)
     if (sv.searching == 3 + win) {
         str_ptr = sv.found_searched;
     }
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
     else if (device_mode == 1 + win) {
         str_ptr = usb_devices;
     }
 #endif
     wattron(fm[win], A_BOLD);
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
-        if (device_mode != 1 + win) {
-            colored_folders(win, *(str_ptr + i));
-        }
-        if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
+        colored_folders(win, *(str_ptr + i));
+        if (ps[win].needs_refresh == DONT_REFRESH) {
             mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, *(str_ptr + i));
         } else {
             mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr + i), '/') + 1);
@@ -207,10 +205,11 @@ void list_everything(int win, int old_dim, int end)
     }
     wattroff(fm[win], A_BOLD);
     mvwprintw(fm[win], INITIAL_POSITION + ps[win].curr_pos - delta[win], 1, "->");
-    if ((sv.searching != 3 + win) && (stat_active[win] == 1)) {
+    if ((ps[win].needs_refresh != DONT_REFRESH) && (stat_active[win] == 1)) {
         show_stat(old_dim, end, win);
+    } else {
+        print_border_and_title(win);
     }
-    print_border_and_title(win);
 }
 
 /*
@@ -361,8 +360,6 @@ static void colored_folders(int win, const char *name)
         } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
             wattron(fm[win], COLOR_PAIR(2));
         }
-    } else {
-        wattron(fm[win], COLOR_PAIR(4));
     }
 }
 
@@ -457,6 +454,7 @@ void show_stat(int init, int end, int win)
     }
     change_unit(total_size, str);
     sprintf(tot_size[win], "Total size: %s", str);
+    print_border_and_title(win);
 }
 
 /*
@@ -480,7 +478,7 @@ void trigger_stats(void)
 {
     stat_active[active] = !stat_active[active];
     if (stat_active[active]) {
-        list_everything(active, delta[active], 0);
+        show_stat(delta[active], dim - 2, active);
     } else {
         erase_stat();
     }
@@ -574,10 +572,10 @@ static void tabs_refresh(void)
     int i;
 
     for (i = 0; i < cont; i++) {
-        if ((ps[i].needs_refresh != NO_REFRESH) && (sv.searching != 3 + i) && (device_mode != 1 + i)) {
+        if (ps[i].needs_refresh >= REFRESH) {
             generate_list(i);
+            ps[i].needs_refresh = NO_REFRESH;
         }
-        ps[i].needs_refresh = NO_REFRESH;
     }
 }
 
@@ -611,6 +609,8 @@ void change_sort(void)
         print_info("Files will be sorted alphabetically now.", INFO_LINE);
     }
     for (i = 0; i < cont; i++) {
-        ps[i].needs_refresh = FORCE_REFRESH;
+        if (ps[i].needs_refresh != DONT_REFRESH) {
+            ps[i].needs_refresh = FORCE_REFRESH;
+        }
     }
 }

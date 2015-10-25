@@ -99,10 +99,13 @@ static void parse_cmd(int argc, const char *argv[])
                 strcpy(config.starting_dir, argv[j] + strlen(cmd_switch[1]));
                 changed++;
             }
-        } else if (!config.inhibit && strncmp(cmd_switch[2], argv[j], strlen(cmd_switch[2])) == 0) {
+        }
+#ifdef SYSTEMD_PRESENT
+        else if (!config.inhibit && strncmp(cmd_switch[2], argv[j], strlen(cmd_switch[2])) == 0) {
             config.inhibit = atoi(argv[j] + strlen(cmd_switch[2]));
             changed++;
         }
+#endif
         j++;
     }
     if (changed != argc) {
@@ -128,7 +131,9 @@ static void read_config_file(void)
             strcpy(config.starting_dir, str_starting_dir);
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
+#ifdef SYSTEMD_PRESENT
         config_lookup_int(&cfg, "inhibit", &config.inhibit);
+#endif
     } else {
         printf("%s", config_file_missing);
         sleep(1);
@@ -167,10 +172,10 @@ static void main_loop(void)
             continue;
         }
         c = tolower(c);
-        if ((device_mode == 1 + active) && isprint(c) && (c != 'q') && (c != 'l')) {
+        if ((ps[active].needs_refresh == DONT_REFRESH) && isprint(c) && (c != 'q') && (c != 'l') && (c != 't')) {
             continue;
         }
-        if ((sv.searching != 3 + active) && (device_mode != 1 + active)) {
+        if (ps[active].needs_refresh != DONT_REFRESH) {
             stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
         }
         switch (c) {
@@ -181,12 +186,12 @@ static void main_loop(void)
             scroll_down();
             break;
         case KEY_RIGHT:
-            if (active == 0 && cont == MAX_TABS) {
+            if (!active && cont == MAX_TABS) {
                 change_tab();
             }
             break;
         case KEY_LEFT:
-            if (active == 1) {
+            if (active) {
                 change_tab();
             }
             break;
@@ -199,7 +204,7 @@ static void main_loop(void)
                 sv.found_searched[ps[active].curr_pos][index] = '\0';
                 leave_search_mode(sv.found_searched[ps[active].curr_pos]);
             }
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
             else if (device_mode == 1 + active) {
                 manage_enter_device();
             }
@@ -219,7 +224,7 @@ static void main_loop(void)
             }
             break;
         case 'w': // w to close second tab
-            if ((active) && (sv.searching != 3 + active)) {
+            if (active) {
                 cont--;
                 active = 0;
                 delete_tab(cont);
@@ -229,7 +234,7 @@ static void main_loop(void)
             }
             break;
         case 32: // space to select files
-            if ((sv.searching != 3 + active) && (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0)) {
+            if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
                 manage_space_press(ps[active].nl[ps[active].curr_pos]);
             }
             break;
@@ -238,9 +243,7 @@ static void main_loop(void)
             trigger_show_helper_message(help);
             break;
         case 's': // show stat about files (size and perms)
-            if (sv.searching != 3 + active) {
-                trigger_stats();
-            }
+            trigger_stats();
             break;
         case 'f': // f to search
             if (sv.searching == 0) {
@@ -253,16 +256,14 @@ static void main_loop(void)
             break;
 #ifdef LIBCUPS_PRESENT
         case 'p': // p to print
-            if ((sv.searching != 3 + active) && (S_ISREG(current_file_stat.st_mode)) && !(current_file_stat.st_mode & S_IXUSR)) {
+            if ((S_ISREG(current_file_stat.st_mode)) && !(current_file_stat.st_mode & S_IXUSR)) {
                 print_support(ps[active].nl[ps[active].curr_pos]);
             }
             break;
 #endif
 #if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
         case 'm': // m to mount/unmount fs
-            if ((sv.searching != 3 + active) && (!device_mode)) {
-                devices_tab();
-            }
+            devices_tab();
             break;
 #endif
         case ',': // , to enable/disable fast browse mode
@@ -294,20 +295,18 @@ static void main_loop(void)
             change_sort();
             break;
         case 'n': case 'd': case 'o':   // fast operations do not require another thread.
-            if ((sv.searching != 3 + active) && (check_access())) {
+            if (check_access()) {
                 ptr = strchr(short_table, c);
                 index = SHORT_FILE_OPERATIONS - strlen(ptr);
                 fast_file_operations(index);
             }
             break;
         default:
-            if (sv.searching != 3 + active) {
-                ptr = strchr(long_table, c);
-                if (ptr) {
-                    index = LONG_FILE_OPERATIONS - 1 - strlen(ptr);
-                    if (check_init(index)) {
-                        init_thread(index, long_func[index]);
-                    }
+            ptr = strchr(long_table, c);
+            if (ptr) {
+                index = LONG_FILE_OPERATIONS - 1 - strlen(ptr);
+                if (check_init(index)) {
+                    init_thread(index, long_func[index]);
                 }
             }
             break;
