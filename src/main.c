@@ -86,8 +86,11 @@ static void helper_function(int argc, const char *argv[])
 static void parse_cmd(int argc, const char *argv[])
 {
     int j = 1, changed = 1;
+#ifdef SYSTEMD_PRESENT
     const char *cmd_switch[] = {"--editor=", "--starting-dir=", "--inhibit="};
-
+#else
+    const char *cmd_switch[] = {"--editor=", "--starting-dir="};
+#endif
     while (j < argc) {
         if (strncmp(cmd_switch[0], argv[j], strlen(cmd_switch[0])) == 0) {
             if (!strlen(config.editor)) {
@@ -172,10 +175,11 @@ static void main_loop(void)
             continue;
         }
         c = tolower(c);
-        if ((ps[active].needs_refresh == DONT_REFRESH) && isprint(c) && (c != 'q') && (c != 'l') && (c != 't')) {
-            continue;
-        }
-        if (ps[active].needs_refresh != DONT_REFRESH) {
+        if (ps[active].needs_refresh == DONT_REFRESH) {
+            if (isprint(c) && (c != 'q') && (c != 'l') && (c != 't')) {
+                continue;
+            }
+        } else {
             stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
         }
         switch (c) {

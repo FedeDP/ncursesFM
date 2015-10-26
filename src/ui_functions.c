@@ -360,6 +360,8 @@ static void colored_folders(int win, const char *name)
         } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
             wattron(fm[win], COLOR_PAIR(2));
         }
+    } else {
+        wattron(fm[win], COLOR_PAIR(4));
     }
 }
 

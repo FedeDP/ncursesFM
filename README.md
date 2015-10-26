@@ -48,7 +48,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 * libconfig -> config file parsing
 * libx11    -> check whether ncursesFM is started in a X environment or not.
 * sd-bus    -> to switch off powermanagement functions, devices/iso mount and packages installation.
-* libudev   -> needed to list mountable drives.
+* libudev   -> needed to list mountable drives. Useful only if built with sd-bus.
 
 ## Runtime dependencies
 
