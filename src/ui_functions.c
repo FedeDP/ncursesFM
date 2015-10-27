@@ -113,12 +113,12 @@ void screen_end(void)
  */
 static void generate_list(int win)
 {
-    int i = ps[win].number_of_files, num_of_files, check = 0;
+    int i, num_of_files, check = 0;
     struct dirent **files;
     char str[PATH_MAX] = {};
     
     num_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func);
-    if ((ps[win].needs_refresh == FORCE_REFRESH) || (i != num_of_files)) {
+    if ((ps[win].needs_refresh == FORCE_REFRESH) || (ps[win].number_of_files != num_of_files)) {
         check = 1;
         free(ps[win].nl);
         ps[win].nl = NULL;
