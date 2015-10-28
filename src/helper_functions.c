@@ -75,16 +75,6 @@ int is_ext(const char *filename, const char *ext[], int size)
     return 0;
 }
 
-void *safe_malloc(ssize_t size, const char *str)
-{
-    void *ptr = NULL;
-
-    if (!(ptr = malloc(size))) {
-        print_info(str, ERR_LINE);
-    }
-    return ptr;
-}
-
 /*
  * Adds a job to the thread_job_list (thread_job_list list).
  * current_th will always point to the newly created job (ie the last job to be executed).
@@ -94,7 +84,8 @@ static thread_job_list *add_thread(thread_job_list *h, int type, int (*f)(void))
     if (h) {
         h->next = add_thread(h->next, type, f);
     } else {
-        if (!(h = safe_malloc(sizeof(struct thread_list), generic_mem_error))) {
+        if (!(h = malloc(sizeof(struct thread_list)))) {
+            quit = MEM_ERR_QUIT;
             return NULL;
         }
         num_of_jobs++;
@@ -135,6 +126,9 @@ void init_thread(int type, int (* const f)(void))
 {
     thread_h = add_thread(thread_h, type, f);
     init_thread_helper();
+    if (quit) {
+        return;
+    }
     if (num_of_jobs > 1) {
         print_info(thread_running, INFO_LINE);
     } else {
@@ -143,7 +137,7 @@ void init_thread(int type, int (* const f)(void))
             inhibit_suspend();
         }
 #endif
-    pthread_create(&th, NULL, execute_thread, NULL);
+        pthread_create(&th, NULL, execute_thread, NULL);
     }
 }
 
@@ -203,7 +197,7 @@ static void init_thread_helper(void)
         strcpy(current_th->filename, ps[active].nl[ps[active].curr_pos]);
     } else {
         copy_selected_files();
-        if (current_th->type == ARCHIVER_TH) {
+        if (current_th->type == ARCHIVER_TH && !quit) {
             ask_user(archiving_mesg, name, NAME_MAX, 0);
             if (!strlen(name)) {
                 strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
@@ -220,7 +214,7 @@ static void copy_selected_files(void)
 {
     file_list *tmp = selected;
 
-    while (tmp) {
+    while (tmp && !quit) {
         current_th->selected_files = select_file(current_th->selected_files, tmp->name);
         tmp = tmp->next;
     }
@@ -312,7 +306,8 @@ file_list *select_file(file_list *h, const char *str)
     if (h) {
         h->next = select_file(h->next, str);
     } else {
-        if (!(h = safe_malloc(sizeof(struct list), generic_mem_error))) {
+        if (!(h = malloc(sizeof(struct list)))) {
+            quit = MEM_ERR_QUIT;
             return NULL;
         }
         strcpy(h->name, str);

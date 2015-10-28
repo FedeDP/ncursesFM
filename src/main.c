@@ -58,6 +58,9 @@ int main(int argc, const char *argv[])
     free_everything();
     screen_end();
     printf("\033c"); // to clear terminal/vt after leaving program
+    if (quit == MEM_ERR_QUIT) {
+        printf("%s\n", generic_mem_error);
+    }
     return 0;
 }
 
@@ -289,7 +292,7 @@ static void main_loop(void)
             }
 #endif
             else {
-                quit = 1;
+                quit = NORM_QUIT;
             }
             break;
         case KEY_RESIZE:

@@ -587,7 +587,7 @@ void change_tab(void)
 void devices_tab(void)
 {
     enumerate_usb_mass_storage();
-    if (device_mode) {
+    if (device_mode && !quit) {
         str_ptr[active] = usb_devices;
         ps[active].number_of_files = device_mode;
         device_mode = 1 + active;
@@ -632,7 +632,11 @@ static void enumerate_usb_mass_storage(void)
         }
         parent = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
         if (parent) {
-            usb_devices = realloc(usb_devices, sizeof(*(usb_devices)) * (device_mode + 1));
+            if (!(usb_devices = realloc(usb_devices, sizeof(*(usb_devices)) * (device_mode + 1)))) {
+                quit = MEM_ERR_QUIT;
+                udev_device_unref(dev);
+                break;
+            }
             sprintf(usb_devices[device_mode], "%s, VID/PID: %s:%s, %s %s, Mounted: %d",
                     name, udev_device_get_sysattr_value(parent, "idVendor"),
                     udev_device_get_sysattr_value(parent, "idProduct"),

@@ -122,8 +122,8 @@ static void generate_list(int win)
         free(ps[win].nl);
         ps[win].nl = NULL;
         ps[win].number_of_files = num_of_files;
-        if (!(ps[win].nl = safe_malloc(sizeof(*(ps[win].nl)) * ps[win].number_of_files, fatal_mem_error))) {
-            quit = 1;
+        if (!(ps[win].nl = calloc(num_of_files, PATH_MAX))) {
+            quit = MEM_ERR_QUIT;
         } else {
             check = 1;
         }

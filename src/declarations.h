@@ -30,6 +30,10 @@
 #define REFRESH 1   // the win may need a refresh, but we have to check whether it is really needed before.
 #define FORCE_REFRESH 2     // the win surely needs a refresh. Skip check because it is useless, and refresh.
 
+#define DONT_QUIT 0
+#define NORM_QUIT 1
+#define MEM_ERR_QUIT 2
+
 struct conf {
     char editor[PATH_MAX];
     int show_hidden;
