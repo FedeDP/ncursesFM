@@ -341,7 +341,6 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         return 0;
     }
     if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
-        memset(sv.found_searched, 0, sizeof(char) * PATH_MAX * sv.found_cont);
         return 1;
     }
     if ((sv.search_archive) && (is_ext(strrchr(path, '/'), arch_ext, 6))) {
@@ -430,9 +429,8 @@ void list_found(void)
 {
     sv.searching = 3 + active;
     ps[active].needs_refresh = DONT_REFRESH;
-    free(ps[active].nl);
-    ps[active].nl = NULL;
     ps[active].number_of_files = sv.found_cont;
+    str_ptr[active] = sv.found_searched;
     reset_win(active);
     sprintf(ps[active].title, "Found file searching %s:", sv.searched_string);
     list_everything(active, 0, 0);
@@ -444,7 +442,6 @@ void leave_search_mode(const char *str)
     sv.searching = 0;
     print_info(NULL, INFO_LINE);
     change_dir(str);
-    memset(sv.found_searched, 0, sizeof(char) * PATH_MAX * sv.found_cont);
 }
 
 int search_enter_press(const char *str)
@@ -591,8 +588,7 @@ void devices_tab(void)
 {
     enumerate_usb_mass_storage();
     if (device_mode) {
-        free(ps[active].nl);
-        ps[active].nl = NULL;
+        str_ptr[active] = usb_devices;
         ps[active].number_of_files = device_mode;
         device_mode = 1 + active;
         ps[active].needs_refresh = DONT_REFRESH;

@@ -86,3 +86,4 @@ int device_mode;
 #endif
 #endif
 pthread_t main_id;
+char (*str_ptr[MAX_TABS])[PATH_MAX]; // pointer to make abstract which list of strings i have to print in list_everything()

@@ -119,25 +119,27 @@ static void generate_list(int win)
     
     num_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func);
     if ((ps[win].needs_refresh == FORCE_REFRESH) || (ps[win].number_of_files != num_of_files)) {
-        check = 1;
         free(ps[win].nl);
         ps[win].nl = NULL;
         ps[win].number_of_files = num_of_files;
         if (!(ps[win].nl = safe_malloc(sizeof(*(ps[win].nl)) * ps[win].number_of_files, fatal_mem_error))) {
             quit = 1;
+        } else {
+            check = 1;
         }
+        str_ptr[win] = ps[win].nl;
         if (strcmp(ps[win].my_cwd, "/") != 0) {
             strcpy(str, ps[win].my_cwd);
         }
     }
     for (i = 0; i < ps[win].number_of_files; i++) {
-        if (!quit && check) {
+        if (check) {
             sprintf(ps[win].nl[i], "%s/%s", str, files[i]->d_name);
         }
         free(files[i]);
     }
     free(files);
-    if (!quit && check) {
+    if (check) {
         reset_win(win);
         list_everything(win, 0, 0);
     }
@@ -180,26 +182,17 @@ void reset_win(int win)
 void list_everything(int win, int old_dim, int end)
 {
     int i;
-    char (*str_ptr)[PATH_MAX] = str_ptr = ps[win].nl;
-
+    
     if (end == 0) {
         end = dim - 2;
     }
-    if (sv.searching == 3 + win) {
-        str_ptr = sv.found_searched;
-    }
-#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
-    else if (device_mode == 1 + win) {
-        str_ptr = usb_devices;
-    }
-#endif
     wattron(fm[win], A_BOLD);
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
-        colored_folders(win, *(str_ptr + i));
+        colored_folders(win, *(str_ptr[win] + i));
         if (ps[win].needs_refresh == DONT_REFRESH) {
-            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, *(str_ptr + i));
+            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, *(str_ptr[win] + i));
         } else {
-            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr + i), '/') + 1);
+            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr[win] + i), '/') + 1);
         }
         wattroff(fm[win], COLOR_PAIR);
     }
@@ -292,7 +285,6 @@ void delete_tab(int win)
     if (!resizing) {
         free(ps[win].nl);
         ps[win].nl = NULL;
-        ps[win].number_of_files = 0;
     }
 }
 
