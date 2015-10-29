@@ -120,7 +120,6 @@ static void generate_list(int win)
     num_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func);
     if ((ps[win].needs_refresh == FORCE_REFRESH) || (ps[win].number_of_files != num_of_files)) {
         free(ps[win].nl);
-        ps[win].nl = NULL;
         ps[win].number_of_files = num_of_files;
         if (!(ps[win].nl = calloc(num_of_files, PATH_MAX))) {
             quit = MEM_ERR_QUIT;

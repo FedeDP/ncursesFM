@@ -125,6 +125,9 @@ void free_running_h(void)
 void init_thread(int type, int (* const f)(void))
 {
     thread_h = add_thread(thread_h, type, f);
+    if (quit) {
+        return;
+    }
     init_thread_helper();
     if (quit) {
         return;
