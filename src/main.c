@@ -21,7 +21,8 @@
  *
  * END_COMMON_COPYRIGHT_HEADER */
 
-#include "fm_functions.h"
+#include "../inc/fm_functions.h"
+
 #ifdef LIBCONFIG_PRESENT
 #include <libconfig.h>
 #endif
@@ -61,11 +62,10 @@ int main(int argc, const char *argv[])
     if (quit == MEM_ERR_QUIT) {
         printf("%s\n", generic_mem_error);
     }
-    return 0;
+    EXIT_SUCCESS;
 }
 
-static void helper_function(int argc, const char *argv[])
-{
+static void helper_function(int argc, const char *argv[]) {
     if (argc != 1) {
         if ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)) {
             printf("\tNcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
@@ -86,8 +86,7 @@ static void helper_function(int argc, const char *argv[])
     }
 }
 
-static void parse_cmd(int argc, const char *argv[])
-{
+static void parse_cmd(int argc, const char *argv[]) {
     int j = 1, changed = 1;
 #ifdef SYSTEMD_PRESENT
     const char *cmd_switch[] = {"--editor=", "--starting-dir=", "--inhibit="};
@@ -121,8 +120,7 @@ static void parse_cmd(int argc, const char *argv[])
 }
 
 #ifdef LIBCONFIG_PRESENT
-static void read_config_file(void)
-{
+static void read_config_file(void) {
     config_t cfg;
     const char *config_file_name = "/etc/default/ncursesFM.conf";
     const char *str_editor, *str_starting_dir;
@@ -148,8 +146,7 @@ static void read_config_file(void)
 }
 #endif
 
-static void config_checks(void)
-{
+static void config_checks(void) {
     const char *str;
 
     if ((strlen(config.starting_dir)) && (access(config.starting_dir, F_OK) == -1)) {
@@ -163,8 +160,7 @@ static void config_checks(void)
     }
 }
 
-static void main_loop(void)
-{
+static void main_loop(void) {
     int c, index, fast_browse_mode = 0, help = 0;
     const char *long_table = "xvrb"; // x to move, v to paste, r to remove, b to compress
     const char *short_table = "ndo";  //n, d to create new file/dir, o to rename.
@@ -321,8 +317,7 @@ static void main_loop(void)
     }
 }
 
-static int check_init(int index)
-{
+static int check_init(int index) {
     char x;
 
     if (!selected) {
@@ -336,8 +331,7 @@ static int check_init(int index)
     return (x == 'y') ? 1 : 0;
 }
 
-static int check_access(void)
-{
+static int check_access(void) {
     if (access(ps[active].my_cwd, W_OK) != 0) {
         print_info(no_w_perm, ERR_LINE);
         return 0;

@@ -21,7 +21,7 @@
  *
  * END_COMMON_COPYRIGHT_HEADER */
 
-#include "ui_functions.h"
+#include "../inc/ui_functions.h"
 
 static void fm_scr_init(void);
 static void generate_list(int win);
@@ -46,8 +46,7 @@ static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) =
 /*
  * Initializes screen, create first tab, and create info_win
  */
-void screen_init(void)
-{
+void screen_init(void) {
     setlocale(LC_ALL, "");
     initscr();
     start_color();
@@ -62,8 +61,7 @@ void screen_init(void)
     fm_scr_init();
 }
 
-static void fm_scr_init(void)
-{
+static void fm_scr_init(void) {
     int i;
 
     dim = LINES - INFO_HEIGHT;
@@ -85,8 +83,7 @@ static void fm_scr_init(void)
 /*
  * Clear any existing window, and remove stdscr
  */
-void screen_end(void)
-{
+void screen_end(void) {
     int i;
 
     for (i = 0; i < cont; i++) {
@@ -111,8 +108,7 @@ void screen_end(void)
  * If it changed, the function will create a new list of files and print them to screen (list_everything)
  * If program cannot allocate memory, it will leave.
  */
-static void generate_list(int win)
-{
+static void generate_list(int win) {
     int i, num_of_files, check = 0;
     struct dirent **files;
     char str[PATH_MAX] = {};
@@ -144,8 +140,7 @@ static void generate_list(int win)
     }
 }
 
-int sizesort(const struct dirent **d1, const struct dirent **d2)
-{
+int sizesort(const struct dirent **d1, const struct dirent **d2) {
     struct stat stat1, stat2;
     float result;
     
@@ -155,8 +150,7 @@ int sizesort(const struct dirent **d1, const struct dirent **d2)
     return (result > 0) ? -1 : 1;
 }
 
-int last_mod_sort(const struct dirent **d1, const struct dirent **d2)
-{
+int last_mod_sort(const struct dirent **d1, const struct dirent **d2) {
     struct stat stat1, stat2;
     
     stat((*d1)->d_name, &stat1);
@@ -178,8 +172,7 @@ void reset_win(int win)
  * else it indicates how many strings the function has to print (starting from files[old_dim])
  * If stat_active == 1 for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
  */
-void list_everything(int win, int old_dim, int end)
-{
+void list_everything(int win, int old_dim, int end) {
     int i;
     
     if (end == 0) {
@@ -207,8 +200,7 @@ void list_everything(int win, int old_dim, int end)
 /*
  * Helper function that prints borders and title of 'win'
  */
-static void print_border_and_title(int win)
-{
+static void print_border_and_title(int win) {
     wborder(fm[win], '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(fm[win], 0, 0, "%.*s", width[win] - 1, ps[win].title);
     if (stat_active[win] == 1) {
@@ -221,8 +213,7 @@ static void print_border_and_title(int win)
  * Helper function passed to scandir (in generate_list() )
  * Will return false for '.', and for every file starting with '.' (except for '..') if !show_hidden
  */
-static int is_hidden(const struct dirent *current_file)
-{
+static int is_hidden(const struct dirent *current_file) {
     if (current_file->d_name[0] == '.') {
         if ((strlen(current_file->d_name) == 1) || ((!config.show_hidden) && current_file->d_name[1] != '.')) {
             return (FALSE);
@@ -235,8 +226,7 @@ static int is_hidden(const struct dirent *current_file)
  * Creates a new tab.
  * Then calculates new tab cwd, chdir there, and generate its list of files.
  */
-void new_tab(int win)
-{
+void new_tab(int win) {
     width[win] = COLS / cont + COLS % cont;
     fm[win] = subwin(stdscr, dim, width[win], 0, (COLS * (win)) / cont);
     keypad(fm[win], TRUE);
@@ -248,8 +238,7 @@ void new_tab(int win)
     }
 }
 
-void restrict_first_tab(void)
-{
+void restrict_first_tab(void) {
     width[active] = COLS / cont;
     wresize(fm[active], dim, width[active]);
     print_border_and_title(active);
@@ -259,8 +248,7 @@ void restrict_first_tab(void)
  * Helper function for new_tab().
  * Saves new tab's cwd, chdir the process inside there, and put flag "needs_refresh" to FORCE_REFRESH.
  */
-static void initialize_tab_cwd(int win)
-{
+static void initialize_tab_cwd(int win) {
     if (strlen(config.starting_dir)) {
         if ((cont == 1) || (config.second_tab_starting_dir)) {
             strcpy(ps[win].my_cwd, config.starting_dir);
@@ -276,8 +264,7 @@ static void initialize_tab_cwd(int win)
 /*
  * Removes a tab and resets its cwd
  */
-void delete_tab(int win)
-{
+void delete_tab(int win) {
     wclear(fm[win]);
     delwin(fm[win]);
     fm[win] = NULL;
@@ -290,16 +277,14 @@ void delete_tab(int win)
 /*
  * Called in main_loop (main.c) after deletion of second tab.
  */
-void enlarge_first_tab(void)
-{
+void enlarge_first_tab(void) {
     width[active] = COLS;
     wborder(fm[active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wresize(fm[active], dim, width[active]);
     print_border_and_title(active);
 }
 
-void scroll_down(void)
-{
+void scroll_down(void) {
     if (ps[active].curr_pos < ps[active].number_of_files - 1) {
         ps[active].curr_pos++;
         if (ps[active].curr_pos - (dim - 2) == delta[active]) {
@@ -312,8 +297,7 @@ void scroll_down(void)
     }
 }
 
-void scroll_up(void)
-{
+void scroll_up(void) {
     if (ps[active].curr_pos > 0) {
         ps[active].curr_pos--;
         if (ps[active].curr_pos < delta[active]) {
@@ -326,8 +310,7 @@ void scroll_up(void)
     }
 }
 
-static void scroll_helper_func(int x, int direction)
-{
+static void scroll_helper_func(int x, int direction) {
     mvwprintw(fm[active], x, 1, "  ");
     wborder(fm[active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wscrl(fm[active], direction);
@@ -339,8 +322,7 @@ static void scroll_helper_func(int x, int direction)
  * Receives a win and a full path to be checked.
  * If it cannot stat a file, it means it is inside an archive (in search_mode), so we print it yellow.
  */
-static void colored_folders(int win, const char *name)
-{
+static void colored_folders(int win, const char *name) {
     struct stat file_stat;
 
     if (lstat(name, &file_stat) == 0) {
@@ -356,8 +338,7 @@ static void colored_folders(int win, const char *name)
     }
 }
 
-void trigger_show_helper_message(int help)
-{
+void trigger_show_helper_message(int help) {
     if (help) {
         create_helper_win();
     } else {
@@ -371,8 +352,7 @@ void trigger_show_helper_message(int help)
  * change it to dim - 3 + ps[i].delta.
  * Then create helper_win and print its strings.
  */
-static void create_helper_win(void)
-{
+static void create_helper_win(void) {
     int i;
 
     dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
@@ -393,8 +373,7 @@ static void create_helper_win(void)
 /*
  * Remove helper_win, resize every ps.fm win and prints last HELPER_HEIGHT lines for each ps.win.
  */
-static void remove_helper_win(void)
-{
+static void remove_helper_win(void) {
     int i;
 
     wclear(helper_win);
@@ -408,8 +387,7 @@ static void remove_helper_win(void)
     }
 }
 
-static void helper_print(void)
-{
+static void helper_print(void) {
     int i;
 
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
@@ -426,8 +404,7 @@ static void helper_print(void)
  * win: window where we need to print.
  * if init is 0, in the first line ("..") print "total size"
  */
-void show_stat(int init, int end, int win)
-{
+void show_stat(int init, int end, int win) {
     int i , j;
     int perm_bit[9] = {S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, S_IROTH, S_IWOTH, S_IXOTH};
     char perm_sign[3] = {'r', 'w', 'x'}, str[20];
@@ -454,8 +431,7 @@ void show_stat(int init, int end, int win)
  * Helper function used in show_stat: received a size,
  * it changes the unit from Kb to Mb to Gb if size > 1024 (previous unit)
  */
-static void change_unit(float size, char *str)
-{
+static void change_unit(float size, char *str) {
     char *unit[3] = {"KB", "MB", "GB"};
     int i = 0;
 
@@ -467,8 +443,7 @@ static void change_unit(float size, char *str)
     sprintf(str, "%.2f%s", size, unit[i]);
 }
 
-void trigger_stats(void)
-{
+void trigger_stats(void) {
     stat_active[active] = !stat_active[active];
     if (stat_active[active]) {
         show_stat(delta[active], dim - 2, active);
@@ -480,8 +455,7 @@ void trigger_stats(void)
 /*
  * Move to STAT_COL and clear to eol.
  */
-static void erase_stat(void)
-{
+static void erase_stat(void) {
     int i;
 
     for (i = 0; (i < ps[active].number_of_files) && (i < dim - 2); i++) {
@@ -499,8 +473,7 @@ static void erase_stat(void)
  * If asking_question != 0, there's a question being asked to user, so we won't clear it inside the for,
  * and we won't print str if i == INFO_LINE (that's the line where the user is being asked the question!)
  */
-void print_info(const char *str, int i)
-{
+void print_info(const char *str, int i) {
     int len = 0;
     char st[100], search_str[20];
 
@@ -535,8 +508,7 @@ void print_info(const char *str, int i)
  * Given a str, a char input[dim], and a char c (that is default value if enter is pressed, if dim == 1),
  * asks the user "str" and saves in input the user response.
  */
-void ask_user(const char *str, char *input, int dim, char c)
-{
+void ask_user(const char *str, char *input, int dim, char c) {
     echo();
     print_info(str, INFO_LINE);
     asking_question = 1;
@@ -553,15 +525,13 @@ void ask_user(const char *str, char *input, int dim, char c)
     print_info(NULL, INFO_LINE);
 }
 
-int win_refresh_and_getch(void)
-{
+int win_refresh_and_getch(void) {
     tabs_refresh();
     signal(SIGUSR2, sig_handler);
     return wgetch(fm[active]);
 }
 
-static void tabs_refresh(void)
-{
+static void tabs_refresh(void) {
     int i;
 
     for (i = 0; i < cont; i++) {
@@ -572,13 +542,11 @@ static void tabs_refresh(void)
     }
 }
 
-static void sig_handler(int sig_num)
-{
+static void sig_handler(int sig_num) {
     return tabs_refresh();
 }
 
-void resize_win(int help)
-{
+void resize_win(int help) {
     resizing = 1;
     screen_end();
     fm_scr_init();
@@ -587,8 +555,7 @@ void resize_win(int help)
     resizing = 0;
 }
 
-void change_sort(void)
-{
+void change_sort(void) {
     int i;
     
     if (sorting_func == alphasort) {

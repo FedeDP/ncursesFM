@@ -1,6 +1,6 @@
 CC = gcc
 LIBS =-lpthread $(shell pkg-config --silence-errors --libs libarchive ncurses)
-CFLAGS =
+CFLAGS =-D_GNU_SOURCE
 RM = rm
 INSTALL = install -p
 INSTALL_PROGRAM = $(INSTALL) -m755

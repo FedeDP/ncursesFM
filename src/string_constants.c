@@ -1,3 +1,5 @@
+#include "../inc/string_constants.h"
+
 #ifdef LIBCONFIG_PRESENT
 const char *config_file_missing = "Config file (/etc/default/ncursesFM.conf) not found. Using default values.\n";
 #endif
@@ -7,6 +9,8 @@ const char *generic_mem_error = "Memory allocation failed.";
 const char *fatal_mem_error = "No more memory available. Program will exit.";
 
 const char *no_w_perm = "You do not have write permissions here.";
+
+const char *arch_ext[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
 
 const char *file_selected = "This file is already selected. Cancel its selection before.";
 const char *no_selected_files = "There are no selected files.";
