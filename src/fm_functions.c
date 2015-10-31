@@ -1,26 +1,3 @@
-/* BEGIN_COMMON_COPYRIGHT_HEADER
- *
- * NcursesFM: file manager in C with ncurses UI for linux.
- * https://github.com/FedeDP/ncursesFM
- *
- * Copyright (C) 2015  Federico Di Pierro <nierro92@gmail.com>
- *
- * This file is part of ncursesFM.
- * ncursesFM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * END_COMMON_COPYRIGHT_HEADER */
-
 #include "../inc/fm_functions.h"
 
 #ifdef LIBX11_PRESENT
@@ -238,12 +215,15 @@ void manage_space_press(const char *str) {
 }
 
 int paste_file(void) {
-    char copied_file_dir[PATH_MAX];
+    char copied_file_dir[PATH_MAX], *str;
+    int len;
     file_list *tmp = NULL;
 
     for (tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
         strcpy(copied_file_dir, tmp->name);
-        copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
+        str = strrchr(tmp->name, '/');
+        len = strlen(tmp->name) - strlen(str);
+        copied_file_dir[len] = '\0';
         if (strcmp(thread_h->full_path, copied_file_dir) != 0) {
             cpr(tmp);
         }
@@ -252,14 +232,17 @@ int paste_file(void) {
 }
 
 int move_file(void) {
-    char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX];
+    char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX], *str;
     struct stat file_stat_copied, file_stat_pasted;
     file_list *tmp = NULL;
+    int len;
 
     lstat(thread_h->full_path, &file_stat_pasted);
     for (tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
         strcpy(copied_file_dir, tmp->name);
-        copied_file_dir[strlen(tmp->name) - strlen(strrchr(tmp->name, '/'))] = '\0';
+        str = strrchr(tmp->name, '/');
+        len = strlen(tmp->name) - strlen(str);
+        copied_file_dir[len] = '\0';
         if (strcmp(thread_h->full_path, copied_file_dir) != 0) {
             lstat(copied_file_dir, &file_stat_copied);
             if (file_stat_copied.st_dev == file_stat_pasted.st_dev) { // if on the same fs, just rename the file
@@ -277,7 +260,10 @@ int move_file(void) {
 }
 
 static void cpr(file_list *tmp) {
-    distance_from_root = strlen(tmp->name) - strlen(strrchr(tmp->name, '/'));
+    char *str;
+    
+    str = strrchr(tmp->name, '/');
+    distance_from_root = strlen(tmp->name) - strlen(str);
     nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
 }
 
@@ -320,6 +306,8 @@ void change_tab(void) {
 
 void fast_browse(int c) {
     int i = 1, found = 0, end = ps[active].number_of_files;
+    int len;
+    char *str;
     uint64_t diff = (MILLION * timer.tv_sec) + timer.tv_usec;
     void (*f)(void);
 
@@ -334,7 +322,9 @@ void fast_browse(int c) {
     sprintf(fast_browse_str + strlen(fast_browse_str), "%c", c);
     print_info(fast_browse_str, INFO_LINE);
     for (num_files = 0; i < end; i++) {
-        if (strncmp(fast_browse_str, strrchr(ps[active].nl[i], '/') + 1, strlen(fast_browse_str)) == 0) {
+        str = strrchr(ps[active].nl[i], '/') + 1;
+        len = strlen(fast_browse_str);
+        if (strncmp(fast_browse_str, str, len) == 0) {
             if (!found) {
                 found = 1;
                 if (i < ps[active].curr_pos) {

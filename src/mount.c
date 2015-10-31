@@ -183,14 +183,16 @@ static int is_mounted(const char *dev_path) {
 
 void manage_enter_device(void) {
     int mount;
-    char *ptr = strchr(usb_devices[ps[active].curr_pos], ',');
+    int pos = ps[active].curr_pos;
+    int len = strlen(usb_devices[pos]);
+    char *ptr = strchr(usb_devices[pos], ',');
 
-    mount = usb_devices[ps[active].curr_pos][strlen(usb_devices[ps[active].curr_pos]) - 1] - '0';
-    usb_devices[ps[active].curr_pos][strlen(usb_devices[ps[active].curr_pos]) - strlen(ptr)] = '\0';
+    mount = usb_devices[pos][len - 1] - '0';
+    usb_devices[pos][len - strlen(ptr)] = '\0';
     if (mount) {
-        mount_fs(usb_devices[ps[active].curr_pos], "Unmount", mount);
+        mount_fs(usb_devices[pos], "Unmount", mount);
     } else {
-        mount_fs(usb_devices[ps[active].curr_pos], "Mount", mount);
+        mount_fs(usb_devices[pos], "Mount", mount);
     }
     leave_device_mode();
 }

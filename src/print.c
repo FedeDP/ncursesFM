@@ -21,7 +21,8 @@ static void *print_file(void *filename) {
 
     if (num_dests > 0) {
         default_dest = cupsGetDest(NULL, NULL, num_dests, dests);
-        cupsPrintFile(default_dest->name, (char *)filename, "ncursesFM job", default_dest->num_options, default_dest->options);
+        cupsPrintFile(default_dest->name, (char *)filename, "ncursesFM job",
+                      default_dest->num_options, default_dest->options);
         print_info(print_ok, INFO_LINE);
     } else {
         print_info(print_fail, ERR_LINE);

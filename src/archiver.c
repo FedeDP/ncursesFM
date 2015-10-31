@@ -72,9 +72,12 @@ static void extractor_thread(struct archive *a) {
     int len;
     int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
     char buff[BUFF_SIZE], current_dir[PATH_MAX], fullpathname[PATH_MAX];
+    char *tmp;
 
     strcpy(current_dir, thread_h->filename);
-    current_dir[strlen(current_dir) - strlen(strrchr(current_dir, '/'))] = '\0';
+    tmp = strrchr(current_dir, '/');
+    len = strlen(current_dir) - strlen(tmp);
+    current_dir[len] = '\0';
     ext = archive_write_disk_new();
     archive_write_disk_set_options(ext, flags);
     archive_write_disk_set_standard_lookup(ext);
