@@ -228,5 +228,10 @@ static void free_thread_job_list(thread_job_list *h) {
 
 static void sig_handler(int signum) {
     free_thread_job_list(thread_h);
+    #ifdef SYSTEMD_PRESENT
+    if (config.inhibit) {
+        free_bus();
+    }
+    #endif
     pthread_exit(NULL);
 }

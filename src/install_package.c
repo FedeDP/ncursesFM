@@ -4,7 +4,7 @@
 
 static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int check_arch(const char *str);
-static void close_bus(sd_bus_error error, sd_bus_message *mess, sd_bus *bus);
+static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus);
 
 void *install_package(void *str) {
     sd_bus_error error = SD_BUS_ERROR_NULL;
@@ -31,7 +31,7 @@ void *install_package(void *str) {
                            NULL);
     if (r < 0) {
         print_info(error.message, ERR_LINE);
-        close_bus(error, mess, install_bus);
+        close_bus(&error, mess, install_bus);
         return NULL;
     }
     sd_bus_message_read(mess, "o", &path);
@@ -66,7 +66,7 @@ void *install_package(void *str) {
             }
         }
     }
-    close_bus(error, mess, install_bus);
+    close_bus(&error, mess, install_bus);
     return NULL;
 }
 
@@ -99,9 +99,9 @@ static int check_arch(const char *str) {
     return ret;
 }
 
-static void close_bus(sd_bus_error error, sd_bus_message *mess, sd_bus *bus) {
+static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus) {
     sd_bus_message_unref(mess);
-    sd_bus_error_free(&error);
+    sd_bus_error_free(error);
     sd_bus_flush_close_unref(bus);
 }
 

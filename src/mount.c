@@ -2,7 +2,7 @@
 
 #include "../inc/mount.h"
 
-static void close_bus(sd_bus_error error, sd_bus_message *mess, sd_bus *bus);
+static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus);
 #ifdef LIBUDEV_PRESENT
 static void enumerate_usb_mass_storage(void);
 static int is_mounted(const char *dev_path);
@@ -43,7 +43,7 @@ void mount_fs(const char *str, const char *method, int mount) {
             print_info("Unmounted", INFO_LINE);
         }
     }
-    close_bus(error, mess, mount_bus);
+    close_bus(&error, mess, mount_bus);
 }
 
 void isomount(const char *str) {
@@ -90,12 +90,12 @@ void isomount(const char *str) {
             print_info(error.message, ERR_LINE);
         }
     }
-    close_bus(error, mess, iso_bus);
+    close_bus(&error, mess, iso_bus);
 }
 
-static void close_bus(sd_bus_error error, sd_bus_message *mess, sd_bus *bus) {
+static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus) {
     sd_bus_message_unref(mess);
-    sd_bus_error_free(&error);
+    sd_bus_error_free(error);
     sd_bus_flush_close_unref(bus);
 }
 
