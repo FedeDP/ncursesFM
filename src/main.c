@@ -68,17 +68,17 @@ int main(int argc, const char *argv[])
 static void helper_function(int argc, const char *argv[]) {
     if (argc != 1) {
         if ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)) {
-            printf("\tNcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
-            printf("\tThis program comes with ABSOLUTELY NO WARRANTY;\n");
-            printf("\tThis is free software, and you are welcome to redistribute it under certain conditions;\n");
-            printf("\tIt is GPL licensed. Have a look at COPYING file.\n");
-            printf("\t\t* -h/--help to view this helper message.\n");
-            printf("\t\t* --editor=/path/to/editor to set an editor for current session.\n");
-            printf("\t\t* --starting-dir=/path/to/dir to set a starting directory for current session.\n");
-            printf("\t\t* --inhibit=1 to switch off powermanagement functions only while a joblist is being processed.\n");
-            printf("\t\t* Have a look at the config file /etc/default/ncursesFM.conf to set your preferred defaults.\n");
-            printf("\t\t* Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
-            printf("\t\t* Press 'l' while in program to view a more detailed helper message.\n");
+            printf("NcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
+            printf("This program comes with ABSOLUTELY NO WARRANTY;\n");
+            printf("This is free software, and you are welcome to redistribute it under certain conditions;\n");
+            printf("It is GPL licensed. Have a look at COPYING file.\n\n");
+            printf("\t* -h/--help to view this helper message.\n");
+            printf("\t* --editor=/path/to/editor to set an editor for current session.\n");
+            printf("\t* --starting-dir=/path/to/dir to set a starting directory for current session.\n");
+            printf("\t* --inhibit={0,1} to switch {on,off} powermanagement functions while a job is being processed.\n\n");
+            printf("Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
+            printf("Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
+            printf("Press 'l' while in program to view a more detailed helper message.\n");
             exit(0);
         } else {
             parse_cmd(argc, argv);
@@ -114,7 +114,7 @@ static void parse_cmd(int argc, const char *argv[]) {
         j++;
     }
     if (changed != argc) {
-        printf("Use '-h' to view helper message.\n");
+        printf("Use '-h' or '--help' to view helper message.\n");
         exit(0);
     }
 }

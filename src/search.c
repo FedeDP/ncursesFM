@@ -81,11 +81,11 @@ static int search_inside_archive(const char *path) {
 }
 
 static void *search_thread(void *x) {
-    int ret = nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
-
-    if (!strlen(sv.found_searched[0])) {
+    nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
+    
+    if ((sv.found_cont == MAX_NUMBER_OF_FOUND) || (sv.found_cont == 0)) {
         sv.searching = 0;
-        if (ret == 1) {
+        if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
             print_info(too_many_found, INFO_LINE);
         } else {
             print_info(no_found, INFO_LINE);
