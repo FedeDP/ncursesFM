@@ -20,9 +20,11 @@ int create_archive(void) {
 
 static void archiver_func(void) {
     file_list *tmp = thread_h->selected_files;
+    char *str;
 
     while (tmp) {
-        distance_from_root = strlen(tmp->name) - strlen(strrchr(tmp->name, '/'));
+        str = strrchr(tmp->name, '/');
+        distance_from_root = strlen(tmp->name) - strlen(str);
         nftw(tmp->name, recursive_archive, 64, FTW_MOUNT | FTW_PHYS);
         tmp = tmp->next;
     }

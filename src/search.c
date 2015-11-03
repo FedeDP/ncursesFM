@@ -27,18 +27,15 @@ void search(void) {
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     char fixed_str[NAME_MAX];
-    int len;
+    int len, ret = 0;
 
     if (ftwbuf->level == 0) {
         return 0;
     }
-    if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
-        return 1;
-    }
-    if ((sv.search_archive) && (is_ext(strrchr(path, '/'), arch_ext, 6))) {
+    strcpy(fixed_str, strrchr(path, '/') + 1);
+    if ((sv.search_archive) && (is_ext(fixed_str, arch_ext, 6))) {
         return search_inside_archive(path);
     }
-    strcpy(fixed_str, strrchr(path, '/') + 1);
     len = strlen(sv.searched_string);
     if (strncmp(fixed_str, sv.searched_string, len) == 0) {
         strcpy(sv.found_searched[sv.found_cont], path);
@@ -46,8 +43,11 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
             strcat(sv.found_searched[sv.found_cont], "/");
         }
         sv.found_cont++;
+        if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
+            ret = 1;
+        }
     }
-    return 0;
+    return ret;
 }
 
 static int search_inside_archive(const char *path) {
@@ -82,7 +82,6 @@ static int search_inside_archive(const char *path) {
 
 static void *search_thread(void *x) {
     nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
-    
     if ((sv.found_cont == MAX_NUMBER_OF_FOUND) || (sv.found_cont == 0)) {
         sv.searching = 0;
         if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
