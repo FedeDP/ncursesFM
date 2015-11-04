@@ -25,6 +25,8 @@
 #define MILLION 1000000
 #define BIG_FILE_THRESHOLD 5000000
 
+#define NUM(a) (sizeof(a) / sizeof(*a))
+
 void change_dir(const char *str);
 void switch_hidden(void);
 int is_ext(const char *filename, const char *ext[], int size);

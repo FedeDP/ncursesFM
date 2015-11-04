@@ -16,20 +16,26 @@
 #define INFO_LINE 0
 #define ERR_LINE 1
 
+/*
+ * Long operations that require a worker thread
+ */
 #define MOVE_TH 0
 #define PASTE_TH 1
 #define RM_TH 2
 #define ARCHIVER_TH 3
 #define EXTRACTOR_TH 4
 
+/*
+ * Short (fast) operations that do not require spawning a separate thread
+ */
 #define NEW_FILE_TH 0
 #define CREATE_DIR_TH 1
 #define RENAME_TH 2
 
-#define DONT_REFRESH -1
-#define NO_REFRESH 0
+#define DONT_REFRESH -1 // skip refreshing of this window because it is in search_mode or device_mode
+#define NO_REFRESH 0    // normale win state
 #define REFRESH 1   // the win may need a refresh, but we have to check whether it is really needed before.
-#define FORCE_REFRESH 2     // the win surely needs a refresh. Skip check and refresh.
+#define FORCE_REFRESH 2 // the win surely needs a refresh. Skip check and refresh.
 
 #define DONT_QUIT 0 
 #define NORM_QUIT 1

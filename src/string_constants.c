@@ -53,16 +53,16 @@ const char *thread_running = "There's already a thread working. This thread will
 const char *quit_with_running_thread = "A job is still running. Do you want to wait for it?(You should!) Y/n:> ";
 
 const char *helper_string[] = { "Enter to surf between folders or to open files.",
-                                "Enter will eventually ask to extract archives, mount your ISO files or install your distro downloaded packages.",
-                                "Press ',' to enable fast browse mode. Now move between files by just typing your desired file name.",
-                                "Press h to trigger the showing of hidden files. s to see stat about files in current folder.",
+                                "It will eventually ask to extract archives, mount your ISO files or install your distro downloaded packages.",
+                                "Press ',' to enable fast browse mode; it lets you jump between files by just typing their name.",
+                                "Press 'h' to trigger the showing of hidden files. 's' to see stat about files in current folder.",
                                 "Press '.' to change files/dirs sorting function: alphabetically (default), by size or by last modified.",
-                                "Space to select files. Space again to remove the file from selected files.",
-                                "v/x to paste/cut(move), b to compress and r to remove selected files. p to print a file.",
-                                "o to rename current file/dir; n/d to create new file/dir. f to search (case sensitive) for a file.",
-                                "t to create new tab (at most one more). w to close tab. Arrow left or right to switch between tabs.",
-                                "m to switch current tab to device tab. Press enter on your desired device to (un)mount it.",
-                                "You can't close first tab. Use q to quit/leave current mode."};
+                                "Space to select files. Twice to remove the file from selected files.",
+                                "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files. 'p' to print a file.",
+                                "'o' to rename current file/dir; 'n'/'d' to create new file/dir. 'f' to search (case sensitive) for a file.",
+                                "'t' to create new tab (at most one more). 'w' to close tab. Arrow left or right to switch between tabs.",
+                                "'m' to switch current tab to device tab. Press enter on your desired device to (un)mount it.",
+                                "You can't close first tab. Use 'q' to quit/leave current mode."};
 
 
 #ifdef SYSTEMD_PRESENT

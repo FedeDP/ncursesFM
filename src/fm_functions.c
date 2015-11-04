@@ -47,6 +47,7 @@ void switch_hidden(void) {
 int is_ext(const char *filename, const char *ext[], int size) {
     int i = 0, len = strlen(filename);
     
+    
     if (strrchr(filename, '.')) {
         while (i < size) {
             if (strcmp(filename + len - strlen(ext[i]), ext[i]) == 0) {
@@ -67,11 +68,12 @@ int is_ext(const char *filename, const char *ext[], int size) {
  */
 void manage_file(const char *str, float size) {
     char c;
+    
 #ifdef SYSTEMD_PRESENT
-    if (is_ext(str, iso_ext, 5)) {
+    if (is_ext(str, iso_ext, NUM(iso_ext))) {
         return isomount(str);
     }
-    if (is_ext(str, pkg_ext, 3)) {
+    if (is_ext(str, pkg_ext, NUM(pkg_ext))) {
         ask_user(pkg_quest, &c, 1, 'n');
         if (c == 'y') {
             pthread_create(&install_th, NULL, install_package, (void *)str);
@@ -80,7 +82,7 @@ void manage_file(const char *str, float size) {
         return;
     }
 #endif
-    if (is_ext(str, arch_ext, 6)) {
+    if (is_ext(str, arch_ext, NUM(arch_ext))) {
         ask_user(extr_question, &c, 1, 'y');
         if (c == 'y') {
             return init_thread(EXTRACTOR_TH, try_extractor);
@@ -145,7 +147,7 @@ static void open_file(const char *str, float size) {
 }
 
 void fast_file_operations(const int index) {
-    char new_name[NAME_MAX] = {};
+    char new_name[NAME_MAX] = {0};
     const char *str = short_fail_msg[index];
     int line = ERR_LINE, i;
 

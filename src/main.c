@@ -106,7 +106,7 @@ static void parse_cmd(int argc, const char *argv[]) {
             }
         }
 #ifdef SYSTEMD_PRESENT
-        else if (!config.inhibit && strncmp(cmd_switch[2], argv[j], strlen(cmd_switch[2])) == 0) {
+        else if (strncmp(cmd_switch[2], argv[j], strlen(cmd_switch[2])) == 0) {
             config.inhibit = atoi(argv[j] + strlen(cmd_switch[2]));
             changed++;
         }
@@ -264,7 +264,7 @@ static void main_loop(void) {
             }
             break;
 #endif
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
         case 'm': // m to mount/unmount fs
             devices_tab();
             break;
@@ -282,7 +282,7 @@ static void main_loop(void) {
             if (sv.searching == 3 + active) {
                 leave_search_mode(ps[active].my_cwd);
             }
-#if defined(LIBUDEV_PRESENT) && (SYSTEMD_PRESENT)
+#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
             else if (device_mode == 1 + active) {
                 leave_device_mode();
             }

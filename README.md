@@ -41,7 +41,8 @@ If built with libconfig support, it reads following variables from /etc/default/
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * pkg-config -> to manage libraries link in makefile
-* glibc      -> for locale config
+* glibc      -> to set locale
+* git        -> to clone repo
 
 ## Optional compile time dependencies
 

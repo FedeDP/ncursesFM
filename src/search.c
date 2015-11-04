@@ -33,7 +33,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         return 0;
     }
     strcpy(fixed_str, strrchr(path, '/') + 1);
-    if ((sv.search_archive) && (is_ext(fixed_str, arch_ext, 6))) {
+    if ((sv.search_archive) && (is_ext(fixed_str, arch_ext, NUM(arch_ext)))) {
         return search_inside_archive(path);
     }
     len = strlen(sv.searched_string);
@@ -114,11 +114,11 @@ void leave_search_mode(const char *str) {
 }
 
 int search_enter_press(const char *str) {
-    char arch_str[PATH_MAX] = {};
+    char arch_str[PATH_MAX] = {0};
 
     if (sv.search_archive) {    // check if the current path is inside an archive
         strcpy(arch_str, str);
-        while (strlen(arch_str) && !is_ext(strrchr(arch_str, '/'), arch_ext, 6)) {
+        while (strlen(arch_str) && !is_ext(strrchr(arch_str, '/'), arch_ext, NUM(arch_ext))) {
             arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
         }
     }

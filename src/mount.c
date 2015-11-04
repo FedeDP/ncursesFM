@@ -40,7 +40,7 @@ void mount_fs(const char *str, const char *method, int mount) {
             strcat(success, path);
             print_info(success, INFO_LINE);
         } else {
-            print_info("Unmounted", INFO_LINE);
+            print_info("Unmounted.", INFO_LINE);
         }
     }
     close_bus(&error, mess, mount_bus);
@@ -115,6 +115,11 @@ void devices_tab(void) {
     }
 }
 
+/*
+ * Scan "block" subsystem for devices.
+ * For each device check if it is a really mountable external fs,
+ * add it to usb_devices{} and increment device_mode.
+ */
 static void enumerate_usb_mass_storage(void) {
     struct udev *udev;
     struct udev_enumerate *enumerate;
@@ -165,6 +170,9 @@ static void enumerate_usb_mass_storage(void) {
     udev_unref(udev);
 }
 
+/*
+ * Open mtab in read mode to check whether dev_path is mounted or not.
+ */
 static int is_mounted(const char *dev_path) {
     FILE *mtab = NULL;
     struct mntent *part = NULL;
