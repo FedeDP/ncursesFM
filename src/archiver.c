@@ -6,6 +6,11 @@ static void extractor_thread(struct archive *a);
 
 static struct archive *archive;
 
+/*
+ * It tries to create a new archive for writing inside,
+ * it fails if it cannot add the proper filter, or cannot set proper format, or
+ * if it cannot open thread_h->filename (ie, the desired pathname of the new archive)
+ */
 int create_archive(void) {
     archive = archive_write_new();
     if (((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) ||
@@ -18,6 +23,14 @@ int create_archive(void) {
     return 0;
 }
 
+/*
+ * For each of the selected files, calculates the distance from root and calls nftw with recursive_archive.
+ * Example: archiving /home/me/Scripts/ folder -> it contains {/x.sh, /foo/bar}.
+ * recursive_archive has to create the entry exactly like /desired/path/name.tgz/{x.sh, foo/bar}
+ * it copies as entry_name the pointer to current path + distance_from_root + 1, in our case:
+ * path is /home/me/Scripts/x.sh and (path + distance_from_root + 1) points exatcly to x.sh.
+ * The entry will be written to the new archive, and then data will be copied.
+ */
 static void archiver_func(void) {
     file_list *tmp = thread_h->selected_files;
     char *str;
@@ -33,7 +46,7 @@ static void archiver_func(void) {
 }
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    char buff[BUFF_SIZE], entry_name[NAME_MAX];
+    char buff[BUFF_SIZE], entry_name[PATH_MAX];
     int len, fd;
     struct archive_entry *entry = archive_entry_new();
 
@@ -68,6 +81,12 @@ int try_extractor(void) {
     return -1;
 }
 
+/*
+ * calculates current_dir path, then creates the write_disk_archive that
+ * will read from the selected archives and will write files on disk.
+ * While there are headers inside the archive being read, it goes on copying data from
+ * the read archive to the disk.
+ */
 static void extractor_thread(struct archive *a) {
     struct archive *ext;
     struct archive_entry *entry;

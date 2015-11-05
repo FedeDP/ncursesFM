@@ -7,10 +7,10 @@ static int check_arch(const char *str);
 static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus);
 
 /* 
- * Firstly, create a transaction;
- * then read the newly created bus path,
- * add a match to the bus to wait that the installation is really finished before notifying the user.
- * finally, call InstallFiles method, and process the bus while finished == 0.
+ * First of all, creates a transaction;
+ * then reads the newly created bus path,
+ * adds a match to the bus to wait until installation is really finished before notifying the user.
+ * finally, calls InstallFiles method, and processes the bus while finished == 0.
  */
 void *install_package(void *str) {
     sd_bus_error error = SD_BUS_ERROR_NULL;
@@ -92,7 +92,7 @@ static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_e
 
 /*
  * Hope this will not be needed after next packagekit release.
- * This is a hotfix for packagekit daemon crashing while trying to install wrong arch packages.s
+ * This is a hotfix for packagekit daemon crashing while trying to install wrong arch packages...
  */
 static int check_arch(const char *str) {
     int ret = 1;

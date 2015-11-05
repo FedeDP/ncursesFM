@@ -15,6 +15,9 @@ void print_support(char *str) {
     }
 }
 
+/*
+ * If there are cups printers available, take the default printer and print the file.
+ */
 static void *print_file(void *filename) {
     cups_dest_t *dests, *default_dest;
     int num_dests = cupsGetDests(&dests);

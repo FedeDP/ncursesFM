@@ -5,24 +5,28 @@ struct thread_mesg {
     int line;
 };
 
-static thread_job_list *add_thread(thread_job_list *h, int type, int (*f)(void));
+static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void));
 static void free_running_h(void);
 static void init_thread_helper(void);
 static void copy_selected_files(void);
 static void *execute_thread(void *x);
 static void check_refresh(void);
+static int refresh_needed(const char *dir);
 static void free_copied_list(file_list *h);
 static void free_thread_job_list(thread_job_list *h);
 static void quit_thread_func(void);
 static void sig_handler(int signum);
 
-static pthread_t th;
+static pthread_t worker_th;
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
 static struct thread_mesg thread_m;
 
-static thread_job_list *add_thread(thread_job_list *h, int type, int (*f)(void)) {
+/*
+ * Creates a new job object for the worker_thread appending it to the end of job's queue.
+ */
+static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void)) {
     if (h) {
-        h->next = add_thread(h->next, type, f);
+        h->next = add_job(h->next, type, f);
     } else {
         if (!(h = malloc(sizeof(struct thread_list)))) {
             quit = MEM_ERR_QUIT;
@@ -40,6 +44,9 @@ static thread_job_list *add_thread(thread_job_list *h, int type, int (*f)(void))
     return h;
 }
 
+/*
+ * Deletes current job object and updates job queue.
+ */
 static void free_running_h(void) {
     thread_job_list *tmp = thread_h;
 
@@ -51,7 +58,7 @@ static void free_running_h(void) {
 }
 
 void init_thread(int type, int (* const f)(void)) {
-    thread_h = add_thread(thread_h, type, f);
+    thread_h = add_job(thread_h, type, f);
     if (quit) {
         return;
     }
@@ -67,10 +74,13 @@ void init_thread(int type, int (* const f)(void)) {
             inhibit_suspend();
         }
 #endif
-        pthread_create(&th, NULL, execute_thread, NULL);
+        pthread_create(&worker_th, NULL, execute_thread, NULL);
     }
 }
 
+/*
+ * Fixes some needed current_th variables.
+ */
 static void init_thread_helper(void) {
     char name[NAME_MAX];
 
@@ -99,6 +109,13 @@ static void copy_selected_files(void) {
     selected = NULL;
 }
 
+/*
+ * It sticks a signal handler to the thread (that is needed if user wants to leave program while worker_thread is still running;
+ * we need at least to kill thread and clear job's queue to avoid memleaks)
+ * then, while job's queue isn't empty, exec job's queue head function, frees its resources, updates UI and notifies user.
+ * Finally, call itself recursively.
+ * When job's queue is empty, reset some vars and returns.
+ */
 static void *execute_thread(void *x) {
     signal(SIGUSR1, sig_handler);
     print_info(thread_m.str, thread_m.line);
@@ -127,21 +144,31 @@ static void *execute_thread(void *x) {
 }
 
 static void check_refresh(void) {
-    int i, refresh = 0;
+    int i;
 
     for (i = 0; i < cont; i++) {
-        if (ps[i].needs_refresh != DONT_REFRESH) {
-            if (strcmp(ps[i].my_cwd, thread_h->full_path) == 0) {
-                ps[i].needs_refresh = FORCE_REFRESH;
-            } else {
-                ps[i].needs_refresh = REFRESH;
-            }
-            refresh = 1;
+        if ((thread_h->type != RM_TH && strcmp(ps[i].my_cwd, thread_h->full_path) == 0) || refresh_needed(ps[i].my_cwd)) {
+            tab_refresh(i);
         }
     }
-    if (refresh) {
-        pthread_kill(main_id, SIGUSR2);
+}
+
+/*
+ * RM_TH and MOVE_TH only: we need cycling through selected_files and
+ * check if current selected file is isnide win's cwd (to update UI)
+ */
+static int refresh_needed(const char *dir) {
+    file_list *tmp = thread_h->selected_files;
+    
+    if (thread_h->type == RM_TH || thread_h->type == MOVE_TH) {
+        while (tmp) {
+            if (strncmp(tmp->name, dir, strlen(dir)) == 0) {
+                return 1;
+            }
+            tmp = tmp->next;
+        }
     }
+    return 0;
 }
 
 static void free_copied_list(file_list *h) {
@@ -202,9 +229,9 @@ static void quit_thread_func(void) {
     if (thread_h) {
         ask_user(quit_with_running_thread, &c, 1, 'y');
         if (c == 'y') {
-            pthread_join(th, NULL);
+            pthread_join(worker_th, NULL);
         } else {
-            pthread_kill(th, SIGUSR1);
+            pthread_kill(worker_th, SIGUSR1);
         }
     }
 #ifdef SYSTEMD_PRESENT

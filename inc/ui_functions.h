@@ -5,7 +5,11 @@
 #include "string_constants.h"
 #include <locale.h>
 #include <ncurses.h>
-#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <archive.h>
+#include <archive_entry.h>
 
 #define INFO_HEIGHT 2
 #define STAT_COL 30
@@ -26,7 +30,8 @@ void scroll_up(void);
 void trigger_show_helper_message(int help);
 void show_stat(int init, int end, int win);
 void trigger_stats(void);
-int win_refresh_and_getch(void);
+int win_getch(void);
+void tab_refresh(int win);
 void print_info(const char *str, int i);
 void ask_user(const char *str, char *input, int dim, char c);
 void resize_win(int help);

@@ -155,7 +155,7 @@ This uses sd-bus api, so it is meant for systemd systems only.
 
 9/ 27 / 2015
 * added fast browse mode: when enabled (with ','), pressing a letter will move the cursor to the first elem that begins with that letter, and so on (second letter, etc etc)
-if letter are pressed fast enough
+if letters are pressed fast enough
 
 9 / 29 / 2015
 * some work on makefile. Now using pkg-config to be as distro agnostic as possible when building.
@@ -164,3 +164,15 @@ if letter are pressed fast enough
 
 9 / 30 / 2015
 * finally support terminal resize :)
+
+11 / 4 / 2015
+* splitted long job (that need a worker thread), from fast job, that can be executed in main thread.
+* added support for changing file sorting (by size and by last mod)
+* added support for accented chars (setlocale)
+* getch is now a blocking call, so it uses far less cpu cycles
+* bugfixing and internal rework (huge reordering of source and header files) + fixed lots of readability issues
+* performance improvement, smaller mem usage
+* removed signal to main thread; now using a mutex (safer and better)
+* dropped libmagic
+* simplified README
+* probably something more i now forgot

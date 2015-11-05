@@ -8,6 +8,9 @@ static void enumerate_usb_mass_storage(void);
 static int is_mounted(const char *dev_path);
 #endif
 
+/*
+ * Open the bus, and call "method" string on UDisks2.Filesystem.
+ */
 void mount_fs(const char *str, const char *method, int mount) {
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_bus_message *mess = NULL;
@@ -46,6 +49,11 @@ void mount_fs(const char *str, const char *method, int mount) {
     close_bus(&error, mess, mount_bus);
 }
 
+/*
+ * Open the bus and setup the loop device,
+ * then set "SetAutoclear" option; this way the loop device 
+ * will be automagically cleared when no more in use.
+ */
 void isomount(const char *str) {
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_bus_message *mess = NULL;
@@ -106,7 +114,6 @@ void devices_tab(void) {
         str_ptr[active] = usb_devices;
         ps[active].number_of_files = device_mode;
         device_mode = 1 + active;
-        ps[active].needs_refresh = DONT_REFRESH;
         reset_win(active);
         sprintf(ps[active].title, device_mode_str);
         list_everything(active, 0, 0);

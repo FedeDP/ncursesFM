@@ -1,12 +1,6 @@
-#include <archive.h>
-#include <archive_entry.h>
 #include <dirent.h>
-#include <stdlib.h>
-#include <string.h>
 #include <pthread.h>
 #include <errno.h>
-#include <ctype.h>
-#include <sys/file.h>
 
 #define INITIAL_POSITION 1
 #define MAX_TABS 2
@@ -32,16 +26,9 @@
 #define CREATE_DIR_TH 1
 #define RENAME_TH 2
 
-#define DONT_REFRESH -1 // skip refreshing of this window because it is in search_mode or device_mode
-#define NO_REFRESH 0    // normale win state
-#define REFRESH 1   // the win may need a refresh, but we have to check whether it is really needed before.
-#define FORCE_REFRESH 2 // the win surely needs a refresh. Skip check and refresh.
-
 #define DONT_QUIT 0 
 #define NORM_QUIT 1
 #define MEM_ERR_QUIT 2
-
-
 
 struct conf {
     char editor[PATH_MAX];
@@ -63,7 +50,6 @@ struct vars {
     char my_cwd[PATH_MAX];
     char (*nl)[PATH_MAX];
     int number_of_files;
-    int needs_refresh;
     char title[PATH_MAX];
 };
 
@@ -98,5 +84,5 @@ char (*usb_devices)[PATH_MAX];
 int device_mode;
 #endif
 #endif
-pthread_t main_id;
+pthread_mutex_t ui_lock;
 char (*str_ptr[MAX_TABS])[PATH_MAX]; // pointer to make abstract which list of strings i have to print in list_everything()

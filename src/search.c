@@ -98,7 +98,6 @@ static void *search_thread(void *x) {
 
 void list_found(void) {
     sv.searching = 3 + active;
-    ps[active].needs_refresh = DONT_REFRESH;
     ps[active].number_of_files = sv.found_cont;
     str_ptr[active] = sv.found_searched;
     reset_win(active);
@@ -113,14 +112,31 @@ void leave_search_mode(const char *str) {
     change_dir(str);
 }
 
+/*
+ * While in search mode, enter will switch to current highlighted file's dir.
+ * It checks if file is inside an archive; if so, it removes last part
+ * of file's path while we're inside an archive.
+ * Then returns the index where the real filename begins (to extract the directory path).
+ */
 int search_enter_press(const char *str) {
     char arch_str[PATH_MAX] = {0};
+    const char *tmp;
+    int len;
 
-    if (sv.search_archive) {    // check if the current path is inside an archive
+    if (sv.search_archive) {
         strcpy(arch_str, str);
-        while (strlen(arch_str) && !is_ext(strrchr(arch_str, '/'), arch_ext, NUM(arch_ext))) {
-            arch_str[strlen(arch_str) - strlen(strrchr(arch_str, '/'))] = '\0';
+        while ((len = strlen(arch_str))) {
+            tmp = strrchr(arch_str, '/');
+            if (is_ext(tmp, arch_ext, NUM(arch_ext))) {
+                break;
+            }
+            arch_str[len - strlen(tmp)] = '\0';
         }
     }
-    return (strlen(arch_str)) ?  (strlen(arch_str) - strlen(strrchr(arch_str, '/'))) : (strlen(str) - strlen(strrchr(str, '/')));
+    if (strlen(arch_str)) {
+        tmp = arch_str;
+    } else {
+        tmp = str;
+    }
+    return (strlen(tmp) - strlen(strrchr(tmp, '/')));
 }

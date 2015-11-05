@@ -14,8 +14,8 @@ static void rmrf(const char *path);
 
 static int num_files;
 #ifdef SYSTEMD_PRESENT
-static const char *iso_ext[5] = {".iso", ".nrg", ".bin", ".mdf", ".img"};
-static const char *pkg_ext[3] = {".pkg.tar.xz", ".deb", ".rpm"};
+static const char *iso_ext[] = {".iso", ".nrg", ".bin", ".mdf", ".img"};
+static const char *pkg_ext[] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
 static struct timeval timer;
 static char fast_browse_str[NAME_MAX];
@@ -26,8 +26,8 @@ static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
 void change_dir(const char *str) {
     if (chdir(str) != -1) {
         getcwd(ps[active].my_cwd, PATH_MAX);
-        ps[active].needs_refresh = FORCE_REFRESH;
         sprintf(ps[active].title, "Current: %s", ps[active].my_cwd);
+        tab_refresh(active);
     } else {
         print_info(strerror(errno), ERR_LINE);
     }
@@ -38,15 +38,12 @@ void switch_hidden(void) {
 
     config.show_hidden = !config.show_hidden;
     for (i = 0; i < cont; i++) {
-        if (ps[i].needs_refresh != DONT_REFRESH) {
-            ps[i].needs_refresh = REFRESH;
-        }
+        tab_refresh(i);
     }
 }
 
 int is_ext(const char *filename, const char *ext[], int size) {
     int i = 0, len = strlen(filename);
-    
     
     if (strrchr(filename, '.')) {
         while (i < size) {
@@ -155,12 +152,12 @@ void fast_file_operations(const int index) {
     if (!strlen(new_name)) {
         return;
     }
-    if  (short_func[index](new_name) == 0) {
+    if (short_func[index](new_name) == 0) {
         str = short_msg[index];
         line = INFO_LINE;
         for (i = 0; i < cont; i++) {
-            if ((strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) && (ps[i].needs_refresh != DONT_REFRESH)) {
-                ps[i].needs_refresh = FORCE_REFRESH;
+            if (strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) {
+                tab_refresh(i);
             }
         }
     }

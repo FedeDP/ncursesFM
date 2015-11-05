@@ -12,12 +12,18 @@ static void create_helper_win(void);
 static void remove_helper_win(void);
 static void change_unit(float size, char *str);
 static void erase_stat(void);
-static void tabs_refresh(void);
-static void sig_handler(int sig_num);
 
-static WINDOW *helper_win, *info_win, *fm[MAX_TABS];
-static int dim, width[MAX_TABS], asking_question, delta[MAX_TABS], stat_active[MAX_TABS], resizing;
-static char tot_size[MAX_TABS][50];
+struct scrstr {
+    WINDOW *fm;
+    int width;
+    int delta;
+    int stat_active;
+    char tot_size[10];
+};
+
+static struct scrstr mywin[MAX_TABS];
+static WINDOW *helper_win, *info_win;
+static int dim, asking_question, resizing;
 static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) = alphasort; // file list sorting function, defaults to alphasort
 
 /*
@@ -46,11 +52,11 @@ static void fm_scr_init(void) {
         new_tab(i);
         if (resizing) {
             if (ps[i].curr_pos > dim - 2 - INITIAL_POSITION) {
-                delta[i] = ps[i].curr_pos - (dim - 2 - INITIAL_POSITION);
+                mywin[i].delta = ps[i].curr_pos - (dim - 2 - INITIAL_POSITION);
             } else {
-                delta[i] = 0;
+                mywin[i].delta = 0;
             }
-            list_everything(i, delta[i], 0);
+            list_everything(i, mywin[i].delta, 0);
         }
     }
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
@@ -79,30 +85,24 @@ void screen_end(void) {
 }
 
 /*
- * Creates a list of strings from current win path's files.
- * If needs_refresh is set to REFRESH (not FORCE_REFRESH),
- * it will check if number of files in current dir has changed.
- * If it changed, the function will create a new list of files and print them to screen (list_everything)
+ * Creates a list of strings from current win path's files and print them to screen (list_everything)
  * If program cannot allocate memory, it will leave.
  */
 static void generate_list(int win) {
-    int i, num_of_files, check = 0;
+    int i, check = 0;
     struct dirent **files;
     char str[PATH_MAX] = {0};
     
-    num_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func);
-    if ((ps[win].needs_refresh == FORCE_REFRESH) || (ps[win].number_of_files != num_of_files)) {
-        free(ps[win].nl);
-        ps[win].number_of_files = num_of_files;
-        if (!(ps[win].nl = calloc(num_of_files, PATH_MAX))) {
-            quit = MEM_ERR_QUIT;
-        } else {
-            check = 1;
-        }
-        str_ptr[win] = ps[win].nl;
-        if (strcmp(ps[win].my_cwd, "/") != 0) {
-            strcpy(str, ps[win].my_cwd);
-        }
+    ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func);
+    free(ps[win].nl);
+    if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
+        quit = MEM_ERR_QUIT;
+    } else {
+        check = 1;
+    }
+    str_ptr[win] = ps[win].nl;
+    if (strcmp(ps[win].my_cwd, "/") != 0) {
+        strcpy(str, ps[win].my_cwd);
     }
     for (i = 0; i < ps[win].number_of_files; i++) {
         if (check) {
@@ -137,8 +137,8 @@ int last_mod_sort(const struct dirent **d1, const struct dirent **d2) {
 
 void reset_win(int win)
 {
-    wclear(fm[win]);
-    delta[win] = 0;
+    wclear(mywin[win].fm);
+    mywin[win].delta = 0;
     ps[win].curr_pos = 0;
 }
 
@@ -155,19 +155,19 @@ void list_everything(int win, int old_dim, int end) {
     if (end == 0) {
         end = dim - 2;
     }
-    wattron(fm[win], A_BOLD);
+    wattron(mywin[win].fm, A_BOLD);
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
         colored_folders(win, *(str_ptr[win] + i));
-        if (ps[win].needs_refresh == DONT_REFRESH) {
-            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", width[win] - 5, *(str_ptr[win] + i));
+        if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
+            mvwprintw(mywin[win].fm, INITIAL_POSITION + i - mywin[win].delta, 4, "%.*s", mywin[win].width - 5, *(str_ptr[win] + i));
         } else {
-            mvwprintw(fm[win], INITIAL_POSITION + i - delta[win], 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr[win] + i), '/') + 1);
+            mvwprintw(mywin[win].fm, INITIAL_POSITION + i - mywin[win].delta, 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr[win] + i), '/') + 1);
         }
-        wattroff(fm[win], COLOR_PAIR);
+        wattroff(mywin[win].fm, COLOR_PAIR);
     }
-    wattroff(fm[win], A_BOLD);
-    mvwprintw(fm[win], INITIAL_POSITION + ps[win].curr_pos - delta[win], 1, "->");
-    if ((ps[win].needs_refresh != DONT_REFRESH) && (stat_active[win] == 1)) {
+    wattroff(mywin[win].fm, A_BOLD);
+    mvwprintw(mywin[win].fm, INITIAL_POSITION + ps[win].curr_pos - mywin[win].delta, 1, "->");
+    if ((sv.searching != 3 + win) && (device_mode != 1 + win) && (mywin[win].stat_active == 1)) {
         show_stat(old_dim, end, win);
     } else {
         print_border_and_title(win);
@@ -178,12 +178,12 @@ void list_everything(int win, int old_dim, int end) {
  * Helper function that prints borders and title of 'win'
  */
 static void print_border_and_title(int win) {
-    wborder(fm[win], '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(fm[win], 0, 0, "%.*s", width[win] - 1, ps[win].title);
-    if (stat_active[win] == 1) {
-        mvwprintw(fm[win], 0, width[win] - strlen(tot_size[win]), tot_size[win]);
+    wborder(mywin[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
+    mvwprintw(mywin[win].fm, 0, 0, "%.*s", mywin[win].width - 1, ps[win].title);
+    if (mywin[win].stat_active == 1) {
+        mvwprintw(mywin[win].fm, 0, mywin[win].width - strlen(mywin[win].tot_size), mywin[win].tot_size);
     }
-    wrefresh(fm[win]);
+    wrefresh(mywin[win].fm);
 }
 
 /*
@@ -204,20 +204,20 @@ static int is_hidden(const struct dirent *current_file) {
  * Then calculates new tab cwd, chdir there, and generate its list of files.
  */
 void new_tab(int win) {
-    width[win] = COLS / cont + COLS % cont;
-    fm[win] = subwin(stdscr, dim, width[win], 0, (COLS * (win)) / cont);
-    keypad(fm[win], TRUE);
-    scrollok(fm[win], TRUE);
-    idlok(fm[win], TRUE);
-    stat_active[win] = 0;
+    mywin[win].width = COLS / cont + COLS % cont;
+    mywin[win].fm = subwin(stdscr, dim, mywin[win].width, 0, (COLS * (win)) / cont);
+    keypad(mywin[win].fm, TRUE);
+    scrollok(mywin[win].fm, TRUE);
+    idlok(mywin[win].fm, TRUE);
+    mywin[win].stat_active = 0;
     if (!resizing) {
         initialize_tab_cwd(win);
     }
 }
 
 void restrict_first_tab(void) {
-    width[active] = COLS / cont;
-    wresize(fm[active], dim, width[active]);
+    mywin[active].width = COLS / cont;
+    wresize(mywin[active].fm, dim, mywin[active].width);
     print_border_and_title(active);
 }
 
@@ -235,16 +235,16 @@ static void initialize_tab_cwd(int win) {
         getcwd(ps[win].my_cwd, PATH_MAX);
     }
     sprintf(ps[win].title, "Current: %s", ps[win].my_cwd);
-    ps[win].needs_refresh = FORCE_REFRESH;
+    tab_refresh(win);
 }
 
 /*
  * Removes a tab and resets its cwd
  */
 void delete_tab(int win) {
-    wclear(fm[win]);
-    delwin(fm[win]);
-    fm[win] = NULL;
+    wclear(mywin[win].fm);
+    delwin(mywin[win].fm);
+    mywin[win].fm = NULL;
     if (!resizing) {
         free(ps[win].nl);
         ps[win].nl = NULL;
@@ -255,21 +255,21 @@ void delete_tab(int win) {
  * Called in main_loop (main.c) after deletion of second tab.
  */
 void enlarge_first_tab(void) {
-    width[active] = COLS;
-    wborder(fm[active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-    wresize(fm[active], dim, width[active]);
+    mywin[active].width = COLS;
+    wborder(mywin[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wresize(mywin[active].fm, dim, mywin[active].width);
     print_border_and_title(active);
 }
 
 void scroll_down(void) {
     if (ps[active].curr_pos < ps[active].number_of_files - 1) {
         ps[active].curr_pos++;
-        if (ps[active].curr_pos - (dim - 2) == delta[active]) {
+        if (ps[active].curr_pos - (dim - 2) == mywin[active].delta) {
             scroll_helper_func(dim - 2, 1);
             list_everything(active, ps[active].curr_pos, 1);
         } else {
-            mvwprintw(fm[active], ps[active].curr_pos - delta[active], 1, "  ");
-            mvwprintw(fm[active], ps[active].curr_pos - delta[active] + INITIAL_POSITION, 1, "->");
+            mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta, 1, "  ");
+            mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + INITIAL_POSITION, 1, "->");
         }
     }
 }
@@ -277,21 +277,21 @@ void scroll_down(void) {
 void scroll_up(void) {
     if (ps[active].curr_pos > 0) {
         ps[active].curr_pos--;
-        if (ps[active].curr_pos < delta[active]) {
+        if (ps[active].curr_pos < mywin[active].delta) {
             scroll_helper_func(INITIAL_POSITION, -1);
-            list_everything(active, delta[active], 1);
+            list_everything(active, mywin[active].delta, 1);
         } else {
-            mvwprintw(fm[active], ps[active].curr_pos - delta[active] + 2, 1, "  ");
-            mvwprintw(fm[active], ps[active].curr_pos - delta[active] + 1, 1, "->");
+            mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 2, 1, "  ");
+            mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 1, 1, "->");
         }
     }
 }
 
 static void scroll_helper_func(int x, int direction) {
-    mvwprintw(fm[active], x, 1, "  ");
-    wborder(fm[active], ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-    wscrl(fm[active], direction);
-    delta[active] += direction;
+    mvwprintw(mywin[active].fm, x, 1, "  ");
+    wborder(mywin[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wscrl(mywin[active].fm, direction);
+    mywin[active].delta += direction;
 }
 
 /*
@@ -304,14 +304,14 @@ static void colored_folders(int win, const char *name) {
 
     if (lstat(name, &file_stat) == 0) {
         if (S_ISDIR(file_stat.st_mode)) {
-            wattron(fm[win], COLOR_PAIR(1));
+            wattron(mywin[win].fm, COLOR_PAIR(1));
         } else if (S_ISLNK(file_stat.st_mode)) {
-            wattron(fm[win], COLOR_PAIR(3));
+            wattron(mywin[win].fm, COLOR_PAIR(3));
         } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
-            wattron(fm[win], COLOR_PAIR(2));
+            wattron(mywin[win].fm, COLOR_PAIR(2));
         }
     } else {
-        wattron(fm[win], COLOR_PAIR(4));
+        wattron(mywin[win].fm, COLOR_PAIR(4));
     }
 }
 
@@ -334,13 +334,13 @@ static void create_helper_win(void) {
 
     dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
     for (i = 0; i < cont; i++) {
-        wresize(fm[i], dim, width[i]);
+        wresize(mywin[i].fm, dim, mywin[i].width);
         print_border_and_title(i);
         if (ps[i].curr_pos > dim - 3) {
-            ps[i].curr_pos = dim - 3 + delta[i];
-            mvwprintw(fm[i], dim - 3 + INITIAL_POSITION, 1, "->");
+            ps[i].curr_pos = dim - 3 + mywin[i].delta;
+            mvwprintw(mywin[i].fm, dim - 3 + INITIAL_POSITION, 1, "->");
         }
-        wrefresh(fm[i]);
+        wrefresh(mywin[i].fm);
     }
     helper_win = subwin(stdscr, HELPER_HEIGHT, COLS, LINES - INFO_HEIGHT - HELPER_HEIGHT, 0);
     wclear(helper_win);
@@ -358,9 +358,9 @@ static void remove_helper_win(void) {
     helper_win = NULL;
     dim = LINES - INFO_HEIGHT;
     for (i = 0; i < cont; i++) {
-        mvwhline(fm[i], dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
-        wresize(fm[i], dim, width[i]);
-        list_everything(i, dim - 2 - HELPER_HEIGHT + delta[i], HELPER_HEIGHT);
+        mvwhline(mywin[i].fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
+        wresize(mywin[i].fm, dim, mywin[i].width);
+        list_everything(i, dim - 2 - HELPER_HEIGHT + mywin[i].delta, HELPER_HEIGHT);
     }
 }
 
@@ -393,14 +393,14 @@ void show_stat(int init, int end, int win) {
         total_size += file_stat.st_size;
         if (i < init + end) {
             change_unit(file_stat.st_size, str);
-            mvwprintw(fm[win], i + INITIAL_POSITION - delta[win], STAT_COL, "%s\t", str);
+            mvwprintw(mywin[win].fm, i + INITIAL_POSITION - mywin[win].delta, STAT_COL, "%s\t", str);
             for (j = 0; j < 9; j++) {
-                wprintw(fm[win], (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
+                wprintw(mywin[win].fm, (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
             }
         }
     }
     change_unit(total_size, str);
-    sprintf(tot_size[win], "Total size: %s", str);
+    sprintf(mywin[win].tot_size, "Total size: %s", str);
     print_border_and_title(win);
 }
 
@@ -421,9 +421,9 @@ static void change_unit(float size, char *str) {
 }
 
 void trigger_stats(void) {
-    stat_active[active] = !stat_active[active];
-    if (stat_active[active]) {
-        show_stat(delta[active], dim - 2, active);
+    mywin[active].stat_active = !mywin[active].stat_active;
+    if (mywin[active].stat_active) {
+        show_stat(mywin[active].delta, dim - 2, active);
     } else {
         erase_stat();
     }
@@ -436,8 +436,8 @@ static void erase_stat(void) {
     int i;
 
     for (i = 0; (i < ps[active].number_of_files) && (i < dim - 2); i++) {
-        wmove(fm[active], i + 1, STAT_COL);
-        wclrtoeol(fm[active]);
+        wmove(mywin[active].fm, i + 1, STAT_COL);
+        wclrtoeol(mywin[active].fm);
     }
     print_border_and_title(active);
 }
@@ -502,25 +502,16 @@ void ask_user(const char *str, char *input, int dim, char c) {
     print_info(NULL, INFO_LINE);
 }
 
-int win_refresh_and_getch(void) {
-    tabs_refresh();
-    signal(SIGUSR2, sig_handler);
-    return wgetch(fm[active]);
+int win_getch(void) {
+    return wgetch(mywin[active].fm);
 }
 
-static void tabs_refresh(void) {
-    int i;
-
-    for (i = 0; i < cont; i++) {
-        if (ps[i].needs_refresh >= REFRESH) {
-            generate_list(i);
-            ps[i].needs_refresh = NO_REFRESH;
-        }
+void tab_refresh(int win) {
+    if ((sv.searching != 3 + win) && (device_mode != 1 + win)) {
+        pthread_mutex_lock(&ui_lock);
+        generate_list(win);
+        pthread_mutex_unlock(&ui_lock);
     }
-}
-
-static void sig_handler(int sig_num) {
-    return tabs_refresh();
 }
 
 void resize_win(int help) {
@@ -546,8 +537,6 @@ void change_sort(void) {
         print_info("Files will be sorted alphabetically now.", INFO_LINE);
     }
     for (i = 0; i < cont; i++) {
-        if (ps[i].needs_refresh != DONT_REFRESH) {
-            ps[i].needs_refresh = FORCE_REFRESH;
-        }
+        tab_refresh(i);
     }
 }

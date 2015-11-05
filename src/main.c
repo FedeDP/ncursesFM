@@ -47,7 +47,7 @@ static int (*const long_func[LONG_FILE_OPERATIONS - 1])(void) = {
 
 int main(int argc, const char *argv[])
 {
-    main_id = pthread_self();
+    pthread_mutex_init(&ui_lock, NULL);
     helper_function(argc, argv);
 #ifdef LIBCONFIG_PRESENT
     read_config_file();
@@ -62,6 +62,7 @@ int main(int argc, const char *argv[])
     if (quit == MEM_ERR_QUIT) {
         printf("%s\n", generic_mem_error);
     }
+    pthread_mutex_destroy(&ui_lock);
     EXIT_SUCCESS;
 }
 
@@ -160,6 +161,12 @@ static void config_checks(void) {
     }
 }
 
+/*
+ * When in fast_browse_mode do not enter switch case;
+ * if device_mode or search_mode are active on current window,
+ * only 'q', 'l', or 't' (and enter, that is not printable char) can be called.
+ * else stat current file and enter switch case.
+ */
 static void main_loop(void) {
     int c, index, fast_browse_mode = 0, help = 0;
     const char *long_table = "xvrb"; // x to move, v to paste, r to remove, b to compress
@@ -168,13 +175,13 @@ static void main_loop(void) {
     struct stat current_file_stat;
 
     while (!quit) {
-        c = win_refresh_and_getch();
+        c = win_getch();
         if ((fast_browse_mode == 1 + active) && isprint(c) && (c != ',')) {
             fast_browse(c);
             continue;
         }
         c = tolower(c);
-        if (ps[active].needs_refresh == DONT_REFRESH) {
+        if ((device_mode == 1 + active) || (sv.searching == 3 + active)) {
             if (isprint(c) && (c != 'q') && (c != 'l') && (c != 't')) {
                 continue;
             }
