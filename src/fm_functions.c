@@ -12,7 +12,6 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void rmrf(const char *path);
 
-static int num_files;
 #ifdef SYSTEMD_PRESENT
 static const char *iso_ext[] = {".iso", ".nrg", ".bin", ".mdf", ".img"};
 static const char *pkg_ext[] = {".pkg.tar.xz", ".deb", ".rpm"};
@@ -42,6 +41,11 @@ void switch_hidden(void) {
     }
 }
 
+/*
+ * Check if filename has "." in it (otherwise surely it has not extension.
+ * Then for each extension in *ext[], check if last strlen(ext[i]) chars of filename are 
+ * equals to ext[i].
+ */
 int is_ext(const char *filename, const char *ext[], int size) {
     int i = 0, len = strlen(filename);
     
@@ -68,13 +72,13 @@ void manage_file(const char *str, float size) {
     
 #ifdef SYSTEMD_PRESENT
     if (is_ext(str, iso_ext, NUM(iso_ext))) {
-        return isomount(str);
+        isomount(str);
+        return;
     }
     if (is_ext(str, pkg_ext, NUM(pkg_ext))) {
         ask_user(pkg_quest, &c, 1, 'n');
         if (c == 'y') {
             pthread_create(&install_th, NULL, install_package, (void *)str);
-            return;
         }
         return;
     }
@@ -82,21 +86,22 @@ void manage_file(const char *str, float size) {
     if (is_ext(str, arch_ext, NUM(arch_ext))) {
         ask_user(extr_question, &c, 1, 'y');
         if (c == 'y') {
-            return init_thread(EXTRACTOR_TH, try_extractor);
+            init_thread(EXTRACTOR_TH, try_extractor);
         }
         return;
     }
 #ifdef LIBX11_PRESENT
     if (access("/usr/bin/xdg-open", X_OK) != -1) {
-        return xdg_open(str, size);
+        xdg_open(str, size);
+        return;
     }
 #endif
-    return open_file(str, size);
+    open_file(str, size);
 }
 
 /*
- * If we're on a X screen, open the file with xdg-open, and redirect its output to /dev/null
- * not to dirty my ncurses screen.
+ * If we're on a X screen, open the file with xdg-open and redirect its output to /dev/null
+ * not to make my ncurses screen dirty.
  */
 #ifdef LIBX11_PRESENT
 static void xdg_open(const char *str, float size) {
@@ -114,11 +119,16 @@ static void xdg_open(const char *str, float size) {
             execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, NULL);
         }
     } else {
-        return open_file(str, size);
+        open_file(str, size);
     }
 }
 #endif
 
+/*
+ * If file size is > than 5 Mb, asks user if he really wants to open the file 
+ * (maybe he pressed enter on a avi video for example), then, if config.editor is set,
+ * opens the file with it.
+ */
 static void open_file(const char *str, float size) {
     pid_t pid;
     char c;
@@ -143,6 +153,11 @@ static void open_file(const char *str, float size) {
     }
 }
 
+/*
+ * Ask user for "new_name" var to be passed to short_func[],
+ * then calls short_func[index]; only refresh UI if the call was successful.
+ * Notyfies user.
+ */
 void fast_file_operations(const int index) {
     char new_name[NAME_MAX] = {0};
     const char *str = short_fail_msg[index];
@@ -183,6 +198,11 @@ static int rename_file_folders(const char *name) {
     return rename(ps[active].nl[ps[active].curr_pos], name);
 }
 
+/*
+ * For each file to be removed, checks if we have write perm on it, then
+ * remove it.
+ * If at least 1 file was removed, the call is considered successful.
+ */
 int remove_file(void) {
     int ok = 0;
     file_list *tmp = thread_h->selected_files;
@@ -198,7 +218,7 @@ int remove_file(void) {
 }
 
 /*
- * If there are no selected files, or the file user selected wasn't already selected,
+ * If there are no selected files, or the file user selected wasn't already selected (call to remove_from_list() ),
  * add this file to select list.
  */
 void manage_space_press(const char *str) {
@@ -213,6 +233,11 @@ void manage_space_press(const char *str) {
     print_info(s, INFO_LINE);
 }
 
+/*
+ * For each file being paste, it performs a check: 
+ * it checks if file is being pasted in the same dir
+ * from where it was copied. If it is the case, it does not copy it.
+ */
 int paste_file(void) {
     char copied_file_dir[PATH_MAX], *str;
     int len;
@@ -230,6 +255,12 @@ int paste_file(void) {
     return 0;
 }
 
+/*
+ * Same check as paste_file func plus:
+ * it checks if copied file dir and directory where the file is being moved
+ * are on the same FS; if it is the case, it only renames it.
+ * Else, the function has to copy it and rm copied file.
+ */
 int move_file(void) {
     char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX], *str;
     struct stat file_stat_copied, file_stat_pasted;
@@ -258,6 +289,16 @@ int move_file(void) {
     return 0;
 }
 
+/*
+ * It calculates the "distance_from_root" of the current file, where root is 
+ * the directory from where it is being copied (eg: copying /home/me/Scripts/ -> root is /home/me/).
+ * Then calls nftw with recursive_copy.
+ * distance_from_root is needed to make pasted_file relative to thread_h->full_path (ie: the folder where we're pasting).
+ * In fact pasted_file will be "thread_h->full_path/(path + distance_from_root)".
+ * If path is /home/me/Scripts/foo, and root is the same as above (/home/me/), in the pasted folder we'll have:
+ * 1) /path/to/pasted/folder/Scripts/,
+ * 2) /path/to/pasted/folder/Scripts/me, that is exactly what we wanted.
+ */
 static void cpr(file_list *tmp) {
     char *str;
     
@@ -293,7 +334,12 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     return remove(path);
 }
-
+/*
+ * Calls recursive_remove starting from the depth: so this func will remove
+ * files and folders from the bottom -> eg: removing /home/me/Scripts, where scripts has 
+ * {/foo/bar, /acme}, will remove "/acme", then "/foo/bar", and lastly "/foo/".
+ * It is needed to assure that we remove directories when they're already empty.
+ */
 static void rmrf(const char *path) {
     nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS | FTW_MOUNT);
 }
@@ -303,29 +349,34 @@ void change_tab(void) {
     chdir(ps[active].my_cwd);
 }
 
+/*
+ * It calculates the time diff since previous call. If it is lower than 0,5s,
+ * will start from last char of fast_browse_str, otherwise it will start from scratch.
+ * For every file in current dir, checks if fast_browse_str and current file name are equals for
+ * at least strlen(fast_browse_str chars). Then moves the cursor to the right name.
+ * If nothing was found, deletes fast_browse_str.
+ */
 void fast_browse(int c) {
-    int i = 1, found = 0, end = ps[active].number_of_files;
-    int len;
+    int i = 1, found = 0, len;
     char *str;
     uint64_t diff = (MILLION * timer.tv_sec) + timer.tv_usec;
     void (*f)(void);
 
     gettimeofday(&timer, NULL);
     diff = MILLION * (timer.tv_sec) + timer.tv_usec - diff;
-    if ((diff < FAST_BROWSE_THRESHOLD) && (num_files)) { // 0,5s
+    if ((diff < FAST_BROWSE_THRESHOLD) && (strlen(fast_browse_str))) { // 0,5s
         i = ps[active].curr_pos;
-        end = i + num_files;
     } else {
         memset(fast_browse_str, 0, strlen(fast_browse_str));
     }
     sprintf(fast_browse_str + strlen(fast_browse_str), "%c", c);
     print_info(fast_browse_str, INFO_LINE);
-    for (num_files = 0; i < end; i++) {
+    for (; (i < ps[active].number_of_files) && (!found); i++) {
         str = strrchr(ps[active].nl[i], '/') + 1;
         len = strlen(fast_browse_str);
         if (strncmp(fast_browse_str, str, len) == 0) {
-            if (!found) {
-                found = 1;
+            found = 1;
+            if (i != ps[active].curr_pos) {
                 if (i < ps[active].curr_pos) {
                     f = scroll_up;
                 } else {
@@ -335,11 +386,9 @@ void fast_browse(int c) {
                     f();
                 }
             }
-            num_files++;
         }
     }
-    if ((!found) && (strlen(fast_browse_str) > 1)) {
+    if (!found) {
         memset(fast_browse_str, 0, strlen(fast_browse_str));
-        print_info(fast_browse_str, INFO_LINE);
     }
 }
