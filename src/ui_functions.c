@@ -100,8 +100,8 @@ static void generate_list(int win) {
     struct dirent **files;
     char str[PATH_MAX] = {0};
     
-    memset(mywin[win].tot_size, 0, strlen(mywin[win].tot_size));
-    if (mywin[win].stat_active == STATS_IDLE) {
+    if (mywin[win].stat_active) {
+        memset(mywin[win].tot_size, 0, strlen(mywin[win].tot_size));
         mywin[win].stat_active = STATS_ON;
     }
     ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func);
@@ -177,9 +177,8 @@ void list_everything(int win, int old_dim, int end) {
     mvwprintw(mywin[win].fm, INITIAL_POSITION + ps[win].curr_pos - mywin[win].delta, 1, "->");
     if ((sv.searching != 3 + win) && (device_mode != 1 + win) && (mywin[win].stat_active == STATS_ON)) {
         show_stat(old_dim, end, win);
-    } else {
-        print_border_and_title(win);
     }
+    print_border_and_title(win);
 }
 
 /*
@@ -190,9 +189,7 @@ void list_everything(int win, int old_dim, int end) {
 static void print_border_and_title(int win) {
     wborder(mywin[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(mywin[win].fm, 0, 0, "%.*s", mywin[win].width - 1, ps[win].title);
-    if (mywin[win].stat_active) {
-        mvwprintw(mywin[win].fm, 0, mywin[win].width - strlen(mywin[win].tot_size), mywin[win].tot_size);
-    }
+    mvwprintw(mywin[win].fm, 0, mywin[win].width - strlen(mywin[win].tot_size), mywin[win].tot_size);
     wrefresh(mywin[win].fm);
 }
 
@@ -429,7 +426,6 @@ static void show_stat(int init, int end, int win) {
         change_unit(total_size, str);
         sprintf(mywin[win].tot_size, "Total size: %s", str);
     }
-    print_border_and_title(win);
     mywin[win].stat_active = STATS_IDLE;
 }
 
@@ -456,6 +452,7 @@ void trigger_stats(void) {
     } else {
         erase_stat();
     }
+    print_border_and_title(active);
 }
 
 /*
@@ -469,7 +466,7 @@ static void erase_stat(void) {
         wmove(mywin[active].fm, i + 1, STAT_COL);
         wclrtoeol(mywin[active].fm);
     }
-    print_border_and_title(active);
+    memset(mywin[active].tot_size, 0, strlen(mywin[active].tot_size));
 }
 
 /*
