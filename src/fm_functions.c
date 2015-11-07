@@ -345,7 +345,7 @@ static void rmrf(const char *path) {
 }
 
 void change_tab(void) {
-    active = (!active + cont) % MAX_TABS;
+    active = !active;
     chdir(ps[active].my_cwd);
 }
 

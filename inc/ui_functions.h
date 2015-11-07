@@ -27,14 +27,13 @@ void delete_tab(int win);
 void enlarge_first_tab(void);
 void scroll_down(void);
 void scroll_up(void);
-void trigger_show_helper_message(int help);
-void show_stat(int init, int end, int win);
+void trigger_show_helper_message(void);
 void trigger_stats(void);
 int win_getch(void);
 void tab_refresh(int win);
 void print_info(const char *str, int i);
 void ask_user(const char *str, char *input, int dim, char c);
-void resize_win(int help);
+void resize_win(void);
 void change_sort(void);
 
 #endif

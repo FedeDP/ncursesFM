@@ -54,7 +54,7 @@ int main(int argc, const char *argv[])
 #endif
     config_checks();
     screen_init();
-    change_tab();
+    chdir(ps[active].my_cwd);
     main_loop();
     free_everything();
     screen_end();
@@ -168,7 +168,7 @@ static void config_checks(void) {
  * else stat current file and enter switch case.
  */
 static void main_loop(void) {
-    int c, index, fast_browse_mode = 0, help = 0;
+    int c, index, fast_browse_mode = 0;
     const char *long_table = "xvrb"; // x to move, v to paste, r to remove, b to compress
     const char *short_table = "ndo";  //n, d to create new file/dir, o to rename.
     char *ptr;
@@ -235,12 +235,10 @@ static void main_loop(void) {
             break;
         case 'w': // w to close second tab
             if (active) {
-                cont--;
-                active = 0;
-                delete_tab(cont);
-                memset(ps[cont].my_cwd, 0, sizeof(ps[cont].my_cwd));
-                enlarge_first_tab();
                 change_tab();
+                cont--;
+                delete_tab(cont);
+                enlarge_first_tab();
             }
             break;
         case 32: // space to select files
@@ -249,8 +247,7 @@ static void main_loop(void) {
             }
             break;
         case 'l':  // show helper mess
-            help = !help;
-            trigger_show_helper_message(help);
+            trigger_show_helper_message();
             break;
         case 's': // show stat about files (size and perms)
             trigger_stats();
@@ -299,7 +296,7 @@ static void main_loop(void) {
             }
             break;
         case KEY_RESIZE:
-            resize_win(help);
+            resize_win();
             break;
         case '.': // . to change sorting function
             change_sort();
