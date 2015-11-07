@@ -60,6 +60,9 @@ static void fm_scr_init(void) {
             } else {
                 mywin[i].delta = 0;
             }
+            if (mywin[i].stat_active == STATS_IDLE) {
+                mywin[i].stat_active = STATS_ON;
+            }
             list_everything(i, mywin[i].delta, 0);
         }
     }
@@ -98,6 +101,9 @@ static void generate_list(int win) {
     char str[PATH_MAX] = {0};
     
     memset(mywin[win].tot_size, 0, strlen(mywin[win].tot_size));
+    if (mywin[win].stat_active == STATS_IDLE) {
+        mywin[win].stat_active = STATS_ON;
+    }
     ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func);
     free(ps[win].nl);
     if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
@@ -149,7 +155,7 @@ void reset_win(int win)
  * Prints to window 'win' "end" strings, startig from old_dim.
  *  If end == 0, it means it needs to print every string until the end of available rows,
  * Checks if window 'win' is in search/device mode, and takes care.
- * If stat_active == 1 for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
+ * If stat_active == STATS_ON for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
  */
 void list_everything(int win, int old_dim, int end) {
     int i;
@@ -169,7 +175,7 @@ void list_everything(int win, int old_dim, int end) {
     }
     wattroff(mywin[win].fm, A_BOLD);
     mvwprintw(mywin[win].fm, INITIAL_POSITION + ps[win].curr_pos - mywin[win].delta, 1, "->");
-    if ((sv.searching != 3 + win) && (device_mode != 1 + win) && (mywin[win].stat_active == 1)) {
+    if ((sv.searching != 3 + win) && (device_mode != 1 + win) && (mywin[win].stat_active == STATS_ON)) {
         show_stat(old_dim, end, win);
     } else {
         print_border_and_title(win);
@@ -178,13 +184,13 @@ void list_everything(int win, int old_dim, int end) {
 
 /*
  * Helper function that prints borders and title of 'win'.
- * If win has stat_active == 1, adds current folder total size
+ * If win has stat_active == (STATS_ON || STATS_IDLE), adds current folder total size
  * to the right border's corner.
  */
 static void print_border_and_title(int win) {
     wborder(mywin[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(mywin[win].fm, 0, 0, "%.*s", mywin[win].width - 1, ps[win].title);
-    if (mywin[win].stat_active == 1) {
+    if (mywin[win].stat_active) {
         mvwprintw(mywin[win].fm, 0, mywin[win].width - strlen(mywin[win].tot_size), mywin[win].tot_size);
     }
     wrefresh(mywin[win].fm);
@@ -252,7 +258,7 @@ void delete_tab(int win) {
     delwin(mywin[win].fm);
     mywin[win].fm = NULL;
     if (!resizing) {
-        mywin[win].stat_active = 0;
+        mywin[win].stat_active = STATS_OFF;
         free(ps[win].nl);
         ps[win].nl = NULL;
     }
@@ -273,6 +279,7 @@ void scroll_down(void) {
         ps[active].curr_pos++;
         if (ps[active].curr_pos - (dim - 2) == mywin[active].delta) {
             scroll_helper_func(dim - 2, 1);
+            mywin[active].stat_active = STATS_ON;
             list_everything(active, ps[active].curr_pos, 1);
         } else {
             mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta, 1, "  ");
@@ -286,6 +293,7 @@ void scroll_up(void) {
         ps[active].curr_pos--;
         if (ps[active].curr_pos < mywin[active].delta) {
             scroll_helper_func(INITIAL_POSITION, -1);
+            mywin[active].stat_active = STATS_ON;
             list_everything(active, mywin[active].delta, 1);
         } else {
             mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 2, 1, "  ");
@@ -422,11 +430,12 @@ static void show_stat(int init, int end, int win) {
         sprintf(mywin[win].tot_size, "Total size: %s", str);
     }
     print_border_and_title(win);
+    mywin[win].stat_active = STATS_IDLE;
 }
 
 /*
  * Helper function used in show_stat: received a size,
- * it changes the unit from Kb to Mb to Gb if size > 1024 (previous unit)
+ * it changes the unit from Kb to Mb to Gb if size > 1024(previous unit)
  */
 static void change_unit(float size, char *str) {
     char *unit[3] = {"KB", "MB", "GB"};

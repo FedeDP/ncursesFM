@@ -15,6 +15,10 @@
 #define STAT_COL 30
 #define MAX_FILENAME_LENGTH 25
 
+#define STATS_OFF 0
+#define STATS_ON 1
+#define STATS_IDLE 2
+
 void screen_init(void);
 void screen_end(void);
 int sizesort(const struct dirent **d1, const struct dirent **d2);
