@@ -479,7 +479,7 @@ static void erase_stat(void) {
  */
 void print_info(const char *str, int i) {
     int len = 0;
-    char st[100], search_str[20];
+    char st[100];
 
     // "quit_with_running_thread" is the longest question string i print. If asking a question (asking_question == 1), i won't clear the question being asked.
     wmove(info_win, INFO_LINE, 1 + (asking_question * strlen(quit_with_running_thread)));
@@ -495,15 +495,10 @@ void print_info(const char *str, int i) {
         mvwprintw(info_win, INFO_LINE, COLS - len - strlen(selected_mess), selected_mess);
     }
     if (sv.searching) {
-        if (sv.searching >= 3) {
-            sprintf(search_str, "%d files found.", sv.found_cont);
-            mvwprintw(info_win, ERR_LINE, COLS - strlen(search_str), search_str);
-        } else {
-            mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
-        }
+        mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
     }
     if (str && (!asking_question || i == ERR_LINE)) {
-        mvwprintw(info_win, i, 1, "%.*s", COLS - (strlen("I: ") + 1), str);
+        mvwprintw(info_win, i, 1, "%.*s", COLS - 1, str);
     }
     wrefresh(info_win);
 }

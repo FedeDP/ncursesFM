@@ -102,6 +102,7 @@ void list_found(void) {
     str_ptr[active] = sv.found_searched;
     reset_win(active);
     sprintf(ps[active].title, "Found file searching %s:", sv.searched_string);
+    sprintf(searching_mess[sv.searching - 1], "%d files found.", sv.found_cont);
     list_everything(active, 0, 0);
     print_info(NULL, INFO_LINE);
 }

@@ -6,4 +6,6 @@
  * -> and i'll remove chech_arch function if it won't be needed anymore
  * 
  * better resize_win without closing and recreating everything, but just wresizing and mvwin...but it is buggy so for now i'll stick with current method.
+ * 
+ * better print_info: -> 1) asking question...find a better solution. 2) wmove, wctrtoeol: find a better sol
  */

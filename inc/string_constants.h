@@ -29,7 +29,7 @@ const char *search_archives;
 const char *searched_string_minimum;
 const char *too_many_found;
 const char *no_found;
-const char *searching_mess[2];
+char searching_mess[4][80];
 
 #ifdef LIBCUPS_PRESENT
 const char *print_question;
