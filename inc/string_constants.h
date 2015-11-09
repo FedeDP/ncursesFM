@@ -12,6 +12,8 @@ const char *fatal_mem_error;
 
 const char *no_w_perm;
 
+const char *info_win_str[3];
+
 const char *arch_ext[6];
 
 const char *file_selected;

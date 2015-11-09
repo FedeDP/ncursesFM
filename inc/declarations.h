@@ -2,13 +2,16 @@
 #include <pthread.h>
 #include <errno.h>
 
-#define INITIAL_POSITION 1
 #define MAX_TABS 2
 #define MAX_NUMBER_OF_FOUND 100
 #define BUFF_SIZE 8192
 
-#define INFO_LINE 0
-#define ERR_LINE 1
+/*
+ * Lines where to print messages to user inside info_win (ui_functions)
+ */
+#define ASK_LINE 0
+#define INFO_LINE 1
+#define ERR_LINE 2
 
 /*
  * Long operations that require a worker thread
@@ -84,5 +87,4 @@ char (*usb_devices)[PATH_MAX];
 int device_mode;
 #endif
 #endif
-pthread_mutex_t ui_lock;
 char (*str_ptr[MAX_TABS])[PATH_MAX]; // pointer to make abstract which list of strings i have to print in list_everything()

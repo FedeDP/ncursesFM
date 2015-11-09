@@ -1,6 +1,7 @@
 #include "../inc/ui_functions.h"
 
 static void fm_scr_init(void);
+static void info_win_init(void);
 static void generate_list(int win);
 static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
@@ -13,6 +14,8 @@ static void remove_helper_win(void);
 static void show_stat(int init, int end, int win);
 static void change_unit(float size, char *str);
 static void erase_stat(void);
+static void resize_helper_win(void);
+static void resize_fm_win(void);
 
 struct scrstr {
     WINDOW *fm;
@@ -24,13 +27,16 @@ struct scrstr {
 
 static struct scrstr mywin[MAX_TABS];
 static WINDOW *helper_win, *info_win;
-static int dim, asking_question, resizing;
+static int dim;
+static pthread_mutex_t ui_lock, info_lock;
 static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) = alphasort; // file list sorting function, defaults to alphasort
 
 /*
  * Initializes screen, colors etc etc, and calls fm_scr_init.
  */
 void screen_init(void) {
+    pthread_mutex_init(&ui_lock, NULL);
+    pthread_mutex_init(&info_lock, NULL);
     setlocale(LC_ALL, "");
     initscr();
     start_color();
@@ -43,6 +49,7 @@ void screen_init(void) {
     curs_set(0);
     cont = 1;
     fm_scr_init();
+    info_win_init();
 }
 
 /*
@@ -54,24 +61,24 @@ static void fm_scr_init(void) {
     dim = LINES - INFO_HEIGHT;
     for (i = 0; i < cont; i++) {
         new_tab(i);
-        if (resizing) {
-            if (ps[i].curr_pos > dim - 2 - INITIAL_POSITION) {
-                mywin[i].delta = ps[i].curr_pos - (dim - 2 - INITIAL_POSITION);
-            } else {
-                mywin[i].delta = 0;
-            }
-            if (mywin[i].stat_active == STATS_IDLE) {
-                mywin[i].stat_active = STATS_ON;
-            }
-            list_everything(i, mywin[i].delta, 0);
-        }
     }
-    info_win = subwin(stdscr, INFO_HEIGHT, COLS, dim, 0);
-    keypad(info_win, TRUE);
 }
 
 /*
- * Clear any existing window, and, if quitting (ie: not resizing) remove stdscr
+ * Initializes info_win with proper strings for every line.
+ */
+static void info_win_init(void) {
+    int i;
+    
+    info_win = subwin(stdscr, INFO_HEIGHT, COLS, LINES - INFO_HEIGHT, 0);
+    keypad(info_win, TRUE);
+    for (i = 0; i < INFO_HEIGHT; i++) {
+        mvwprintw(info_win, i, 1, "%s", info_win_str[i]);
+    }
+    wrefresh(info_win);
+}
+/*
+ * Clear any existing window, and destroy mutexes
  */
 void screen_end(void) {
     int i;
@@ -79,16 +86,14 @@ void screen_end(void) {
     for (i = 0; i < cont; i++) {
         delete_tab(i);
     }
+    delwin(info_win);
     if (helper_win) {
-        wclear(helper_win);
         delwin(helper_win);
     }
-    wclear(info_win);
-    delwin(info_win);
+    delwin(stdscr);
     endwin();
-    if (quit) {
-        delwin(stdscr);
-    }
+    pthread_mutex_destroy(&ui_lock);
+    pthread_mutex_destroy(&info_lock);
 }
 
 /*
@@ -167,14 +172,14 @@ void list_everything(int win, int old_dim, int end) {
     for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
         colored_folders(win, *(str_ptr[win] + i));
         if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
-            mvwprintw(mywin[win].fm, INITIAL_POSITION + i - mywin[win].delta, 4, "%.*s", mywin[win].width - 5, *(str_ptr[win] + i));
+            mvwprintw(mywin[win].fm, 1 + i - mywin[win].delta, 4, "%.*s", mywin[win].width - 5, *(str_ptr[win] + i));
         } else {
-            mvwprintw(mywin[win].fm, INITIAL_POSITION + i - mywin[win].delta, 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr[win] + i), '/') + 1);
+            mvwprintw(mywin[win].fm, 1 + i - mywin[win].delta, 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr[win] + i), '/') + 1);
         }
         wattroff(mywin[win].fm, COLOR_PAIR);
     }
     wattroff(mywin[win].fm, A_BOLD);
-    mvwprintw(mywin[win].fm, INITIAL_POSITION + ps[win].curr_pos - mywin[win].delta, 1, "->");
+    mvwprintw(mywin[win].fm, 1 + ps[win].curr_pos - mywin[win].delta, 1, "->");
     if ((sv.searching != 3 + win) && (device_mode != 1 + win) && (mywin[win].stat_active == STATS_ON)) {
         show_stat(old_dim, end, win);
     }
@@ -212,13 +217,11 @@ static int is_hidden(const struct dirent *current_file) {
  */
 void new_tab(int win) {
     mywin[win].width = COLS / cont + COLS % cont;
-    mywin[win].fm = subwin(stdscr, dim, mywin[win].width, 0, (COLS * (win)) / cont);
+    mywin[win].fm = newwin(dim, mywin[win].width, 0, (COLS * (win)) / cont);
     keypad(mywin[win].fm, TRUE);
     scrollok(mywin[win].fm, TRUE);
     idlok(mywin[win].fm, TRUE);
-    if (!resizing) {
-        initialize_tab_cwd(win);
-    }
+    initialize_tab_cwd(win);
 }
 
 /*
@@ -243,7 +246,7 @@ static void initialize_tab_cwd(int win) {
     if (!strlen(ps[win].my_cwd)) {
         getcwd(ps[win].my_cwd, PATH_MAX);
     }
-    sprintf(ps[win].title, "Current: %s", ps[win].my_cwd);
+    sprintf(ps[win].title, "%s", ps[win].my_cwd);
     tab_refresh(win);
 }
 
@@ -251,14 +254,12 @@ static void initialize_tab_cwd(int win) {
  * Removes a tab and if !resizing, free its list of files.
  */
 void delete_tab(int win) {
-    wclear(mywin[win].fm);
     delwin(mywin[win].fm);
     mywin[win].fm = NULL;
-    if (!resizing) {
-        mywin[win].stat_active = STATS_OFF;
-        free(ps[win].nl);
-        ps[win].nl = NULL;
-    }
+    memset(ps[win].my_cwd, 0, sizeof(ps[win].my_cwd));
+    mywin[win].stat_active = STATS_OFF;
+    free(ps[win].nl);
+    ps[win].nl = NULL;
 }
 
 /*
@@ -276,11 +277,13 @@ void scroll_down(void) {
         ps[active].curr_pos++;
         if (ps[active].curr_pos - (dim - 2) == mywin[active].delta) {
             scroll_helper_func(dim - 2, 1);
-            mywin[active].stat_active = STATS_ON;
+            if (mywin[active].stat_active == STATS_IDLE) {
+                mywin[active].stat_active = STATS_ON;
+            }
             list_everything(active, ps[active].curr_pos, 1);
         } else {
             mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta, 1, "  ");
-            mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + INITIAL_POSITION, 1, "->");
+            mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 1, 1, "->");
         }
     }
 }
@@ -289,8 +292,10 @@ void scroll_up(void) {
     if (ps[active].curr_pos > 0) {
         ps[active].curr_pos--;
         if (ps[active].curr_pos < mywin[active].delta) {
-            scroll_helper_func(INITIAL_POSITION, -1);
-            mywin[active].stat_active = STATS_ON;
+            scroll_helper_func(1, -1);
+            if (mywin[active].stat_active == STATS_IDLE) {
+                mywin[active].stat_active = STATS_ON;
+            }
             list_everything(active, mywin[active].delta, 1);
         } else {
             mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 2, 1, "  ");
@@ -348,13 +353,13 @@ static void create_helper_win(void) {
     for (i = 0; i < cont; i++) {
         wresize(mywin[i].fm, dim, mywin[i].width);
         print_border_and_title(i);
-        if (ps[i].curr_pos > dim - 3) {
+        if (ps[i].curr_pos > dim - 3 + mywin[i].delta) {
             ps[i].curr_pos = dim - 3 + mywin[i].delta;
-            mvwprintw(mywin[i].fm, dim - 3 + INITIAL_POSITION, 1, "->");
+            mvwprintw(mywin[i].fm, dim - 3 + 1, 1, "->");
         }
         wrefresh(mywin[i].fm);
     }
-    helper_win = subwin(stdscr, HELPER_HEIGHT, COLS, LINES - INFO_HEIGHT - HELPER_HEIGHT, 0);
+    helper_win = newwin(HELPER_HEIGHT, COLS, dim, 0);
     wclear(helper_win);
     helper_print();
 }
@@ -372,6 +377,9 @@ static void remove_helper_win(void) {
     for (i = 0; i < cont; i++) {
         mvwhline(mywin[i].fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
         wresize(mywin[i].fm, dim, mywin[i].width);
+        if (mywin[i].stat_active == STATS_IDLE) {
+            mywin[i].stat_active = STATS_ON;
+        }
         list_everything(i, dim - 2 - HELPER_HEIGHT + mywin[i].delta, HELPER_HEIGHT);
     }
 }
@@ -380,7 +388,7 @@ static void helper_print(void) {
     int i;
 
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
-    for (i = HELPER_HEIGHT - INFO_HEIGHT - 1; i >= 0; i--) {
+    for (i = 0; i < HELPER_HEIGHT - 2; i++) {
         mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, helper_string[i]);
     }
     mvwprintw(helper_win, 0, 0, "Helper");
@@ -411,13 +419,13 @@ static void show_stat(int init, int end, int win) {
         if (!check) {
             total_size += file_stat.st_size;
         }
-        if (i < init + end) {
+        if ((i >= init) && (i < init + end)) {
             change_unit(file_stat.st_size, str);
-            mvwprintw(mywin[win].fm, i + INITIAL_POSITION - mywin[win].delta, STAT_COL, "%s\t", str);
+            mvwprintw(mywin[win].fm, i + 1 - mywin[win].delta, STAT_COL, "%s\t", str);
             for (j = 0; j < 9; j++) {
                 wprintw(mywin[win].fm, (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
             }
-            if ((i == end - 1) && (check)) {
+            if ((i == init + end - 1) && (check)) {
                 break;
             }
         }
@@ -470,58 +478,51 @@ static void erase_stat(void) {
 }
 
 /*
- * Given a string str, and a line i, prints str on the I line of INFO_WIN.
- * Plus, if thread_h is not NULL, prints thread_job_mesg message(depends on current job type) at the end of INFO_LINE
- * It searches for selected_files too, and prints a message at the end of INFO_LINE - (strlen(running_h mesg) if there's.
- * Finally, if a search is running, prints a message at the end of ERR_LINE;
- * If asking_question != 0, there's a question being asked to user, so we won't clear it inside the for,
- * and we won't print str if i == INFO_LINE (that's the line where the user is being asked the question!)
+ * It locks info_lock mutex, then clears "i" line of info_win.
+ * Performs various checks: if thread_h is not NULL, prints thread_job_mesg message(depends on current job type) at the end of ASK_LINE.
+ * It searches for selected_files too, and prints a message at the end of INFO_LINE.
+ * If a search is running, prints a message at the end of ERR_LINE;
+ * Finally, prints str on the "i" line.
  */
 void print_info(const char *str, int i) {
-    int len = 0;
     char st[100];
-
-    // "quit_with_running_thread" is the longest question string i print. If asking a question (asking_question == 1), i won't clear the question being asked.
-    wmove(info_win, INFO_LINE, 1 + (asking_question * strlen(quit_with_running_thread)));
-    wclrtoeol(info_win);
-    wmove(info_win, ERR_LINE, 1);
-    wclrtoeol(info_win);
+    
+    pthread_mutex_lock(&info_lock);
+    if (wmove(info_win, i, 1 + strlen(info_win_str[i])) == OK) {
+        wclrtoeol(info_win);
+    }
     if (thread_h) {
         sprintf(st, "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type]);
-        len = strlen(st) + 1;
-        mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
+        mvwprintw(info_win, ASK_LINE, COLS - strlen(st), st);
     }
     if (selected) {
-        mvwprintw(info_win, INFO_LINE, COLS - len - strlen(selected_mess), selected_mess);
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(selected_mess), selected_mess);
     }
     if (sv.searching) {
         mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
     }
-    if (str && (!asking_question || i == ERR_LINE)) {
-        mvwprintw(info_win, i, 1, "%.*s", COLS - 1, str);
-    }
+    mvwprintw(info_win, i, 1 + strlen(info_win_str[i]), "%.*s", COLS - 1, str);
     wrefresh(info_win);
+    pthread_mutex_unlock(&info_lock);
 }
 
 /*
  * Given a str, a char input[dim], and a char c (that is default value if enter is pressed, if dim == 1),
  * asks the user "str" and saves in input the user response.
  */
-void ask_user(const char *str, char *input, int dim, char c) {
+void ask_user(const char *str, char *input, int d, char c) {
     echo();
-    print_info(str, INFO_LINE);
-    asking_question = 1;
-    if (dim == 1) {
+    print_info(str, ASK_LINE);
+    if (d == 1) {
         *input = tolower(wgetch(info_win));
         if (*input == 10) {
             *input = c;
         }
     } else {
-        wgetnstr(info_win, input, NAME_MAX);
+        wgetnstr(info_win, input, d);
     }
     noecho();
-    asking_question = 0;
-    print_info(NULL, INFO_LINE);
+    print_info("", ASK_LINE);
 }
 
 int win_getch(void) {
@@ -541,25 +542,63 @@ void tab_refresh(int win) {
 }
 
 /*
- * Removes every win except for stdscr;
- * reprint every win, if help==1, it needs to reprint 
- * helper_win too.
- * Then prints any "sticky" message (eg: "searching"/"pasting..." etc etc)
+ * Removes info win;
+ * resizes every fm win, and moves it in the new position.
+ * If helper_win != NULL, resizes it too, and moves it in the new position.
+ * Then recreates info win.
+ * Fixes new current_position of every fm, 
+ * then prints again any "sticky" message (eg: "searching"/"pasting...")
  */
 void resize_win(void) {
-    int help = 0;
-    
+    pthread_mutex_lock(&ui_lock);
+    pthread_mutex_lock(&info_lock);
+    delwin(info_win);
+    dim = LINES - INFO_HEIGHT;
     if (helper_win) {
-        help = 1;
+        resize_helper_win();
     }
-    resizing = 1;
-    screen_end();
-    fm_scr_init();
-    if (help) {
-        create_helper_win();
+    resize_fm_win();
+    info_win_init();
+    pthread_mutex_unlock(&ui_lock);
+    pthread_mutex_unlock(&info_lock);
+    print_info("", -1);
+}
+
+/*
+ * Just clear helper_win and resize it.
+ * Then move it to the new position and print helper strings.
+ */
+static void resize_helper_win(void) {
+    wclear(helper_win);
+    dim -= HELPER_HEIGHT;
+    wresize(helper_win, HELPER_HEIGHT, COLS);
+    mvwin(helper_win, dim, 0);
+    helper_print();
+}
+
+/*
+ * Clear every fm win, resize it and move it to its new position.
+ * Fix new win's delta with new available LINES (ie: dim).
+ * Then list_everything, being careful if stat_active is ON.
+ */
+static void resize_fm_win(void) {
+    int i;
+    
+    for(i = 0; i < cont; i++) {
+        wclear(mywin[i].fm);
+        mywin[i].width = COLS / cont + i * (COLS % cont);
+        wresize(mywin[i].fm, dim, mywin[i].width);
+        mvwin(mywin[i].fm, 0, i * mywin[i].width);
+        if (ps[i].curr_pos > dim - 3) {
+            mywin[i].delta = ps[i].curr_pos - (dim - 3);
+        } else {
+            mywin[i].delta = 0;
+        }
+        if (mywin[i].stat_active == STATS_IDLE) {
+            mywin[i].stat_active = STATS_ON;
+        }
+        list_everything(i, mywin[i].delta, 0);
     }
-    print_info(NULL, INFO_LINE);
-    resizing = 0;
 }
 
 void change_sort(void) {

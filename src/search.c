@@ -10,7 +10,7 @@ void search(void) {
 
     ask_user(search_insert_name, sv.searched_string, 20, 0);
     if (strlen(sv.searched_string) < 5) {
-        print_info(searched_string_minimum, INFO_LINE);
+        print_info(searched_string_minimum, ERR_LINE);
         return;
     }
     sv.found_cont = 0;
@@ -20,7 +20,7 @@ void search(void) {
         sv.search_archive = 1;
     }
     sv.searching = 1;
-    print_info(NULL, INFO_LINE);
+    print_info("", SEARCH_LINE);
     pthread_create(&search_th, NULL, search_thread, NULL);
     pthread_detach(search_th);
 }
@@ -91,7 +91,7 @@ static void *search_thread(void *x) {
         }
     } else {
         sv.searching = 2;
-        print_info(NULL, INFO_LINE);
+        print_info("", SEARCH_LINE);
     }
     return NULL;
 }
@@ -104,12 +104,12 @@ void list_found(void) {
     sprintf(ps[active].title, "Found file searching %s:", sv.searched_string);
     sprintf(searching_mess[sv.searching - 1], "%d files found.", sv.found_cont);
     list_everything(active, 0, 0);
-    print_info(NULL, INFO_LINE);
+    print_info("", SEARCH_LINE);
 }
 
 void leave_search_mode(const char *str) {
     sv.searching = 0;
-    print_info(NULL, INFO_LINE);
+    print_info("", SEARCH_LINE);
     change_dir(str);
 }
 

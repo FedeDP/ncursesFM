@@ -25,7 +25,7 @@ static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
 void change_dir(const char *str) {
     if (chdir(str) != -1) {
         getcwd(ps[active].my_cwd, PATH_MAX);
-        sprintf(ps[active].title, "Current: %s", ps[active].my_cwd);
+        sprintf(ps[active].title, "%s", ps[active].my_cwd);
         tab_refresh(active);
     } else {
         print_info(strerror(errno), ERR_LINE);

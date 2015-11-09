@@ -10,6 +10,8 @@ const char *fatal_mem_error = "No more memory available. Program will exit.";
 
 const char *no_w_perm = "You do not have write permissions here.";
 
+const char *info_win_str[] = {"?: ", "Last info: ", "Last err: "};
+
 const char *arch_ext[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
 
 const char *file_selected = "This file is already selected. Cancel its selection before.";

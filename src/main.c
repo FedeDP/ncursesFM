@@ -47,7 +47,6 @@ static int (*const long_func[LONG_FILE_OPERATIONS - 1])(void) = {
 
 int main(int argc, const char *argv[])
 {
-    pthread_mutex_init(&ui_lock, NULL);
     helper_function(argc, argv);
 #ifdef LIBCONFIG_PRESENT
     read_config_file();
@@ -62,7 +61,6 @@ int main(int argc, const char *argv[])
     if (quit == MEM_ERR_QUIT) {
         printf("%s\n", generic_mem_error);
     }
-    pthread_mutex_destroy(&ui_lock);
     EXIT_SUCCESS;
 }
 

@@ -133,7 +133,8 @@ static void *execute_thread(void *x) {
     }
     num_of_jobs = 0;
     thread_m.str = NULL;
-    thread_m.line = INFO_LINE;
+    thread_m.line = ASK_LINE;
+    print_info("", ASK_LINE);
 #ifdef SYSTEMD_PRESENT
     if (config.inhibit) {
         free_bus();

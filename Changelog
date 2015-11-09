@@ -176,3 +176,9 @@ if letters are pressed fast enough
 * dropped libmagic
 * simplified README
 * probably something more i now forgot
+
+11 / 9 / 2015
+* better and safer print_info, now with 3 lines: first for questions, second for info, third for errors. It has its own info_mutex now to avoid race conditions with worker thread.
+* Better and safer resize_win: 1) locks UI mutexes (ui_mutex and info_mutex) 2) doesn't destroy every win but it only resizes and moves existent windows.
+* safer show_stat: it locks ui_mutex too
+* Lots of bugfixing related to resize and show_stat
