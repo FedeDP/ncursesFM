@@ -333,11 +333,13 @@ static void colored_folders(int win, const char *name) {
 }
 
 void trigger_show_helper_message(void) {
+    pthread_mutex_lock(&ui_lock);
     if (!helper_win) {
         create_helper_win();
     } else {
         remove_helper_win();
     }
+    pthread_mutex_unlock(&ui_lock);
 }
 
 /*
@@ -455,12 +457,14 @@ static void change_unit(float size, char *str) {
 
 void trigger_stats(void) {
     mywin[active].stat_active = !mywin[active].stat_active;
+    pthread_mutex_lock(&ui_lock);
     if (mywin[active].stat_active) {
         show_stat(mywin[active].delta, dim - 2, active);
     } else {
         erase_stat();
     }
     print_border_and_title(active);
+    pthread_mutex_unlock(&ui_lock);
 }
 
 /*
