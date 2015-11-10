@@ -409,12 +409,13 @@ static void helper_print(void) {
 static void show_stat(int init, int end, int win) {
     int j, i;
     int check = strlen(mywin[win].tot_size);
-    int perm_bit[9] = {S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, S_IROTH, S_IWOTH, S_IXOTH};
-    char perm_sign[3] = {'r', 'w', 'x'}, str[20];
+    const int perm_bit[9] = {S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, S_IROTH, S_IWOTH, S_IXOTH};
+    const char perm_sign[3] = {'r', 'w', 'x'};
+    char str[20];
     float total_size = 0;
     struct stat file_stat;
     
-    check %= check - 1; // "check" should be 0 or 1 (strlen(tot_size) will always be > 1, so i can safely divide for check - 1
+    check %= check - 1; // "check" should be 0 or 1 (strlen(tot_size) will never be 1, so i can safely divide for check - 1)
     for (i = check * init; i < ps[win].number_of_files; i++) {
         stat(ps[win].nl[i], &file_stat);
         if (!check) {
