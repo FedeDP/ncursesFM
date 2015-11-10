@@ -367,7 +367,8 @@ static void create_helper_win(void) {
 }
 
 /*
- * Remove helper_win, resize every ps.fm win and prints last HELPER_HEIGHT lines for each ps.win.
+ * Remove helper_win, removes old bottom border of every fm win then resizes it.
+ * Finally prints last HELPER_HEIGHT lines for each fm win.
  */
 static void remove_helper_win(void) {
     int i;
@@ -406,17 +407,15 @@ static void helper_print(void) {
  * so it will be empty only when a full redraw of the win is needed).
  */
 static void show_stat(int init, int end, int win) {
-    int j, i = 0;
+    int j, i;
     int check = strlen(mywin[win].tot_size);
     int perm_bit[9] = {S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, S_IROTH, S_IWOTH, S_IXOTH};
     char perm_sign[3] = {'r', 'w', 'x'}, str[20];
     float total_size = 0;
     struct stat file_stat;
     
-    if (check) {
-        i = init;
-    }
-    for (; i < ps[win].number_of_files; i++) {
+    check %= check - 1; // "check" should be 0 or 1 (strlen(tot_size) will always be > 1, so i can safely divide for check - 1
+    for (i = check * init; i < ps[win].number_of_files; i++) {
         stat(ps[win].nl[i], &file_stat);
         if (!check) {
             total_size += file_stat.st_size;
@@ -455,6 +454,11 @@ static void change_unit(float size, char *str) {
     sprintf(str, "%.2f%s", size, unit[i]);
 }
 
+/*
+ * Called when "s" is pressed, updates stat_active, then locks ui_mutex 
+ * and shows stats or erase stats.
+ * Then release the mutex.
+ */
 void trigger_stats(void) {
     mywin[active].stat_active = !mywin[active].stat_active;
     pthread_mutex_lock(&ui_lock);
@@ -469,7 +473,7 @@ void trigger_stats(void) {
 
 /*
  * Move to STAT_COL and clear to eol.
- * Then, reprint border and title.
+ * It deletes mywin[active].tot_size too.
  */
 static void erase_stat(void) {
     int i;
@@ -515,8 +519,8 @@ void print_info(const char *str, int i) {
  * asks the user "str" and saves in input the user response.
  */
 void ask_user(const char *str, char *input, int d, char c) {
-    echo();
     print_info(str, ASK_LINE);
+    echo();
     if (d == 1) {
         *input = tolower(wgetch(info_win));
         if (*input == 10) {

@@ -19,7 +19,7 @@ static void sig_handler(int signum);
 
 static pthread_t worker_th;
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
-static struct thread_mesg thread_m;
+static struct thread_mesg thread_m = {"", INFO_LINE};
 
 /*
  * Creates a new job object for the worker_thread appending it to the end of job's queue.
@@ -132,8 +132,8 @@ static void *execute_thread(void *x) {
         return execute_thread(NULL);
     }
     num_of_jobs = 0;
-    thread_m.str = NULL;
-    thread_m.line = ASK_LINE;
+    thread_m.str = "";
+    thread_m.line = INFO_LINE;
     print_info("", ASK_LINE);
 #ifdef SYSTEMD_PRESENT
     if (config.inhibit) {
