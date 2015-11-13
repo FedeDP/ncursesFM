@@ -145,9 +145,7 @@ static void *execute_thread(void *x) {
 }
 
 static void check_refresh(void) {
-    int i;
-
-    for (i = 0; i < cont; i++) {
+    for (int i = 0; i < cont; i++) {
         if ((thread_h->type != RM_TH && strcmp(ps[i].my_cwd, thread_h->full_path) == 0) || refresh_needed(ps[i].my_cwd)) {
             tab_refresh(i);
         }

@@ -53,13 +53,11 @@ void screen_init(void) {
 }
 
 /*
- * Used to initialize fm win and info_win at program startup and after a resize.
+ * Used to initialize fm win and info_win at program startup.
  */
 static void fm_scr_init(void) {
-    int i;
-
     dim = LINES - INFO_HEIGHT;
-    for (i = 0; i < cont; i++) {
+    for (int i = 0; i < cont; i++) {
         new_tab(i);
     }
 }
@@ -68,11 +66,9 @@ static void fm_scr_init(void) {
  * Initializes info_win with proper strings for every line.
  */
 static void info_win_init(void) {
-    int i;
-    
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, LINES - INFO_HEIGHT, 0);
     keypad(info_win, TRUE);
-    for (i = 0; i < INFO_HEIGHT; i++) {
+    for (int i = 0; i < INFO_HEIGHT; i++) {
         mvwprintw(info_win, i, 1, "%s", info_win_str[i]);
     }
     wrefresh(info_win);
@@ -81,9 +77,7 @@ static void info_win_init(void) {
  * Clear any existing window, and destroy mutexes
  */
 void screen_end(void) {
-    int i;
-
-    for (i = 0; i < cont; i++) {
+    for (int i = 0; i < cont; i++) {
         delete_tab(i);
     }
     delwin(info_win);
@@ -101,7 +95,6 @@ void screen_end(void) {
  * If program cannot allocate memory, it will leave.
  */
 static void generate_list(int win) {
-    int i;
     struct dirent **files;
     char str[PATH_MAX] = {0};
     
@@ -118,7 +111,7 @@ static void generate_list(int win) {
     if (strcmp(ps[win].my_cwd, "/") != 0) {
         strcpy(str, ps[win].my_cwd);
     }
-    for (i = 0; i < ps[win].number_of_files; i++) {
+    for (int i = 0; i < ps[win].number_of_files; i++) {
         if (!quit) {
             sprintf(ps[win].nl[i], "%s/%s", str, files[i]->d_name);
         }
@@ -163,13 +156,11 @@ void reset_win(int win)
  * If stat_active == STATS_ON for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
  */
 void list_everything(int win, int old_dim, int end) {
-    int i;
-    
     if (end == 0) {
         end = dim - 2;
     }
     wattron(mywin[win].fm, A_BOLD);
-    for (i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
+    for (int i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
         colored_folders(win, *(str_ptr[win] + i));
         if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
             mvwprintw(mywin[win].fm, 1 + i - mywin[win].delta, 4, "%.*s", mywin[win].width - 5, *(str_ptr[win] + i));
@@ -349,10 +340,8 @@ void trigger_show_helper_message(void) {
  * Then create helper_win and print its strings.
  */
 static void create_helper_win(void) {
-    int i;
-
     dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
-    for (i = 0; i < cont; i++) {
+    for (int i = 0; i < cont; i++) {
         wresize(mywin[i].fm, dim, mywin[i].width);
         print_border_and_title(i);
         if (ps[i].curr_pos > dim - 3 + mywin[i].delta) {
@@ -371,13 +360,11 @@ static void create_helper_win(void) {
  * Finally prints last HELPER_HEIGHT lines for each fm win.
  */
 static void remove_helper_win(void) {
-    int i;
-
     wclear(helper_win);
     delwin(helper_win);
     helper_win = NULL;
     dim = LINES - INFO_HEIGHT;
-    for (i = 0; i < cont; i++) {
+    for (int i = 0; i < cont; i++) {
         mvwhline(mywin[i].fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
         wresize(mywin[i].fm, dim, mywin[i].width);
         if (mywin[i].stat_active == STATS_IDLE) {
@@ -388,10 +375,8 @@ static void remove_helper_win(void) {
 }
 
 static void helper_print(void) {
-    int i;
-
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
-    for (i = 0; i < HELPER_HEIGHT - 2; i++) {
+    for (int i = 0; i < HELPER_HEIGHT - 2; i++) {
         mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, helper_string[i]);
     }
     mvwprintw(helper_win, 0, 0, "Helper");
@@ -407,7 +392,6 @@ static void helper_print(void) {
  * so it will be empty only when a full redraw of the win is needed).
  */
 static void show_stat(int init, int end, int win) {
-    int j, i;
     int check = strlen(mywin[win].tot_size);
     const int perm_bit[9] = {S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, S_IROTH, S_IWOTH, S_IXOTH};
     const char perm_sign[3] = {'r', 'w', 'x'};
@@ -416,7 +400,7 @@ static void show_stat(int init, int end, int win) {
     struct stat file_stat;
     
     check %= check - 1; // "check" should be 0 or 1 (strlen(tot_size) will never be 1, so i can safely divide for check - 1)
-    for (i = check * init; i < ps[win].number_of_files; i++) {
+    for (int i = check * init; i < ps[win].number_of_files; i++) {
         stat(ps[win].nl[i], &file_stat);
         if (!check) {
             total_size += file_stat.st_size;
@@ -424,7 +408,7 @@ static void show_stat(int init, int end, int win) {
         if ((i >= init) && (i < init + end)) {
             change_unit(file_stat.st_size, str);
             mvwprintw(mywin[win].fm, i + 1 - mywin[win].delta, STAT_COL, "%s\t", str);
-            for (j = 0; j < 9; j++) {
+            for (int j = 0; j < 9; j++) {
                 wprintw(mywin[win].fm, (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
             }
             if ((i == init + end - 1) && (check)) {
@@ -477,9 +461,7 @@ void trigger_stats(void) {
  * It deletes mywin[active].tot_size too.
  */
 static void erase_stat(void) {
-    int i;
-
-    for (i = 0; (i < ps[active].number_of_files) && (i < dim - 2); i++) {
+    for (int i = 0; (i < ps[active].number_of_files) && (i < dim - 2); i++) {
         wmove(mywin[active].fm, i + 1, STAT_COL);
         wclrtoeol(mywin[active].fm);
     }
@@ -591,9 +573,7 @@ static void resize_helper_win(void) {
  * Then list_everything, being careful if stat_active is ON.
  */
 static void resize_fm_win(void) {
-    int i;
-    
-    for(i = 0; i < cont; i++) {
+    for (int i = 0; i < cont; i++) {
         wclear(mywin[i].fm);
         mywin[i].width = COLS / cont + i * (COLS % cont);
         wresize(mywin[i].fm, dim, mywin[i].width);
@@ -611,8 +591,6 @@ static void resize_fm_win(void) {
 }
 
 void change_sort(void) {
-    int i;
-    
     if (sorting_func == alphasort) {
         sorting_func = sizesort;
         print_info("Files will be sorted by size now.", INFO_LINE);
@@ -623,7 +601,7 @@ void change_sort(void) {
         sorting_func = alphasort;
         print_info("Files will be sorted alphabetically now.", INFO_LINE);
     }
-    for (i = 0; i < cont; i++) {
+    for (int i = 0; i < cont; i++) {
         tab_refresh(i);
     }
 }

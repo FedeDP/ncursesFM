@@ -60,8 +60,9 @@ int main(int argc, const char *argv[])
     printf("\033c"); // to clear terminal/vt after leaving program
     if (quit == MEM_ERR_QUIT) {
         printf("%s\n", generic_mem_error);
+        exit(EXIT_FAILURE);
     }
-    EXIT_SUCCESS;
+    exit(EXIT_SUCCESS);
 }
 
 static void helper_function(int argc, const char *argv[]) {
@@ -78,7 +79,7 @@ static void helper_function(int argc, const char *argv[]) {
             printf("Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
             printf("Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
             printf("Press 'l' while in program to view a more detailed helper message.\n");
-            exit(0);
+            exit(EXIT_SUCCESS);
         } else {
             parse_cmd(argc, argv);
         }
@@ -114,7 +115,7 @@ static void parse_cmd(int argc, const char *argv[]) {
     }
     if (changed != argc) {
         printf("Use '-h' or '--help' to view helper message.\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 }
 

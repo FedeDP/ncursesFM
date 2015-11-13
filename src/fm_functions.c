@@ -33,10 +33,8 @@ void change_dir(const char *str) {
 }
 
 void switch_hidden(void) {
-    int i;
-
     config.show_hidden = !config.show_hidden;
-    for (i = 0; i < cont; i++) {
+    for (int i = 0; i < cont; i++) {
         tab_refresh(i);
     }
 }
@@ -161,7 +159,7 @@ static void open_file(const char *str, float size) {
 void fast_file_operations(const int index) {
     char new_name[NAME_MAX] = {0};
     const char *str = short_fail_msg[index];
-    int line = ERR_LINE, i;
+    int line = ERR_LINE;
 
     ask_user(ask_name, new_name, NAME_MAX, 0);
     if (!strlen(new_name)) {
@@ -170,7 +168,7 @@ void fast_file_operations(const int index) {
     if (short_func[index](new_name) == 0) {
         str = short_msg[index];
         line = INFO_LINE;
-        for (i = 0; i < cont; i++) {
+        for (int i = 0; i < cont; i++) {
             if (strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) {
                 tab_refresh(i);
             }
@@ -241,9 +239,8 @@ void manage_space_press(const char *str) {
 int paste_file(void) {
     char copied_file_dir[PATH_MAX], *str;
     int len;
-    file_list *tmp = NULL;
 
-    for (tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
+    for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
         strcpy(copied_file_dir, tmp->name);
         str = strrchr(tmp->name, '/');
         len = strlen(tmp->name) - strlen(str);
@@ -264,11 +261,10 @@ int paste_file(void) {
 int move_file(void) {
     char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX], *str;
     struct stat file_stat_copied, file_stat_pasted;
-    file_list *tmp = NULL;
     int len;
 
     lstat(thread_h->full_path, &file_stat_pasted);
-    for (tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
+    for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
         strcpy(copied_file_dir, tmp->name);
         str = strrchr(tmp->name, '/');
         len = strlen(tmp->name) - strlen(str);
