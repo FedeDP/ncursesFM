@@ -61,7 +61,7 @@ endif
 all: ncursesFM clean
 
 objects:
-	cd $(SRCDIR); $(CC) -c *.c -Wall $(CFLAGS) -g
+	cd $(SRCDIR); $(CC) -c *.c -Wall $(CFLAGS)
 
 ncursesFM: objects
 	cd $(SRCDIR); $(CC) -o ../ncursesFM *.o $(LIBS)
