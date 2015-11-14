@@ -10,14 +10,16 @@ BINDIR = /usr/bin
 CONFDIR = /etc/default
 BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
+SRCDIR = src/
 
 ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 
 LIBX11=$(shell pkg-config --silence-errors --libs x11)
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
+LIBGIT2=$(shell pkg-config --silence-errors --libs libgit2)
 
-LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD)
+LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBGIT2)
 
 ifneq ("$(LIBX11)","")
 CFLAGS+=-DLIBX11_PRESENT
@@ -33,6 +35,11 @@ endif
 ifneq ("$(LIBCONFIG)","")
 CFLAGS+=-DLIBCONFIG_PRESENT
 $(info libconfig support enabled.)
+endif
+
+ifneq ("$(LIBGIT2)","")
+CFLAGS+=-DLIBGIT2_PRESENT
+$(info libgit2 support enabled.)
 endif
 
 # Udev support is useful only if libsystemd support is enabled!
@@ -54,13 +61,13 @@ endif
 all: ncursesFM clean
 
 objects:
-	cd src/; $(CC) -c *.c -Wall $(CFLAGS)
+	cd $(SRCDIR); $(CC) -c *.c -Wall $(CFLAGS) -g
 
 ncursesFM: objects
-	cd src/; $(CC) -o ../ncursesFM *.o $(LIBS)
+	cd $(SRCDIR); $(CC) -o ../ncursesFM *.o $(LIBS)
 
 clean:
-	cd src/; $(RM) *.o
+	cd $(SRCDIR); $(RM) *.o
 
 install:
 	$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"

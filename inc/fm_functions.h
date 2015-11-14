@@ -21,6 +21,10 @@
 #include <X11/Xlib.h>
 #endif
 
+#ifdef LIBGIT2_PRESENT
+#include "git_fetch.h"
+#endif
+
 #define FAST_BROWSE_THRESHOLD 500000
 #define MILLION 1000000
 #define BIG_FILE_THRESHOLD 5000000

@@ -500,6 +500,7 @@ void print_info(const char *str, int i) {
 /*
  * Given a str, a char input[dim], and a char c (that is default value if enter is pressed, if dim == 1),
  * asks the user "str" and saves in input the user response.
+ * It does not need its own mutex because as of now only main thread calls it.
  */
 void ask_user(const char *str, char *input, int d, char c) {
     print_info(str, ASK_LINE);

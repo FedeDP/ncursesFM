@@ -281,6 +281,11 @@ static void main_loop(void) {
                 print_info("Fast browse mode disabled.", INFO_LINE);
             }
             break;
+#ifdef LIBGIT2_PRESENT
+        case 'y': // y to check if current dir is a git repo, and to fetch from origin
+            fetch(ps[active].my_cwd);
+            break;
+#endif
         case 'q': /* q to exit/leave search mode/leave device_mode */
             if (sv.searching == 3 + active) {
                 leave_search_mode(ps[active].my_cwd);
