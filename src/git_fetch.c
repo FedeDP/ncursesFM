@@ -35,15 +35,19 @@ void fetch(const char *path)
 {
     git_repository *repo = NULL;
     git_remote *remote = NULL;
+    git_buf buf = GIT_BUF_INIT_CONST(NULL, 0);
     const git_transfer_progress *stats;
     git_fetch_options fetch_opts = GIT_FETCH_OPTIONS_INIT;
     char success[200];
     int error;
     
     git_libgit2_init();
-    error = git_repository_open(&repo, path);
-    if ((!error) && (git_remote_lookup(&remote, repo, path) < 0)) {
-        error = git_remote_create_anonymous(&remote, repo, path);
+    error = git_repository_discover(&buf, path, 0, NULL);
+    if (!error) {
+        error = git_repository_open(&repo, buf.ptr);
+    }
+    if ((!error) && (git_remote_lookup(&remote, repo, buf.ptr) < 0)) { // shouldn't here be "origin"?
+        error = git_remote_create_anonymous(&remote, repo, buf.ptr);    // not sure about this one...
     }
     if (!error) {
         fetch_opts.callbacks.credentials = cred_acquire_cb;
@@ -70,6 +74,7 @@ void fetch(const char *path)
     if (repo) {
         git_repository_free(repo);
     }
+    git_buf_free(&buf);
     git_libgit2_shutdown();
 }
 
