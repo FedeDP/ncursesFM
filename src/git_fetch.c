@@ -51,8 +51,8 @@ void fetch(const char *path)
     }
     if (!error) {
         stats = git_remote_stats(remote);
-        if (stats->total_objects) {
-            sprintf(success, "Received %d/%d objects in %lu bytes",
+        if (stats->received_bytes) {
+            sprintf(success, "Received %d/%d objects in %zu bytes",
             stats->indexed_objects, stats->total_objects, stats->received_bytes);
         } else {
             sprintf(success, "Already up to date.");
