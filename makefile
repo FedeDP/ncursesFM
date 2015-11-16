@@ -17,9 +17,15 @@ ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 LIBX11=$(shell pkg-config --silence-errors --libs x11)
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
+ifneq ("$(LIBSYSTEMD)","")
+LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
+endif
+LIBOPENSSL=$(shell pkg-config --silence-errors --libs openssl)
+ifneq ("$(LIBOPENSSL)","")
 LIBGIT2=$(shell pkg-config --silence-errors --libs libgit2)
+endif
 
-LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBGIT2)
+LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBUDEV) $(LIBOPENSSL) $(LIBGIT2)
 
 ifneq ("$(LIBX11)","")
 CFLAGS+=-DLIBX11_PRESENT
@@ -37,23 +43,26 @@ CFLAGS+=-DLIBCONFIG_PRESENT
 $(info libconfig support enabled.)
 endif
 
+ifneq ("$(LIBOPENSSL)","")
+CFLAGS+=-DOPENSSL_PRESENT
+$(info openssl support enabled.)
+
+# libgit requires openssl
 ifneq ("$(LIBGIT2)","")
 CFLAGS+=-DLIBGIT2_PRESENT
 $(info libgit2 support enabled.)
 endif
+endif
 
-# Udev support is useful only if libsystemd support is enabled!
 ifneq ("$(LIBSYSTEMD)","")
 CFLAGS+=-DSYSTEMD_PRESENT
 $(info libsystemd support enabled.)
 
-LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
+# libudev support is useful only if systemd support is enabled
 ifneq ("$(LIBUDEV)","")
 CFLAGS+=-DLIBUDEV_PRESENT
-LIBS+=$(LIBUDEV)
 $(info libudev support enabled.)
 endif
-
 endif
 
 endif

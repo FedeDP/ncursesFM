@@ -21,8 +21,11 @@
 #include <X11/Xlib.h>
 #endif
 
+#ifdef OPENSSL_PRESENT
+#include "shasum.h"
 #ifdef LIBGIT2_PRESENT
 #include "git_fetch.h"
+#endif
 #endif
 
 #define FAST_BROWSE_THRESHOLD 500000

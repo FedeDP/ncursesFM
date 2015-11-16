@@ -215,7 +215,7 @@ void free_everything(void) {
     if (selected) {
         free_copied_list(selected);
     }
-#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
+#ifdef LIBUDEV_PRESENT
     if (usb_devices) {
         free(usb_devices);
     }

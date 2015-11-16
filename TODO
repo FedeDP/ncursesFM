@@ -8,5 +8,9 @@
  * 
  * add support for password protected archives (libarchive does not support this feature...or it does but couldn't find any doc about it...)
  * 
- * add support for libgit (eg: if current dir is a local git repo, let user pull or push...obviously only basic functions should be supported)
+ * should i support pull and push too? (fetch is done, pull and push are better outside of the program, they're way too difficult to implement in a user interactive way)
+ * 
+ * debug support: -DENABLE_DEBUG -> somewhere like /tmp/ncursesfm.log that will not survive a reboot.
+ *
+ * UPDATE README and PKGBUILD with new optdeps
  */

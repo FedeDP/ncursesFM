@@ -213,7 +213,7 @@ static void main_loop(void) {
                 sv.found_searched[ps[active].curr_pos][index] = '\0';
                 leave_search_mode(sv.found_searched[ps[active].curr_pos]);
             }
-#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
+#ifdef LIBUDEV_PRESENT
             else if (device_mode == 1 + active) {
                 manage_enter_device();
             }
@@ -267,7 +267,7 @@ static void main_loop(void) {
             }
             break;
 #endif
-#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
+#ifdef LIBUDEV_PRESENT
         case 'm': // m to mount/unmount fs
             devices_tab();
             break;
@@ -286,11 +286,16 @@ static void main_loop(void) {
             fetch(ps[active].my_cwd);
             break;
 #endif
+#ifdef OPENSSL_PRESENT
+        case 'u': // u to check current file's shasum
+            shasum_func(ps[active].nl[ps[active].curr_pos]);
+            break;
+#endif
         case 'q': /* q to exit/leave search mode/leave device_mode */
             if (sv.searching == 3 + active) {
                 leave_search_mode(ps[active].my_cwd);
             }
-#if defined (SYSTEMD_PRESENT) && (LIBUDEV_PRESENT)
+#ifdef LIBUDEV_PRESENT
             else if (device_mode == 1 + active) {
                 leave_device_mode();
             }
