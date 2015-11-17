@@ -21,11 +21,8 @@ ifneq ("$(LIBSYSTEMD)","")
 LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
 endif
 LIBOPENSSL=$(shell pkg-config --silence-errors --libs openssl)
-ifneq ("$(LIBOPENSSL)","")
-LIBGIT2=$(shell pkg-config --silence-errors --libs libgit2)
-endif
 
-LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBUDEV) $(LIBOPENSSL) $(LIBGIT2)
+LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBUDEV) $(LIBOPENSSL)
 
 ifneq ("$(LIBX11)","")
 CFLAGS+=-DLIBX11_PRESENT
@@ -46,12 +43,6 @@ endif
 ifneq ("$(LIBOPENSSL)","")
 CFLAGS+=-DOPENSSL_PRESENT
 $(info openssl support enabled.)
-
-# libgit requires openssl
-ifneq ("$(LIBGIT2)","")
-CFLAGS+=-DLIBGIT2_PRESENT
-$(info libgit2 support enabled.)
-endif
 endif
 
 ifneq ("$(LIBSYSTEMD)","")

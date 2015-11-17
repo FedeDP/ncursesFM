@@ -281,11 +281,6 @@ static void main_loop(void) {
                 print_info("Fast browse mode disabled.", INFO_LINE);
             }
             break;
-#ifdef LIBGIT2_PRESENT
-        case 'y': // y to check if current dir is a git repo, and to fetch from origin
-            checkout(ps[active].my_cwd);
-            break;
-#endif
 #ifdef OPENSSL_PRESENT
         case 'u': // u to check current file's shasum
             shasum_func(ps[active].nl[ps[active].curr_pos]);
