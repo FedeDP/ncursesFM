@@ -8,6 +8,12 @@ static int cred_acquire_cb(git_cred **out,
                            unsigned int allowed_types,
                            void *payload);
 static void print_error(void);
+static int mynotify(git_checkout_notify_t why,
+                    const char *path,
+                    const git_diff_file *baseline,
+                    const git_diff_file *target,
+                    const git_diff_file *workdir,
+                    void *payload);
 
 void fetch(const char *path) {
     git_libgit2_init();
@@ -62,6 +68,51 @@ void fetch(const char *path) {
         git_repository_free(repo);
     }
     git_libgit2_shutdown();
+}
+
+void checkout(const char *path) {
+    git_libgit2_init();
+    
+    git_repository *repo = NULL;
+    git_buf buf = GIT_BUF_INIT_CONST(NULL, 0);
+    git_checkout_options opts = GIT_CHECKOUT_OPTIONS_INIT;
+    int error, num_of_changed_files = 0;
+    char success[30];
+    
+    error = git_repository_discover(&buf, path, 0, NULL);
+    if (!error) {
+        error = git_repository_open(&repo, buf.ptr);
+        git_buf_free(&buf);
+    }
+    if (!error) {
+        opts.checkout_strategy = GIT_CHECKOUT_SAFE;
+        opts.notify_flags = GIT_CHECKOUT_NOTIFY_DIRTY;
+        opts.notify_cb = mynotify;
+        opts.notify_payload = &num_of_changed_files;
+        error = git_checkout_head(repo, &opts);
+    }
+    if (!error) {
+        sprintf(success, "%d files changed on disk.", num_of_changed_files);
+        print_info(success,INFO_LINE);
+    } else {
+        print_error();
+    }
+    if (repo) {
+        git_repository_free(repo);
+    }
+    git_libgit2_shutdown();
+}
+
+static int mynotify(git_checkout_notify_t why,
+                    const char *path,
+                    const git_diff_file *baseline,
+                    const git_diff_file *target,
+                    const git_diff_file *workdir,
+                    void *payload) {
+//     print_info(path, INFO_LINE);
+//     sleep(1);
+    (*(int *)payload)++;
+    return 0;
 }
 
 static int cred_acquire_cb(git_cred **out,

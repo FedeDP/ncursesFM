@@ -283,7 +283,7 @@ static void main_loop(void) {
             break;
 #ifdef LIBGIT2_PRESENT
         case 'y': // y to check if current dir is a git repo, and to fetch from origin
-            fetch(ps[active].my_cwd);
+            checkout(ps[active].my_cwd);
             break;
 #endif
 #ifdef OPENSSL_PRESENT

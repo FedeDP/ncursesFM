@@ -3,3 +3,4 @@
 #include "ui_functions.h"
 
 void fetch(const char *path);
+void checkout(const char *path);
