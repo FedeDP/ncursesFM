@@ -85,7 +85,6 @@ void checkout(const char *path) {
         git_buf_free(&buf);
     }
     if (!error) {
-        opts.checkout_strategy = GIT_CHECKOUT_SAFE;
         opts.notify_flags = GIT_CHECKOUT_NOTIFY_DIRTY;
         opts.notify_cb = mynotify;
         opts.notify_payload = &num_of_changed_files;
@@ -109,8 +108,8 @@ static int mynotify(git_checkout_notify_t why,
                     const git_diff_file *target,
                     const git_diff_file *workdir,
                     void *payload) {
-//     print_info(path, INFO_LINE);
-//     sleep(1);
+    print_info(path, INFO_LINE);
+    sleep(1);
     (*(int *)payload)++;
     return 0;
 }
