@@ -134,7 +134,6 @@ static void *execute_thread(void *x) {
         return execute_thread(NULL);
     }
     num_of_jobs = 0;
-    print_info("", ASK_LINE);
 #ifdef SYSTEMD_PRESENT
     if (config.inhibit) {
         free_bus();

@@ -6,9 +6,14 @@
  * -> next packagekit version should not crash: https://github.com/hughsie/PackageKit/commit/09ebef1ec578c886098cdbf839effc461d864817
  * -> and i'll remove chech_arch function if it won't be needed anymore
  * 
- * add support for password protected archives (libarchive does not support this feature...or it does but couldn't find any doc about it...)
+ * add support for password protected archives (libarchive does not support this feature...or it does but i couldn't find any doc about it...)
  * 
  * debug support: -DENABLE_DEBUG -> somewhere like /tmp/ncursesfm.log that will not survive a reboot.
  *
- * UPDATE README and PKGBUILD with new optdeps
+ * UPDATE README and PKGBUILD with new optdep/function (openssl/shasum support)
+ * 
+ * bug: print question and answer after resize.
+ * bug: wgetnstr is a blocking call: resize is not performed until we leave that call...
+ * 
+ * FEATURE: add a "*" before selected files in list_everything
  */

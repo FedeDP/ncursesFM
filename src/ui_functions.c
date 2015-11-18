@@ -28,14 +28,15 @@ struct scrstr {
 static struct scrstr mywin[MAX_TABS];
 static WINDOW *helper_win, *info_win;
 static int dim;
-static pthread_mutex_t ui_lock, info_lock;
+static pthread_mutex_t fm_lock, filelist_lock, info_lock;
 static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) = alphasort; // file list sorting function, defaults to alphasort
 
 /*
  * Initializes screen, colors etc etc, and calls fm_scr_init.
  */
 void screen_init(void) {
-    pthread_mutex_init(&ui_lock, NULL);
+    pthread_mutex_init(&fm_lock, NULL);
+    pthread_mutex_init(&filelist_lock, NULL);
     pthread_mutex_init(&info_lock, NULL);
     setlocale(LC_ALL, "");
     initscr();
@@ -86,7 +87,8 @@ void screen_end(void) {
     }
     delwin(stdscr);
     endwin();
-    pthread_mutex_destroy(&ui_lock);
+    pthread_mutex_destroy(&fm_lock);
+    pthread_mutex_destroy(&filelist_lock);
     pthread_mutex_destroy(&info_lock);
 }
 
@@ -156,6 +158,7 @@ void reset_win(int win)
  * If stat_active == STATS_ON for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
  */
 void list_everything(int win, int old_dim, int end) {
+    pthread_mutex_lock(&fm_lock);
     if (end == 0) {
         end = dim - 2;
     }
@@ -175,6 +178,7 @@ void list_everything(int win, int old_dim, int end) {
         show_stat(old_dim, end, win);
     }
     print_border_and_title(win);
+    pthread_mutex_unlock(&fm_lock);
 }
 
 /*
@@ -324,13 +328,13 @@ static void colored_folders(int win, const char *name) {
 }
 
 void trigger_show_helper_message(void) {
-    pthread_mutex_lock(&ui_lock);
+    pthread_mutex_lock(&fm_lock);
     if (!helper_win) {
         create_helper_win();
     } else {
         remove_helper_win();
     }
-    pthread_mutex_unlock(&ui_lock);
+    pthread_mutex_unlock(&fm_lock);
 }
 
 /*
@@ -446,14 +450,14 @@ static void change_unit(float size, char *str) {
  */
 void trigger_stats(void) {
     mywin[active].stat_active = !mywin[active].stat_active;
-    pthread_mutex_lock(&ui_lock);
+    pthread_mutex_lock(&fm_lock);
     if (mywin[active].stat_active) {
         show_stat(mywin[active].delta, dim - 2, active);
     } else {
         erase_stat();
     }
     print_border_and_title(active);
-    pthread_mutex_unlock(&ui_lock);
+    pthread_mutex_unlock(&fm_lock);
 }
 
 /*
@@ -470,24 +474,26 @@ static void erase_stat(void) {
 
 /*
  * It locks info_lock mutex, then clears "i" line of info_win.
- * Performs various checks: if thread_h is not NULL, prints thread_job_mesg message(depends on current job type) at the end of ASK_LINE.
- * It searches for selected_files too, and prints a message at the end of INFO_LINE.
+ * Performs various checks: if thread_h is not NULL, prints thread_job_mesg message(depends on current job type) at the end of INFO_LINE.
+ * It searches for selected_files too, and prints a message at the end of INFO_LINE (beside thread_job_mesg, if present).
  * If a search is running, prints a message at the end of ERR_LINE;
  * Finally, prints str on the "i" line.
  */
 void print_info(const char *str, int i) {
-    char st[100];
+    char st[100] = {0};
     
     pthread_mutex_lock(&info_lock);
-    if (wmove(info_win, i, 1 + strlen(info_win_str[i])) == OK) {
-        wclrtoeol(info_win);
-    }
+    wmove(info_win, i, 1 + strlen(info_win_str[i]));
+    wclrtoeol(info_win);
     if (thread_h) {
-        sprintf(st, "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type]);
-        mvwprintw(info_win, ASK_LINE, COLS - strlen(st), st);
+        if (selected) {
+            st[0] = '/';
+        }
+        sprintf(st + strlen(st), "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type]);
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
     }
     if (selected) {
-        mvwprintw(info_win, INFO_LINE, COLS - strlen(selected_mess), selected_mess);
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(st) - strlen(selected_mess), selected_mess);
     }
     if (sv.searching) {
         mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
@@ -527,9 +533,9 @@ int win_getch(void) {
  */
 void tab_refresh(int win) {
     if ((sv.searching != 3 + win) && (device_mode != 1 + win)) {
-        pthread_mutex_lock(&ui_lock);
+        pthread_mutex_lock(&filelist_lock);
         generate_list(win);
-        pthread_mutex_unlock(&ui_lock);
+        pthread_mutex_unlock(&filelist_lock);
     }
 }
 
@@ -542,7 +548,6 @@ void tab_refresh(int win) {
  * then prints again any "sticky" message (eg: "searching"/"pasting...")
  */
 void resize_win(void) {
-    pthread_mutex_lock(&ui_lock);
     pthread_mutex_lock(&info_lock);
     delwin(info_win);
     dim = LINES - INFO_HEIGHT;
@@ -551,9 +556,8 @@ void resize_win(void) {
     }
     resize_fm_win();
     info_win_init();
-    pthread_mutex_unlock(&ui_lock);
     pthread_mutex_unlock(&info_lock);
-    print_info("", -1);
+    print_info("", INFO_LINE);
 }
 
 /*
