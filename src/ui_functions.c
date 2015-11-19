@@ -520,6 +520,8 @@ void print_info(const char *str, int i) {
  * It does not need its own mutex because as of now only main thread calls it.
  */
 void ask_user(const char *str, char *input, int d, char c) {
+    int s;
+    
     print_info(str, ASK_LINE);
     question = str;
     echo();
@@ -530,7 +532,21 @@ void ask_user(const char *str, char *input, int d, char c) {
         }
     } else {
         answer = input;
-        wgetnstr(info_win, input, d);
+        do {
+            s = wgetch(info_win);
+            if (s == KEY_RESIZE) {
+                resize_win();
+                char resize_str[200];
+                sprintf(resize_str, "%s%s", question, answer);
+                print_info(resize_str, ASK_LINE);
+            } else if (s == 10) {
+                break;
+            } else {
+                if (isprint(s)) {
+                    sprintf(input + strlen(input), "%c", s);
+                }
+            }
+        } while (strlen(input) < d);
         answer = NULL;
     }
     noecho();
