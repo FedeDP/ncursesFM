@@ -14,6 +14,7 @@
  * 
  * bug: print question and answer after resize.
  * bug: wgetnstr is a blocking call: resize is not performed until we leave that call...
+ * FIXED BUG: if main thread is in ask_user and second thread print_info, print_info will move cursor away. 
  * 
  * FEATURE: add a "*" before selected files in list_everything
  */

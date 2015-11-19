@@ -30,6 +30,7 @@ static WINDOW *helper_win, *info_win;
 static int dim;
 static pthread_mutex_t fm_lock, filelist_lock, info_lock;
 static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) = alphasort; // file list sorting function, defaults to alphasort
+static const char *question, *answer;
 
 /*
  * Initializes screen, colors etc etc, and calls fm_scr_init.
@@ -499,6 +500,16 @@ void print_info(const char *str, int i) {
         mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
     }
     mvwprintw(info_win, i, 1 + strlen(info_win_str[i]), "%.*s", COLS - 1, str);
+    /*
+     * if we're asking a question, move back the cursor to the right position.
+     */ 
+    if (question) {
+        int len = strlen(question) + 1 + strlen(info_win_str[ASK_LINE]);
+        if (answer) {
+            len += strlen(answer);
+        }
+        wmove(info_win, ASK_LINE, len);
+    }
     wrefresh(info_win);
     pthread_mutex_unlock(&info_lock);
 }
@@ -510,6 +521,7 @@ void print_info(const char *str, int i) {
  */
 void ask_user(const char *str, char *input, int d, char c) {
     print_info(str, ASK_LINE);
+    question = str;
     echo();
     if (d == 1) {
         *input = tolower(wgetch(info_win));
@@ -517,9 +529,12 @@ void ask_user(const char *str, char *input, int d, char c) {
             *input = c;
         }
     } else {
+        answer = input;
         wgetnstr(info_win, input, d);
+        answer = NULL;
     }
     noecho();
+    question = NULL;
     print_info("", ASK_LINE);
 }
 
