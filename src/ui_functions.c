@@ -520,36 +520,37 @@ void print_info(const char *str, int i) {
  * It does not need its own mutex because as of now only main thread calls it.
  */
 void ask_user(const char *str, char *input, int d, char c) {
-    int s;
+    int s, len, i = 0;
     
     print_info(str, ASK_LINE);
     question = str;
-    echo();
-    if (d == 1) {
-        *input = tolower(wgetch(info_win));
-        if (*input == 10) {
-            *input = c;
-        }
-    } else {
-        answer = input;
-        do {
-            s = wgetch(info_win);
-            if (s == KEY_RESIZE) {
-                resize_win();
-                char resize_str[200];
-                sprintf(resize_str, "%s%s", question, answer);
-                print_info(resize_str, ASK_LINE);
-            } else if (s == 10) {
-                break;
+    answer = input;
+    input[0] = '\0';
+    do {
+        s = wgetch(info_win);
+        if (s == KEY_RESIZE) {
+            resize_win();
+            char resize_str[200];
+            sprintf(resize_str, "%s%s", question, answer);
+            print_info(resize_str, ASK_LINE);
+        } else if (s == 10) { // enter to exit
+            break;
+        } else if ((s == 127) && (i)) {
+            input[i - 1] = '\0';
+            i--;
+            len = strlen(question) + strlen(info_win_str[ASK_LINE]) + i;
+            mvwdelch(info_win, ASK_LINE, len + 1);
+        } else if (isprint(s)) {
+            if (d == 1) {
+                *input = tolower(s);
             } else {
-                if (isprint(s)) {
-                    sprintf(input + strlen(input), "%c", s);
-                }
+                sprintf(input + i, "%c", s);
             }
-        } while (strlen(input) < d);
-        answer = NULL;
-    }
-    noecho();
+            i++;
+            waddch(info_win, s);
+        }
+    } while (i < d);
+    answer = NULL;
     question = NULL;
     print_info("", ASK_LINE);
 }
