@@ -30,7 +30,6 @@ static WINDOW *helper_win, *info_win;
 static int dim;
 static pthread_mutex_t fm_lock, filelist_lock, info_lock;
 static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) = alphasort; // file list sorting function, defaults to alphasort
-static const char *question, *answer;
 
 /*
  * Initializes screen, colors etc etc, and calls fm_scr_init.
@@ -500,58 +499,53 @@ void print_info(const char *str, int i) {
         mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
     }
     mvwprintw(info_win, i, 1 + strlen(info_win_str[i]), "%.*s", COLS - 1, str);
-    /*
-     * if we're asking a question, move back the cursor to the right position.
-     */ 
-    if (question) {
-        int len = strlen(question) + 1 + strlen(info_win_str[ASK_LINE]);
-        if (answer) {
-            len += strlen(answer);
-        }
-        wmove(info_win, ASK_LINE, len);
-    }
     wrefresh(info_win);
     pthread_mutex_unlock(&info_lock);
 }
 
 /*
- * Given a str, a char input[dim], and a char c (that is default value if enter is pressed, if dim == 1),
+ * Given a str, a char input[d], and a char c (that is default value if enter is pressed, if dim == 1),
  * asks the user "str" and saves in input the user response.
  * It does not need its own mutex because as of now only main thread calls it.
+ * I needed to replace wgetnstr function with my own wgetch cycle
+ * because otherwise that would prevent KEY_RESIZE event to be managed.
+ * Plus this way i can reprint the question (str) and the current answer (input) after the resize.
+ * Safer: delch and addch function will lock info_lock.
  */
 void ask_user(const char *str, char *input, int d, char c) {
     int s, len, i = 0;
     
     print_info(str, ASK_LINE);
-    question = str;
-    answer = input;
-    input[0] = '\0';
+    input[0] = c;
     do {
         s = wgetch(info_win);
         if (s == KEY_RESIZE) {
             resize_win();
             char resize_str[200];
-            sprintf(resize_str, "%s%s", question, answer);
+            sprintf(resize_str, "%s%s", str, input);
             print_info(resize_str, ASK_LINE);
         } else if (s == 10) { // enter to exit
             break;
-        } else if ((s == 127) && (i)) {
-            input[i - 1] = '\0';
-            i--;
-            len = strlen(question) + strlen(info_win_str[ASK_LINE]) + i;
-            mvwdelch(info_win, ASK_LINE, len + 1);
-        } else if (isprint(s)) {
-            if (d == 1) {
-                *input = tolower(s);
-            } else {
-                sprintf(input + i, "%c", s);
+        } else {
+            len = strlen(str) + strlen(info_win_str[ASK_LINE]) + i;
+            if ((s == 127) && (i)) {    // backspace!
+                input[i--] = '\0';
+                pthread_mutex_lock(&info_lock);
+                mvwdelch(info_win, ASK_LINE, len);
+                pthread_mutex_unlock(&info_lock);
+            } else if (isprint(s)) {
+                if (d == 1) {
+                    *input = tolower(s);
+                } else {
+                    sprintf(input + i, "%c", s);
+                }
+                i++;
+                pthread_mutex_lock(&info_lock);
+                mvwaddch(info_win, ASK_LINE, len + 1, s);
+                pthread_mutex_unlock(&info_lock);
             }
-            i++;
-            waddch(info_win, s);
         }
     } while (i < d);
-    answer = NULL;
-    question = NULL;
     print_info("", ASK_LINE);
 }
 

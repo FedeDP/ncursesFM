@@ -9,7 +9,7 @@ void shasum_func(const char *filename) {
     int i = 1, length = SHA_DIGEST_LENGTH;
     char input[4];
     const char *question = "Which shasum do you want? Choose between 1, 224, 256, 384, 512. Defaults to 1.> ";
-    const char *matching_quest = "Insert matching shasum (enter nothing to just print desired shasum):> ";
+    const char *matching_quest = "Insert matching shasum (enter to just print desired shasum):> ";
 
     if(!(fp = fopen(filename, "rb"))) {
         print_info(strerror(errno), ERR_LINE);
@@ -25,10 +25,8 @@ void shasum_func(const char *filename) {
     }
     fread(buffer, size, 1, fp);
     fclose(fp);
-    ask_user(question, input, 4, 0);
-    if (strlen(input)) {
-        i = atoi(input);
-    }
+    ask_user(question, input, 4, 1);
+    i = atoi(input);
     if ((i == 224) || (i == 256) || (i == 384) || (i == 512)) {
         length = i / 8;
     }
