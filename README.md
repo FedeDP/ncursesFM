@@ -15,6 +15,7 @@ Otherwise, it will use $editor (config file defined) var. Editor var fallbacks t
 * Terminal resize support.
 * Search support: it will search your string in current directory tree. It can search your string inside archives too.
 * Basic print support through libcups.
+* shasum support (both printing file shasum/checking a given one), if built with openssl support.
 * Extract/compress files/folders through libarchive.
 * File operations are performed in a different thread. You'll get a notification when the job is done.
 * If you try to quit while a job is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
@@ -51,6 +52,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 * libx11    -> check whether ncursesFM is started in a X environment or not.
 * sd-bus    -> to switch off powermanagement functions, devices/iso mount and packages installation.
 * libudev   -> needed to list mountable drives. Useful only if built with sd-bus.
+* openssl   -> for shasum functions support.
 
 ## Runtime dependencies
 
@@ -76,4 +78,5 @@ To remove, just move inside the folder and run:
 
 make {install/uninstall) require root privileges.
 
-![Alt text](ncursesfm.png?raw=true)
+<!-- ![Alt text](ncursesfm.png?raw=true) -->
+[![asciicast](https://asciinema.org/a/6fuow18cjvxhonhd3qjwpy8ow.png)](https://asciinema.org/a/6fuow18cjvxhonhd3qjwpy8ow)
