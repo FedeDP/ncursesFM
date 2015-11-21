@@ -39,5 +39,6 @@ void print_info(const char *str, int i);
 void ask_user(const char *str, char *input, int d, char c);
 void resize_win(void);
 void change_sort(void);
+void highlight_selected(int line, const char c);
 
 #endif

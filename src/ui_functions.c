@@ -16,6 +16,7 @@ static void change_unit(float size, char *str);
 static void erase_stat(void);
 static void resize_helper_win(void);
 static void resize_fm_win(void);
+static void check_selected(const char *str, int win, int line);
 
 struct scrstr {
     WINDOW *fm;
@@ -158,18 +159,25 @@ void reset_win(int win)
  * If stat_active == STATS_ON for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
  */
 void list_everything(int win, int old_dim, int end) {
+    char *str;
+    int width;
+    
     pthread_mutex_lock(&fm_lock);
     if (end == 0) {
         end = dim - 2;
     }
     wattron(mywin[win].fm, A_BOLD);
     for (int i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
-        colored_folders(win, *(str_ptr[win] + i));
         if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
-            mvwprintw(mywin[win].fm, 1 + i - mywin[win].delta, 4, "%.*s", mywin[win].width - 5, *(str_ptr[win] + i));
+            width = mywin[win].width - 5;
+            str = *(str_ptr[win] + 1);
         } else {
-            mvwprintw(mywin[win].fm, 1 + i - mywin[win].delta, 4, "%.*s", MAX_FILENAME_LENGTH, strrchr(*(str_ptr[win] + i), '/') + 1);
+            check_selected(*(str_ptr[win] + i), win, i);
+            width = MAX_FILENAME_LENGTH;
+            str = strrchr(*(str_ptr[win] + i), '/') + 1;
         }
+        colored_folders(win, *(str_ptr[win] + i));
+        mvwprintw(mywin[win].fm, 1 + i - mywin[win].delta, 4, "%.*s", width, str);
         wattroff(mywin[win].fm, COLOR_PAIR);
     }
     wattroff(mywin[win].fm, A_BOLD);
@@ -634,5 +642,35 @@ void change_sort(void) {
     }
     for (int i = 0; i < cont; i++) {
         tab_refresh(i);
+    }
+}
+
+/*
+ * Called in manage_space_press() (fm_functions.c)
+ * It checks for each fm win, if they're on the same cwd, then checks
+ * if the file to be highlighted is visible inside "win" -> useful only if win is not the active one.
+ * Then prints c char before current filename and refreshes win.
+ */
+void highlight_selected(int line, const char c) {
+    for (int i = 0; i < cont; i++) {
+        if ((i == active) || ((strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) 
+            && (line - mywin[i].delta > 0) && (line - mywin[i].delta < dim - 2))) {
+            wattron(mywin[i].fm, A_BOLD);
+            mvwprintw(mywin[i].fm, 1 + line - mywin[i].delta, 3, "%c", c);
+            wattroff(mywin[i].fm, A_BOLD);
+            wrefresh(mywin[i].fm);
+        }
+    }
+}
+
+static void check_selected(const char *str, int win, int line) {
+    file_list *tmp = selected;
+    
+    while (tmp) {
+        if (strcmp(tmp->name, str) == 0) {
+            mvwprintw(mywin[win].fm, 1 + line - mywin[win].delta, 3, "*");
+            break;
+        }
+        tmp = tmp->next;
     }
 }

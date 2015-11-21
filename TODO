@@ -11,6 +11,4 @@
  * debug support: -DENABLE_DEBUG -> somewhere like /tmp/ncursesfm.log that will not survive a reboot.
  *
  * UPDATE README and PKGBUILD with new optdep/function (openssl/shasum support)
- * 
- * FEATURE: add a "*" before selected files in list_everything
  */

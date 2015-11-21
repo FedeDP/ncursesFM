@@ -216,19 +216,23 @@ int remove_file(void) {
 }
 
 /*
- * If there are no selected files, or the file user selected wasn't already selected (call to remove_from_list() ),
+ * If there are no selected files, or the file user selected wasn't already selected (remove_from_list() returns 0),
  * add this file to select list.
  */
 void manage_space_press(const char *str) {
     const char *s;
+    char c;
 
     if ((!selected) || (remove_from_list(str) == 0)) {
         selected = select_file(selected, str);
         s = file_sel[0];
+        c = '*';
     } else {
+        c = ' ';
         ((selected) ? (s = file_sel[1]) : (s = file_sel[2]));
     }
     print_info(s, INFO_LINE);
+    highlight_selected(ps[active].curr_pos, c);
 }
 
 /*
