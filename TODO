@@ -9,6 +9,4 @@
  * add support for password protected archives (libarchive does not support this feature...or it does but i couldn't find any doc about it...)
  * 
  * debug support: -DENABLE_DEBUG -> somewhere like /tmp/ncursesfm.log that will not survive a reboot.
- *
- * UPDATE README and PKGBUILD with new optdep/function (openssl/shasum support)
  */
