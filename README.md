@@ -78,5 +78,4 @@ To remove, just move inside the folder and run:
 
 make {install/uninstall) require root privileges.
 
-<!-- ![Alt text](ncursesfm.png?raw=true) -->
-[![asciicast](https://asciinema.org/a/6fuow18cjvxhonhd3qjwpy8ow.png)](https://asciinema.org/a/6fuow18cjvxhonhd3qjwpy8ow)
+![Alt text](ncursesfm.png?raw=true)
