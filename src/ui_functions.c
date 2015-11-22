@@ -656,7 +656,7 @@ void highlight_selected(int line, const char c) {
         if ((i == active) || ((strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) 
             && (line - mywin[i].delta > 0) && (line - mywin[i].delta < dim - 2))) {
             wattron(mywin[i].fm, A_BOLD);
-            mvwprintw(mywin[i].fm, 1 + line - mywin[i].delta, 3, "%c", c);
+            mvwprintw(mywin[i].fm, 1 + line - mywin[i].delta, SEL_COL, "%c", c);
             wattroff(mywin[i].fm, A_BOLD);
             wrefresh(mywin[i].fm);
         }
@@ -668,9 +668,18 @@ static void check_selected(const char *str, int win, int line) {
     
     while (tmp) {
         if (strcmp(tmp->name, str) == 0) {
-            mvwprintw(mywin[win].fm, 1 + line - mywin[win].delta, 3, "*");
+            mvwprintw(mywin[win].fm, 1 + line - mywin[win].delta, SEL_COL, "*");
             break;
         }
         tmp = tmp->next;
+    }
+}
+
+void erase_selected_highlight(void) {
+    for (int j = 0; j < cont; j++) {
+        for (int i = 0; (i < dim - 2) && (i < ps[j].number_of_files); i++) {
+            mvwprintw(mywin[j].fm, 1 + i, SEL_COL, " ");
+        }
+        wrefresh(mywin[j].fm);
     }
 }

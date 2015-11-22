@@ -76,6 +76,6 @@ To remove, just move inside the folder and run:
 
     $ make uninstall
 
-make {install/uninstall) require root privileges.
+make {install/uninstall} require root privileges.
 
 ![Alt text](ncursesfm.png?raw=true)

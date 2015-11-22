@@ -59,7 +59,7 @@ const char *helper_string[] = { "Enter to surf between folders or to open files.
                                 "Press ',' to enable fast browse mode; it lets you jump between files by just typing their name.",
                                 "Press 'h' to trigger the showing of hidden files. 's' to see stat about files in current folder.",
                                 "Press '.' to change files/dirs sorting function: alphabetically (default), by size or by last modified.",
-                                "Space to select files. Twice to remove the file from selected files.",
+                                "Space to select files. Twice to remove the file from selected files. 'u' to check shasum of current file.",
                                 "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files. 'p' to print a file.",
                                 "'o' to rename current file/dir; 'n'/'d' to create new file/dir. 'f' to search (case sensitive) for a file.",
                                 "'t' to create new tab (at most one more). 'w' to close tab. Arrow left or right to switch between tabs.",

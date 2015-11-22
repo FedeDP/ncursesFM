@@ -1,14 +1,8 @@
 #include "../inc/worker_thread.h"
 
-struct thread_mesg {
-    const char *str;
-    int line;
-};
-
 static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void));
 static void free_running_h(void);
 static void init_thread_helper(void);
-static void copy_selected_files(void);
 static void *execute_thread(void *x);
 static void check_refresh(void);
 static int refresh_needed(const char *dir);
@@ -89,7 +83,8 @@ static void init_thread_helper(void) {
     if (current_th->type == EXTRACTOR_TH) {
         strcpy(current_th->filename, ps[active].nl[ps[active].curr_pos]);
     } else {
-        copy_selected_files();
+        current_th->selected_files = selected;
+        selected = NULL;
         if (current_th->type == ARCHIVER_TH && !quit) {
             ask_user(archiving_mesg, name, NAME_MAX, 0);
             if (!strlen(name)) {
@@ -97,18 +92,8 @@ static void init_thread_helper(void) {
             }
             sprintf(current_th->filename, "%s/%s.tgz", current_th->full_path, name);
         }
+        erase_selected_highlight();
     }
-}
-
-static void copy_selected_files(void) {
-    file_list *tmp = selected;
-
-    while (tmp && !quit) {
-        current_th->selected_files = select_file(current_th->selected_files, tmp->name);
-        tmp = tmp->next;
-    }
-    free_copied_list(selected);
-    selected = NULL;
 }
 
 /*

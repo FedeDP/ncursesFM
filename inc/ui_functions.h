@@ -12,6 +12,7 @@
 #include <archive_entry.h>
 
 #define INFO_HEIGHT 3
+#define SEL_COL 3
 #define STAT_COL 30
 #define MAX_FILENAME_LENGTH 25
 
@@ -40,5 +41,6 @@ void ask_user(const char *str, char *input, int d, char c);
 void resize_win(void);
 void change_sort(void);
 void highlight_selected(int line, const char c);
+void erase_selected_highlight(void);
 
 #endif
