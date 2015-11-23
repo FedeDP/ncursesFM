@@ -29,7 +29,7 @@ struct scrstr {
 static struct scrstr mywin[MAX_TABS];
 static WINDOW *helper_win, *info_win;
 static int dim;
-static pthread_mutex_t fm_lock, filelist_lock, info_lock;
+static pthread_mutex_t fm_lock, info_lock;
 static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) = alphasort; // file list sorting function, defaults to alphasort
 
 /*
@@ -37,7 +37,6 @@ static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) =
  */
 void screen_init(void) {
     pthread_mutex_init(&fm_lock, NULL);
-    pthread_mutex_init(&filelist_lock, NULL);
     pthread_mutex_init(&info_lock, NULL);
     setlocale(LC_ALL, "");
     initscr();
@@ -50,6 +49,10 @@ void screen_init(void) {
     noecho();
     curs_set(0);
     cont = 1;
+    dim = LINES - INFO_HEIGHT;
+    if (config.starting_helper) {
+        create_helper_win();
+    }
     fm_scr_init();
     info_win_init();
 }
@@ -58,7 +61,6 @@ void screen_init(void) {
  * Used to initialize fm win and info_win at program startup.
  */
 static void fm_scr_init(void) {
-    dim = LINES - INFO_HEIGHT;
     for (int i = 0; i < cont; i++) {
         new_tab(i);
     }
@@ -89,7 +91,6 @@ void screen_end(void) {
     delwin(stdscr);
     endwin();
     pthread_mutex_destroy(&fm_lock);
-    pthread_mutex_destroy(&filelist_lock);
     pthread_mutex_destroy(&info_lock);
 }
 
@@ -162,7 +163,6 @@ void list_everything(int win, int old_dim, int end) {
     char *str;
     int width;
     
-    pthread_mutex_lock(&fm_lock);
     if (end == 0) {
         end = dim - 2;
     }
@@ -186,7 +186,6 @@ void list_everything(int win, int old_dim, int end) {
         show_stat(old_dim, end, win);
     }
     print_border_and_title(win);
-    pthread_mutex_unlock(&fm_lock);
 }
 
 /*
@@ -352,7 +351,7 @@ void trigger_show_helper_message(void) {
  * Then create helper_win and print its strings.
  */
 static void create_helper_win(void) {
-    dim = LINES - INFO_HEIGHT - HELPER_HEIGHT;
+    dim -= HELPER_HEIGHT;
     for (int i = 0; i < cont; i++) {
         wresize(mywin[i].fm, dim, mywin[i].width);
         print_border_and_title(i);
@@ -375,7 +374,7 @@ static void remove_helper_win(void) {
     wclear(helper_win);
     delwin(helper_win);
     helper_win = NULL;
-    dim = LINES - INFO_HEIGHT;
+    dim += HELPER_HEIGHT;
     for (int i = 0; i < cont; i++) {
         mvwhline(mywin[i].fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
         wresize(mywin[i].fm, dim, mywin[i].width);
@@ -387,11 +386,16 @@ static void remove_helper_win(void) {
 }
 
 static void helper_print(void) {
+    const char *title = "Press 'l' to trigger helper";
+    int len = (COLS - strlen(title)) / 2;
+    
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
     for (int i = 0; i < HELPER_HEIGHT - 2; i++) {
         mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, helper_string[i]);
     }
-    mvwprintw(helper_win, 0, 0, "Helper");
+    wattron(helper_win, A_BOLD);
+    mvwprintw(helper_win, 0, len, title);
+    wattroff(helper_win, A_BOLD);
     wrefresh(helper_win);
 }
 
@@ -567,9 +571,9 @@ int win_getch(void) {
  */
 void tab_refresh(int win) {
     if ((sv.searching != 3 + win) && (device_mode != 1 + win)) {
-        pthread_mutex_lock(&filelist_lock);
+        pthread_mutex_lock(&fm_lock);
         generate_list(win);
-        pthread_mutex_unlock(&filelist_lock);
+        pthread_mutex_unlock(&fm_lock);
     }
 }
 
@@ -612,6 +616,7 @@ static void resize_helper_win(void) {
  * Then list_everything, being careful if stat_active is ON.
  */
 static void resize_fm_win(void) {
+    pthread_mutex_lock(&fm_lock);
     for (int i = 0; i < cont; i++) {
         wclear(mywin[i].fm);
         mywin[i].width = COLS / cont + i * (COLS % cont);
@@ -627,6 +632,7 @@ static void resize_fm_win(void) {
         }
         list_everything(i, mywin[i].delta, 0);
     }
+    pthread_mutex_unlock(&fm_lock);
 }
 
 void change_sort(void) {

@@ -20,7 +20,7 @@ Otherwise, it will use $editor (config file defined) var. Editor var fallbacks t
 * File operations are performed in a different thread. You'll get a notification when the job is done.
 * If you try to quit while a job is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
-* It supports following command line switches: "--editor=", "--starting-dir=" and "--inhibit={0/1}".
+* It supports following command line switches: "--editor=", "--starting-dir=", "--starting_helper={0,1}" "--inhibit={0,1}".
 
 **Optional (compile time) features that require sd-bus API (systemd)**
 * Powermanagement inhibition while processing a job(eg: while pasting a file) to avoid data loss. It is switched off by default. Enable this feature from the config file or with "--inhibit=1" cmdline switch.
@@ -36,6 +36,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 * starting_directory -> default starting directory.
 * use_default_starting_dir_second_tab -> whether to use "starting_directory" when opening second tab. Otherwise current tab will be used.
 * inhibit -> whether to inhibit powermanagement functions. Defaults to 0.
+* starting_helper -> whether to show helper win after program started. Defaults to 1.
 
 ## Build requirements
 

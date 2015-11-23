@@ -41,6 +41,7 @@ struct conf {
 #ifdef SYSTEMD_PRESENT
     int inhibit;
 #endif
+    int starting_helper;
 };
 
 typedef struct list {

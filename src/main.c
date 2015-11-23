@@ -66,6 +66,7 @@ int main(int argc, const char *argv[])
 }
 
 static void helper_function(int argc, const char *argv[]) {
+    config.starting_helper = 1;
     if (argc != 1) {
         if ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0)) {
             printf("NcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
@@ -89,9 +90,9 @@ static void helper_function(int argc, const char *argv[]) {
 static void parse_cmd(int argc, const char *argv[]) {
     int j = 1, changed = 1;
 #ifdef SYSTEMD_PRESENT
-    const char *cmd_switch[] = {"--editor=", "--starting-dir=", "--inhibit="};
+    const char *cmd_switch[] = {"--editor=", "--starting-dir=", "--helper=", "--inhibit="};
 #else
-    const char *cmd_switch[] = {"--editor=", "--starting-dir="};
+    const char *cmd_switch[] = {"--editor=", "--starting-dir=", "--helper="};
 #endif
     while (j < argc) {
         if (strncmp(cmd_switch[0], argv[j], strlen(cmd_switch[0])) == 0) {
@@ -104,10 +105,13 @@ static void parse_cmd(int argc, const char *argv[]) {
                 strcpy(config.starting_dir, argv[j] + strlen(cmd_switch[1]));
                 changed++;
             }
+        } else if (strncmp(cmd_switch[2], argv[j], strlen(cmd_switch[2])) == 0) {
+            config.starting_helper = atoi(argv[j] + strlen(cmd_switch[2]));
+            changed++;
         }
 #ifdef SYSTEMD_PRESENT
-        else if (strncmp(cmd_switch[2], argv[j], strlen(cmd_switch[2])) == 0) {
-            config.inhibit = atoi(argv[j] + strlen(cmd_switch[2]));
+        else if (strncmp(cmd_switch[3], argv[j], strlen(cmd_switch[3])) == 0) {
+            config.inhibit = atoi(argv[j] + strlen(cmd_switch[3]));
             changed++;
         }
 #endif
@@ -138,6 +142,7 @@ static void read_config_file(void) {
 #ifdef SYSTEMD_PRESENT
         config_lookup_int(&cfg, "inhibit", &config.inhibit);
 #endif
+        config_lookup_int(&cfg, "starting_helper", &config.starting_helper);
     } else {
         printf("%s", config_file_missing);
         sleep(1);
