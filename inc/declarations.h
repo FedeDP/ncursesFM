@@ -95,4 +95,3 @@ int device_mode;
 #endif
 #endif
 char (*str_ptr[MAX_TABS])[PATH_MAX]; // pointer to make abstract which list of strings i have to print in list_everything()
-pthread_mutex_t fm_lock;

@@ -33,7 +33,7 @@ struct scrstr {
 static struct scrstr mywin[MAX_TABS];
 static WINDOW *helper_win, *info_win;
 static int dim;
-static pthread_mutex_t info_lock;
+static pthread_mutex_t fm_lock, info_lock;
 static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) = alphasort; // file list sorting function, defaults to alphasort
 
 /*
