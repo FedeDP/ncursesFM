@@ -175,6 +175,7 @@ static void main_loop(void) {
     int c, index, fast_browse_mode = 0;
     const char *long_table = "xvrb"; // x to move, v to paste, r to remove, b to compress
     const char *short_table = "ndo";  //n, d to create new file/dir, o to rename.
+    const char *special_mode_allowed_chars = "ltq";
     char *ptr;
     struct stat current_file_stat;
 
@@ -186,7 +187,7 @@ static void main_loop(void) {
         }
         c = tolower(c);
         if ((device_mode == 1 + active) || (sv.searching == 3 + active)) {
-            if (isprint(c) && (c != 'q') && (c != 'l') && (c != 't')) {
+            if (isprint(c) && (!strchr(special_mode_allowed_chars, c))) {
                 continue;
             }
         } else {

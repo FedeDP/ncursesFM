@@ -589,10 +589,13 @@ void list_found_or_devices(int num, char (*str)[PATH_MAX], int mode) {
         sv.searching = 3 + active;
         sprintf(ps[active].title, "Found file searching %s:", sv.searched_string);
         sprintf(searching_mess[sv.searching - 1], "%d files found.", num);
-    } else {
+    }
+#ifdef LIBUDEV_PRESENT
+    else {
         device_mode = 1 + active;
         sprintf(ps[active].title, device_mode_str);
     }
+#endif
     if (mywin[active].stat_active) {
         memset(mywin[active].tot_size, 0, strlen(mywin[active].tot_size));
     }

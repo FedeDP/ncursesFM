@@ -86,12 +86,11 @@ file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
-int active, quit, num_of_jobs, cont, distance_from_root;
+int active, quit, num_of_jobs, cont, distance_from_root, device_mode;
 #ifdef SYSTEMD_PRESENT 
 pthread_t install_th;
 #ifdef LIBUDEV_PRESENT
 char (*usb_devices)[PATH_MAX];
-int device_mode;
 #endif
 #endif
 char (*str_ptr[MAX_TABS])[PATH_MAX]; // pointer to make abstract which list of strings i have to print in list_everything()

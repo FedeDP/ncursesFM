@@ -1,4 +1,5 @@
 #include "ui_functions.h"
+#include <signal.h>
 
 #ifdef SYSTEMD_PRESENT
 #include "inhibit.h"
