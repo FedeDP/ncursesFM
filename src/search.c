@@ -91,19 +91,13 @@ static void *search_thread(void *x) {
         }
     } else {
         sv.searching = 2;
-        print_info("", SEARCH_LINE);
     }
+    print_info("", SEARCH_LINE);
     return NULL;
 }
 
 void list_found(void) {
-    sv.searching = 3 + active;
-    ps[active].number_of_files = sv.found_cont;
-    str_ptr[active] = sv.found_searched;
-    reset_win(active);
-    sprintf(ps[active].title, "Found file searching %s:", sv.searched_string);
-    sprintf(searching_mess[sv.searching - 1], "%d files found.", sv.found_cont);
-    list_everything(active, 0, 0);
+    list_found_or_devices(sv.found_cont, sv.found_searched, SEARCH);
     print_info("", SEARCH_LINE);
 }
 

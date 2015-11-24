@@ -3,6 +3,10 @@
 static void fm_scr_init(void);
 static void info_win_init(void);
 static void generate_list(int win);
+static int sizesort(const struct dirent **d1, const struct dirent **d2);
+static int last_mod_sort(const struct dirent **d1, const struct dirent **d2);
+static void reset_win(int win);
+static void list_everything(int win, int old_dim, int end);
 static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
 static void initialize_tab_cwd(int win);
@@ -29,7 +33,7 @@ struct scrstr {
 static struct scrstr mywin[MAX_TABS];
 static WINDOW *helper_win, *info_win;
 static int dim;
-static pthread_mutex_t fm_lock, info_lock;
+static pthread_mutex_t info_lock;
 static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) = alphasort; // file list sorting function, defaults to alphasort
 
 /*
@@ -124,11 +128,10 @@ static void generate_list(int win) {
     free(files);
     if (!quit) {
         reset_win(win);
-        list_everything(win, 0, 0);
     }
 }
 
-int sizesort(const struct dirent **d1, const struct dirent **d2) {
+static int sizesort(const struct dirent **d1, const struct dirent **d2) {
     struct stat stat1, stat2;
     float result;
     
@@ -138,7 +141,7 @@ int sizesort(const struct dirent **d1, const struct dirent **d2) {
     return (result > 0) ? -1 : 1;
 }
 
-int last_mod_sort(const struct dirent **d1, const struct dirent **d2) {
+static int last_mod_sort(const struct dirent **d1, const struct dirent **d2) {
     struct stat stat1, stat2;
     
     stat((*d1)->d_name, &stat1);
@@ -146,11 +149,12 @@ int last_mod_sort(const struct dirent **d1, const struct dirent **d2) {
     return (stat2.st_mtime - stat1.st_mtime);
 }
 
-void reset_win(int win)
+static void reset_win(int win)
 {
     wclear(mywin[win].fm);
     mywin[win].delta = 0;
     ps[win].curr_pos = 0;
+    list_everything(win, 0, 0);
 }
 
 /*
@@ -159,7 +163,7 @@ void reset_win(int win)
  * Checks if window 'win' is in search/device mode, and takes care.
  * If stat_active == STATS_ON for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
  */
-void list_everything(int win, int old_dim, int end) {
+static void list_everything(int win, int old_dim, int end) {
     char *str;
     int width;
     
@@ -170,7 +174,7 @@ void list_everything(int win, int old_dim, int end) {
     for (int i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
         if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
             width = mywin[win].width - 5;
-            str = *(str_ptr[win] + 1);
+            str = *(str_ptr[win] + i);
         } else {
             check_selected(*(str_ptr[win] + i), win, i);
             width = MAX_FILENAME_LENGTH;
@@ -575,6 +579,25 @@ void tab_refresh(int win) {
         generate_list(win);
         pthread_mutex_unlock(&fm_lock);
     }
+}
+
+void list_found_or_devices(int num, char (*str)[PATH_MAX], int mode) {
+    pthread_mutex_lock(&fm_lock);
+    ps[active].number_of_files = num;
+    str_ptr[active] = str;
+    if (mode == SEARCH) {
+        sv.searching = 3 + active;
+        sprintf(ps[active].title, "Found file searching %s:", sv.searched_string);
+        sprintf(searching_mess[sv.searching - 1], "%d files found.", num);
+    } else {
+        device_mode = 1 + active;
+        sprintf(ps[active].title, device_mode_str);
+    }
+    if (mywin[active].stat_active) {
+        memset(mywin[active].tot_size, 0, strlen(mywin[active].tot_size));
+    }
+    reset_win(active);
+    pthread_mutex_unlock(&fm_lock);
 }
 
 /*

@@ -274,7 +274,9 @@ static void main_loop(void) {
 #endif
 #ifdef LIBUDEV_PRESENT
         case 'm': // m to mount/unmount fs
-            devices_tab();
+            if (!device_mode) {
+                devices_tab();
+            }
             break;
 #endif
         case ',': // , to enable/disable fast browse mode

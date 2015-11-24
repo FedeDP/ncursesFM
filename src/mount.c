@@ -111,12 +111,7 @@ static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus) {
 void devices_tab(void) {
     enumerate_usb_mass_storage();
     if (device_mode && !quit) {
-        str_ptr[active] = usb_devices;
-        ps[active].number_of_files = device_mode;
-        device_mode = 1 + active;
-        reset_win(active);
-        sprintf(ps[active].title, device_mode_str);
-        list_everything(active, 0, 0);
+        list_found_or_devices(device_mode, usb_devices, DEVICE);
     } else {
         print_info("No mountable devices found.", INFO_LINE);
     }

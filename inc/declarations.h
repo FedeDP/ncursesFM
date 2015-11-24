@@ -33,6 +33,12 @@
 #define NORM_QUIT 1
 #define MEM_ERR_QUIT 2
 
+/*
+ * Just a flag to be passed to list_found_or_devices() in ui_functions.c
+ */
+#define SEARCH 0
+#define DEVICE 1
+
 struct conf {
     char editor[PATH_MAX];
     int show_hidden;
@@ -89,3 +95,4 @@ int device_mode;
 #endif
 #endif
 char (*str_ptr[MAX_TABS])[PATH_MAX]; // pointer to make abstract which list of strings i have to print in list_everything()
+pthread_mutex_t fm_lock;
