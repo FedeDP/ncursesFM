@@ -157,7 +157,7 @@ static void open_file(const char *str, float size) {
  * Notyfies user.
  */
 void fast_file_operations(const int index) {
-    char new_name[NAME_MAX] = {0};
+    char new_name[NAME_MAX];
     const char *str = short_fail_msg[index];
     int line = ERR_LINE;
 

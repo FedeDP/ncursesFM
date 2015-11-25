@@ -545,7 +545,7 @@ void ask_user(const char *str, char *input, int d, char c) {
         } else {
             len = strlen(str) + strlen(info_win_str[ASK_LINE]) + i;
             if ((s == 127) && (i)) {    // backspace!
-                input[i--] = '\0';
+                input[--i] = '\0';
                 pthread_mutex_lock(&info_lock);
                 mvwdelch(info_win, ASK_LINE, len);
                 pthread_mutex_unlock(&info_lock);
@@ -685,12 +685,14 @@ void change_sort(void) {
  */
 void highlight_selected(int line, const char c) {
     for (int i = 0; i < cont; i++) {
-        if ((i == active) || ((strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) 
+        if ((sv.searching != 3 + i) && (device_mode != 1 + i)) {
+            if ((i == active) || ((strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) 
             && (line - mywin[i].delta > 0) && (line - mywin[i].delta < dim - 2))) {
-            wattron(mywin[i].fm, A_BOLD);
-            mvwprintw(mywin[i].fm, 1 + line - mywin[i].delta, SEL_COL, "%c", c);
-            wattroff(mywin[i].fm, A_BOLD);
-            wrefresh(mywin[i].fm);
+                wattron(mywin[i].fm, A_BOLD);
+                mvwprintw(mywin[i].fm, 1 + line - mywin[i].delta, SEL_COL, "%c", c);
+                wattroff(mywin[i].fm, A_BOLD);
+                wrefresh(mywin[i].fm);
+            }
         }
     }
 }
