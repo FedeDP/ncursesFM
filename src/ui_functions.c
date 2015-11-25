@@ -587,7 +587,7 @@ void list_found_or_devices(int num, char (*str)[PATH_MAX], int mode) {
     str_ptr[active] = str;
     if (mode == SEARCH) {
         sv.searching = 3 + active;
-        sprintf(ps[active].title, "Found file searching %s:", sv.searched_string);
+        sprintf(ps[active].title, "Files found searching %s:", sv.searched_string);
         sprintf(searching_mess[sv.searching - 1], "%d files found.", num);
     }
 #ifdef LIBUDEV_PRESENT
