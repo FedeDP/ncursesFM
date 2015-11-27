@@ -200,7 +200,11 @@ static void list_everything(int win, int old_dim, int end) {
 static void print_border_and_title(int win) {
     wborder(mywin[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(mywin[win].fm, 0, 0, "%.*s", mywin[win].width - 1, ps[win].title);
-    mvwprintw(mywin[win].fm, 0, mywin[win].width - strlen(mywin[win].tot_size), mywin[win].tot_size);
+    if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
+        mvwprintw(mywin[win].fm, 0, mywin[win].width - strlen(special_mode_title), special_mode_title);
+    } else {
+        mvwprintw(mywin[win].fm, 0, mywin[win].width - strlen(mywin[win].tot_size), mywin[win].tot_size);
+    }
     wrefresh(mywin[win].fm);
 }
 
@@ -596,9 +600,6 @@ void list_found_or_devices(int num, char (*str)[PATH_MAX], int mode) {
         sprintf(ps[active].title, device_mode_str);
     }
 #endif
-    if (mywin[active].stat_active) {
-        memset(mywin[active].tot_size, 0, strlen(mywin[active].tot_size));
-    }
     reset_win(active);
     pthread_mutex_unlock(&fm_lock);
 }

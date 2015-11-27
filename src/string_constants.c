@@ -56,8 +56,8 @@ const char *quit_with_running_thread = "A job is still running. Do you want to w
 
 const char *helper_string[] = { "Enter to surf between folders or to open files.",
                                 "It will eventually ask to extract archives, mount your ISO files or install your distro downloaded packages.",
-                                "Press ',' to enable fast browse mode; it lets you jump between files by just typing their name.",
-                                "Press 'h' to trigger the showing of hidden files. 's' to see stat about files in current folder.",
+                                "Press ',' to enable fast browse mode: it lets you jump between files by just typing their name.",
+                                "Press 'h' to trigger the showing of hidden files; 's' to see stat about files in current folder.",
                                 "Press '.' to change files/dirs sorting function: alphabetically (default), by size or by last modified.",
                                 "Space to select files. Twice to remove the file from selected files. 'u' to check shasum of current file.",
                                 "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files. 'p' to print a file.",
@@ -68,10 +68,12 @@ const char *helper_string[] = { "Enter to surf between folders or to open files.
 
 
 #ifdef SYSTEMD_PRESENT
-const char *bus_error = "Failed to open system bus";
+const char *bus_error = "Failed to open system bus.";
 const char *pkg_quest = "Do you really want to install this package? y/N:> ";
 const char *install_th_wait = "Waiting for package installation to finish before exiting. It can really harm your OS otherwise.";
 #ifdef LIBUDEV_PRESENT
-const char *device_mode_str =  "Choose your desired device to (un)mount it.";
+const char *device_mode_str =  "Choose your desired device to (un)mount it";
 #endif
 #endif
+
+const char *special_mode_title = "q to return to normal mode";

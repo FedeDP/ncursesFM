@@ -65,3 +65,5 @@ const char *install_th_wait;
 const char *device_mode_str;
 #endif
 #endif
+
+const char *special_mode_title;

@@ -92,7 +92,7 @@ static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_e
 
 /*
  * Hope this will not be needed after next packagekit release.
- * This is a hotfix for packagekit daemon crashing while trying to install wrong arch packages...
+ * This is a hotfix for packagekit daemon crashing while trying to install wrong arch packages.
  */
 static int check_arch(const char *str) {
     int ret = 1;
