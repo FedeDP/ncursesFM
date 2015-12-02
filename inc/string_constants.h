@@ -61,6 +61,7 @@ const char *helper_string[HELPER_HEIGHT - 2];
 const char *bus_error;
 const char *pkg_quest;
 const char *install_th_wait;
+const char *package_warn;
 #ifdef LIBUDEV_PRESENT
 const char *device_mode_str;
 #endif

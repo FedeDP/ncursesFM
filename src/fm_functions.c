@@ -74,6 +74,7 @@ void manage_file(const char *str, float size) {
         return;
     }
     if (is_ext(str, pkg_ext, NUM(pkg_ext))) {
+        print_info(package_warn, INFO_LINE);
         ask_user(pkg_quest, &c, 1, 'n');
         if (c == 'y') {
             pthread_create(&install_th, NULL, install_package, (void *)str);

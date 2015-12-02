@@ -3,7 +3,6 @@
 #include "../inc/install_package.h"
 
 static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
-static int check_arch(const char *str);
 static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus);
 
 /* 
@@ -19,9 +18,6 @@ void *install_package(void *str) {
     const char *path;
     int r, finished = 0;
     
-    if (check_arch(str) == 0) {
-        return NULL;
-    }
     r = sd_bus_open_system(&install_bus);
     if (r < 0) {
         print_info(bus_error, ERR_LINE);
@@ -88,25 +84,6 @@ static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_e
         print_info(install_failed, ERR_LINE);
     }
     return 0;
-}
-
-/*
- * Hope this will not be needed after next packagekit release.
- * This is a hotfix for packagekit daemon crashing while trying to install wrong arch packages.
- */
-static int check_arch(const char *str) {
-    int ret = 1;
-    struct utsname buf;
-    
-    if (uname(&buf) == 0) {
-        if (!strstr(str, buf.machine)) {
-            print_info("Wrong architecture.", ERR_LINE);
-            ret = 0;
-        }
-    } else {
-        print_info(strerror(errno), ERR_LINE);
-    }
-    return ret;
 }
 
 static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus) {

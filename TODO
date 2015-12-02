@@ -2,9 +2,7 @@
  * 
  * install_packages segfaults on my netbook... can't understand why, really.
  * 
- * check_arch() will work on archlinux (in which package name has x86_64 or i686 inside) But it won't work on ubuntu for example, because it uses "amd64"...
- * -> next packagekit version should not crash: https://github.com/hughsie/PackageKit/commit/09ebef1ec578c886098cdbf839effc461d864817
- * -> and i'll remove chech_arch function if it won't be needed anymore
+ * https://github.com/hughsie/PackageKit/issues/87
  * 
  * improve doc (doc as many lib calls as possible)
  */
