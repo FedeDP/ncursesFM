@@ -15,7 +15,7 @@ optdepends=('xdg-utils: xdg-open support'
 # libcups, libconfig, libx11, openssl, and systemd are optional build dep.
 # If compiled without them, the program will run just fine;
 # but that would disable xdg-open, config file read, printing, shasum,
-# powermanagement inhibition, external usb drives/iso mount and package file installation support.
+# powermanagement inhibition, external usb drives/iso mount and local packages installation support.
 makedepends=('git')
 source=("git://github.com/FedeDP/${_gitname}.git")
 backup=('etc/default/ncursesFM.conf')
