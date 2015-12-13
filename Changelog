@@ -190,3 +190,12 @@ if letters are pressed fast enough
 * added back shasum support function: you can print a file sha{1, 224, 256, 384, 512}sum, or check if your file is not corrupted.
 * added new feature: starting with helper_win shown by default. It can be disabled through config file or cmdline switch.
 * fixed compilation without each optdep.
+
+12 / 13 / 2015
+* small fixes
+* fixed mutexes (it should finally be definitively safe)
+* fixed windows titles
+* removed check_arch() before installing packages. Now just saying user to check arch because wrong one will crash program and packagekit.
+* New FEATURE: libudev devices monitor(enabled by default), plus automounting support (disabled by default). It will poll udev for devices in background.
+* performance improvement
+* code readability improvement

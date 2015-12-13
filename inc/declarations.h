@@ -29,15 +29,9 @@
 #define CREATE_DIR_TH 1
 #define RENAME_TH 2
 
-#define DONT_QUIT 0 
+#define DONT_QUIT 0
 #define NORM_QUIT 1
 #define MEM_ERR_QUIT 2
-
-/*
- * Just a flag to be passed to list_found_or_devices() in ui_functions.c
- */
-#define SEARCH 0
-#define DEVICE 1
 
 struct conf {
     char editor[PATH_MAX];
@@ -46,8 +40,14 @@ struct conf {
     int second_tab_starting_dir;
 #ifdef SYSTEMD_PRESENT
     int inhibit;
+#ifdef LIBUDEV_PRESENT
+    int automount;
+#endif
 #endif
     int starting_helper;
+#ifdef LIBUDEV_PRESENT
+    int monitor;
+#endif
 };
 
 typedef struct list {
@@ -87,10 +87,11 @@ struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
 int active, quit, num_of_jobs, cont, distance_from_root, device_mode;
-#ifdef SYSTEMD_PRESENT 
+pthread_mutex_t fm_lock[MAX_TABS];
+#ifdef SYSTEMD_PRESENT
 pthread_t install_th;
+#endif
 #ifdef LIBUDEV_PRESENT
-char (*usb_devices)[PATH_MAX];
+pthread_t monitor_th;
 #endif
-#endif
-char (*str_ptr[MAX_TABS])[PATH_MAX]; // pointer to make abstract which list of strings i have to print in list_everything()
+char (*str_ptr[MAX_TABS])[PATH_MAX]; // pointer to abstract which list of strings i have to print in list_everything()

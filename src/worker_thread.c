@@ -125,7 +125,7 @@ static void *execute_thread(void *x) {
     }
 #endif
     pthread_detach(pthread_self()); // to avoid stupid valgrind errors
-    return NULL;
+    pthread_exit(NULL);
 }
 
 static void check_refresh(void) {
@@ -138,11 +138,11 @@ static void check_refresh(void) {
 
 /*
  * RM_TH and MOVE_TH only: we need cycling through selected_files and
- * check if current selected file is isnide win's cwd (to update UI)
+ * check if current selected file is inside win's cwd (to update UI)
  */
 static int refresh_needed(const char *dir) {
     file_list *tmp = thread_h->selected_files;
-    
+
     if (thread_h->type == RM_TH || thread_h->type == MOVE_TH) {
         while (tmp) {
             if (strncmp(tmp->name, dir, strlen(dir)) == 0) {
@@ -199,11 +199,6 @@ void free_everything(void) {
     if (selected) {
         free_copied_list(selected);
     }
-#ifdef LIBUDEV_PRESENT
-    if (usb_devices) {
-        free(usb_devices);
-    }
-#endif
 }
 
 static void quit_thread_func(void) {
@@ -211,11 +206,10 @@ static void quit_thread_func(void) {
 
     if (thread_h) {
         ask_user(quit_with_running_thread, &c, 1, 'y');
-        if (c == 'y') {
-            pthread_join(worker_th, NULL);
-        } else {
+        if (c == 'n') {
             pthread_kill(worker_th, SIGUSR1);
         }
+        pthread_join(worker_th, NULL);
     }
 #ifdef SYSTEMD_PRESENT
     if (install_th) {
@@ -223,6 +217,12 @@ static void quit_thread_func(void) {
             print_info(install_th_wait, INFO_LINE);
         }
         pthread_join(install_th, NULL);
+    }
+#endif
+#ifdef LIBUDEV_PRESENT
+    if (monitor_th) {
+        pthread_kill(monitor_th, SIGUSR1);
+        pthread_join(monitor_th, NULL);
     }
 #endif
 }

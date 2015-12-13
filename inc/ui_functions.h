@@ -22,6 +22,7 @@
 
 void screen_init(void);
 void screen_end(void);
+void reset_win(int win);
 void new_tab(int win);
 void restrict_first_tab(void);
 void delete_tab(int win);
@@ -30,9 +31,13 @@ void scroll_down(void);
 void scroll_up(void);
 void trigger_show_helper_message(void);
 void trigger_stats(void);
+void change_unit(float size, char *str);
 int win_getch(void);
 void tab_refresh(int win);
 void list_found_or_devices(int num, char (*str)[PATH_MAX], int mode);
+#ifdef LIBUDEV_PRESENT
+void update_devices(int num,  char (*str)[PATH_MAX]);
+#endif
 void print_info(const char *str, int i);
 void ask_user(const char *str, char *input, int d, char c);
 void resize_win(void);

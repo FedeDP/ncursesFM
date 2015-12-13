@@ -2,10 +2,10 @@
 #define FM
 
 #ifdef SYSTEMD_PRESENT
-#include "mount.h"
 #include "install_package.h"
 #endif
 
+#include "mount.h"
 #include "search.h"
 #include "archiver.h"
 #include "worker_thread.h"

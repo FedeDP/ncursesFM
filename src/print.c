@@ -6,12 +6,15 @@ static void *print_file(void *filename);
 
 void print_support(char *str) {
     pthread_t print_thread;
+    pthread_attr_t tattr;
     char c;
 
     ask_user(print_question, &c, 1, 'y');
     if (c == 'y') {
-        pthread_create(&print_thread, NULL, print_file, str);
-        pthread_detach(print_thread);
+        pthread_attr_init(&tattr);
+        pthread_attr_setdetachstate(&tattr,PTHREAD_CREATE_DETACHED);
+        pthread_create(&print_thread, &tattr, print_file, str);
+        pthread_attr_destroy(&tattr);
     }
 }
 
@@ -30,7 +33,7 @@ static void *print_file(void *filename) {
     } else {
         print_info(print_fail, ERR_LINE);
     }
-    return NULL;
+    pthread_exit(NULL);
 }
 
 #endif

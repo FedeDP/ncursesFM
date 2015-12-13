@@ -62,9 +62,10 @@ const char *bus_error;
 const char *pkg_quest;
 const char *install_th_wait;
 const char *package_warn;
+#endif
 #ifdef LIBUDEV_PRESENT
 const char *device_mode_str;
 #endif
-#endif
+
 
 const char *special_mode_title;

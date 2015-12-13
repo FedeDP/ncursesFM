@@ -6,6 +6,7 @@ static void *search_thread(void *x);
 
 void search(void) {
     pthread_t search_th;
+    pthread_attr_t tattr;
     char c;
 
     ask_user(search_insert_name, sv.searched_string, 20, 0);
@@ -21,8 +22,10 @@ void search(void) {
     }
     sv.searching = 1;
     print_info("", SEARCH_LINE);
-    pthread_create(&search_th, NULL, search_thread, NULL);
-    pthread_detach(search_th);
+    pthread_attr_init(&tattr);
+    pthread_attr_setdetachstate(&tattr,PTHREAD_CREATE_DETACHED);
+    pthread_create(&search_th, &tattr, search_thread, NULL);
+    pthread_attr_destroy(&tattr);
 }
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
@@ -93,16 +96,25 @@ static void *search_thread(void *x) {
         sv.searching = 2;
     }
     print_info("", SEARCH_LINE);
-    return NULL;
+    pthread_exit(NULL);
 }
 
 void list_found(void) {
-    list_found_or_devices(sv.found_cont, sv.found_searched, SEARCH);
+    pthread_mutex_lock(&fm_lock[active]);
+    ps[active].number_of_files = sv.found_cont;
+    str_ptr[active] = sv.found_searched;
+    sv.searching = 3 + active;
+    sprintf(ps[active].title, "Files found searching %s:", sv.searched_string);
+    sprintf(searching_mess[sv.searching - 1], "%d files found.", sv.found_cont);
+    reset_win(active);
+    pthread_mutex_unlock(&fm_lock[active]);
     print_info("", SEARCH_LINE);
 }
 
 void leave_search_mode(const char *str) {
+    pthread_mutex_lock(&fm_lock[active]);
     sv.searching = 0;
+    pthread_mutex_unlock(&fm_lock[active]);
     print_info("", SEARCH_LINE);
     change_dir(str);
 }

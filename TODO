@@ -1,10 +1,8 @@
 /* TODO:
- * 
+ *
  * install_packages segfaults on my netbook... can't understand why, really.
- * 
+ *
  * https://github.com/hughsie/PackageKit/issues/87
- * 
+ *
  * improve doc (doc as many lib calls as possible)
- * 
- * sshfs, samba support?
  */

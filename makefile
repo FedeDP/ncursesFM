@@ -17,9 +17,7 @@ ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 LIBX11=$(shell pkg-config --silence-errors --libs x11)
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
-ifneq ("$(LIBSYSTEMD)","")
 LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
-endif
 LIBOPENSSL=$(shell pkg-config --silence-errors --libs openssl)
 
 LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBUDEV) $(LIBOPENSSL)
@@ -48,12 +46,11 @@ endif
 ifneq ("$(LIBSYSTEMD)","")
 CFLAGS+=-DSYSTEMD_PRESENT
 $(info libsystemd support enabled.)
+endif
 
-# libudev support is useful only if systemd support is enabled
 ifneq ("$(LIBUDEV)","")
 CFLAGS+=-DLIBUDEV_PRESENT
 $(info libudev support enabled.)
-endif
 endif
 
 endif
