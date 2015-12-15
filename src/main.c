@@ -36,7 +36,6 @@ static void config_checks(void);
 static void main_loop(void);
 static int check_init(int index);
 static int check_access(void);
-int program_quit(void);
 
 /*
  * pointers to long_file_operations functions, used in main loop;
