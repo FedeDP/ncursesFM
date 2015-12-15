@@ -36,6 +36,7 @@ static void config_checks(void);
 static void main_loop(void);
 static int check_init(int index);
 static int check_access(void);
+int program_quit(void);
 
 /*
  * pointers to long_file_operations functions, used in main loop;
@@ -57,14 +58,7 @@ int main(int argc, const char *argv[])
     screen_init();
     chdir(ps[active].my_cwd);
     main_loop();
-    free_everything();
-    screen_end();
-    printf("\033c"); // to clear terminal/vt after leaving program
-    if (quit == MEM_ERR_QUIT) {
-        printf("%s\n", generic_mem_error);
-        exit(EXIT_FAILURE);
-    }
-    exit(EXIT_SUCCESS);
+    program_quit();
 }
 
 static void helper_function(int argc, const char *argv[]) {
@@ -280,7 +274,7 @@ static void main_loop(void) {
         case 't': // t to open second tab
             if (cont < MAX_TABS) {
                 cont++;
-                restrict_first_tab();
+                change_first_tab_size();
                 new_tab(cont - 1);
                 change_tab();
             }
@@ -290,7 +284,7 @@ static void main_loop(void) {
                 change_tab();
                 cont--;
                 delete_tab(cont);
-                enlarge_first_tab();
+                change_first_tab_size();
             }
             break;
         case 32: // space to select files

@@ -63,7 +63,7 @@ const char *helper_string[] = { "Enter to surf between folders or to open files.
                                 "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files. 'p' to print a file.",
                                 "'o' to rename current file/dir; 'n'/'d' to create new file/dir. 'f' to search (case sensitive) for a file.",
                                 "'t' to create new tab (at most one more). 'w' to close tab. Arrow left or right to switch between tabs.",
-                                "'m' to switch current tab to device tab. Press enter on your desired device to (un)mount it.",
+                                "'m' to switch current tab to devices tab. Press enter on your desired device to (un)mount it.",
                                 "You can't close first tab. Use 'q' to quit/leave current mode."};
 
 

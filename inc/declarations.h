@@ -29,10 +29,16 @@
 #define CREATE_DIR_TH 1
 #define RENAME_TH 2
 
+/*
+ * Quit status
+ */
 #define DONT_QUIT 0
 #define NORM_QUIT 1
 #define MEM_ERR_QUIT 2
 
+/*
+ * Config settings struct
+ */
 struct conf {
     char editor[PATH_MAX];
     int show_hidden;
@@ -50,11 +56,17 @@ struct conf {
 #endif
 };
 
+/*
+ * List used to store file names when selecting them
+ */
 typedef struct list {
     char name[PATH_MAX];
     struct list *next;
 } file_list;
 
+/*
+ * Struct used to store tab's information
+ */
 struct vars {
     int curr_pos;
     char my_cwd[PATH_MAX];
@@ -63,6 +75,9 @@ struct vars {
     char title[PATH_MAX];
 };
 
+/*
+ * Struct used to store searches information
+ */
 struct search_vars {
     char searched_string[20];
     char found_searched[MAX_NUMBER_OF_FOUND][PATH_MAX];
@@ -71,6 +86,9 @@ struct search_vars {
     int found_cont;
 };
 
+/*
+ * Struct that defines a list of thread job to be executed one after the other.
+ */
 typedef struct thread_list {
     file_list *selected_files;
     int (*f)(void);
@@ -94,4 +112,5 @@ pthread_t install_th;
 #ifdef LIBUDEV_PRESENT
 pthread_t monitor_th;
 #endif
+pthread_t worker_th;
 char (*str_ptr[MAX_TABS])[PATH_MAX]; // pointer to abstract which list of strings i have to print in list_everything()

@@ -3,6 +3,7 @@
 
 #include "declarations.h"
 #include "string_constants.h"
+#include "quit_functions.h"
 #include <locale.h>
 #include <ncurses.h>
 #include <stdlib.h>
@@ -13,8 +14,8 @@
 
 #define INFO_HEIGHT 3
 #define SEL_COL 3
-#define STAT_COL 30
-#define MAX_FILENAME_LENGTH 25
+#define STAT_LENGTH 20
+#define PERM_LENGTH 10
 
 #define STATS_OFF 0
 #define STATS_ON 1
@@ -24,9 +25,8 @@ void screen_init(void);
 void screen_end(void);
 void reset_win(int win);
 void new_tab(int win);
-void restrict_first_tab(void);
+void change_first_tab_size(void);
 void delete_tab(int win);
-void enlarge_first_tab(void);
 void scroll_down(void);
 void scroll_up(void);
 void trigger_show_helper_message(void);
@@ -34,7 +34,6 @@ void trigger_stats(void);
 void change_unit(float size, char *str);
 int win_getch(void);
 void tab_refresh(int win);
-void list_found_or_devices(int num, char (*str)[PATH_MAX], int mode);
 #ifdef LIBUDEV_PRESENT
 void update_devices(int num,  char (*str)[PATH_MAX]);
 #endif

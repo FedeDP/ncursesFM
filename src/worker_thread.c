@@ -6,12 +6,9 @@ static void init_thread_helper(void);
 static void *execute_thread(void *x);
 static void check_refresh(void);
 static int refresh_needed(const char *dir);
-static void free_copied_list(file_list *h);
 static void free_thread_job_list(thread_job_list *h);
-static void quit_thread_func(void);
 static void sig_handler(int signum);
 
-static pthread_t worker_th;
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
 static struct thread_mesg thread_m;
 
@@ -154,12 +151,6 @@ static int refresh_needed(const char *dir) {
     return 0;
 }
 
-static void free_copied_list(file_list *h) {
-    if (h->next)
-        free_copied_list(h->next);
-    free(h);
-}
-
 int remove_from_list(const char *name) {
     file_list *temp = NULL, *tmp = selected;
 
@@ -194,45 +185,13 @@ file_list *select_file(file_list *h, const char *str) {
     return h;
 }
 
-void free_everything(void) {
-    quit_thread_func();
-    if (selected) {
-        free_copied_list(selected);
-    }
-}
-
-static void quit_thread_func(void) {
-    char c;
-
-    if (thread_h) {
-        ask_user(quit_with_running_thread, &c, 1, 'y');
-        if (c == 'n') {
-            pthread_kill(worker_th, SIGUSR1);
-        }
-        pthread_join(worker_th, NULL);
-    }
-#ifdef SYSTEMD_PRESENT
-    if (install_th) {
-        if (pthread_kill(install_th, 0) != ESRCH) {
-            print_info(install_th_wait, INFO_LINE);
-        }
-        pthread_join(install_th, NULL);
-    }
-#endif
-#ifdef LIBUDEV_PRESENT
-    if (monitor_th) {
-        pthread_kill(monitor_th, SIGUSR1);
-        pthread_join(monitor_th, NULL);
-    }
-#endif
-}
-
 static void free_thread_job_list(thread_job_list *h) {
     if (h->next) {
         free_thread_job_list(h->next);
     }
-    if (h->selected_files)
+    if (h->selected_files) {
         free_copied_list(h->selected_files);
+    }
     free(h);
 }
 

@@ -1,5 +1,6 @@
 #include "../inc/ui_functions.h"
 
+static void term_size_check(void);
 static void info_win_init(void);
 static void generate_list(int win);
 static int sizesort(const struct dirent **d1, const struct dirent **d2);
@@ -47,9 +48,10 @@ void screen_init(void) {
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
     init_pair(3, COLOR_CYAN, COLOR_BLACK);
     init_pair(4, COLOR_YELLOW, COLOR_BLACK);
-    raw();
     noecho();
     curs_set(0);
+    raw();
+    term_size_check();
     cont = 1;
     dim = LINES - INFO_HEIGHT;
     if (config.starting_helper) {
@@ -57,6 +59,23 @@ void screen_init(void) {
     }
     new_tab(0);
     info_win_init();
+}
+
+static void term_size_check(void) {
+    int c;
+    int min_lines = HELPER_HEIGHT + INFO_HEIGHT + 3;
+    int min_cols = MAX_TABS * (STAT_LENGTH + 5);
+    
+    while ((LINES < min_lines) || (COLS < min_cols)) {
+        clear();
+        printw("Window too small, enlarge it. Q to exit.");
+        do {
+            c = getch();
+            if (tolower(c) == 'q') {
+                program_quit();
+            }
+        } while (c != KEY_RESIZE);
+    }
 }
 
 /*
@@ -96,10 +115,6 @@ static void generate_list(int win) {
     struct dirent **files;
     char str[PATH_MAX] = {0};
 
-    if (mywin[win].stat_active) {
-        memset(mywin[win].tot_size, 0, strlen(mywin[win].tot_size));
-        mywin[win].stat_active = STATS_ON;
-    }
     ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func);
     free(ps[win].nl);
     if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
@@ -144,6 +159,10 @@ void reset_win(int win)
     wclear(mywin[win].fm);
     mywin[win].delta = 0;
     ps[win].curr_pos = 0;
+    if (mywin[win].stat_active) {
+        memset(mywin[win].tot_size, 0, strlen(mywin[win].tot_size));
+        mywin[win].stat_active = STATS_ON;
+    }
     list_everything(win, 0, 0);
 }
 
@@ -167,7 +186,7 @@ static void list_everything(int win, int old_dim, int end) {
             str = *(str_ptr[win] + i);
         } else {
             check_selected(*(str_ptr[win] + i), win, i);
-            width = MAX_FILENAME_LENGTH;
+            width = mywin[win].width - STAT_LENGTH;
             str = strrchr(*(str_ptr[win] + i), '/') + 1;
         }
         colored_folders(win, *(str_ptr[win] + i));
@@ -216,8 +235,8 @@ static int is_hidden(const struct dirent *current_file) {
  * Then, only if !resizing, calls initialize_tab_cwd().
  */
 void new_tab(int win) {
-    mywin[win].width = COLS / cont + COLS % cont;
-    mywin[win].fm = newwin(dim, mywin[win].width, 0, (COLS * (win)) / cont);
+    mywin[win].width = COLS / cont + win * (COLS % cont);
+    mywin[win].fm = newwin(dim, mywin[win].width, 0, (COLS * win) / cont);
     keypad(mywin[win].fm, TRUE);
     scrollok(mywin[win].fm, TRUE);
     idlok(mywin[win].fm, TRUE);
@@ -225,11 +244,16 @@ void new_tab(int win) {
 }
 
 /*
- * Helper functions called in main.c before creating second tab.
+ * Helper functions called in main.c before creating/after deleting second tab.
  */
-void restrict_first_tab(void) {
+void change_first_tab_size(void) {
+    erase_stat();
     mywin[active].width = COLS / cont;
+    wborder(mywin[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wresize(mywin[active].fm, dim, mywin[active].width);
+    if (mywin[active].stat_active) {
+        show_stat(mywin[active].delta, dim - 2, active);
+    }
     print_border_and_title(active);
 }
 
@@ -251,25 +275,16 @@ static void initialize_tab_cwd(int win) {
 }
 
 /*
- * Removes a tab and if !resizing, free its list of files.
+ * Removes a tab and frees its list of files.
  */
 void delete_tab(int win) {
     delwin(mywin[win].fm);
     mywin[win].fm = NULL;
     memset(ps[win].my_cwd, 0, sizeof(ps[win].my_cwd));
+    memset(mywin[win].tot_size, 0, strlen(mywin[win].tot_size));
     mywin[win].stat_active = STATS_OFF;
     free(ps[win].nl);
     ps[win].nl = NULL;
-}
-
-/*
- * Called in main_loop (main.c) after deletion of second tab.
- */
-void enlarge_first_tab(void) {
-    mywin[active].width = COLS;
-    wborder(mywin[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-    wresize(mywin[active].fm, dim, mywin[active].width);
-    print_border_and_title(active);
 }
 
 void scroll_down(void) {
@@ -418,6 +433,8 @@ static void show_stat(int init, int end, int win) {
     char str[20];
     float total_size = 0;
     struct stat file_stat;
+    int perm_col = mywin[win].width - PERM_LENGTH;
+    int size_col = mywin[win].width - STAT_LENGTH;
 
     check %= check - 1; // "check" should be 0 or 1 (strlen(tot_size) will never be 1, so i can safely divide for check - 1)
     for (int i = check * init; i < ps[win].number_of_files; i++) {
@@ -427,7 +444,10 @@ static void show_stat(int init, int end, int win) {
         }
         if ((i >= init) && (i < init + end)) {
             change_unit(file_stat.st_size, str);
-            mvwprintw(mywin[win].fm, i + 1 - mywin[win].delta, STAT_COL, "%s\t", str);
+            char x[30];
+            sprintf(x, "%s\t", str);
+            mvwprintw(mywin[win].fm, i + 1 - mywin[win].delta, size_col, "%s", str);
+            wmove(mywin[win].fm, i + 1 - mywin[win].delta, perm_col);
             for (int j = 0; j < 9; j++) {
                 wprintw(mywin[win].fm, (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
             }
@@ -482,7 +502,7 @@ void trigger_stats(void) {
  */
 static void erase_stat(void) {
     for (int i = 0; (i < ps[active].number_of_files) && (i < dim - 2); i++) {
-        wmove(mywin[active].fm, i + 1, STAT_COL);
+        wmove(mywin[active].fm, i + 1, mywin[active].width - STAT_LENGTH);
         wclrtoeol(mywin[active].fm);
     }
     memset(mywin[active].tot_size, 0, strlen(mywin[active].tot_size));
@@ -537,6 +557,10 @@ void ask_user(const char *str, char *input, int d, char c) {
         s = wgetch(info_win);
         if (s == KEY_RESIZE) {
             resize_win();
+            if (quit) {
+                memset(input, 0, strlen(input));
+                return;
+            }
             char resize_str[200];
             sprintf(resize_str, "%s%s", str, input);
             print_info(resize_str, ASK_LINE);
@@ -611,6 +635,7 @@ void update_devices(int num,  char (*str)[PATH_MAX]) {
  * then prints again any "sticky" message (eg: "searching"/"pasting...")
  */
 void resize_win(void) {
+    term_size_check();
     pthread_mutex_lock(&info_lock);
     delwin(info_win);
     dim = LINES - INFO_HEIGHT;
@@ -647,7 +672,7 @@ static void resize_fm_win(void) {
         wclear(mywin[i].fm);
         mywin[i].width = COLS / cont + i * (COLS % cont);
         wresize(mywin[i].fm, dim, mywin[i].width);
-        mvwin(mywin[i].fm, 0, i * mywin[i].width);
+        mvwin(mywin[i].fm, 0, (COLS * i) / cont);
         if (ps[i].curr_pos > dim - 3) {
             mywin[i].delta = ps[i].curr_pos - (dim - 3);
         } else {

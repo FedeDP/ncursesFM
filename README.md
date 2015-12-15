@@ -1,8 +1,8 @@
 # ncursesFM
 Ncurses File Manager for linux.  
-It aims to be as user friendly and lightweight as possible, being good looking too (my own tastes), simple and easy to use.  
+It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes), simple and easy to use.  
 Being simple doesn't imply being useless; indeed it is a full featured fm.  
-It can be built with very few dependencies, as i tried to make as many deps as possible optional (compile time or runtime).  
+It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).
 
 ## Features:
 
@@ -90,6 +90,6 @@ To remove, just move inside the folder and run:
 
     $ make uninstall
 
-make {install/uninstall} require root privileges.
+make {install/uninstall} require root privileges unless you specify a DESTDIR variable to install/uninstall targets. Be aware that it will disable config file support though.
 
 ![Alt text](ncursesfm.png?raw=true)

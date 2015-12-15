@@ -31,7 +31,7 @@ void mount_fs(const char *str, const char *method, int mount) {
     sd_bus *mount_bus = NULL;
     const char *path;
     char obj_path[PATH_MAX] = "/org/freedesktop/UDisks2/block_devices/";
-    char success[PATH_MAX] = "Mounted in ";
+    char success[PATH_MAX];
     int r;
 
     r = sd_bus_open_system(&mount_bus);
@@ -54,7 +54,7 @@ void mount_fs(const char *str, const char *method, int mount) {
     } else {
         if (!mount) {
             sd_bus_message_read(mess, "s", &path);
-            strcat(success, path);
+            sprintf(success, "%s mounted in: %s.", str, path);
             print_info(success, INFO_LINE);
         } else {
             print_info("Unmounted.", INFO_LINE);
