@@ -32,7 +32,7 @@ static struct scrstr mywin[MAX_TABS];
 static WINDOW *helper_win, *info_win;
 static int dim;
 static pthread_mutex_t info_lock;
-static int (*const sorting_func[3])(const struct dirent **d1, const struct dirent **d2) = {
+static int (*const sorting_func[])(const struct dirent **d1, const struct dirent **d2) = {
     alphasort, sizesort, last_mod_sort
 };
 static int sorting_index;
