@@ -32,7 +32,10 @@ static struct scrstr mywin[MAX_TABS];
 static WINDOW *helper_win, *info_win;
 static int dim;
 static pthread_mutex_t info_lock;
-static int (*sorting_func)(const struct dirent **d1, const struct dirent **d2) = alphasort; // file list sorting function, defaults to alphasort
+static int (*const sorting_func[3])(const struct dirent **d1, const struct dirent **d2) = {
+    alphasort, sizesort, last_mod_sort
+};
+static int sorting_index;
 
 /*
  * Initializes screen, colors etc etc, and calls fm_scr_init.
@@ -115,7 +118,7 @@ static void generate_list(int win) {
     struct dirent **files;
     char str[PATH_MAX] = {0};
 
-    ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func);
+    ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func[sorting_index]);
     free(ps[win].nl);
     if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
         quit = MEM_ERR_QUIT;
@@ -688,15 +691,17 @@ static void resize_fm_win(void) {
 }
 
 void change_sort(void) {
-    if (sorting_func == alphasort) {
-        sorting_func = sizesort;
-        print_info("Files will be sorted by size now.", INFO_LINE);
-    } else if (sorting_func == sizesort) {
-        sorting_func = last_mod_sort;
-        print_info("Files will be sorted by last access now.", INFO_LINE);
-    } else {
-        sorting_func = alphasort;
+    sorting_index = (sorting_index + 1) % 3;
+    switch (sorting_index) {
+    case 0:
         print_info("Files will be sorted alphabetically now.", INFO_LINE);
+        break;
+    case 1:
+        print_info("Files will be sorted by size now.", INFO_LINE);
+        break;
+    case 2:
+        print_info("Files will be sorted by last access now.", INFO_LINE);
+        break;
     }
     for (int i = 0; i < cont; i++) {
         tab_refresh(i);
