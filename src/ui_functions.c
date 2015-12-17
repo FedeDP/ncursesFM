@@ -177,19 +177,20 @@ void reset_win(int win)
  */
 static void list_everything(int win, int old_dim, int end) {
     char *str;
-    int width;
+    int width = mywin[win].width - 5;
 
     if (end == 0) {
         end = dim - 2;
     }
+    if ((sv.searching != 3 + win) && (device_mode != 1 + win)) {
+        width -= STAT_LENGTH;
+    }
     wattron(mywin[win].fm, A_BOLD);
     for (int i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
         if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
-            width = mywin[win].width - 5;
             str = *(str_ptr[win] + i);
         } else {
             check_selected(*(str_ptr[win] + i), win, i);
-            width = mywin[win].width - STAT_LENGTH;
             str = strrchr(*(str_ptr[win] + i), '/') + 1;
         }
         colored_folders(win, *(str_ptr[win] + i));
@@ -250,14 +251,13 @@ void new_tab(int win) {
  * Helper functions called in main.c before creating/after deleting second tab.
  */
 void change_first_tab_size(void) {
-    erase_stat();
+    wclear(mywin[active].fm);
     mywin[active].width = COLS / cont;
-    wborder(mywin[active].fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wresize(mywin[active].fm, dim, mywin[active].width);
     if (mywin[active].stat_active) {
-        show_stat(mywin[active].delta, dim - 2, active);
+        mywin[active].stat_active = STATS_ON;
     }
-    print_border_and_title(active);
+    list_everything(active, mywin[active].delta, 0);
 }
 
 /*

@@ -11,6 +11,9 @@ static void sig_handler(int signum);
 
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
 static struct thread_mesg thread_m;
+#ifdef SYSTEMD_PRESENT
+static int inhibit_fd;
+#endif
 
 /*
  * Creates a new job object for the worker_thread appending it to the end of job's queue.
@@ -62,7 +65,7 @@ void init_thread(int type, int (* const f)(void)) {
     } else {
 #ifdef SYSTEMD_PRESENT
         if (config.inhibit) {
-            inhibit_suspend();
+            inhibit_fd = inhibit_suspend("Job in process...");
         }
 #endif
         thread_m.str = "";
@@ -118,7 +121,7 @@ static void *execute_thread(void *x) {
     num_of_jobs = 0;
 #ifdef SYSTEMD_PRESENT
     if (config.inhibit) {
-        free_bus();
+        close(inhibit_fd);
     }
 #endif
     pthread_detach(pthread_self()); // to avoid stupid valgrind errors
@@ -199,7 +202,7 @@ static void sig_handler(int signum) {
     free_thread_job_list(thread_h);
     #ifdef SYSTEMD_PRESENT
     if (config.inhibit) {
-        free_bus();
+        close(inhibit_fd);
     }
     #endif
     pthread_exit(NULL);

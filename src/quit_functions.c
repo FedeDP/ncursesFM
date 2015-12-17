@@ -2,7 +2,9 @@
 
 static void free_everything(void);
 static void quit_thread_func(void);
-static void quit_worker_th(void) ;
+static void quit_worker_th(void);
+static void quit_monitor_th(void);
+static void quit_install_th(void);
 
 int program_quit(void) {
     free_everything();
@@ -25,19 +27,12 @@ static void free_everything(void) {
 static void quit_thread_func(void) {
     quit_worker_th();
 #ifdef SYSTEMD_PRESENT
-    if (install_th) {
-        if (pthread_kill(install_th, 0) != ESRCH) {
-            print_info(install_th_wait, INFO_LINE);
-        }
-        pthread_join(install_th, NULL);
-    }
+    quit_install_th();
 #endif
 #ifdef LIBUDEV_PRESENT
-    if (monitor_th) {
-        pthread_kill(monitor_th, SIGUSR1);
-        pthread_join(monitor_th, NULL);
-    }
+    quit_monitor_th();
 #endif
+
 }
 
 static void quit_worker_th(void) {
@@ -51,6 +46,26 @@ static void quit_worker_th(void) {
         pthread_join(worker_th, NULL);
     }
 }
+
+#ifdef LIBUDEV_PRESENT
+static void quit_monitor_th(void) {
+    if ((monitor_th) && (pthread_kill(monitor_th, 0) != ESRCH)) {
+        pthread_kill(monitor_th, SIGUSR2);
+        pthread_join(monitor_th, NULL);
+    }
+}
+#endif
+
+#ifdef SYSTEMD_PRESENT
+static void quit_install_th(void) {
+    if (install_th) {
+        if (pthread_kill(install_th, 0) != ESRCH) {
+            print_info(install_th_wait, INFO_LINE);
+        }
+        pthread_join(install_th, NULL);
+    }
+}
+#endif
 
 void free_copied_list(file_list *h) {
     if (h->next)

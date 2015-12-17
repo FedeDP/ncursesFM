@@ -3,7 +3,6 @@
 #include "../inc/install_package.h"
 
 static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
-static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus);
 
 /*
  * First of all, creates a transaction;
@@ -16,8 +15,8 @@ void *install_package(void *str) {
     sd_bus_message *mess = NULL;
     sd_bus *install_bus = NULL;
     const char *path;
-    int r, finished = 0;
-
+    int r, inhibit_fd, finished = 0;
+    
     r = sd_bus_open_system(&install_bus);
     if (r < 0) {
         print_info(bus_error, ERR_LINE);
@@ -35,6 +34,9 @@ void *install_package(void *str) {
         print_info(error.message, ERR_LINE);
         close_bus(&error, mess, install_bus);
         pthread_exit(NULL);
+    }
+    if (config.inhibit) {
+        inhibit_fd = inhibit_suspend("Package installation...");
     }
     sd_bus_message_read(mess, "o", &path);
     r = sd_bus_add_match(install_bus, NULL, "type='signal',interface='org.freedesktop.PackageKit.Transaction',member='Finished'", match_callback, &finished);
@@ -68,6 +70,9 @@ void *install_package(void *str) {
             }
         }
     }
+    if (config.inhibit) {
+        close(inhibit_fd);
+    }
     close_bus(&error, mess, install_bus);
     pthread_exit(NULL);
 }
@@ -84,12 +89,6 @@ static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_e
         print_info(install_failed, ERR_LINE);
     }
     return 0;
-}
-
-static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus) {
-    sd_bus_message_unref(mess);
-    sd_bus_error_free(error);
-    sd_bus_flush_close_unref(bus);
 }
 
 #endif

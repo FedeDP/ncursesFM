@@ -1,169 +1,33 @@
-6 / 5 / 2015
-* removed info_message global var
-* splitted th in paste_th and archiver_th
-* reverted strncpy use (no null-terminated strings...); back to strcpy.
-* ask_user is back to "void"
-* added default action (if enter is pressed) in ask_user. So user can just press enter when asked for y/n, and default action will be done.
-* defaults to first entry name in create_archive function, if no name is entered.
-* fixed a bug in scroll_down func
-* fixed bug in is_extension; removed strrstr function
-* Now using libmagic and get_mimetype function to understand whether it is a plain/text file (to open it), or an iso image (to mount).
-* added "u" to view current file mimetype
+12 / 16 / 2015
+* fixed some issues
+* leaving device_monitor loop now handled way better using pselect instead of select.
+* better UI, with some improvements
+* added a check_term_size() function to check whether terminal window size is large enough.
+* inhibition will now be active during package installation too.
+* fixed inhibition through sd-bus (it worked before, but it was implemented in the wrong way)
 
-6 / 6 / 2015
-* better is_archive function. It is now faster than before, and search through archives use less memory and time.
+12 / 13 / 2015
+* small fixes
+* fixed mutexes (it should finally be definitively safe)
+* fixed windows titles
+* removed check_arch() before installing packages. Now just saying user to check arch because wrong one will crash program and packagekit.
+* New FEATURE: libudev devices monitor(enabled by default), plus automounting support (disabled by default). It will poll udev for devices in background.
+* performance improvement
+* code readability improvement
 
-6 / 7 / 2015
-* Better integration between shasum_func and md5_func
-* Added a warn message about md5sum being very slow if file size is larger than 100MB.
-* added "is_thread_running" function.
-* Better checks in manage_file, and in create_archive/try_extractor/paste_file.
-* libarchive is not an optdep...
+11 / 25 / 2015
+* lots of small bugs fixed
+* finally safe behaviour: every print to any fm win, will lock a mutex.
+* fully fixed resizing (now being-asked question and anwer won't disappear after resize)
+* added back shasum support function: you can print a file sha{1, 224, 256, 384, 512}sum, or check if your file is not corrupted.
+* added new feature: starting with helper_win shown by default. It can be disabled through config file or cmdline switch.
+* fixed compilation without each optdep.
 
-6 / 8 / 2015
-* get rid of memmove; now copying with 'strcpy(dest, src + 1)' to remove starting "/"
-* fixed little memleak
-* moved every "access" check to first lines of functions
-
-6 / 9 / 2015
-* fixed new_file / create_dir bugs: if cwd is being pasted/archived, i can't create a file/dir there. Now gracefully managing this possibility.
-
-6 / 10 / 2015
-* check fopen/open errors
-* fixed a bug in open_file
-* fixed a bug in print_info/extractor_thread: i still need extracting glob var
-
-6 / 11 / 2015
-* added support for xdg_open while in X environment, otherwise old config.editor variable will be used to open (only, obviously) text files. With xdg_open user can virtually open every type of file
-* better makefile
-* updated readme and pkgbuild with new deps
-
-6 / 12 / 2015
-* huge rework: now you can queue as many copy/archive as you want, they'll be taken into care one after the other.
-* switched to full path for namelist; solved some problems and finally removed "chdir" workardounds in list_everything
-* get rid of sv.search_active_win -> now sv.searching will be equal to "3 + its win" : 3 for first tab, 4 for second tab.
-* redirect vforked stdout and stderr to /dev/null
-
-6 / 13 / 2015
-* using safe_malloc in add_thread function
-
-6 / 17 / 2015
-* file_isCopied() will now check only the right depth level (ie: only head of thread_l, or everything).
-* file_isCopied() and change_thread_list_head() will now lock a mutex before checking head, to avoid possible crash: if file_isCopied() was checkin head, and in the meantime change_thread_list_head() would change my head, the program would crash. It should be now avoided.
-* fixed a small bug in print_info().
-* fixed a small bug in create_dir().
-
-6 / 25 / 2015
-* fixed a bug while switching tab: now properly chdir inside new active tab path
-* fixed a bug on 'c' press: ".." is no more selectable for copy/archiving
-* changed internal thread list implementation; now it is more robust
-* some changes in makefile: now libx11, libcrypto and libcups are optional build dep.
-* probably some other bugfixing i now forgot about
-* code cleanup
-
-6 / 28 / 2015
-* fixed some bugs
-* semplified code, now way more readable and simple
-* reworked thread_list; now every file operation (except for new_file and create_dir) will be linked in a thread_l struct
-* print_info() is now way more readable and easy to understand
-* added string_constants source file, with lots of const char used inside other source files, to improve readability
-
-6 / 29 / 2015
-* fixed a little bug in init_thread()
-* removed openssl support. This does not really belong to a fm function.
-
-6 / 30 / 2015
-* removed is_thread_running() func (using running_h ptr as reference now)
-* fixed some small issues all around
-* added a "[1/3]" style counter for jobs queue printing (eg: "[1/2] Pasting...")
-* exec_thread() will now spawn a thread if it is not present. Every operation passed to init_thread() will be executed in a thread now.
-
-7 / 1 / 2015
-* now using flock to lock files while a thread is using them.
-* removed is_file_used function
-* fixed a bug in main where file_stat was updated before a thread called generate_list. So file_stat had the wrong informations about current file.
-* Using a mutex to avoid that while in main_loop there's the call to "stat", generate_list changed current_position (or something else).
-* code cleanup
-* fixed generic issues
-* fixed a bug in extractor thread: it previously extracted the files in process cwd, and not in the dir the archive was.
-* better thread safety
-
-7 / 2 / 2015
-* better execute thread: now it is executed in another thread and calls running_h->f(); plus calls itself recursively. Way better now.
-
-7 / 4 / 2015
-* a few small changes
-* libconfig is now compile time optional
-* some more DOCS
-
-7 / 7 / 2015
-* fixed some bugs; now add_thread is always executed inside init_thread; this will fix some bugs in certain conditions
-* only way for current running job, if a thread is running and user tries to leave; not for all the job's list.
-* current_th now static inside helper_functions
-* remove running_h
-
-7 / 12 / 2015
-* lots of internal changes
-* got rid of mutex
-* now every ps.fm WIN changes are performed inside main thread, way more reliable.
-* small code cleanup and bugfixing
-* something more i may have forgot about
-
-7 / 30 / 2015
-* fixed some bugs
-* every WIN* var is now static inside ui_functions.c
-* removed flock() calls
-* lots of other internal changes, have a look to commits since last changelog update
-
-9 / 12 / 2015 - 9 / 15 / 2015
-* new option to lock powermanagement actions (eg: autosuspend after N minutes) while a job is being performed (eg: while pasting a large file) to avoid data loss.
-This uses sd-bus api, so it is meant for systemd systems only.
-* fixed a bug related to helper win while in search mode.
-* added ability to trigger helper win showing in search mode
-* added ability to create new tab in search mode
-* removed stand-alone search_loop and using only main_loop.
-* lots of internal changes, some fixes.
-
-9 / 16 / 2015 - 9 / 18 / 2015
-* fixed some bugs
-* lots, lots, lots of internal changes.
-* list of files is now a pointer to char[PATH_MAX].
-* list of found files while searching is now capped to [MAX_NUMBER_OF_FOUND(100)][PATH_MAX], ie: it's a 2 dim array.
-* it should now be more memory friendly.
-* more accurate refresh of tabs.
-* fixed a memleak.
-* probably some little performance improvement.
-* do not enter switch case in main_loop if user doesn't press any key.
-* fixed (i hope) every valgrind error.
-
-9 / 24 / 2015
-* added ability to mount external usb drives through udisks2 and sd-bus.
-* fixed some bugs
-* now any message printed inside info_win will last until a new message is sent.
-* better README, update pkgbuild.
-* better makefile checks.
-* better sd-bus api checks
-* probably other improvements i now forgot
-
-9 / 26 / 2015
-* added ability to install packages by pressing enter on them, through packagekit; so it should be distro independent.
-* The installation process is done in another thread. Before exiting, main thread will wait for the installation thread to finish its job, to avoid damages.
-* fixed a bug: i forgot to change_dir() in current dir when ncursesfm starts.
-* fixed a bug: when a call to generate_list is done during device_mode, update only the win in normal mode (before i did not update anything)
-* fixed some valgrind issues/errors
-* string_constants now only declared if correspondent LIB symbols are defined
-
-9/ 27 / 2015
-* added fast browse mode: when enabled (with ','), pressing a letter will move the cursor to the first elem that begins with that letter, and so on (second letter, etc etc)
-if letters are pressed fast enough
-
-9 / 29 / 2015
-* some work on makefile. Now using pkg-config to be as distro agnostic as possible when building.
-* libudev support in makefile is now checked only if libsystemd support is enabled.
-* removed fuseiso optdep. Using udisks2 and sd-bus for mounting iso too.
-
-9 / 30 / 2015
-* finally support terminal resize :)
+11 / 9 / 2015
+* better and safer print_info, now with 3 lines: first for questions, second for info, third for errors. It has its own info_mutex now to avoid race conditions with worker thread.
+* Better and safer resize_win: 1) locks UI mutexes (ui_mutex and info_mutex) 2) doesn't destroy every win but it only resizes and moves existent windows.
+* safer show_stat: it locks ui_mutex too
+* Lots of bugfixing related to resize and show_stat
 
 11 / 4 / 2015
 * splitted long job (that need a worker thread), from fast job, that can be executed in main thread.
@@ -177,25 +41,169 @@ if letters are pressed fast enough
 * simplified README
 * probably something more i now forgot
 
-11 / 9 / 2015
-* better and safer print_info, now with 3 lines: first for questions, second for info, third for errors. It has its own info_mutex now to avoid race conditions with worker thread.
-* Better and safer resize_win: 1) locks UI mutexes (ui_mutex and info_mutex) 2) doesn't destroy every win but it only resizes and moves existent windows.
-* safer show_stat: it locks ui_mutex too
-* Lots of bugfixing related to resize and show_stat
+9 / 30 / 2015
+* finally support terminal resize :)
 
-11 / 25 / 2015
-* lots of small bugs fixed
-* finally safe behaviour: every print to any fm win, will lock a mutex.
-* fully fixed resizing (now being-asked question and anwer won't disappear after resize)
-* added back shasum support function: you can print a file sha{1, 224, 256, 384, 512}sum, or check if your file is not corrupted.
-* added new feature: starting with helper_win shown by default. It can be disabled through config file or cmdline switch.
-* fixed compilation without each optdep.
+9 / 29 / 2015
+* some work on makefile. Now using pkg-config to be as distro agnostic as possible when building.
+* libudev support in makefile is now checked only if libsystemd support is enabled.
+* removed fuseiso optdep. Using udisks2 and sd-bus for mounting iso too.
 
-12 / 13 / 2015
-* small fixes
-* fixed mutexes (it should finally be definitively safe)
-* fixed windows titles
-* removed check_arch() before installing packages. Now just saying user to check arch because wrong one will crash program and packagekit.
-* New FEATURE: libudev devices monitor(enabled by default), plus automounting support (disabled by default). It will poll udev for devices in background.
-* performance improvement
-* code readability improvement
+9/ 27 / 2015
+* added fast browse mode: when enabled (with ','), pressing a letter will move the cursor to the first elem that begins with that letter, and so on (second letter, etc etc)
+if letters are pressed fast enough
+
+9 / 26 / 2015
+* added ability to install packages by pressing enter on them, through packagekit; so it should be distro independent.
+* The installation process is done in another thread. Before exiting, main thread will wait for the installation thread to finish its job, to avoid damages.
+* fixed a bug: i forgot to change_dir() in current dir when ncursesfm starts.
+* fixed a bug: when a call to generate_list is done during device_mode, update only the win in normal mode (before i did not update anything)
+* fixed some valgrind issues/errors
+* string_constants now only declared if correspondent LIB symbols are defined
+
+9 / 24 / 2015
+* added ability to mount external usb drives through udisks2 and sd-bus.
+* fixed some bugs
+* now any message printed inside info_win will last until a new message is sent.
+* better README, update pkgbuild.
+* better makefile checks.
+* better sd-bus api checks
+* probably other improvements i now forgot
+
+9 / 18 / 2015
+* fixed some bugs
+* lots, lots, lots of internal changes.
+* list of files is now a pointer to char[PATH_MAX].
+* list of found files while searching is now capped to [MAX_NUMBER_OF_FOUND(100)][PATH_MAX], ie: it's a 2 dim array.
+* it should now be more memory friendly.
+* more accurate refresh of tabs.
+* fixed a memleak.
+* probably some little performance improvement.
+* do not enter switch case in main_loop if user doesn't press any key.
+* fixed (i hope) every valgrind error.
+
+9 / 15 / 2015
+* new option to lock powermanagement actions (eg: autosuspend after N minutes) while a job is being performed (eg: while pasting a large file) to avoid data loss.
+This uses sd-bus api, so it is meant for systemd systems only.
+* fixed a bug related to helper win while in search mode.
+* added ability to trigger helper win showing in search mode
+* added ability to create new tab in search mode
+* removed stand-alone search_loop and using only main_loop.
+* lots of internal changes, some fixes.
+
+7 / 30 / 2015
+* fixed some bugs
+* every WIN* var is now static inside ui_functions.c
+* removed flock() calls
+* lots of other internal changes, have a look to commits since last changelog update
+
+7 / 12 / 2015
+* lots of internal changes
+* got rid of mutex
+* now every ps.fm WIN changes are performed inside main thread, way more reliable.
+* small code cleanup and bugfixing
+* something more i may have forgot about
+
+7 / 7 / 2015
+* fixed some bugs; now add_thread is always executed inside init_thread; this will fix some bugs in certain conditions
+* only way for current running job, if a thread is running and user tries to leave; not for all the job's list.
+* current_th now static inside helper_functions
+* remove running_h
+
+7 / 4 / 2015
+* a few small changes
+* libconfig is now compile time optional
+* some more DOCS
+
+7 / 2 / 2015
+* better execute thread: now it is executed in another thread and calls running_h->f(); plus calls itself recursively. Way better now.
+
+7 / 1 / 2015
+* now using flock to lock files while a thread is using them.
+* removed is_file_used function
+* fixed a bug in main where file_stat was updated before a thread called generate_list. So file_stat had the wrong informations about current file.
+* Using a mutex to avoid that while in main_loop there's the call to "stat", generate_list changed current_position (or something else).
+* code cleanup
+* fixed generic issues
+* fixed a bug in extractor thread: it previously extracted the files in process cwd, and not in the dir the archive was.
+* better thread safety
+
+6 / 30 / 2015
+* removed is_thread_running() func (using running_h ptr as reference now)
+* fixed some small issues all around
+* added a "[1/3]" style counter for jobs queue printing (eg: "[1/2] Pasting...")
+* exec_thread() will now spawn a thread if it is not present. Every operation passed to init_thread() will be executed in a thread now.
+
+6 / 29 / 2015
+* fixed a little bug in init_thread()
+* removed openssl support. This does not really belong to a fm function.
+
+6 / 28 / 2015
+* fixed some bugs
+* semplified code, now way more readable and simple
+* reworked thread_list; now every file operation (except for new_file and create_dir) will be linked in a thread_l struct
+* print_info() is now way more readable and easy to understand
+* added string_constants source file, with lots of const char used inside other source files, to improve readability
+
+6 / 25 / 2015
+* fixed a bug while switching tab: now properly chdir inside new active tab path
+* fixed a bug on 'c' press: ".." is no more selectable for copy/archiving
+* changed internal thread list implementation; now it is more robust
+* some changes in makefile: now libx11, libcrypto and libcups are optional build dep.
+* probably some other bugfixing i now forgot about
+* code cleanup
+
+6 / 17 / 2015
+* file_isCopied() will now check only the right depth level (ie: only head of thread_l, or everything).
+* file_isCopied() and change_thread_list_head() will now lock a mutex before checking head, to avoid possible crash: if file_isCopied() was checkin head, and in the meantime change_thread_list_head() would change my head, the program would crash. It should be now avoided.
+* fixed a small bug in print_info().
+* fixed a small bug in create_dir().
+
+6 / 13 / 2015
+* using safe_malloc in add_thread function
+
+6 / 12 / 2015
+* huge rework: now you can queue as many copy/archive as you want, they'll be taken into care one after the other.
+* switched to full path for namelist; solved some problems and finally removed "chdir" workardounds in list_everything
+* get rid of sv.search_active_win -> now sv.searching will be equal to "3 + its win" : 3 for first tab, 4 for second tab.
+* redirect vforked stdout and stderr to /dev/null
+
+6 / 11 / 2015
+* added support for xdg_open while in X environment, otherwise old config.editor variable will be used to open (only, obviously) text files. With xdg_open user can virtually open every type of file
+* better makefile
+* updated readme and pkgbuild with new deps
+
+6 / 10 / 2015
+* check fopen/open errors
+* fixed a bug in open_file
+* fixed a bug in print_info/extractor_thread: i still need extracting glob var
+
+6 / 9 / 2015
+* fixed new_file / create_dir bugs: if cwd is being pasted/archived, i can't create a file/dir there. Now gracefully managing this possibility.
+
+6 / 8 / 2015
+* get rid of memmove; now copying with 'strcpy(dest, src + 1)' to remove starting "/"
+* fixed little memleak
+* moved every "access" check to first lines of functions
+
+6 / 7 / 2015
+* Better integration between shasum_func and md5_func
+* Added a warn message about md5sum being very slow if file size is larger than 100MB.
+* added "is_thread_running" function.
+* Better checks in manage_file, and in create_archive/try_extractor/paste_file.
+* libarchive is not an optdep...
+
+6 / 6 / 2015
+* better is_archive function. It is now faster than before, and search through archives use less memory and time.
+
+6 / 5 / 2015
+* removed info_message global var
+* splitted th in paste_th and archiver_th
+* reverted strncpy use (no null-terminated strings...); back to strcpy.
+* ask_user is back to "void"
+* added default action (if enter is pressed) in ask_user. So user can just press enter when asked for y/n, and default action will be done.
+* defaults to first entry name in create_archive function, if no name is entered.
+* fixed a bug in scroll_down func
+* fixed bug in is_extension; removed strrstr function
+* Now using libmagic and get_mimetype function to understand whether it is a plain/text file (to open it), or an iso image (to mount).
+* added "u" to view current file mimetype

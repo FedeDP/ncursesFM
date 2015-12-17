@@ -32,7 +32,6 @@
 /*
  * Quit status
  */
-#define DONT_QUIT 0
 #define NORM_QUIT 1
 #define MEM_ERR_QUIT 2
 

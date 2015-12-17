@@ -1,8 +1,5 @@
 #include "../inc/mount.h"
 
-#ifdef SYSTEMD_PRESENT
-static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus);
-#endif
 #ifdef LIBUDEV_PRESENT
 static void enumerate_block_devices(void);
 static int is_mounted(const char *dev_path);
@@ -113,12 +110,6 @@ void isomount(const char *str) {
         }
     }
     close_bus(&error, mess, iso_bus);
-}
-
-static void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus) {
-    sd_bus_message_unref(mess);
-    sd_bus_error_free(error);
-    sd_bus_flush_close_unref(bus);
 }
 #endif
 
@@ -250,18 +241,26 @@ static void *device_monitor(void *x) {
 #ifdef SYSTEMD_PRESENT
     int mount;
 #endif
-
-    signal(SIGUSR1, sig_handler);   // here select is a blocking io call. We need a signal to gracefully leave this thread upon program exiting
+    sigset_t mask;
+    sigset_t orig_mask;
+    struct sigaction act;
+    
+    memset (&act, 0, sizeof(act));
+    act.sa_handler = sig_handler;
+    sigaction(SIGUSR2, &act, 0);
+    sigemptyset (&mask);
+    sigaddset (&mask, SIGUSR2);
+    sigprocmask(SIG_BLOCK, &mask, &orig_mask);
 
     mon = udev_monitor_new_from_netlink(udev, "udev");
     udev_monitor_filter_add_match_subsystem_devtype(mon, "block", NULL);
     udev_monitor_enable_receiving(mon);
     fd = udev_monitor_get_fd(mon);
 
-    while (1) {
+    while (!quit) {
         FD_ZERO(&fds);
         FD_SET(fd, &fds);
-        ret = select(fd + 1, &fds, NULL, NULL, NULL);
+        ret = pselect(fd + 1, &fds, NULL, NULL, NULL, &orig_mask);
         /* Check if our file descriptor has received data. */
         if (ret > 0 && FD_ISSET(fd, &fds)) {
             dev = udev_monitor_receive_device(mon);
@@ -293,10 +292,6 @@ static void *device_monitor(void *x) {
             }
         }
     }
-    pthread_exit(NULL);
-}
-
-static void sig_handler(int signum) {
     udev_monitor_unref(mon);
     udev_unref(udev);
     if (my_devices) {
@@ -304,6 +299,8 @@ static void sig_handler(int signum) {
     }
     pthread_exit(NULL);
 }
+
+static void sig_handler(int signum) {}
 
 static void add_device(struct udev_device *dev, const char *name) {
     long size;
