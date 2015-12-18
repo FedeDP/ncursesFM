@@ -11,8 +11,10 @@ int inhibit_suspend(const char *str) {
     
     if (r < 0) {
         print_info(bus_error, ERR_LINE);
+        ERROR("failed to open bus.");
         return r;
     }
+    INFO("calling Inhibit method on bus.");
     r = sd_bus_call_method(bus,
                            "org.freedesktop.login1",
                            "/org/freedesktop/login1",
@@ -27,12 +29,14 @@ int inhibit_suspend(const char *str) {
                            "block");
     if (r < 0) {
         print_info(error.message, ERR_LINE);
+        ERROR("failed to call Inhibit method on bus.");
     } else {
         r = sd_bus_message_read_basic(reply, SD_BUS_TYPE_UNIX_FD, &fd);
         if (r < 0) {
             print_info(strerror(-r), ERR_LINE);
         } else {
             r = fcntl(fd, F_DUPFD, 3);
+            INFO("power management functions inhibition started.");
         }
     }
     close_bus(&error, reply, bus);

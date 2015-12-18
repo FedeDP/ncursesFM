@@ -1,3 +1,8 @@
+12 / 18 / 2015
+* fixed a small bug in ask_user
+* added a (beautiful :D) logger
+* added shell autocompletion script
+
 12 / 16 / 2015
 * fixed some issues
 * leaving device_monitor loop now handled way better using pselect instead of select.

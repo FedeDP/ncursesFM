@@ -36,6 +36,8 @@ static void config_checks(void);
 static void main_loop(void);
 static int check_init(int index);
 static int check_access(void);
+static void set_signals(void);
+static void sig_handler(int signum);
 
 /*
  * pointers to long_file_operations functions, used in main loop;
@@ -47,8 +49,11 @@ static int (*const long_func[LONG_FILE_OPERATIONS - 1])(void) = {
 
 int main(int argc, const char *argv[])
 {
+    set_signals();
     helper_function(argc, argv);
     config_checks();
+    open_log();
+    log_current_options();
 #ifdef LIBUDEV_PRESENT
     if (config.monitor) {
         start_udev();
@@ -67,7 +72,7 @@ static void helper_function(int argc, const char *argv[]) {
     config.monitor = 1;
 #endif
 
-    if ((argc > 1) && (strcmp(argv[1], "-h") == 0)) {
+    if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
         printf(" NcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
         printf(" This is free software, and you are welcome to redistribute it under certain conditions;\n");
@@ -78,7 +83,10 @@ static void helper_function(int argc, const char *argv[]) {
         printf("\t* --helper={0,1} to switch (off,on) starting helper message. Defaults to 1.\n");
         printf("\t* --inhibit={0,1} to switch {off,on} powermanagement functions while a job is being processed. Defaults to 0.\n");
         printf("\t* --monitor={0,1} to switch {off,on} udev monitor. Defaults to 1.\n");
-        printf("\t* --automount={0,1} to switch {off,on} automounting of external drives/usb sticks. Defaults to 0.\n\n");
+        printf("\t* --automount={0,1} to switch {off,on} automounting of external drives/usb sticks. Defaults to 0.\n");
+        printf("\t* --loglevel={0,1,2,3} to change loglevel. Defaults to 0.\n");
+        printf("\t\t* 0 to only log errors.\n\t\t* 1 to log warn and errors.\n");
+        printf("\t\t* 2 to log only info too.\n\t\t* 3 to disable log.\n\n");
         printf(" Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
         printf(" Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
         printf(" Press 'l' while in program to view a more detailed helper message.\n");
@@ -92,62 +100,63 @@ static void helper_function(int argc, const char *argv[]) {
 }
 
 static void parse_cmd(int argc, const char *argv[]) {
-    int j = 1, changed = 1;
+    int j = 1;
 #ifdef SYSTEMD_PRESENT
 #ifdef LIBUDEV_PRESENT
-    const char *cmd_switch[] = {"--editor=", "--starting-dir=", "--helper=", "--inhibit=", "--monitor=", "--automount="};
+    const char *cmd_switch[] = {"--editor", "--starting-dir", "--helper", "--loglevel", "--inhibit", "--monitor", "--automount"};
 #else
-    const char *cmd_switch[] = {"--editor=", "--starting-dir=", "--helper=", "--inhibit="};
+    const char *cmd_switch[] = {"--editor", "--starting-dir", "--helper", "--loglevel", "--inhibit"};
 #endif
 #else
 #ifdef LIBUDEV_PRESENT
-    const char *cmd_switch[] = {"--editor=", "--starting-dir=", "--helper=", "--monitor="};
+    const char *cmd_switch[] = {"--editor", "--starting-dir", "--helper", "--loglevel", "--monitor"};
 #else
-    const char *cmd_switch[] = {"--editor=", "--starting-dir=", "--helper="};
+    const char *cmd_switch[] = {"--editor", "--starting-dir", "--helper", "--loglevel"};
 #endif
 #endif
     while (j < argc) {
-        if (strncmp(cmd_switch[0], argv[j], strlen(cmd_switch[0])) == 0) {
-            if (!strlen(config.editor)) {
-                strcpy(config.editor, argv[j] + strlen(cmd_switch[0]));
-                changed++;
-            }
-        } else if (strncmp(cmd_switch[1], argv[j], strlen(cmd_switch[1])) == 0) {
-            if (!strlen(config.starting_dir)) {
-                strcpy(config.starting_dir, argv[j] + strlen(cmd_switch[1]));
-                changed++;
-            }
-        } else if (strncmp(cmd_switch[2], argv[j], strlen(cmd_switch[2])) == 0) {
-            config.starting_helper = atoi(argv[j] + strlen(cmd_switch[2]));
-            changed++;
+        if ((strcmp(cmd_switch[0], argv[j]) == 0) && (argv[j + 1])) {
+            strcpy(config.editor, argv[j + 1]);
+            j += 2;
+        } else if ((strcmp(cmd_switch[1], argv[j]) == 0) && (argv[j + 1])) {
+            strcpy(config.starting_dir, argv[j + 1]);
+            j += 2;
+        } else if ((strcmp(cmd_switch[2], argv[j]) == 0) && (argv[j + 1])) {
+            config.starting_helper = atoi(argv[j + 1]);
+            j += 2;
+        } else if ((strcmp(cmd_switch[3], argv[j]) == 0) && (argv[j + 1])) {
+            config.loglevel = atoi(argv[j + 1]);
+            j += 2;
         }
 #ifdef SYSTEMD_PRESENT
-        else if (strncmp(cmd_switch[3], argv[j], strlen(cmd_switch[3])) == 0) {
-            config.inhibit = atoi(argv[j] + strlen(cmd_switch[3]));
-            changed++;
+        else if ((strcmp(cmd_switch[4], argv[j]) == 0) && (argv[j + 1])) {
+            config.inhibit = atoi(argv[j + 1]);
+            j += 2;
         }
 #ifdef LIBUDEV_PRESENT
-        else if (strncmp(cmd_switch[4], argv[j], strlen(cmd_switch[4])) == 0) {
-            config.monitor = atoi(argv[j] + strlen(cmd_switch[4]));
-            changed++;
+        else if ((strcmp(cmd_switch[5], argv[j]) == 0) && (argv[j + 1])) {
+            config.monitor = atoi(argv[j + 1]);
+            j += 2;
         }
-        else if (strncmp(cmd_switch[5], argv[j], strlen(cmd_switch[5])) == 0) {
-            config.automount = atoi(argv[j] + strlen(cmd_switch[5]));
-            changed++;
+        else if ((strcmp(cmd_switch[6], argv[j]) == 0) && (argv[j + 1])) {
+            config.automount = atoi(argv[j + 1]);
+            j += 2;
         }
 #endif
 #else
 #ifdef LIBUDEV_PRESENT
-        else if (strncmp(cmd_switch[3], argv[j], strlen(cmd_switch[3])) == 0) {
-            config.monitor = atoi(argv[j] + strlen(cmd_switch[3]));
-            changed++;
+        else if ((strcmp(cmd_switch[4], argv[j]) == 0) && (argv[j + 1])) {
+            config.monitor = atoi(argv[j + 1]);
+            j += 2;
         }
 #endif
 #endif
-        j++;
+        else {
+            break;
+        }
     }
-    if (changed != argc) {
-        printf("Use '-h' to view helper message.\n");
+    if (j != argc) {
+        printf("Use '--help' to view helper message.\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -178,8 +187,10 @@ static void read_config_file(void) {
 #ifdef LIBUDEV_PRESENT
         config_lookup_int(&cfg, "monitor", &config.monitor);
 #endif
+        config_lookup_int(&cfg, "loglevel", &config.loglevel);
     } else {
         printf("%s", config_file_missing);
+        ERROR(config_file_missing);
         sleep(1);
     }
     config_destroy(&cfg);
@@ -194,15 +205,23 @@ static void config_checks(void) {
     }
     if (!strlen(config.editor) || (access(config.editor, X_OK) == -1)) {
         memset(config.editor, 0, strlen(config.editor));
+        WARN("no editor defined. Trying to get one from env.");
         if ((str = getenv("EDITOR"))) {
             strcpy(config.editor, str);
+        } else {
+            WARN("no editor env var found.");
         }
     }
 #if defined LIBUDEV_PRESENT && SYSTEMD_PRESENT
     if (!config.monitor) {
+        WARN("automount disabled as it is useless without udev monitor enabled.");
         config.automount = 0;   // monitor must be enabled for automount to work!
     }
 #endif
+    if ((config.loglevel < LOG_ERR) || (config.loglevel > NO_LOG)) {
+        config.loglevel = 0;
+        WARN("wrong loglevel value. Back to default value.");
+    }
 }
 
 /*
@@ -396,4 +415,20 @@ static int check_access(void) {
         return 0;
     }
     return 1;
+}
+
+static void set_signals(void) {
+    signal(SIGSEGV, sig_handler);
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
+}
+
+static void sig_handler(int signum) {
+    char str[100];
+    
+    sprintf(str, "received signal %d.", signum);
+    ERROR(str);
+    close_log();
+    signal(signum, SIG_DFL);
+    kill(getpid(), signum);
 }

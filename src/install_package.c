@@ -20,8 +20,10 @@ void *install_package(void *str) {
     r = sd_bus_open_system(&install_bus);
     if (r < 0) {
         print_info(bus_error, ERR_LINE);
+        ERROR("failed to open bus.");
         pthread_exit(NULL);
     }
+    INFO("calling CreateTransaction on bus.");
     r = sd_bus_call_method(install_bus,
                            "org.freedesktop.PackageKit",
                            "/org/freedesktop/PackageKit",
@@ -32,6 +34,7 @@ void *install_package(void *str) {
                            NULL);
     if (r < 0) {
         print_info(error.message, ERR_LINE);
+        ERROR("failed to call CreateTransaction on bus.");
         close_bus(&error, mess, install_bus);
         pthread_exit(NULL);
     }
@@ -44,6 +47,7 @@ void *install_package(void *str) {
         print_info(strerror(-r), ERR_LINE);
     } else {
         sd_bus_flush(install_bus);
+        INFO("calling InstallFiles on bus.");
         r = sd_bus_call_method(install_bus,
                            "org.freedesktop.PackageKit",
                            path,
@@ -57,6 +61,7 @@ void *install_package(void *str) {
                            (char *)str);
         if (r < 0) {
             print_info(error.message, ERR_LINE);
+            ERROR("failed to call InstallFiles on bus.");
         } else {
             while (!finished) {
                 r = sd_bus_process(install_bus, NULL);
@@ -71,6 +76,7 @@ void *install_package(void *str) {
         }
     }
     if (config.inhibit) {
+        INFO("power management functions inhibition stopped.");
         close(inhibit_fd);
     }
     close_bus(&error, mess, install_bus);

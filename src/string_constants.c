@@ -71,7 +71,7 @@ const char *helper_string[] = { "Enter to surf between folders or to open files.
 const char *bus_error = "Failed to open system bus.";
 const char *pkg_quest = "Do you really want to install this package? y/N:> ";
 const char *install_th_wait = "Waiting for package installation to finish before exiting. It can really harm your OS otherwise.";
-const char *package_warn = "Currently there is no check against wrong package arch: it will crash packagekit and ncursesfm. You've been warned.";
+const char *package_warn = "Currently there is no check against wrong package arch: it will crash packagekit and ncursesfm.";
 #endif
 #ifdef LIBUDEV_PRESENT
 const char *device_mode_str =  "Choose your desired device to (un)mount it";

@@ -1,13 +1,12 @@
 #ifndef UI
 #define UI
 
-#include "declarations.h"
+#include "log.h"
 #include "string_constants.h"
 #include "quit_functions.h"
 #include <locale.h>
 #include <ncurses.h>
 #include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 #include <archive.h>
 #include <archive_entry.h>

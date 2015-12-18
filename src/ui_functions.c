@@ -122,6 +122,7 @@ static void generate_list(int win) {
     free(ps[win].nl);
     if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
         quit = MEM_ERR_QUIT;
+        ERROR("could not malloc. Leaving.");
     }
     str_ptr[win] = ps[win].nl;
     if (strcmp(ps[win].my_cwd, "/") != 0) {
@@ -520,9 +521,10 @@ static void erase_stat(void) {
  */
 void print_info(const char *str, int i) {
     char st[100] = {0};
+    int starting_col = 1 + strlen(info_win_str[i]);
 
     pthread_mutex_lock(&info_lock);
-    wmove(info_win, i, 1 + strlen(info_win_str[i]));
+    wmove(info_win, i, starting_col);
     wclrtoeol(info_win);
     if (thread_h) {
         if (selected) {
@@ -537,7 +539,7 @@ void print_info(const char *str, int i) {
     if (sv.searching) {
         mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
     }
-    mvwprintw(info_win, i, 1 + strlen(info_win_str[i]), "%.*s", COLS - 1, str);
+    mvwprintw(info_win, i, starting_col, "%.*s", COLS - starting_col, str);
     wrefresh(info_win);
     pthread_mutex_unlock(&info_lock);
 }
@@ -555,7 +557,6 @@ void ask_user(const char *str, char *input, int d, char c) {
     int s, len, i = 0;
 
     print_info(str, ASK_LINE);
-    input[0] = c;
     do {
         s = wgetch(info_win);
         if (s == KEY_RESIZE) {
@@ -589,6 +590,9 @@ void ask_user(const char *str, char *input, int d, char c) {
             }
         }
     } while (i < d);
+    if (i == 0) {
+        input[0] = c;
+    }
     print_info("", ASK_LINE);
 }
 

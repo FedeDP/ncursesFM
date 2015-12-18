@@ -34,9 +34,11 @@ void mount_fs(const char *str, const char *method, int mount) {
     r = sd_bus_open_system(&mount_bus);
     if (r < 0) {
         print_info(bus_error, ERR_LINE);
+        ERROR("mounter: failed to open bus.");
         return;
     }
     strcat(obj_path, strrchr(str, '/') + 1);
+    INFO("mounter: calling method on bus.");
     r = sd_bus_call_method(mount_bus,
                            "org.freedesktop.UDisks2",
                            obj_path,
@@ -48,6 +50,7 @@ void mount_fs(const char *str, const char *method, int mount) {
                            NULL);
     if (r < 0) {
         print_info(error.message, ERR_LINE);
+        ERROR("mounter: failed to call method on bus.");
     } else {
         if (!mount) {
             sd_bus_message_read(mess, "s", &path);
@@ -76,8 +79,10 @@ void isomount(const char *str) {
     r = sd_bus_open_system(&iso_bus);
     if (r < 0) {
         print_info(bus_error, ERR_LINE);
+        ERROR("isomounter: failed to open bus.");
         return;
     }
+    INFO("isomounter: calling LoopSetup method on bus.");
     r = sd_bus_call_method(iso_bus,
                            "org.freedesktop.UDisks2",
                            "/org/freedesktop/UDisks2/Manager",
@@ -91,10 +96,12 @@ void isomount(const char *str) {
     close(fd);
     if (r < 0) {
         print_info(error.message, ERR_LINE);
+        ERROR("isomounter: failed to call LoopSetup on bus.");
     } else {
         sd_bus_message_read(mess, "o", &obj_path);
         mount_fs(obj_path, "Mount", 0);
         sd_bus_flush(iso_bus);
+        INFO("isomounter: calling SetAutoClear on bus.");
         r = sd_bus_call_method(iso_bus,
                                "org.freedesktop.UDisks2",
                                obj_path,
@@ -107,6 +114,7 @@ void isomount(const char *str) {
                                NULL);
         if (r < 0) {
             print_info(error.message, ERR_LINE);
+            ERROR("isomounter: failed to call SetAutoClear on bus.");
         }
     }
     close_bus(&error, mess, iso_bus);
@@ -118,8 +126,10 @@ void start_udev(void) {
     udev = udev_new();
     if (!udev) {
         print_info("Couldn't create udev. You won't be able to use libudev functions.", ERR_LINE);
+        ERROR("could not create udev.");
         return;
     }
+    INFO("started device monitor th.");
     enumerate_block_devices();
     if (!quit && config.monitor) {
         pthread_create(&monitor_th, NULL, device_monitor, NULL);
@@ -245,11 +255,11 @@ static void *device_monitor(void *x) {
     sigset_t orig_mask;
     struct sigaction act;
     
-    memset (&act, 0, sizeof(act));
+    memset(&act, 0, sizeof(act));
     act.sa_handler = sig_handler;
     sigaction(SIGUSR2, &act, 0);
-    sigemptyset (&mask);
-    sigaddset (&mask, SIGUSR2);
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGUSR2);
     sigprocmask(SIG_BLOCK, &mask, &orig_mask);
 
     mon = udev_monitor_new_from_netlink(udev, "udev");
@@ -292,15 +302,19 @@ static void *device_monitor(void *x) {
             }
         }
     }
+    INFO("freeing resources...");
     udev_monitor_unref(mon);
     udev_unref(udev);
     if (my_devices) {
         free(my_devices);
     }
+    INFO("freed.");
     pthread_exit(NULL);
 }
 
-static void sig_handler(int signum) {}
+static void sig_handler(int signum) {
+    INFO("received SIGUSR2 signal.");
+}
 
 static void add_device(struct udev_device *dev, const char *name) {
     long size;
@@ -319,6 +333,7 @@ static void add_device(struct udev_device *dev, const char *name) {
     }
     if (!(my_devices = realloc(my_devices, sizeof(*(my_devices)) * (number_of_devices + 1)))) {
         quit = MEM_ERR_QUIT;
+        ERROR("could not malloc. Leaving monitor th.");
         return;
     }
     size = strtol(udev_device_get_sysattr_value(dev, "size"), NULL, 10);
@@ -339,6 +354,7 @@ static void add_device(struct udev_device *dev, const char *name) {
         sprintf(my_devices[number_of_devices], "%s, Size: %s, Mounted: %d", name, s, is_mounted(name));
     }
     number_of_devices++;
+    INFO("added device.");
 }
 
 static void remove_device(const char *name) {
@@ -351,9 +367,12 @@ static void remove_device(const char *name) {
             }
             if (!(my_devices = realloc(my_devices, sizeof(*(my_devices)) * (number_of_devices - 1)))) {
                 quit = MEM_ERR_QUIT;
+                ERROR("could not realloc devices. Leaving monitor th.");
+            } else {
+                number_of_devices--;
+                print_info("Device removed.", INFO_LINE);
+                INFO("removed device.");
             }
-            number_of_devices--;
-            print_info("Device removed.", INFO_LINE);
             break;
         }
     }

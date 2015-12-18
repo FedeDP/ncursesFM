@@ -42,14 +42,22 @@ If built with libconfig support, it reads following variables from /etc/default/
 * starting_helper -> whether to show helper win after program started. Defaults to 1.
 * monitor -> wheter to enable udev monitor. Defaults to 1.
 * automount -> whether to enable devices automount. Defaults to 0.
+* loglevel -> to change program loglevel. Defaults to 0.
 
-It supports following command line switches:
-* "--editor=/path/to/editor"
-* "--starting-dir=/path/to/dir"
-* "--starting_helper={0,1}" to disable(enable) helper window show at program start.
-* "--inhibit={0,1}" to disable(enable) powermanagement inhibition.
-* "--monitor={0,1}" to disable(enable) udev monitor.
-* "--automount={0,1}" to disable(enable) automount of connected devices.
+It supports following command line switches. NcursesFM ships an autocompletion script for these switches.
+* "--editor" /path/to/editor
+* "--starting-dir" /path/to/dir
+* "--starting_helper" {0,1} to disable(enable) helper window show at program start.
+* "--inhibit" {0,1} to disable(enable) powermanagement inhibition.
+* "--monitor" {0,1} to disable(enable) udev monitor.
+* "--automount" {0,1} to disable(enable) automount of connected devices.
+* "--loglevel" {0,1,2,3} to change program loglevel.
+
+Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time the program starts. Log levels:
+* 0 means it will log only errors.
+* 1 means it will log warnings too.
+* 2 means it will log info messages too.
+* 3 disables log.
 
 ## Build requirements
 

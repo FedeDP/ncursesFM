@@ -10,7 +10,9 @@ BINDIR = /usr/bin
 CONFDIR = /etc/default
 BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
+COMPLNAME = ncursesfm
 SRCDIR = src/
+COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
 
 ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 
@@ -67,11 +69,20 @@ clean:
 	cd $(SRCDIR); $(RM) *.o
 
 install:
+# 	install executable file
 	$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
 	$(INSTALL_PROGRAM) $(BINNAME) "$(DESTDIR)$(BINDIR)"
+# 	install conf file
 	$(INSTALL_DIR) "$(DESTDIR)$(CONFDIR)"
 	$(INSTALL_DATA) $(CONFNAME) "$(DESTDIR)$(CONFDIR)"
+# 	install bash autocompletion script
+	$(INSTALL_DIR) "$(DESTDIR)$(COMPLDIR)"
+	$(INSTALL_DATA) $(COMPLNAME) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
 
 uninstall:
+# 	remove executable file
 	$(RM) "$(DESTDIR)$(BINDIR)/$(BINNAME)"
+# 	remove conf file
 	$(RM) "$(DESTDIR)$(CONFDIR)/$(CONFNAME)"
+# 	remove bash autocompletion script
+	$(RM) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"

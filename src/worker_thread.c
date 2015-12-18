@@ -24,6 +24,7 @@ static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void)) {
     } else {
         if (!(h = malloc(sizeof(struct thread_list)))) {
             quit = MEM_ERR_QUIT;
+            ERROR("could not malloc. Leaving.");
             return NULL;
         }
         num_of_jobs++;
@@ -62,6 +63,7 @@ void init_thread(int type, int (* const f)(void)) {
     }
     if (num_of_jobs > 1) {
         print_info(thread_running, INFO_LINE);
+        INFO("job added to job's queue.");
     } else {
 #ifdef SYSTEMD_PRESENT
         if (config.inhibit) {
@@ -70,6 +72,7 @@ void init_thread(int type, int (* const f)(void)) {
 #endif
         thread_m.str = "";
         thread_m.line = INFO_LINE;
+        INFO("starting a job.");
         pthread_create(&worker_th, NULL, execute_thread, NULL);
     }
 }
@@ -118,9 +121,11 @@ static void *execute_thread(void *x) {
         free_running_h();
         return execute_thread(NULL);
     }
+    INFO("ended all queued jobs.");
     num_of_jobs = 0;
 #ifdef SYSTEMD_PRESENT
     if (config.inhibit) {
+        INFO("power management functions inhibition stopped.");
         close(inhibit_fd);
     }
 #endif
@@ -180,6 +185,7 @@ file_list *select_file(file_list *h, const char *str) {
     } else {
         if (!(h = malloc(sizeof(struct list)))) {
             quit = MEM_ERR_QUIT;
+            ERROR("could not malloc. Leaving.");
             return NULL;
         }
         strcpy(h->name, str);
@@ -199,9 +205,13 @@ static void free_thread_job_list(thread_job_list *h) {
 }
 
 static void sig_handler(int signum) {
+    INFO("received SIGUSR1 signal.");
+    INFO("freeing job's list...");
     free_thread_job_list(thread_h);
+    INFO("freed.");
     #ifdef SYSTEMD_PRESENT
     if (config.inhibit) {
+        INFO("power management functions inhibition stopped.");
         close(inhibit_fd);
     }
     #endif

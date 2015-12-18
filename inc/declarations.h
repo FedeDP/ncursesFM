@@ -1,6 +1,6 @@
 #include <dirent.h>
-#include <pthread.h>
 #include <errno.h>
+#include <pthread.h>
 
 #define MAX_TABS 2
 #define MAX_NUMBER_OF_FOUND 100
@@ -53,6 +53,7 @@ struct conf {
 #ifdef LIBUDEV_PRESENT
     int monitor;
 #endif
+    int loglevel;
 };
 
 /*

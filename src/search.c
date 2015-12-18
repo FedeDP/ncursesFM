@@ -84,7 +84,9 @@ static int search_inside_archive(const char *path) {
 }
 
 static void *search_thread(void *x) {
+    INFO("starting recursive search...");
     nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
+    INFO("ended recursive search");
     if ((sv.found_cont == MAX_NUMBER_OF_FOUND) || (sv.found_cont == 0)) {
         sv.searching = 0;
         if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
