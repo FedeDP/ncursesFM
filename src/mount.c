@@ -129,9 +129,9 @@ void start_udev(void) {
         ERROR("could not create udev.");
         return;
     }
-    INFO("started device monitor th.");
     enumerate_block_devices();
     if (!quit && config.monitor) {
+        INFO("started device monitor th.");
         pthread_create(&monitor_th, NULL, device_monitor, NULL);
     } else {
         udev_unref(udev);
@@ -171,12 +171,10 @@ static void enumerate_block_devices(void) {
         dev = udev_device_new_from_syspath(udev, path);
         const char *name = udev_device_get_devnode(dev);
         add_device(dev, name);
+        udev_device_unref(dev);
         if (quit) {
-            udev_device_unref(dev);
-            udev_unref(udev);
             break;
         }
-        udev_device_unref(dev);
     }
     udev_enumerate_unref(enumerate);
 }
@@ -244,6 +242,11 @@ void leave_device_mode(void) {
     change_dir(ps[active].my_cwd);
 }
 
+/*
+ * http://www.linuxprogrammingblog.com/code-examples/using-pselect-to-avoid-a-signal-race
+ * thanks daper for the perfect pselect example + thanks udev crew for udev monitor example:
+ * http://www.signal11.us/oss/udev/udev_example.c
+ */
 static void *device_monitor(void *x) {
     struct udev_device *dev;
     int fd, ret;
@@ -291,12 +294,8 @@ static void *device_monitor(void *x) {
                 } else if (strcmp(udev_device_get_action(dev), "remove") == 0) {
                     remove_device(name);
                 }
-                if (quit) {
-                    udev_device_unref(dev);
-                    break;
-                }
                 udev_device_unref(dev);
-                if (device_mode) {
+                if (!quit && device_mode) {
                     update_devices(number_of_devices, my_devices);
                 }
             }
@@ -318,43 +317,36 @@ static void sig_handler(int signum) {
 
 static void add_device(struct udev_device *dev, const char *name) {
     long size;
-    char s[20], next_name[10];
-    struct udev_device *usb_parent, *scsi_parent, *next_dev;
-
-    // if there's eg: sda1, do not print sda.
-    if (udev_device_get_sysnum(dev) == 0) {
-        sprintf(next_name, "%s1", strrchr(name, '/') + 1);
-        next_dev = udev_device_new_from_subsystem_sysname(udev, "block", next_name);
-        if (next_dev) {
-            udev_device_unref(next_dev);
-            return;
-        }
-        udev_device_unref(next_dev);
-    }
-    if (!(my_devices = realloc(my_devices, sizeof(*(my_devices)) * (number_of_devices + 1)))) {
-        quit = MEM_ERR_QUIT;
-        ERROR("could not malloc. Leaving monitor th.");
+    char s[20];
+    struct udev_device *usb_parent, *scsi_parent;
+    
+    /* if there's eg: sda1, do not print sda + do not list cd/dvd players */
+    if (!udev_device_get_property_value(dev, "ID_FS_TYPE")) {
         return;
     }
-    size = strtol(udev_device_get_sysattr_value(dev, "size"), NULL, 10);
-    size = (size / (long) 2) * 1024;
-    change_unit((float)size, s);
     usb_parent = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
-    scsi_parent = udev_device_get_parent_with_subsystem_devtype(dev, "scsi", NULL);
-    if (usb_parent) {
-        sprintf(my_devices[number_of_devices], "%s, %s %s, Size: %s, Mounted: %d", name,
-                udev_device_get_sysattr_value(usb_parent,"manufacturer"),
-                udev_device_get_sysattr_value(usb_parent,"product"),
-                s, is_mounted(name));
-    } else if (scsi_parent) {
-        sprintf(my_devices[number_of_devices], "%s, %s, Size: %s, Mounted: %d", name,
-                udev_device_get_sysattr_value(scsi_parent, "model"),
-                s, is_mounted(name));
-    } else {
-        sprintf(my_devices[number_of_devices], "%s, Size: %s, Mounted: %d", name, s, is_mounted(name));
+    scsi_parent = udev_device_get_parent_with_subsystem_devtype(dev, "scsi", "scsi_device");
+    if (usb_parent || scsi_parent) {
+        if (!(my_devices = realloc(my_devices, sizeof(*(my_devices)) * (number_of_devices + 1)))) {
+            quit = MEM_ERR_QUIT;
+            ERROR("could not malloc. Leaving monitor th.");
+        } else {
+            /* calculates current device size */
+            size = strtol(udev_device_get_sysattr_value(dev, "size"), NULL, 10);
+            size = (size / (long) 2) * 1024;
+            change_unit((float)size, s);
+            if (usb_parent) {
+                sprintf(my_devices[number_of_devices], "%s, %s %s, Size: %s, Mounted: %d", name,
+                    udev_device_get_sysattr_value(usb_parent,"manufacturer"),
+                    udev_device_get_sysattr_value(usb_parent,"product"), s, is_mounted(name));
+            } else {
+                sprintf(my_devices[number_of_devices], "%s, %s, Size: %s, Mounted: %d", name,
+                    udev_device_get_sysattr_value(scsi_parent, "model"), s, is_mounted(name));
+            }
+            number_of_devices++;
+            INFO("added device.");
+        }
     }
-    number_of_devices++;
-    INFO("added device.");
 }
 
 static void remove_device(const char *name) {
