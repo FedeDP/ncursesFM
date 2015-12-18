@@ -9,13 +9,13 @@ It can be built with a very small set of dependencies, as i tried to make as man
 **Press 'l' while in program to view a detailed helper message**
 
 * Every feature you would expect by a basic FM.
+* Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
 * '.' to change files/dirs sorting: alphabetically (default), by size or by last modified.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
 Otherwise, it will use $editor (config file defined) var. It fallbacks to environment $EDITOR if none is set.
 * Stats support (permissions and sizes).
-* Terminal resize support.
 * Search support: it will search your string in current directory tree. It can search your string inside archives too.
 * Basic print support through libcups.
 * shasum support (both printing file shasum/checking a given one), if built with openssl support.
@@ -55,8 +55,8 @@ NcursesFM ships an autocompletion script for cmdline options. It supports follow
 
 Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time ncursesFM starts. Log levels:
 * 0 : log errors only.
-* 1 : log warnings too.
-* 2 : log info messages too.
+* 1 : log warnings and errors.
+* 2 : log info messages, warnings and errors.
 * 3 : log disabled.
 
 ## Build requirements
