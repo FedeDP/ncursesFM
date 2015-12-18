@@ -44,7 +44,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 * automount -> whether to enable devices automount. Defaults to 0.
 * loglevel -> to change program loglevel. Defaults to 0.
 
-It supports following command line switches. NcursesFM ships an autocompletion script for these switches.
+NcursesFM ships an autocompletion script for cmdline options. It supports following options:
 * "--editor" /path/to/editor
 * "--starting-dir" /path/to/dir
 * "--starting_helper" {0,1} to disable(enable) helper window show at program start.
@@ -53,11 +53,11 @@ It supports following command line switches. NcursesFM ships an autocompletion s
 * "--automount" {0,1} to disable(enable) automount of connected devices.
 * "--loglevel" {0,1,2,3} to change program loglevel.
 
-Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time the program starts. Log levels:
-* 0 means it will log only errors.
-* 1 means it will log warnings too.
-* 2 means it will log info messages too.
-* 3 disables log.
+Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time ncursesFM starts. Log levels:
+* 0 : log errors only.
+* 1 : log warnings too.
+* 2 : log info messages too.
+* 3 : log disabled.
 
 ## Build requirements
 
@@ -98,6 +98,7 @@ To remove, just move inside the folder and run:
 
     $ make uninstall
 
-make {install/uninstall} require root privileges unless you specify a DESTDIR variable to install/uninstall targets. Be aware that it will disable config file support though.
+make {install/uninstall} require root privileges unless you specify a DESTDIR variable to install/uninstall targets.  
+Be aware that it will disable config file support and bash autocompletion script (you can still source it manually by the way) though.
 
 ![Alt text](ncursesfm.png?raw=true)
