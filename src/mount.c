@@ -10,6 +10,8 @@ static void change_mounted_status(int pos, const char *name);
 static void sig_handler(int signum);
 static void add_device(struct udev_device *dev, const char *name);
 static void remove_device(const char *name);
+static void *safe_realloc(const size_t size);
+static void free_devices(void);
 
 static struct udev *udev;
 struct udev_monitor *mon;
@@ -130,11 +132,15 @@ void start_udev(void) {
         return;
     }
     enumerate_block_devices();
-    if (!quit && config.monitor) {
-        INFO("started device monitor th.");
-        pthread_create(&monitor_th, NULL, device_monitor, NULL);
+    if (!quit) {
+        if (config.monitor) {
+            INFO("started device monitor th.");
+            pthread_create(&monitor_th, NULL, device_monitor, NULL);
+        } else {
+            udev_unref(udev);
+        }
     } else {
-        udev_unref(udev);
+        free_devices();
     }
 }
 
@@ -301,13 +307,8 @@ static void *device_monitor(void *x) {
             }
         }
     }
-    INFO("freeing resources...");
     udev_monitor_unref(mon);
-    udev_unref(udev);
-    if (my_devices) {
-        free(my_devices);
-    }
-    INFO("freed.");
+    free_devices();
     pthread_exit(NULL);
 }
 
@@ -327,10 +328,8 @@ static void add_device(struct udev_device *dev, const char *name) {
     usb_parent = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
     scsi_parent = udev_device_get_parent_with_subsystem_devtype(dev, "scsi", "scsi_device");
     if (usb_parent || scsi_parent) {
-        if (!(my_devices = realloc(my_devices, sizeof(*(my_devices)) * (number_of_devices + 1)))) {
-            quit = MEM_ERR_QUIT;
-            ERROR("could not malloc. Leaving monitor th.");
-        } else {
+        my_devices = safe_realloc(sizeof(*(my_devices)) * (number_of_devices + 1));
+        if (!quit) {
             /* calculates current device size */
             size = strtol(udev_device_get_sysattr_value(dev, "size"), NULL, 10);
             size = (size / (long) 2) * 1024;
@@ -357,10 +356,8 @@ static void remove_device(const char *name) {
                 strcpy(my_devices[i], my_devices[i + 1]);
                 i++;
             }
-            if (!(my_devices = realloc(my_devices, sizeof(*(my_devices)) * (number_of_devices - 1)))) {
-                quit = MEM_ERR_QUIT;
-                ERROR("could not realloc devices. Leaving monitor th.");
-            } else {
+            my_devices = safe_realloc(sizeof(*(my_devices)) * (number_of_devices - 1));
+            if (!quit) {
                 number_of_devices--;
                 print_info("Device removed.", INFO_LINE);
                 INFO("removed device.");
@@ -369,4 +366,25 @@ static void remove_device(const char *name) {
         }
     }
 }
+
+static void *safe_realloc(const size_t size) {
+    void *tmp = realloc(my_devices, size);
+    
+    if (!tmp) {
+        quit = MEM_ERR_QUIT;
+        ERROR("could not realloc. Leaving monitor th.");
+        return my_devices;
+    }
+    return tmp;
+}
+
+static void free_devices(void) {
+    INFO("freeing resources...");
+    udev_unref(udev);
+    if (my_devices) {
+        free(my_devices);
+    }
+    INFO("freed.");
+}
+
 #endif
