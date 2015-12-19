@@ -39,9 +39,9 @@
  * Config settings struct
  */
 struct conf {
-    char editor[PATH_MAX];
+    char editor[PATH_MAX + 1];
     int show_hidden;
-    char starting_dir[PATH_MAX];
+    char starting_dir[PATH_MAX + 1];
     int second_tab_starting_dir;
 #ifdef SYSTEMD_PRESENT
     int inhibit;
@@ -70,9 +70,9 @@ typedef struct list {
 struct vars {
     int curr_pos;
     char my_cwd[PATH_MAX];
-    char (*nl)[PATH_MAX];
+    char (*nl)[PATH_MAX + 1];
     int number_of_files;
-    char title[PATH_MAX];
+    char title[PATH_MAX + 1];
 };
 
 /*
@@ -80,7 +80,7 @@ struct vars {
  */
 struct search_vars {
     char searched_string[20];
-    char found_searched[MAX_NUMBER_OF_FOUND][PATH_MAX];
+    char found_searched[MAX_NUMBER_OF_FOUND][PATH_MAX + 1];
     int searching;
     int search_archive;
     int found_cont;
@@ -92,8 +92,8 @@ struct search_vars {
 typedef struct thread_list {
     file_list *selected_files;
     int (*f)(void);
-    char full_path[PATH_MAX];
-    char filename[PATH_MAX];
+    char full_path[PATH_MAX + 1];
+    char filename[PATH_MAX + 1];
     struct thread_list *next;
     int num;
     int type;
@@ -112,5 +112,5 @@ pthread_t install_th;
 #ifdef LIBUDEV_PRESENT
 pthread_t monitor_th;
 #endif
-pthread_t worker_th;
-char (*str_ptr[MAX_TABS])[PATH_MAX]; // pointer to abstract which list of strings i have to print in list_everything()
+pthread_t worker_th, search_th;
+char (*str_ptr[MAX_TABS])[PATH_MAX + 1]; // pointer to abstract which list of strings i have to print in list_everything()

@@ -5,7 +5,7 @@ static pthread_mutex_t log_mutex;
 
 void open_log(void) {
     const char *log_name = "ncursesfm.log";
-    char log_path[PATH_MAX];
+    char log_path[PATH_MAX + 1];
     
     if (config.loglevel != NO_LOG) {
         sprintf(log_path, "%s/.%s", getpwuid(getuid())->pw_dir, log_name);

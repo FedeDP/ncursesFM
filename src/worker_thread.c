@@ -8,6 +8,7 @@ static void check_refresh(void);
 static int refresh_needed(const char *dir);
 static void free_thread_job_list(thread_job_list *h);
 static void sig_handler(int signum);
+static void stop_inhibition(void);
 
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
 static struct thread_mesg thread_m;
@@ -81,7 +82,8 @@ void init_thread(int type, int (* const f)(void)) {
  * Fixes some needed current_th variables.
  */
 static void init_thread_helper(void) {
-    char name[NAME_MAX];
+    char name[NAME_MAX + 1];
+    int num = 1, len;
 
     if (current_th->type == EXTRACTOR_TH) {
         strcpy(current_th->filename, ps[active].nl[ps[active].curr_pos]);
@@ -93,7 +95,14 @@ static void init_thread_helper(void) {
             if (!strlen(name)) {
                 strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
             }
-            sprintf(current_th->filename, "%s/%s.tgz", current_th->full_path, name);
+            /* avoid overwriting a compressed file in path if it has the same name of the archive being created there */
+            len = strlen(name);
+            strcat(name, ".tgz");
+            while (access(name, F_OK) != -1) {
+                sprintf(name + len, "%d.tgz", num);
+                num++;
+            }
+            sprintf(current_th->filename, "%s/%s", current_th->full_path, name);
         }
         erase_selected_highlight();
     }
@@ -113,6 +122,7 @@ static void *execute_thread(void *x) {
         if (thread_h->f() == -1) {
             thread_m.str = thread_fail_str[thread_h->type];
             thread_m.line = ERR_LINE;
+            print_info("", INFO_LINE);
         } else {
             thread_m.str = thread_str[thread_h->type];
             thread_m.line = INFO_LINE;
@@ -123,12 +133,7 @@ static void *execute_thread(void *x) {
     }
     INFO("ended all queued jobs.");
     num_of_jobs = 0;
-#ifdef SYSTEMD_PRESENT
-    if (config.inhibit) {
-        INFO("power management functions inhibition stopped.");
-        close(inhibit_fd);
-    }
-#endif
+    stop_inhibition();
     pthread_detach(pthread_self()); // to avoid stupid valgrind errors
     pthread_exit(NULL);
 }
@@ -209,11 +214,15 @@ static void sig_handler(int signum) {
     INFO("freeing job's list...");
     free_thread_job_list(thread_h);
     INFO("freed.");
+    stop_inhibition();
+    pthread_exit(NULL);
+}
+
+static void stop_inhibition(void) {
     #ifdef SYSTEMD_PRESENT
     if (config.inhibit) {
         INFO("power management functions inhibition stopped.");
         close(inhibit_fd);
     }
     #endif
-    pthread_exit(NULL);
 }

@@ -9,6 +9,7 @@ static void quit_monitor_th(void);
 #ifdef SYSTEMD_PRESENT
 static void quit_install_th(void);
 #endif
+static void quit_search_th(void);
 
 int program_quit(void) {
     free_everything();
@@ -39,7 +40,7 @@ static void quit_thread_func(void) {
 #ifdef LIBUDEV_PRESENT
     quit_monitor_th();
 #endif
-
+    quit_search_th();
 }
 
 static void quit_worker_th(void) {
@@ -79,6 +80,14 @@ static void quit_install_th(void) {
     }
 }
 #endif
+
+static void quit_search_th(void) {
+    if (sv.searching == 1) {
+        INFO("waiting for search thread to leave...");
+        pthread_join(search_th, NULL);
+        INFO("search th left.");
+    }
+}
 
 void free_copied_list(file_list *h) {
     if (h->next)

@@ -17,7 +17,7 @@ static const char *iso_ext[] = {".iso", ".nrg", ".bin", ".mdf", ".img"};
 static const char *pkg_ext[] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
 static struct timeval timer;
-static char fast_browse_str[NAME_MAX];
+static char fast_browse_str[NAME_MAX + 1];
 static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
     new_file, new_dir, rename_file_folders
 };
@@ -76,6 +76,7 @@ void manage_file(const char *str, float size) {
     if (is_ext(str, pkg_ext, NUM(pkg_ext))) {
         print_info(package_warn, INFO_LINE);
         ask_user(pkg_quest, &c, 1, 'n');
+        print_info("", INFO_LINE);
         if (c == 'y') {
             pthread_create(&install_th, NULL, install_package, (void *)str);
         }
@@ -158,7 +159,7 @@ static void open_file(const char *str, float size) {
  * Notyfies user.
  */
 void fast_file_operations(const int index) {
-    char new_name[NAME_MAX];
+    char new_name[NAME_MAX + 1];
     const char *str = short_fail_msg[index];
     int line = ERR_LINE;
 
@@ -242,7 +243,7 @@ void manage_space_press(const char *str) {
  * from where it was copied. If it is the case, it does not copy it.
  */
 int paste_file(void) {
-    char copied_file_dir[PATH_MAX], *str;
+    char copied_file_dir[PATH_MAX + 1], *str;
     int len;
 
     for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
@@ -264,7 +265,7 @@ int paste_file(void) {
  * Else, the function has to copy it and rm copied file.
  */
 int move_file(void) {
-    char pasted_file[PATH_MAX], copied_file_dir[PATH_MAX], *str;
+    char pasted_file[PATH_MAX + 1], copied_file_dir[PATH_MAX + 1], *str;
     struct stat file_stat_copied, file_stat_pasted;
     int len;
 
@@ -311,7 +312,7 @@ static void cpr(file_list *tmp) {
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     int buff[BUFF_SIZE];
     int len, fd_to, fd_from;
-    char pasted_file[PATH_MAX];
+    char pasted_file[PATH_MAX + 1];
 
     sprintf(pasted_file, "%s%s", thread_h->full_path, path + distance_from_root);
     if (typeflag == FTW_D) {

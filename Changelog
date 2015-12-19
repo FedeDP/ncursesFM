@@ -1,3 +1,12 @@
+12 / 20 / 2015
+* fixed a bug in extracting/archiving when there already was a file with same name in current path (do not overwrite!)
+* safer: using a safer version of realloc.
+* safer: using arrays of [PATH_MAX + 1] or [NAME_MAX + 1] now (always enough space for null terminator char)
+* fixed a small issue in search when MAX_NUMBER_OF_FOUND was hit inside search_inside_archive() function
+* fixed a small memleak when leaving ncursesfm while a search was active
+* some print_info() related fixes
+* fixed a bug in shasum call from within main()
+
 12 / 18 / 2015
 * fixed a small bug in ask_user
 * added a (beautiful :D) logger

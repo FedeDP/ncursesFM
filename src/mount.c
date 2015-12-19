@@ -16,7 +16,7 @@ static void free_devices(void);
 static struct udev *udev;
 struct udev_monitor *mon;
 static int number_of_devices;
-char (*my_devices)[PATH_MAX];
+char (*my_devices)[PATH_MAX + 1];
 #endif
 
 
@@ -29,8 +29,8 @@ void mount_fs(const char *str, const char *method, int mount) {
     sd_bus_message *mess = NULL;
     sd_bus *mount_bus = NULL;
     const char *path;
-    char obj_path[PATH_MAX] = "/org/freedesktop/UDisks2/block_devices/";
-    char success[PATH_MAX];
+    char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
+    char success[PATH_MAX + 1];
     int r;
 
     r = sd_bus_open_system(&mount_bus);
@@ -211,7 +211,7 @@ void manage_enter_device(void) {
     int pos = ps[active].curr_pos;
     int len = strlen(my_devices[pos]);
     char *ptr = strchr(my_devices[pos], ',');
-    char name[PATH_MAX], action[10];
+    char name[PATH_MAX + 1], action[10];
 
     mount = my_devices[pos][len - 1] - '0';
     strcpy(name, my_devices[pos]);
@@ -328,7 +328,7 @@ static void add_device(struct udev_device *dev, const char *name) {
     usb_parent = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
     scsi_parent = udev_device_get_parent_with_subsystem_devtype(dev, "scsi", "scsi_device");
     if (usb_parent || scsi_parent) {
-        my_devices = safe_realloc(sizeof(*(my_devices)) * (number_of_devices + 1));
+        my_devices = safe_realloc(PATH_MAX * (number_of_devices + 1));
         if (!quit) {
             /* calculates current device size */
             size = strtol(udev_device_get_sysattr_value(dev, "size"), NULL, 10);
@@ -356,7 +356,7 @@ static void remove_device(const char *name) {
                 strcpy(my_devices[i], my_devices[i + 1]);
                 i++;
             }
-            my_devices = safe_realloc(sizeof(*(my_devices)) * (number_of_devices - 1));
+            my_devices = safe_realloc(PATH_MAX * (number_of_devices - 1));
             if (!quit) {
                 number_of_devices--;
                 print_info("Device removed.", INFO_LINE);

@@ -116,7 +116,6 @@ void screen_end(void) {
  */
 static void generate_list(int win) {
     struct dirent **files;
-    char str[PATH_MAX] = {0};
 
     ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func[sorting_index]);
     free(ps[win].nl);
@@ -125,12 +124,13 @@ static void generate_list(int win) {
         ERROR("could not malloc. Leaving.");
     }
     str_ptr[win] = ps[win].nl;
-    if (strcmp(ps[win].my_cwd, "/") != 0) {
-        strcpy(str, ps[win].my_cwd);
-    }
     for (int i = 0; i < ps[win].number_of_files; i++) {
         if (!quit) {
-            sprintf(ps[win].nl[i], "%s/%s", str, files[i]->d_name);
+            if (strcmp(ps[win].my_cwd, "/") != 0) {
+                sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
+            } else {
+                sprintf(ps[win].nl[i], "/%s", files[i]->d_name);
+            }
         }
         free(files[i]);
     }
@@ -521,25 +521,32 @@ static void erase_stat(void) {
  */
 void print_info(const char *str, int i) {
     char st[100] = {0};
-    int starting_col = 1 + strlen(info_win_str[i]);
+    int len = 1 + strlen(info_win_str[i]);
 
     pthread_mutex_lock(&info_lock);
-    wmove(info_win, i, starting_col);
+    wmove(info_win, i, len);
     wclrtoeol(info_win);
-    if (thread_h) {
-        if (selected) {
-            st[0] = '/';
+    if (i == INFO_LINE) {
+        if (thread_h) {
+            if (selected) {
+                st[0] = '/';
+            }
+            sprintf(st + strlen(st), "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type]);
+            mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
+            len += strlen(st);
         }
-        sprintf(st + strlen(st), "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type]);
-        mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
-    }
-    if (selected) {
-        mvwprintw(info_win, INFO_LINE, COLS - strlen(st) - strlen(selected_mess), selected_mess);
-    }
-    if (sv.searching) {
+        if (selected) {
+            mvwprintw(info_win, INFO_LINE, COLS - strlen(st) - strlen(selected_mess), selected_mess);
+            len += strlen(selected_mess);
+        }
+    } else if ((i == ERR_LINE) && (sv.searching)) {
         mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
+        len += strlen(searching_mess[sv.searching - 1]);
     }
-    mvwprintw(info_win, i, starting_col, "%.*s", COLS - starting_col, str);
+    mvwprintw(info_win, i, 1 + strlen(info_win_str[i]), "%.*s", COLS - len, str);
+    if (COLS - len < strlen(str)) {
+        mvwprintw(info_win, i, COLS - len + strlen(info_win_str[i]) + 1 - 3, "...");
+    }
     wrefresh(info_win);
     pthread_mutex_unlock(&info_lock);
 }
@@ -613,7 +620,7 @@ void tab_refresh(int win) {
 }
 
 #ifdef LIBUDEV_PRESENT
-void update_devices(int num,  char (*str)[PATH_MAX]) {
+void update_devices(int num,  char (*str)[PATH_MAX + 1]) {
     pthread_mutex_lock(&fm_lock[device_mode - 1]);
     /* Do not reset win if a device has been added. Just print next line */
     int check = num - ps[device_mode - 1].number_of_files;

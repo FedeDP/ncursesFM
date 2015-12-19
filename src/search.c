@@ -5,8 +5,6 @@ static int search_inside_archive(const char *path);
 static void *search_thread(void *x);
 
 void search(void) {
-    pthread_t search_th;
-    pthread_attr_t tattr;
     char c;
 
     ask_user(search_insert_name, sv.searched_string, 20, 0);
@@ -22,14 +20,11 @@ void search(void) {
     }
     sv.searching = 1;
     print_info("", SEARCH_LINE);
-    pthread_attr_init(&tattr);
-    pthread_attr_setdetachstate(&tattr,PTHREAD_CREATE_DETACHED);
-    pthread_create(&search_th, &tattr, search_thread, NULL);
-    pthread_attr_destroy(&tattr);
+    pthread_create(&search_th, NULL, search_thread, NULL);
 }
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    char fixed_str[NAME_MAX];
+    char fixed_str[NAME_MAX + 1];
     int len, ret = 0;
 
     if (ftwbuf->level == 0) {
@@ -50,19 +45,22 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
             ret = 1;
         }
     }
+    if (quit) {
+        ret = 1;
+    }
     return ret;
 }
 
 static int search_inside_archive(const char *path) {
-    char str[PATH_MAX], *ptr;
+    char str[PATH_MAX + 1], *ptr;
     struct archive *a = archive_read_new();
     struct archive_entry *entry;
-    int len;
+    int len, ret = 0;
 
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
     if ((a) && (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK)) {
-        while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
+        while ((!quit) && (archive_read_next_header(a, &entry) == ARCHIVE_OK)) {
             strcpy(str, archive_entry_pathname(entry));
             len = strlen(str);
             if (str[len - 1] == '/') {  // check if we're on a dir
@@ -76,17 +74,27 @@ static int search_inside_archive(const char *path) {
             if (strncmp(ptr, sv.searched_string, len) == 0) {
                 sprintf(sv.found_searched[sv.found_cont], "%s/%s", path, archive_entry_pathname(entry));
                 sv.found_cont++;
+                if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
+                    ret = 1;
+                    break;
+                }
             }
         }
     }
     archive_read_free(a);
-    return 0;
+    if (quit) {
+        ret = 1;
+    }
+    return ret;
 }
 
 static void *search_thread(void *x) {
     INFO("starting recursive search...");
     nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
     INFO("ended recursive search");
+    if (quit) {
+        pthread_exit(NULL);
+    }
     if ((sv.found_cont == MAX_NUMBER_OF_FOUND) || (sv.found_cont == 0)) {
         sv.searching = 0;
         if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
@@ -128,7 +136,7 @@ void leave_search_mode(const char *str) {
  * Then returns the index where the real filename begins (to extract the directory path).
  */
 int search_enter_press(const char *str) {
-    char arch_str[PATH_MAX] = {0};
+    char arch_str[PATH_MAX + 1] = {0};
     const char *tmp;
     int len;
 

@@ -14,7 +14,7 @@ static struct archive *archive;
 int create_archive(void) {
     archive = archive_write_new();
     if (((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) ||
-        (archive_write_open_filename(archive, thread_h->filename) == ARCHIVE_FATAL)) {
+        (archive_write_open_filename(archive, thread_h->filename) != ARCHIVE_OK)) {
         archive_write_free(archive);
         archive = NULL;
         return -1;
@@ -46,7 +46,7 @@ static void archiver_func(void) {
 }
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    char buff[BUFF_SIZE], entry_name[PATH_MAX];
+    char buff[BUFF_SIZE], entry_name[PATH_MAX + 1];
     int len, fd;
     struct archive_entry *entry = archive_entry_new();
 
@@ -90,10 +90,11 @@ int try_extractor(void) {
 static void extractor_thread(struct archive *a) {
     struct archive *ext;
     struct archive_entry *entry;
-    int len;
+    int len, num = 0;
     int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
-    char buff[BUFF_SIZE], current_dir[PATH_MAX], fullpathname[PATH_MAX];
+    char buff[BUFF_SIZE], current_dir[PATH_MAX + 1], fullpathname[PATH_MAX + 1];
     char *tmp;
+    char name[PATH_MAX + 1], tmp_name[PATH_MAX + 1];
 
     strcpy(current_dir, thread_h->filename);
     tmp = strrchr(current_dir, '/');
@@ -103,7 +104,22 @@ static void extractor_thread(struct archive *a) {
     archive_write_disk_set_options(ext, flags);
     archive_write_disk_set_standard_lookup(ext);
     while (archive_read_next_header(a, &entry) != ARCHIVE_EOF) {
-        sprintf(fullpathname, "%s/%s", current_dir, archive_entry_pathname(entry));
+        strcpy(name, archive_entry_pathname(entry));
+        /* only perform overwrite check if on the first entry, or if num != 1 */
+        if ((len == strlen(current_dir)) || (num != 1)) {
+            /* avoid overwriting a file/dir in path if it has the same name of a file being extracted there */
+            strcpy(tmp_name, strchr(name, '/'));
+            len = strlen(name) - strlen(tmp_name);
+            if (num == 0) {
+                while (access(name, F_OK) != -1) {
+                    num++;
+                    sprintf(name + len, "%d%s", num, tmp_name);
+                }
+            } else {
+                sprintf(name + len, "%d%s", num, tmp_name);
+            }
+        }
+        sprintf(fullpathname, "%s/%s", current_dir, name);
         archive_entry_set_pathname(entry, fullpathname);
         archive_write_header(ext, entry);
         len = archive_read_data(a, buff, sizeof(buff));

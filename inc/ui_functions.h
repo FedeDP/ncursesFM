@@ -34,7 +34,7 @@ void change_unit(float size, char *str);
 int win_getch(void);
 void tab_refresh(int win);
 #ifdef LIBUDEV_PRESENT
-void update_devices(int num,  char (*str)[PATH_MAX]);
+void update_devices(int num,  char (*str)[PATH_MAX + 1]);
 #endif
 void print_info(const char *str, int i);
 void ask_user(const char *str, char *input, int d, char c);

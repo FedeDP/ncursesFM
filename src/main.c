@@ -353,7 +353,9 @@ static void main_loop(void) {
             break;
 #ifdef OPENSSL_PRESENT
         case 'u': // u to check current file's shasum
-            shasum_func(ps[active].nl[ps[active].curr_pos]);
+            if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
+                shasum_func(ps[active].nl[ps[active].curr_pos]);
+            }
             break;
 #endif
         case 'q': /* q to exit/leave search mode/leave device_mode */
