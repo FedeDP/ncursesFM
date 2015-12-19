@@ -45,10 +45,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
             ret = 1;
         }
     }
-    if (quit) {
-        ret = 1;
-    }
-    return ret;
+    return quit ? 1 : ret;
 }
 
 static int search_inside_archive(const char *path) {
@@ -82,10 +79,7 @@ static int search_inside_archive(const char *path) {
         }
     }
     archive_read_free(a);
-    if (quit) {
-        ret = 1;
-    }
-    return ret;
+    return quit ? 1 : ret;
 }
 
 static void *search_thread(void *x) {
