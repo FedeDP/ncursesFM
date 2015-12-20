@@ -1,6 +1,6 @@
 # ncursesFM
 Ncurses File Manager for linux.  
-It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes), simple and easy to use.  
+It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.  
 Being simple doesn't imply being useless; indeed it is a full featured fm.  
 It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).
 

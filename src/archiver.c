@@ -2,7 +2,7 @@
 
 static void archiver_func(void);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-static void extractor_thread(struct archive *a);
+static void extractor_thread(struct archive *a, const char *current_dir);
 
 static struct archive *archive;
 
@@ -69,12 +69,17 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 
 int try_extractor(void) {
     struct archive *a;
+    char current_dir[PATH_MAX + 1];
 
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
     if ((a) && (archive_read_open_filename(a, thread_h->filename, BUFF_SIZE) == ARCHIVE_OK)) {
-        extractor_thread(a);
+        strcpy(current_dir, thread_h->filename);
+        char *tmp = strrchr(current_dir, '/');
+        int len = strlen(current_dir) - strlen(tmp);
+        current_dir[len] = '\0';
+        extractor_thread(a, current_dir);
         return 0;
     }
     archive_read_free(a);
@@ -87,37 +92,30 @@ int try_extractor(void) {
  * While there are headers inside the archive being read, it goes on copying data from
  * the read archive to the disk.
  */
-static void extractor_thread(struct archive *a) {
+static void extractor_thread(struct archive *a, const char *current_dir) {
     struct archive *ext;
     struct archive_entry *entry;
-    int len, num = 0;
+    int len, num;
     int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
-    char buff[BUFF_SIZE], current_dir[PATH_MAX + 1], fullpathname[PATH_MAX + 1];
-    char *tmp;
+    char buff[BUFF_SIZE], fullpathname[PATH_MAX + 1];
     char name[PATH_MAX + 1], tmp_name[PATH_MAX + 1];
 
-    strcpy(current_dir, thread_h->filename);
-    tmp = strrchr(current_dir, '/');
-    len = strlen(current_dir) - strlen(tmp);
-    current_dir[len] = '\0';
     ext = archive_write_disk_new();
     archive_write_disk_set_options(ext, flags);
     archive_write_disk_set_standard_lookup(ext);
     while (archive_read_next_header(a, &entry) != ARCHIVE_EOF) {
         strcpy(name, archive_entry_pathname(entry));
-        /* only perform overwrite check if on the first entry, or if num != 1 */
-        if ((len == strlen(current_dir)) || (num != 1)) {
-            /* avoid overwriting a file/dir in path if it has the same name of a file being extracted there */
+        num = 0;
+        /* avoid overwriting a file/dir in path if it has the same name of a file being extracted there */
+        if (strchr(name, '/')) {
             strcpy(tmp_name, strchr(name, '/'));
-            len = strlen(name) - strlen(tmp_name);
-            if (num == 0) {
-                while (access(name, F_OK) != -1) {
-                    num++;
-                    sprintf(name + len, "%d%s", num, tmp_name);
-                }
-            } else {
-                sprintf(name + len, "%d%s", num, tmp_name);
-            }
+        } else {
+            tmp_name[0] = '\0';
+        }
+        len = strlen(name) - strlen(tmp_name);
+        while (access(name, F_OK) != -1) {
+            num++;
+            sprintf(name + len, "%d%s", num, tmp_name);
         }
         sprintf(fullpathname, "%s/%s", current_dir, name);
         archive_entry_set_pathname(entry, fullpathname);

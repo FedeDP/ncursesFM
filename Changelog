@@ -6,6 +6,7 @@
 * fixed a small memleak when leaving ncursesfm while a search was active
 * some print_info() related fixes
 * fixed a bug in shasum call from within main()
+* fixed another long standing bug in extractor. It now works perfectly fine
 
 12 / 18 / 2015
 * fixed a small bug in ask_user

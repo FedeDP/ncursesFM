@@ -2,6 +2,11 @@
 
 #include "../inc/inhibit.h"
 
+
+/*
+ * Thanks elogind project for some hints to improve my old implementation.
+ * https://github.com/andywingo/elogind/blob/master/src/login/inhibit.c
+ */
 int inhibit_suspend(const char *str) {
     sd_bus *bus;
     sd_bus_message *reply = NULL;

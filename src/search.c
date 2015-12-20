@@ -10,17 +10,17 @@ void search(void) {
     ask_user(search_insert_name, sv.searched_string, 20, 0);
     if (strlen(sv.searched_string) < 5) {
         print_info(searched_string_minimum, ERR_LINE);
-        return;
+    } else {
+        sv.found_cont = 0;
+        sv.search_archive = 0;
+        ask_user(search_archives, &c, 1, 'n');
+        if (c == 'y') {
+            sv.search_archive = 1;
+        }
+        sv.searching = 1;
+        print_info("", SEARCH_LINE);
+        pthread_create(&search_th, NULL, search_thread, NULL);
     }
-    sv.found_cont = 0;
-    sv.search_archive = 0;
-    ask_user(search_archives, &c, 1, 'n');
-    if (c == 'y') {
-        sv.search_archive = 1;
-    }
-    sv.searching = 1;
-    print_info("", SEARCH_LINE);
-    pthread_create(&search_th, NULL, search_thread, NULL);
 }
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
@@ -48,33 +48,32 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     return quit ? 1 : ret;
 }
 
+/*
+ * For each entry in the archive, it checks "entry + len" pointer against searched string.
+ * Len is always the offset of the current dir inside archive, eg: foo.tgz/bar/x, 
+ * while checking x, len will be strlen("bar/")
+ */
 static int search_inside_archive(const char *path) {
-    char str[PATH_MAX + 1], *ptr;
-    struct archive *a = archive_read_new();
+    char *ptr;
+    int len = 0, ret = 0, string_length;
     struct archive_entry *entry;
-    int len, ret = 0;
-
+    struct archive *a = archive_read_new();
+    
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
+    string_length = strlen(sv.searched_string);
     if ((a) && (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK)) {
-        while ((!quit) && (archive_read_next_header(a, &entry) == ARCHIVE_OK)) {
-            strcpy(str, archive_entry_pathname(entry));
-            len = strlen(str);
-            if (str[len - 1] == '/') {  // check if we're on a dir
-                str[len - 1] = '\0';
-            }
-            ptr = str;
-            if (strrchr(str, '/')) {
-                ptr = strrchr(str, '/') + 1;
-            }
-            len = strlen(sv.searched_string);
-            if (strncmp(ptr, sv.searched_string, len) == 0) {
+        while ((!quit) && (!ret) && (archive_read_next_header(a, &entry) == ARCHIVE_OK)) {
+            if (strncmp(archive_entry_pathname(entry) + len, sv.searched_string, string_length) == 0) {
                 sprintf(sv.found_searched[sv.found_cont], "%s/%s", path, archive_entry_pathname(entry));
                 sv.found_cont++;
                 if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
                     ret = 1;
-                    break;
                 }
+            }
+            ptr = strrchr(archive_entry_pathname(entry), '/');
+            if ((ptr) && (strlen(ptr) == 1)) {
+                len = strlen(archive_entry_pathname(entry));
             }
         }
     }
