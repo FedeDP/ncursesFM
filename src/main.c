@@ -73,7 +73,7 @@ static void helper_function(int argc, const char *argv[]) {
 #endif
 
     if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
-        printf(" NcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
+        printf("\n NcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
         printf(" This is free software, and you are welcome to redistribute it under certain conditions;\n");
         printf(" It is GPL licensed. Have a look at COPYING file.\n\n");
@@ -85,11 +85,11 @@ static void helper_function(int argc, const char *argv[]) {
         printf("\t* --monitor {0,1} to switch {off,on} udev monitor. Defaults to 1.\n");
         printf("\t* --automount {0,1} to switch {off,on} automounting of external drives/usb sticks. Defaults to 0.\n");
         printf("\t* --loglevel {0,1,2,3} to change loglevel. Defaults to 0.\n");
-        printf("\t\t* 0 to only log errors.\n\t\t* 1 to log warn and errors.\n");
-        printf("\t\t* 2 to log only info too.\n\t\t* 3 to disable log.\n\n");
+        printf("\t\t* 0 to log only errors.\n\t\t* 1 to log warn messages and errors.\n");
+        printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable log.\n\n");
         printf(" Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
         printf(" Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
-        printf(" Press 'l' while in program to view a more detailed helper message.\n");
+        printf(" Press 'l' while in program to view a more detailed helper message.\n\n");
         exit(EXIT_SUCCESS);
     } else {
 #ifdef LIBCONFIG_PRESENT
