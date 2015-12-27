@@ -18,6 +18,5 @@
 #define ERROR(msg) log_message(__FILE__, __LINE__, __func__, msg, 'E', LOG_ERR)
 
 void open_log(void);
-void log_current_options(void);
 void log_message(const char *filename, int lineno, const char *funcname, const char *log_msg, char type, int log_level);
 void close_log(void);

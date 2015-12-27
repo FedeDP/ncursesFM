@@ -51,9 +51,12 @@ int main(int argc, const char *argv[])
 {
     set_signals();
     helper_function(argc, argv);
-    config_checks();
     open_log();
-    log_current_options();
+#ifdef LIBCONFIG_PRESENT
+    read_config_file();
+#endif
+    parse_cmd(argc, argv);
+    config_checks();
 #ifdef LIBUDEV_PRESENT
     if (config.monitor) {
         start_udev();
@@ -91,11 +94,6 @@ static void helper_function(int argc, const char *argv[]) {
         printf(" Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
         printf(" Press 'l' while in program to view a more detailed helper message.\n\n");
         exit(EXIT_SUCCESS);
-    } else {
-#ifdef LIBCONFIG_PRESENT
-        read_config_file();
-#endif
-        parse_cmd(argc, argv);
     }
 }
 
@@ -157,6 +155,7 @@ static void parse_cmd(int argc, const char *argv[]) {
     }
     if (j != argc) {
         printf("Use '--help' to view helper message.\n");
+        close_log();
         exit(EXIT_FAILURE);
     }
 }
@@ -213,13 +212,13 @@ static void config_checks(void) {
         }
     }
 #if defined LIBUDEV_PRESENT && SYSTEMD_PRESENT
-    if (!config.monitor) {
+    if ((!config.monitor) && (config.automount)) {
         WARN("automount disabled as it is useless without udev monitor enabled.");
-        config.automount = 0;   // monitor must be enabled for automount to work!
+        config.automount = 0;
     }
 #endif
     if ((config.loglevel < LOG_ERR) || (config.loglevel > NO_LOG)) {
-        config.loglevel = 0;
+        config.loglevel = LOG_ERR;
         WARN("wrong loglevel value. Back to default value.");
     }
 }

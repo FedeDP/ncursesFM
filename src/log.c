@@ -3,6 +3,8 @@
 static FILE *log_file;
 static pthread_mutex_t log_mutex;
 
+static void log_current_options(void);
+
 void open_log(void) {
     const char *log_name = "ncursesfm.log";
     char log_path[PATH_MAX + 1];
@@ -12,35 +14,34 @@ void open_log(void) {
         log_file = fopen(log_path, "w");
         if (log_file) {
             pthread_mutex_init(&log_mutex, NULL);
+            log_current_options();
         }
     }
 }
 
-void log_current_options(void) {
+static void log_current_options(void) {
     time_t t;
     struct tm tm;
     
-    if (log_file) {
-        t = time(NULL);
-        tm = *localtime(&t);
-        fprintf(log_file, "%d-%d-%d %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1,
-                tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-        fprintf(log_file, "NcursesFM starting options:\n\n");
-        fprintf(log_file, "* EDITOR: %s\n", config.editor);
-        fprintf(log_file, "* Starting directory: %s\n", config.starting_dir);
-        fprintf(log_file, "* Second tab starting dir: %d\n", config.second_tab_starting_dir);
+    t = time(NULL);
+    tm = *localtime(&t);
+    fprintf(log_file, "%d-%d-%d %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1,
+            tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    fprintf(log_file, "NcursesFM starting options:\n\n");
+    fprintf(log_file, "* EDITOR: %s\n", config.editor);
+    fprintf(log_file, "* Starting directory: %s\n", config.starting_dir);
+    fprintf(log_file, "* Second tab starting dir: %d\n", config.second_tab_starting_dir);
 #ifdef SYSTEMD_PRESENT
-        fprintf(log_file, "* Inhibition: %d\n", config.inhibit);
+    fprintf(log_file, "* Inhibition: %d\n", config.inhibit);
 #ifdef LIBUDEV_PRESENT
-        fprintf(log_file, "* Automount: %d\n", config.automount);
+    fprintf(log_file, "* Automount: %d\n", config.automount);
 #endif
 #endif
-        fprintf(log_file, "* Starting with helper window: %d\n", config.starting_helper);
+    fprintf(log_file, "* Starting with helper window: %d\n", config.starting_helper);
 #ifdef LIBUDEV_PRESENT
-        fprintf(log_file, "* Device monitor: %d\n", config.monitor);
+    fprintf(log_file, "* Device monitor: %d\n", config.monitor);
 #endif
-        fprintf(log_file, "* Log level: %d\n\n", config.loglevel);
-    }
+    fprintf(log_file, "* Log level: %d\n\n", config.loglevel);
 }
 
 void log_message(const char *filename, int lineno, const char *funcname, const char *log_msg, char type, int log_level) {
