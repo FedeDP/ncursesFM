@@ -11,7 +11,11 @@ void open_log(void) {
     
     if (config.loglevel != NO_LOG) {
         sprintf(log_path, "%s/.%s", getpwuid(getuid())->pw_dir, log_name);
-        log_file = fopen(log_path, "w");
+        if (config.persistent_log) {
+            log_file = fopen(log_path, "a+");
+        } else {
+            log_file = fopen(log_path, "w");
+        }
         if (log_file) {
             pthread_mutex_init(&log_mutex, NULL);
             log_current_options();
@@ -25,7 +29,7 @@ static void log_current_options(void) {
     
     t = time(NULL);
     tm = *localtime(&t);
-    fprintf(log_file, "%d-%d-%d %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1,
+    fprintf(log_file, "\n%d-%d-%d %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1,
             tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
     fprintf(log_file, "NcursesFM starting options:\n\n");
     fprintf(log_file, "* EDITOR: %s\n", config.editor);

@@ -54,6 +54,7 @@ struct conf {
     int monitor;
 #endif
     int loglevel;
+    int persistent_log;
 };
 
 /*

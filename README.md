@@ -45,15 +45,17 @@ If built with libconfig support, it reads following variables from /etc/default/
 * monitor -> wheter to enable udev monitor. Defaults to 1.
 * automount -> whether to enable devices automount. Defaults to 0.
 * loglevel -> to change program loglevel. Defaults to 0.
+* persistent_log -> to enable log persistency across program restarts. Defaults to 0.
 
 NcursesFM ships an autocompletion script for cmdline options. It supports following options:
 * "--editor" /path/to/editor
-* "--starting-dir" /path/to/dir
-* "--starting_helper" {0,1} to disable(enable) helper window show at program start.
+* "--starting_dir" /path/to/dir
+* "--helper" {0,1} to disable(enable) helper window show at program start.
 * "--inhibit" {0,1} to disable(enable) powermanagement inhibition.
 * "--monitor" {0,1} to disable(enable) udev monitor.
 * "--automount" {0,1} to disable(enable) automount of connected devices.
 * "--loglevel" {0,1,2,3} to change program loglevel.
+* "--persistent_log" {0,1} -> to disable(enable) log persistency across program restarts.
 
 Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time ncursesFM starts. Log levels:
 * 0 : log errors only.

@@ -51,11 +51,11 @@ int main(int argc, const char *argv[])
 {
     set_signals();
     helper_function(argc, argv);
-    open_log();
 #ifdef LIBCONFIG_PRESENT
     read_config_file();
 #endif
     parse_cmd(argc, argv);
+    open_log();
     config_checks();
 #ifdef LIBUDEV_PRESENT
     if (config.monitor) {
@@ -74,7 +74,6 @@ static void helper_function(int argc, const char *argv[]) {
 #ifdef LIBUDEV_PRESENT
     config.monitor = 1;
 #endif
-
     if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
         printf("\n NcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
@@ -82,14 +81,15 @@ static void helper_function(int argc, const char *argv[]) {
         printf(" It is GPL licensed. Have a look at COPYING file.\n\n");
         printf("\tIt supports following cmdline options (they will override conf file settings):\n");
         printf("\t* --editor /path/to/editor to set an editor for current session. Fallbacks to $EDITOR env var.\n");
-        printf("\t* --starting-dir /path/to/dir to set a starting directory for current session. Defaults to current dir.\n");
+        printf("\t* --starting_dir /path/to/dir to set a starting directory for current session. Defaults to current dir.\n");
         printf("\t* --helper {0,1} to switch (off,on) starting helper message. Defaults to 1.\n");
         printf("\t* --inhibit {0,1} to switch {off,on} powermanagement functions while a job is being processed. Defaults to 0.\n");
         printf("\t* --monitor {0,1} to switch {off,on} udev monitor. Defaults to 1.\n");
         printf("\t* --automount {0,1} to switch {off,on} automounting of external drives/usb sticks. Defaults to 0.\n");
         printf("\t* --loglevel {0,1,2,3} to change loglevel. Defaults to 0.\n");
         printf("\t\t* 0 to log only errors.\n\t\t* 1 to log warn messages and errors.\n");
-        printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable log.\n\n");
+        printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable log.\n");
+        printf("\t* --persistent_log {0,1} to switch {off,on} persistent log across program restarts.\n\n");
         printf(" Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
         printf(" Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
         printf(" Press 'l' while in program to view a more detailed helper message.\n\n");
@@ -101,62 +101,55 @@ static void parse_cmd(int argc, const char *argv[]) {
     int j = 1;
 #ifdef SYSTEMD_PRESENT
 #ifdef LIBUDEV_PRESENT
-    const char *cmd_switch[] = {"--editor", "--starting-dir", "--helper", "--loglevel", "--inhibit", "--monitor", "--automount"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log", "--inhibit", "--monitor", "--automount"};
 #else
-    const char *cmd_switch[] = {"--editor", "--starting-dir", "--helper", "--loglevel", "--inhibit"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log", "--inhibit"};
 #endif
 #else
 #ifdef LIBUDEV_PRESENT
-    const char *cmd_switch[] = {"--editor", "--starting-dir", "--helper", "--loglevel", "--monitor"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log", "--monitor"};
 #else
-    const char *cmd_switch[] = {"--editor", "--starting-dir", "--helper", "--loglevel"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log"};
 #endif
 #endif
     while (j < argc) {
         if ((strcmp(cmd_switch[0], argv[j]) == 0) && (argv[j + 1])) {
             strcpy(config.editor, argv[j + 1]);
-            j += 2;
         } else if ((strcmp(cmd_switch[1], argv[j]) == 0) && (argv[j + 1])) {
             strcpy(config.starting_dir, argv[j + 1]);
-            j += 2;
         } else if ((strcmp(cmd_switch[2], argv[j]) == 0) && (argv[j + 1])) {
             config.starting_helper = atoi(argv[j + 1]);
-            j += 2;
         } else if ((strcmp(cmd_switch[3], argv[j]) == 0) && (argv[j + 1])) {
             config.loglevel = atoi(argv[j + 1]);
-            j += 2;
+        } else if ((strcmp(cmd_switch[4], argv[j]) == 0) && (argv[j + 1])) {
+            config.persistent_log = atoi(argv[j + 1]);
         }
 #ifdef SYSTEMD_PRESENT
-        else if ((strcmp(cmd_switch[4], argv[j]) == 0) && (argv[j + 1])) {
+        else if ((strcmp(cmd_switch[5], argv[j]) == 0) && (argv[j + 1])) {
             config.inhibit = atoi(argv[j + 1]);
-            j += 2;
         }
 #ifdef LIBUDEV_PRESENT
-        else if ((strcmp(cmd_switch[5], argv[j]) == 0) && (argv[j + 1])) {
-            config.monitor = atoi(argv[j + 1]);
-            j += 2;
-        }
         else if ((strcmp(cmd_switch[6], argv[j]) == 0) && (argv[j + 1])) {
+            config.monitor = atoi(argv[j + 1]);
+        }
+        else if ((strcmp(cmd_switch[7], argv[j]) == 0) && (argv[j + 1])) {
             config.automount = atoi(argv[j + 1]);
-            j += 2;
         }
 #endif
 #else
 #ifdef LIBUDEV_PRESENT
-        else if ((strcmp(cmd_switch[4], argv[j]) == 0) && (argv[j + 1])) {
+        else if ((strcmp(cmd_switch[5], argv[j]) == 0) && (argv[j + 1])) {
             config.monitor = atoi(argv[j + 1]);
-            j += 2;
         }
 #endif
 #endif
         else {
             break;
         }
+        j += 2;
     }
     if (j != argc) {
         printf("Use '--help' to view helper message.\n");
-        ERROR("wrong command line option.");
-        close_log();
         exit(EXIT_FAILURE);
     }
 }
@@ -169,11 +162,11 @@ static void read_config_file(void) {
 
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name)) {
-        if ((!strlen(config.editor)) && (config_lookup_string(&cfg, "editor", &str_editor))) {
+        if ((!strlen(config.editor)) && (config_lookup_string(&cfg, "editor", &str_editor) == CONFIG_TRUE)) {
             strcpy(config.editor, str_editor);
         }
         config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
-        if ((!strlen(config.starting_dir)) && (config_lookup_string(&cfg, "starting_directory", &str_starting_dir))) {
+        if ((!strlen(config.starting_dir)) && (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) == CONFIG_TRUE)) {
             strcpy(config.starting_dir, str_starting_dir);
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
@@ -188,9 +181,9 @@ static void read_config_file(void) {
         config_lookup_int(&cfg, "monitor", &config.monitor);
 #endif
         config_lookup_int(&cfg, "loglevel", &config.loglevel);
+        config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
     } else {
         printf("%s", config_file_missing);
-        WARN(config_file_missing);
         sleep(1);
     }
     config_destroy(&cfg);
