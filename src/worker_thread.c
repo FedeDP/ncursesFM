@@ -69,6 +69,7 @@ void init_thread(int type, int (* const f)(void)) {
 #ifdef SYSTEMD_PRESENT
         if (config.inhibit) {
             inhibit_fd = inhibit_suspend("Job in process...");
+            INFO("power management functions inhibition started.");
         }
 #endif
         thread_m.str = "";

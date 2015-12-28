@@ -59,6 +59,7 @@ const char *helper_string[HELPER_HEIGHT - 2];
 
 #ifdef SYSTEMD_PRESENT
 const char *bus_error;
+const char *bus_call_fail;
 const char *pkg_quest;
 const char *install_th_wait;
 const char *package_warn;

@@ -30,17 +30,18 @@ void mount_fs(const char *str, const char *method, int mount) {
     sd_bus *mount_bus = NULL;
     const char *path;
     char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
-    char success[PATH_MAX + 1];
+    char success[PATH_MAX + 1], mount_str[100];
     int r;
 
     r = sd_bus_open_system(&mount_bus);
     if (r < 0) {
         print_info(bus_error, ERR_LINE);
-        ERROR("mounter: failed to open bus.");
+        WARN(bus_error);
         return;
     }
     strcat(obj_path, strrchr(str, '/') + 1);
-    INFO("mounter: calling method on bus.");
+    sprintf(mount_str, "calling %s on bus.", method);
+    INFO(mount_str);
     r = sd_bus_call_method(mount_bus,
                            "org.freedesktop.UDisks2",
                            obj_path,
@@ -52,7 +53,7 @@ void mount_fs(const char *str, const char *method, int mount) {
                            NULL);
     if (r < 0) {
         print_info(error.message, ERR_LINE);
-        ERROR("mounter: failed to call method on bus.");
+        WARN(bus_call_fail);
     } else {
         if (!mount) {
             sd_bus_message_read(mess, "s", &path);
@@ -81,10 +82,10 @@ void isomount(const char *str) {
     r = sd_bus_open_system(&iso_bus);
     if (r < 0) {
         print_info(bus_error, ERR_LINE);
-        ERROR("isomounter: failed to open bus.");
+        WARN(bus_error);
         return;
     }
-    INFO("isomounter: calling LoopSetup method on bus.");
+    INFO("calling LoopSetup method on bus.");
     r = sd_bus_call_method(iso_bus,
                            "org.freedesktop.UDisks2",
                            "/org/freedesktop/UDisks2/Manager",
@@ -98,12 +99,12 @@ void isomount(const char *str) {
     close(fd);
     if (r < 0) {
         print_info(error.message, ERR_LINE);
-        ERROR("isomounter: failed to call LoopSetup on bus.");
+        WARN(bus_call_fail);
     } else {
         sd_bus_message_read(mess, "o", &obj_path);
         mount_fs(obj_path, "Mount", 0);
         sd_bus_flush(iso_bus);
-        INFO("isomounter: calling SetAutoClear on bus.");
+        INFO("calling SetAutoClear on bus.");
         r = sd_bus_call_method(iso_bus,
                                "org.freedesktop.UDisks2",
                                obj_path,
@@ -116,7 +117,7 @@ void isomount(const char *str) {
                                NULL);
         if (r < 0) {
             print_info(error.message, ERR_LINE);
-            ERROR("isomounter: failed to call SetAutoClear on bus.");
+            WARN(bus_call_fail);
         }
     }
     close_bus(&error, mess, iso_bus);
@@ -128,7 +129,7 @@ void start_udev(void) {
     udev = udev_new();
     if (!udev) {
         print_info("Couldn't create udev. You won't be able to use libudev functions.", ERR_LINE);
-        ERROR("could not create udev.");
+        WARN("could not create udev.");
         return;
     }
     enumerate_block_devices();

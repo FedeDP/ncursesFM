@@ -155,6 +155,7 @@ static void parse_cmd(int argc, const char *argv[]) {
     }
     if (j != argc) {
         printf("Use '--help' to view helper message.\n");
+        ERROR("wrong command line option.");
         close_log();
         exit(EXIT_FAILURE);
     }
@@ -189,7 +190,7 @@ static void read_config_file(void) {
         config_lookup_int(&cfg, "loglevel", &config.loglevel);
     } else {
         printf("%s", config_file_missing);
-        ERROR(config_file_missing);
+        WARN(config_file_missing);
         sleep(1);
     }
     config_destroy(&cfg);
