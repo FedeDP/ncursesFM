@@ -1,5 +1,6 @@
-# ncursesFM
+# NcursesFM
 Ncurses File Manager for linux.  
+
 It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.  
 Being simple doesn't imply being useless; indeed it is a full featured fm.  
 It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).
@@ -26,9 +27,10 @@ Otherwise, it will use $editor (config file defined) var. It fallbacks to enviro
 * It has an internal udev monitor, to poll udev for new devices. It can automount new connected devices too.
 
 **Optional (compile time) features that require sd-bus API (systemd)**
-* Powermanagement inhibition while processing a job(eg: while pasting a file) to avoid data loss.
-* It can mount drives/usb sticks/ISO files through udisks2. For drives/usb sticks mount, you also need libudev to list all mountable drives.
-* ISO files cannot be unmounted from within ncursesFM: they will be automagically unmounted and removed by udev when no more in use (eg after a reboot).
+* Powermanagement inhibition while processing a job (eg: while pasting a file) to avoid data loss.
+* It can (un)mount drives/usb sticks/ISO files through udisks2. For drives/usb sticks mount, you also need libudev to list all mountable drives.  
+ISO files cannot be unmounted from within ncursesFM: they will be automagically unmounted and removed by udev when no more in use (eg: after a reboot).
+* If built with libudev support, you can enable devices automount too.
 * It can install your distro package files: pressing enter on a package file will ask user if he wants to install the package. It relies upon packagekit, so it should be distro agnostic.
 
 ---
@@ -98,7 +100,7 @@ To remove, just move inside the folder and run:
 
     $ make uninstall
 
-make {install/uninstall} require root privileges unless you specify a DESTDIR variable to install/uninstall targets.  
-Be aware that it will disable config file support and bash autocompletion script (you can still source it manually by the way) though.
+make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets.  
+Be aware that it will disable config file support and bash autocompletion script (you can still source it manually anyway) though.
 
 ![Alt text](ncursesfm.png?raw=true)
