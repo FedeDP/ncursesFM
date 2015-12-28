@@ -7,4 +7,6 @@
  * improve doc (doc as many lib calls as possible)
  * 
  * -> ask to force if unmount fails? -> http://udisks.freedesktop.org/docs/latest/gdbus-org.freedesktop.UDisks2.Filesystem.html#gdbus-method-org-freedesktop-UDisks2-Filesystem.Unmount
+ * 
+ * bash completion script build dep aware? (ie: if not compiled with systemd support, hide systemd only options)
  */

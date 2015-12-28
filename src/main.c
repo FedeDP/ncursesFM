@@ -149,7 +149,7 @@ static void parse_cmd(int argc, const char *argv[]) {
         j += 2;
     }
     if (j != argc) {
-        printf("Use '--help' to view helper message.\n");
+        printf("Option not recognized. Use '--help' to view helper message.\n");
         exit(EXIT_FAILURE);
     }
 }
