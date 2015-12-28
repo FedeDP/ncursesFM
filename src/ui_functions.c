@@ -75,6 +75,7 @@ static void term_size_check(void) {
         do {
             c = getch();
             if (tolower(c) == 'q') {
+                quit = NORM_QUIT;
                 program_quit();
             }
         } while (c != KEY_RESIZE);

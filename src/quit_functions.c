@@ -16,7 +16,7 @@ int program_quit(void) {
     screen_end();
     printf("\033c"); // clear terminal/vt after leaving program
     if (quit == MEM_ERR_QUIT) {
-        printf("%s\n", generic_mem_error);
+        fprintf(stderr, "%s\n", generic_mem_error);
         ERROR("program exited with errors.");
         exit(EXIT_FAILURE);
     }

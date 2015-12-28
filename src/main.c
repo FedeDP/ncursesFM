@@ -161,7 +161,7 @@ static void read_config_file(void) {
     const char *str_editor, *str_starting_dir;
 
     config_init(&cfg);
-    if (config_read_file(&cfg, config_file_name)) {
+    if (config_read_file(&cfg, config_file_name) == CONFIG_TRUE) {
         if ((!strlen(config.editor)) && (config_lookup_string(&cfg, "editor", &str_editor) == CONFIG_TRUE)) {
             strcpy(config.editor, str_editor);
         }
@@ -183,7 +183,10 @@ static void read_config_file(void) {
         config_lookup_int(&cfg, "loglevel", &config.loglevel);
         config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
     } else {
-        printf("%s", config_file_missing);
+        fprintf(stderr, "%s:%d - %s\n",
+                config_error_file(&cfg),
+                config_error_line(&cfg),
+                config_error_text(&cfg));
         sleep(1);
     }
     config_destroy(&cfg);

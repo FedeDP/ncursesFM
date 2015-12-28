@@ -1,8 +1,5 @@
 #include "../inc/string_constants.h"
 
-#ifdef LIBCONFIG_PRESENT
-const char *config_file_missing = "Config file (/etc/default/ncursesFM.conf) not found. Using default values.\n";
-#endif
 const char *editor_missing = "You have to specify a valid editor in config file.";
 
 const char *generic_mem_error = "Memory allocation failed.";

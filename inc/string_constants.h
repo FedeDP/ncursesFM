@@ -2,9 +2,6 @@
 #define LONG_FILE_OPERATIONS 5
 #define SHORT_FILE_OPERATIONS 3
 
-#ifdef LIBCONFIG_PRESENT
-const char *config_file_missing;
-#endif
 const char *editor_missing;
 
 const char *generic_mem_error;
