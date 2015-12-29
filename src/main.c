@@ -183,11 +183,9 @@ static void read_config_file(void) {
         config_lookup_int(&cfg, "loglevel", &config.loglevel);
         config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
     } else {
-        fprintf(stderr, "%s:%d - %s\n",
-                config_error_file(&cfg),
-                config_error_line(&cfg),
-                config_error_text(&cfg));
-        sleep(1);
+        fprintf(stderr, "Config file: %s at line %d.\n",
+                config_error_text(&cfg),
+                config_error_line(&cfg));
     }
     config_destroy(&cfg);
 }

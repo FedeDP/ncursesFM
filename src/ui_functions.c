@@ -66,9 +66,12 @@ void screen_init(void) {
 
 static void term_size_check(void) {
     int c;
-    int min_lines = HELPER_HEIGHT + INFO_HEIGHT + 3;
+    int min_lines = INFO_HEIGHT + 3;
     int min_cols = MAX_TABS * (STAT_LENGTH + 5);
     
+    if (helper_win) {
+        min_lines += HELPER_HEIGHT;
+    }
     while ((LINES < min_lines) || (COLS < min_cols)) {
         clear();
         printw("Window too small, enlarge it. Q to exit.");
@@ -360,7 +363,11 @@ void trigger_show_helper_message(void) {
     pthread_mutex_lock(&fm_lock[0]);
     pthread_mutex_lock(&fm_lock[1]);
     if (!helper_win) {
-        create_helper_win();
+        if (LINES >= HELPER_HEIGHT + INFO_HEIGHT + 3) {
+            create_helper_win();
+        } else {
+            print_info("Window too small. Enlarge it.", ERR_LINE);
+        }
     } else {
         remove_helper_win();
     }

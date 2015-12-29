@@ -14,7 +14,6 @@ static void quit_search_th(void);
 int program_quit(void) {
     free_everything();
     screen_end();
-    printf("\033c"); // clear terminal/vt after leaving program
     if (quit == MEM_ERR_QUIT) {
         fprintf(stderr, "%s\n", generic_mem_error);
         ERROR("program exited with errors.");
