@@ -5,6 +5,7 @@ static void info_win_init(void);
 static void generate_list(int win);
 static int sizesort(const struct dirent **d1, const struct dirent **d2);
 static int last_mod_sort(const struct dirent **d1, const struct dirent **d2);
+static int typesort(const struct dirent **d1, const struct dirent **d2);
 static void list_everything(int win, int old_dim, int end);
 static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
@@ -33,7 +34,7 @@ static WINDOW *helper_win, *info_win;
 static int dim;
 static pthread_mutex_t info_lock;
 static int (*const sorting_func[])(const struct dirent **d1, const struct dirent **d2) = {
-    alphasort, sizesort, last_mod_sort
+    alphasort, sizesort, last_mod_sort, typesort
 };
 static int sorting_index;
 
@@ -160,6 +161,22 @@ static int last_mod_sort(const struct dirent **d1, const struct dirent **d2) {
     stat((*d1)->d_name, &stat1);
     stat((*d2)->d_name, &stat2);
     return (stat2.st_mtime - stat1.st_mtime);
+}
+
+static int typesort(const struct dirent **d1, const struct dirent **d2) {
+    int ret;
+    
+    if ((*d1)->d_type == (*d2)->d_type) {
+        return alphasort(d1, d2);
+    }
+    if ((*d1)->d_type == DT_DIR) {
+        ret = -1;
+    } else if (((*d1)->d_type == DT_REG) && ((*d2)->d_type == DT_LNK)) {
+        ret = -1;
+    } else {
+        ret = 1;
+    }
+    return ret;
 }
 
 void reset_win(int win)
@@ -710,18 +727,8 @@ static void resize_fm_win(void) {
 }
 
 void change_sort(void) {
-    sorting_index = (sorting_index + 1) % 3;
-    switch (sorting_index) {
-    case 0:
-        print_info("Files will be sorted alphabetically now.", INFO_LINE);
-        break;
-    case 1:
-        print_info("Files will be sorted by size now.", INFO_LINE);
-        break;
-    case 2:
-        print_info("Files will be sorted by last access now.", INFO_LINE);
-        break;
-    }
+    sorting_index = (sorting_index + 1) % NUM(sorting_func);
+    print_info(sorting_str[sorting_index], INFO_LINE);
     for (int i = 0; i < cont; i++) {
         tab_refresh(i);
     }

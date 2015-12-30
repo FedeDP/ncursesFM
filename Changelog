@@ -1,3 +1,9 @@
+12 / 29 / 2015
+* small fixes related to UI
+* using warn log level instead of error when error is not critical
+* added a log_persistency options (libconfig and cmdline) off by default, to save logs across program restarts.
+* added a typesort function that sorts files by type.
+
 12 / 20 / 2015
 * fixed a bug in extracting/archiving when there already was a file with same name in current path (do not overwrite!)
 * safer: using a safer version of realloc.

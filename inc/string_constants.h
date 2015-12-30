@@ -13,6 +13,8 @@ const char *info_win_str[3];
 
 const char *arch_ext[6];
 
+const char *sorting_str[4];
+
 const char *file_selected;
 const char *no_selected_files;
 const char *file_sel[3];

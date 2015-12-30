@@ -13,7 +13,7 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
-* '.' to change files/dirs sorting: alphabetically (default), by size or by last modified.
+* '.' to change files/dirs sorting mode: alphabetically (default), by size, by last modified or by type.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
 Otherwise, it will use $editor (config file defined) var. It fallbacks to environment $EDITOR if none is set.
 * Stats support (permissions and sizes).
@@ -88,6 +88,9 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 **optional:**
 * xdg-utils (if compiled with libx11 support)
 * a message bus (dbus/kdbus) plus: logind (for inhibition support), udisks2 (for mount support), packagekit (for packages installation support).
+
+## Known bugs
+Currently there are no known bugs
 
 ## Install instructions:
 

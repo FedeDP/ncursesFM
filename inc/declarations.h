@@ -36,6 +36,11 @@
 #define MEM_ERR_QUIT 2
 
 /*
+ * Useful macro to know number of elements in arrays
+ */
+#define NUM(a) (sizeof(a) / sizeof(*a))
+
+/*
  * Config settings struct
  */
 struct conf {

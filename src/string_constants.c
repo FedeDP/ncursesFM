@@ -11,6 +11,11 @@ const char *info_win_str[] = {"?: ", "I: ", "E: "};
 
 const char *arch_ext[] = {".tgz", ".tar.gz", ".zip", ".rar", ".xz", ".ar"};
 
+const char *sorting_str[] = {"Files will be sorted alphabetically now.",
+                             "Files will be sorted by size now.",
+                             "Files will be sorted by last access now.",
+                             "Files will be sorted by type now."};
+
 const char *file_selected = "This file is already selected. Cancel its selection before.";
 const char *no_selected_files = "There are no selected files.";
 const char *file_sel[] = {"File selected.", "File deleted from selected list.", "File deleted from selected list. Selected list empty."};
@@ -55,7 +60,7 @@ const char *helper_string[] = { "Enter to surf between folders or to open files.
                                 "It will eventually ask to extract archives, mount your ISO files or install your distro downloaded packages.",
                                 "Press ',' to enable fast browse mode: it lets you jump between files by just typing their name.",
                                 "Press 'h' to trigger the showing of hidden files; 's' to see stat about files in current folder.",
-                                "Press '.' to change files/dirs sorting function: alphabetically (default), by size or by last modified.",
+                                "Press '.' to change files/dirs sorting function: alphabetically (default), by size, by last modified or by type.",
                                 "Space to select files. Twice to remove the file from selected files. 'u' to check shasum of current file.",
                                 "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files. 'p' to print a file.",
                                 "'o' to rename current file/dir; 'n'/'d' to create new file/dir. 'f' to search (case sensitive) for a file.",
