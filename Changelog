@@ -1,3 +1,7 @@
+01 / 02 / 2016
+* Fixed a bug in add_device() call by device_monitor(): print_info() and automount were called even for wrong (discarded) devices...
+* removed an useless check in device_monitor()
+
 12 / 29 / 2015
 * small fixes related to UI
 * using warn log level instead of error when error is not critical

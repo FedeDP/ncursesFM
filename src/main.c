@@ -3,7 +3,7 @@
  * NcursesFM: file manager in C with ncurses UI for linux.
  * https://github.com/FedeDP/ncursesFM
  *
- * Copyright (C) 2015  Federico Di Pierro <nierro92@gmail.com>
+ * Copyright (C) 2016  Federico Di Pierro <nierro92@gmail.com>
  *
  * This file is part of ncursesFM.
  * ncursesFM is free software: you can redistribute it and/or modify
@@ -75,7 +75,7 @@ static void helper_function(int argc, const char *argv[]) {
     config.monitor = 1;
 #endif
     if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
-        printf("\n NcursesFM Copyright (C) 2015  Federico Di Pierro (https://github.com/FedeDP):\n");
+        printf("\n NcursesFM Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
         printf(" This is free software, and you are welcome to redistribute it under certain conditions;\n");
         printf(" It is GPL licensed. Have a look at COPYING file.\n\n");
