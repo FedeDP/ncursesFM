@@ -8,7 +8,7 @@ static void *device_monitor(void *x);
 static void change_mounted_status(int pos, const char *name);
 #endif
 static void sig_handler(int signum);
-static void add_device(struct udev_device *dev, const char *name);
+static int add_device(struct udev_device *dev, const char *name);
 static void remove_device(const char *name);
 static void *safe_realloc(const size_t size);
 static void free_devices(void);
@@ -258,9 +258,6 @@ static void *device_monitor(void *x) {
     struct udev_device *dev;
     int fd, ret;
     fd_set fds;
-#ifdef SYSTEMD_PRESENT
-    int mount;
-#endif
     sigset_t mask;
     sigset_t orig_mask;
     struct sigaction act;
@@ -287,13 +284,11 @@ static void *device_monitor(void *x) {
             if (dev) {
                 const char *name = udev_device_get_devnode(dev);
                 if (strcmp(udev_device_get_action(dev), "add") == 0) {
-                    add_device(dev, name);
-                    print_info("New device connected.", INFO_LINE);
+                    if (add_device(dev, name) == 1) {
+                        print_info("New device connected.", INFO_LINE);
 #ifdef SYSTEMD_PRESENT
-                    if (config.automount) {
-                        mount = is_mounted(name);
-                        if (!mount) {
-                            mount_fs(name, "Mount", mount);
+                        if (config.automount) {
+                            mount_fs(name, "Mount", 0);
                             change_mounted_status(number_of_devices - 1, name);
                         }
                     }
@@ -317,14 +312,15 @@ static void sig_handler(int signum) {
     INFO("received SIGUSR2 signal.");
 }
 
-static void add_device(struct udev_device *dev, const char *name) {
+static int add_device(struct udev_device *dev, const char *name) {
     long size;
     char s[20];
+    int ret = 0;
     struct udev_device *usb_parent, *scsi_parent;
     
     /* if there's eg: sda1, do not print sda + do not list cd/dvd players */
     if (!udev_device_get_property_value(dev, "ID_FS_TYPE")) {
-        return;
+        return ret;
     }
     usb_parent = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
     scsi_parent = udev_device_get_parent_with_subsystem_devtype(dev, "scsi", "scsi_device");
@@ -345,8 +341,10 @@ static void add_device(struct udev_device *dev, const char *name) {
             }
             number_of_devices++;
             INFO("added device.");
+            ret = 1;
         }
     }
+    return ret;
 }
 
 static void remove_device(const char *name) {

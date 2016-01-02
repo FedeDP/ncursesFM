@@ -21,7 +21,7 @@ Otherwise, it will use $editor (config file defined) var. It fallbacks to enviro
 * Basic print support through libcups.
 * shasum support (both printing file shasum/checking a given one), if built with openssl support.
 * Extract/compress files/folders through libarchive.
-* File operations are performed in a different thread. You'll get a notification when the job is done.
+* Long file operations are performed in a different thread. You'll get a notification when the job is done.
 * If you try to quit while a job is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
 * It has an internal udev monitor, to poll udev for new devices. It can automount new connected devices too.
@@ -30,7 +30,7 @@ Otherwise, it will use $editor (config file defined) var. It fallbacks to enviro
 * Powermanagement inhibition while processing a job (eg: while pasting a file) to avoid data loss.
 * It can (un)mount drives/usb sticks/ISO files through udisks2. For drives/usb sticks mount, you also need libudev to list all mountable drives.  
 ISO files cannot be unmounted from within ncursesFM: they will be automagically unmounted and removed by udev when no more in use (eg: after a reboot).
-* If built with libudev support, you can enable devices automount too.
+* If built with libudev support, it can perform devices automount too.
 * It can install your distro package files: pressing enter on a package file will ask user if he wants to install the package. It relies upon packagekit, so it should be distro agnostic.
 
 ---

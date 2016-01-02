@@ -89,7 +89,7 @@ static void helper_function(int argc, const char *argv[]) {
         printf("\t* --loglevel {0,1,2,3} to change loglevel. Defaults to 0.\n");
         printf("\t\t* 0 to log only errors.\n\t\t* 1 to log warn messages and errors.\n");
         printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable log.\n");
-        printf("\t* --persistent_log {0,1} to switch {off,on} persistent log across program restarts.\n\n");
+        printf("\t* --persistent_log {0,1} to switch {off,on} persistent log across program restarts. Defaults to 0.\n\n");
         printf(" Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
         printf(" Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
         printf(" Press 'l' while in program to view a more detailed helper message.\n\n");
