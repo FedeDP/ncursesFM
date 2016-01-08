@@ -24,12 +24,17 @@ void print_support(char *str) {
 static void *print_file(void *filename) {
     cups_dest_t *dests, *default_dest;
     int num_dests = cupsGetDests(&dests);
+    int r;
 
     if (num_dests > 0) {
         default_dest = cupsGetDest(NULL, NULL, num_dests, dests);
-        cupsPrintFile(default_dest->name, (char *)filename, "ncursesFM job",
+        r = cupsPrintFile(default_dest->name, (char *)filename, "ncursesFM job",
                       default_dest->num_options, default_dest->options);
-        print_info(print_ok, INFO_LINE);
+        if (r) {
+            print_info(print_ok, INFO_LINE);
+        } else {
+            print_info(ippErrorString(cupsLastError()), ERR_LINE);
+        }
     } else {
         print_info(print_fail, ERR_LINE);
     }

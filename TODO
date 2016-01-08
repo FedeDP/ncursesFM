@@ -1,10 +1,10 @@
 /* TODO:
  *
- * install_packages segfaults on my netbook... can't understand why, really.
- *
  * https://github.com/hughsie/PackageKit/issues/87
  *
- * improve doc (doc as many lib calls as possible)
+ * improve doc
  * 
- * -> ask to force if unmount fails? -> http://udisks.freedesktop.org/docs/latest/gdbus-org.freedesktop.UDisks2.Filesystem.html#gdbus-method-org-freedesktop-UDisks2-Filesystem.Unmount
+ * ask to force if unmount fails? -> http://udisks.freedesktop.org/docs/latest/gdbus-org.freedesktop.UDisks2.Filesystem.html#gdbus-method-org-freedesktop-UDisks2-Filesystem.Unmount
+ * 
+ * re-add iso unmounting with enter? Test/iso_unmouning_with_enter
  */

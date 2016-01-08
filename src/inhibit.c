@@ -15,8 +15,8 @@ int inhibit_suspend(const char *str) {
     int fd;
     
     if (r < 0) {
-        print_info(bus_error, ERR_LINE);
-        WARN(bus_error);
+        print_info(strerror(-r), ERR_LINE);
+        WARN(strerror(-r));
         return r;
     }
     INFO("calling Inhibit method on bus.");
@@ -34,7 +34,7 @@ int inhibit_suspend(const char *str) {
                            "block");
     if (r < 0) {
         print_info(error.message, ERR_LINE);
-        WARN(bus_call_fail);
+        WARN(error.message);
     } else {
         r = sd_bus_message_read_basic(reply, SD_BUS_TYPE_UNIX_FD, &fd);
         if (r < 0) {

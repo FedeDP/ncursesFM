@@ -36,6 +36,13 @@
 #define MEM_ERR_QUIT 2
 
 /*
+ * Device monitor status
+ */
+#define DEVMON_OFF -2
+#define DEVMON_STARTING -1
+#define DEVMON_READY 0
+
+/*
  * Useful macro to know number of elements in arrays
  */
 #define NUM(a) (sizeof(a) / sizeof(*a))
@@ -55,9 +62,6 @@ struct conf {
 #endif
 #endif
     int starting_helper;
-#ifdef LIBUDEV_PRESENT
-    int monitor;
-#endif
     int loglevel;
     int persistent_log;
 };
@@ -114,9 +118,9 @@ int active, quit, num_of_jobs, cont, distance_from_root, device_mode;
 pthread_mutex_t fm_lock[MAX_TABS];
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;
-#endif
 #ifdef LIBUDEV_PRESENT
 pthread_t monitor_th;
+#endif
 #endif
 pthread_t worker_th, search_th;
 char (*str_ptr[MAX_TABS])[PATH_MAX + 1]; // pointer to abstract which list of strings i have to print in list_everything()

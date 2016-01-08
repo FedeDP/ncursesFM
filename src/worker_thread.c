@@ -99,7 +99,7 @@ static void init_thread_helper(void) {
             /* avoid overwriting a compressed file in path if it has the same name of the archive being created there */
             len = strlen(name);
             strcat(name, ".tgz");
-            while (access(name, F_OK) != -1) {
+            while (access(name, F_OK) == 0) {
                 sprintf(name + len, "%d.tgz", num);
                 num++;
             }
@@ -201,13 +201,16 @@ file_list *select_file(file_list *h, const char *str) {
 }
 
 static void free_thread_job_list(thread_job_list *h) {
-    if (h->next) {
-        free_thread_job_list(h->next);
+    thread_job_list *tmp = h;
+    
+    while (h) {
+        h = h->next;
+        if (tmp->selected_files) {
+            free_copied_list(tmp->selected_files);
+        }
+        free(tmp);
+        tmp = h;
     }
-    if (h->selected_files) {
-        free_copied_list(h->selected_files);
-    }
-    free(h);
 }
 
 static void sig_handler(int signum) {

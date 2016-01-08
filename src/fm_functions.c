@@ -91,7 +91,7 @@ void manage_file(const char *str, float size) {
         return;
     }
 #ifdef LIBX11_PRESENT
-    if (access("/usr/bin/xdg-open", X_OK) != -1) {
+    if (access("/usr/bin/xdg-open", X_OK) == 0) {
         xdg_open(str, size);
         return;
     }

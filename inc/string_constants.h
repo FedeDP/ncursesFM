@@ -5,9 +5,6 @@
 const char *editor_missing;
 
 const char *generic_mem_error;
-const char *fatal_mem_error;
-
-const char *no_w_perm;
 
 const char *info_win_str[3];
 
@@ -57,8 +54,6 @@ const char *quit_with_running_thread;
 const char *helper_string[HELPER_HEIGHT - 2];
 
 #ifdef SYSTEMD_PRESENT
-const char *bus_error;
-const char *bus_call_fail;
 const char *pkg_quest;
 const char *install_th_wait;
 const char *package_warn;

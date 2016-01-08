@@ -59,8 +59,8 @@ static void quit_worker_th(void) {
 #ifdef LIBUDEV_PRESENT
 static void quit_monitor_th(void) {
     if ((monitor_th) && (pthread_kill(monitor_th, 0) != ESRCH)) {
-        INFO("sending SIGUSR2 signal to monitor th...");
-        pthread_kill(monitor_th, SIGUSR2);
+        INFO("removing monitor th...");
+        pthread_cancel(monitor_th);
         pthread_join(monitor_th, NULL);
         INFO("monitor th exited without errors.");
     }
@@ -89,7 +89,11 @@ static void quit_search_th(void) {
 }
 
 void free_copied_list(file_list *h) {
-    if (h->next)
-        free_copied_list(h->next);
-    free(h);
+    file_list *tmp = h;
+    
+    while (h) {
+        h = h->next;
+        free(tmp);
+        tmp = h;
+    }
 }

@@ -16,11 +16,21 @@ COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
 
 ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 
+ifneq ("$(DISABLE_LIBX11)","1")
 LIBX11=$(shell pkg-config --silence-errors --libs x11)
+endif
+ifneq ("$(DISABLE_LIBCONFIG)","1")
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
+endif
+ifneq ("$(DISABLE_LIBSYSTEMD)","1")
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
+endif
+ifneq ("$(DISABLE_LIBUDEV)","1")
 LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
+endif
+ifneq ("$(DISABLE_OPENSSL)","1")
 LIBOPENSSL=$(shell pkg-config --silence-errors --libs openssl)
+endif
 
 LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBUDEV) $(LIBOPENSSL)
 
@@ -29,10 +39,12 @@ CFLAGS+=-DLIBX11_PRESENT
 $(info libX11 support enabled.)
 endif
 
+ifneq ("$(DISABLE_LIBCUPS)","1")
 ifneq ("$(wildcard /usr/include/cups/cups.h)","")
 CFLAGS+=-DLIBCUPS_PRESENT
 LIBS+=-lcups
 $(info libcups support enabled.)
+endif
 endif
 
 ifneq ("$(LIBCONFIG)","")
@@ -48,11 +60,11 @@ endif
 ifneq ("$(LIBSYSTEMD)","")
 CFLAGS+=-DSYSTEMD_PRESENT
 $(info libsystemd support enabled.)
-endif
 
 ifneq ("$(LIBUDEV)","")
 CFLAGS+=-DLIBUDEV_PRESENT
 $(info libudev support enabled.)
+endif
 endif
 
 endif

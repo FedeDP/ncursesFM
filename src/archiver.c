@@ -113,7 +113,7 @@ static void extractor_thread(struct archive *a, const char *current_dir) {
             tmp_name[0] = '\0';
         }
         len = strlen(name) - strlen(tmp_name);
-        while (access(name, F_OK) != -1) {
+        while (access(name, F_OK) == 0) {
             num++;
             sprintf(name + len, "%d%s", num, tmp_name);
         }

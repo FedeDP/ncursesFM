@@ -42,9 +42,6 @@ static void log_current_options(void) {
 #endif
 #endif
     fprintf(log_file, "* Starting with helper window: %d\n", config.starting_helper);
-#ifdef LIBUDEV_PRESENT
-    fprintf(log_file, "* Device monitor: %d\n", config.monitor);
-#endif
     fprintf(log_file, "* Log level: %d\n\n", config.loglevel);
 }
 

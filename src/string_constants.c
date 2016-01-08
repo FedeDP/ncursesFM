@@ -3,9 +3,6 @@
 const char *editor_missing = "You have to specify a valid editor in config file.";
 
 const char *generic_mem_error = "Memory allocation failed.";
-const char *fatal_mem_error = "No more memory available. Program will exit.";
-
-const char *no_w_perm = "You do not have write permissions here.";
 
 const char *info_win_str[] = {"?: ", "I: ", "E: "};
 
@@ -57,7 +54,7 @@ const char *thread_running = "There's already a thread working. This thread will
 const char *quit_with_running_thread = "A job is still running. Do you want to wait for it?(You should!) Y/n:> ";
 
 const char *helper_string[] = { "Enter to surf between folders or to open files.",
-                                "It will eventually ask to extract archives, mount your ISO files or install your distro downloaded packages.",
+                                "It will eventually extract your archives, (un)mount your ISO files or install your distro downloaded packages.",
                                 "Press ',' to enable fast browse mode: it lets you jump between files by just typing their name.",
                                 "Press 'h' to trigger the showing of hidden files; 's' to see stat about files in current folder.",
                                 "Press '.' to change files/dirs sorting function: alphabetically (default), by size, by last modified or by type.",
@@ -70,8 +67,6 @@ const char *helper_string[] = { "Enter to surf between folders or to open files.
 
 
 #ifdef SYSTEMD_PRESENT
-const char *bus_error = "Failed to open system bus.";
-const char *bus_call_fail = "failed to call method on bus.";
 const char *pkg_quest = "Do you really want to install this package? y/N:> ";
 const char *install_th_wait = "Waiting for package installation to finish before exiting. It can really harm your OS otherwise.";
 const char *package_warn = "Currently there is no check against wrong package arch: it will crash packagekit and ncursesfm.";

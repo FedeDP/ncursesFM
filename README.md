@@ -24,13 +24,12 @@ Otherwise, it will use $editor (config file defined) var. It fallbacks to enviro
 * Long file operations are performed in a different thread. You'll get a notification when the job is done.
 * If you try to quit while a job is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
-* It has an internal udev monitor, to poll udev for new devices. It can automount new connected devices too.
+* It has an internal udisks2 monitor, to poll for new devices. It can automount new connected devices too.
+Device monitor will list only mountable devices, eg: dvd reader will not be listed until a cd/dvd is inserted.
 
 **Optional (compile time) features that require sd-bus API (systemd)**
 * Powermanagement inhibition while processing a job (eg: while pasting a file) to avoid data loss.
-* It can (un)mount drives/usb sticks/ISO files through udisks2. For drives/usb sticks mount, you also need libudev to list all mountable drives.  
-ISO files cannot be unmounted from within ncursesFM: they will be automagically unmounted and removed by udev when no more in use (eg: after a reboot).
-* If built with libudev support, it can perform devices automount too.
+* It can (un)mount drives/usb sticks/ISO files through udisks2. For drives/usb sticks mount, you also need libudev.
 * It can install your distro package files: pressing enter on a package file will ask user if he wants to install the package. It relies upon packagekit, so it should be distro agnostic.
 
 ---
@@ -42,7 +41,6 @@ If built with libconfig support, it reads following variables from /etc/default/
 * use_default_starting_dir_second_tab -> whether to use "starting_directory" when opening second tab, or to open it in current directory.
 * inhibit -> whether to inhibit powermanagement functions. Defaults to 0.
 * starting_helper -> whether to show helper win after program started. Defaults to 1.
-* monitor -> wheter to enable udev monitor. Defaults to 1.
 * automount -> whether to enable devices automount. Defaults to 0.
 * loglevel -> to change program loglevel. Defaults to 0.
 * persistent_log -> to enable log persistency across program restarts. Defaults to 0.
@@ -52,7 +50,6 @@ NcursesFM ships an autocompletion script for cmdline options. It supports follow
 * "--starting_dir" /path/to/dir
 * "--helper" {0,1} to disable(enable) helper window show at program start.
 * "--inhibit" {0,1} to disable(enable) powermanagement inhibition.
-* "--monitor" {0,1} to disable(enable) udev monitor.
 * "--automount" {0,1} to disable(enable) automount of connected devices.
 * "--loglevel" {0,1,2,3} to change program loglevel.
 * "--persistent_log" {0,1} -> to disable(enable) log persistency across program restarts.
@@ -76,8 +73,8 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 * libcups   -> print support.
 * libconfig -> config file parsing.
 * libx11    -> check whether ncursesFM is started in a X environment or not.
-* sd-bus    -> to switch off powermanagement functions, devices/iso mount and packages installation.
-* libudev   -> needed to list mountable drives and to enable udev monitor.
+* sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
+* libudev   -> needed for devices/iso mount, useful only if compiled with sd-bus.
 * openssl   -> for shasum functions support.
 
 ## Runtime dependencies
@@ -86,11 +83,11 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 * ncurses, libarchive, glibc plus every optional build dep if compiled with its support.
 
 **optional:**
-* xdg-utils (if compiled with libx11 support)
-* a message bus (dbus/kdbus) plus: logind (for inhibition support), udisks2 (for mount support), packagekit (for packages installation support).
+* if compiled with libx11 support: xdg-utils.
+* if compiled with sd-bus support: a message bus (dbus/kdbus) plus logind (for inhibition support), udisks2 (for mount support), packagekit (for packages installation support).
 
 ## Known bugs
-Currently there are no known bugs
+* installing packages segfaults if package has wrong arch. Packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.
 
 ## Install instructions:
 

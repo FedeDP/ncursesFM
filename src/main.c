@@ -58,9 +58,7 @@ int main(int argc, const char *argv[])
     open_log();
     config_checks();
 #ifdef LIBUDEV_PRESENT
-    if (config.monitor) {
-        start_udev();
-    }
+    start_monitor();
 #endif
     screen_init();
     chdir(ps[active].my_cwd);
@@ -69,10 +67,12 @@ int main(int argc, const char *argv[])
 }
 
 static void helper_function(int argc, const char *argv[]) {
-    /* default values for starting_helper and monitor */
+    /* default value for starting_helper */
     config.starting_helper = 1;
 #ifdef LIBUDEV_PRESENT
-    config.monitor = 1;
+    device_mode = DEVMON_STARTING;
+#else
+    device_mode = DEVMON_OFF;
 #endif
     if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
         printf("\n NcursesFM Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
@@ -84,7 +84,6 @@ static void helper_function(int argc, const char *argv[]) {
         printf("\t* --starting_dir /path/to/dir to set a starting directory for current session. Defaults to current dir.\n");
         printf("\t* --helper {0,1} to switch (off,on) starting helper message. Defaults to 1.\n");
         printf("\t* --inhibit {0,1} to switch {off,on} powermanagement functions while a job is being processed. Defaults to 0.\n");
-        printf("\t* --monitor {0,1} to switch {off,on} udev monitor. Defaults to 1.\n");
         printf("\t* --automount {0,1} to switch {off,on} automounting of external drives/usb sticks. Defaults to 0.\n");
         printf("\t* --loglevel {0,1,2,3} to change loglevel. Defaults to 0.\n");
         printf("\t\t* 0 to log only errors.\n\t\t* 1 to log warn messages and errors.\n");
@@ -101,17 +100,14 @@ static void parse_cmd(int argc, const char *argv[]) {
     int j = 1;
 #ifdef SYSTEMD_PRESENT
 #ifdef LIBUDEV_PRESENT
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log", "--inhibit", "--monitor", "--automount"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log", "--inhibit", "--automount"};
 #else
     const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log", "--inhibit"};
 #endif
 #else
-#ifdef LIBUDEV_PRESENT
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log", "--monitor"};
-#else
     const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log"};
 #endif
-#endif
+
     while (j < argc) {
         if ((strcmp(cmd_switch[0], argv[j]) == 0) && (argv[j + 1])) {
             strcpy(config.editor, argv[j + 1]);
@@ -130,16 +126,7 @@ static void parse_cmd(int argc, const char *argv[]) {
         }
 #ifdef LIBUDEV_PRESENT
         else if ((strcmp(cmd_switch[6], argv[j]) == 0) && (argv[j + 1])) {
-            config.monitor = atoi(argv[j + 1]);
-        }
-        else if ((strcmp(cmd_switch[7], argv[j]) == 0) && (argv[j + 1])) {
             config.automount = atoi(argv[j + 1]);
-        }
-#endif
-#else
-#ifdef LIBUDEV_PRESENT
-        else if ((strcmp(cmd_switch[5], argv[j]) == 0) && (argv[j + 1])) {
-            config.monitor = atoi(argv[j + 1]);
         }
 #endif
 #endif
@@ -177,9 +164,6 @@ static void read_config_file(void) {
         config_lookup_int(&cfg, "automount", &config.automount);
 #endif
 #endif
-#ifdef LIBUDEV_PRESENT
-        config_lookup_int(&cfg, "monitor", &config.monitor);
-#endif
         config_lookup_int(&cfg, "loglevel", &config.loglevel);
         config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
     } else {
@@ -206,12 +190,6 @@ static void config_checks(void) {
             WARN("no editor env var found.");
         }
     }
-#if defined LIBUDEV_PRESENT && SYSTEMD_PRESENT
-    if ((!config.monitor) && (config.automount)) {
-        WARN("automount disabled as it is useless without udev monitor enabled.");
-        config.automount = 0;
-    }
-#endif
     if ((config.loglevel < LOG_ERR) || (config.loglevel > NO_LOG)) {
         config.loglevel = LOG_ERR;
         WARN("wrong loglevel value. Back to default value.");
@@ -328,10 +306,11 @@ static void main_loop(void) {
 #endif
 #ifdef LIBUDEV_PRESENT
         case 'm': // m to mount/unmount fs
-            if (!device_mode) {
-                if (!config.monitor) {
-                    start_udev();
-                }
+            if (device_mode == DEVMON_OFF) {
+                print_info("Monitor is not active. An error occurred, check log file.", INFO_LINE);
+            } else if (device_mode > DEVMON_READY) {
+                print_info("A tab is already in device mode.", INFO_LINE);
+            } else {
                 show_devices_tab();
             }
             break;
@@ -406,8 +385,8 @@ static int check_init(int index) {
 }
 
 static int check_access(void) {
-    if (access(ps[active].my_cwd, W_OK) != 0) {
-        print_info(no_w_perm, ERR_LINE);
+    if (access(ps[active].my_cwd, W_OK) == -1) {
+        print_info(strerror(errno), ERR_LINE);
         return 0;
     }
     return 1;

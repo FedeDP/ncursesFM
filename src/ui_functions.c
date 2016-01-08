@@ -646,11 +646,12 @@ void tab_refresh(int win) {
 
 #ifdef LIBUDEV_PRESENT
 void update_devices(int num,  char (*str)[PATH_MAX + 1]) {
+    int check;
+    
     pthread_mutex_lock(&fm_lock[device_mode - 1]);
-    /* Do not reset win if a device has been added. Just print next line */
-    int check = num - ps[device_mode - 1].number_of_files;
-
     if (str) {
+        /* Do not reset win if a device has been added. Just print next line */
+        check = num - ps[device_mode - 1].number_of_files;
         ps[device_mode - 1].number_of_files = num;
         str_ptr[device_mode - 1] = str;
         if (check < 0) {
