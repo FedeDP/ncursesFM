@@ -503,10 +503,8 @@ static int add_device(struct udev_device *dev, const char *name) {
             }
             number_of_devices++;
             INFO("added device.");
-            if (device_mode != DEVMON_STARTING) {
-                if (!mount && config.automount) {
+            if (device_mode != DEVMON_STARTING && !mount && config.automount) {
                     mount_fs(name, "Mount", mount);
-                }
             }
         }
     }
