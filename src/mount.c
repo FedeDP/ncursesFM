@@ -485,8 +485,6 @@ static void cleanup_f(void *x) {
 static int add_device(struct udev_device *dev, const char *name) {
     long size;
     char s[20];
-    struct udev_device *parent;
-    char removable[2] = "\0";
     int mount = is_mounted(name);
     
     if (mount != -1) {
@@ -505,17 +503,10 @@ static int add_device(struct udev_device *dev, const char *name) {
             }
             number_of_devices++;
             INFO("added device.");
-            if (udev_device_get_sysattr_value(dev, "removable")) {
-                strcpy(removable, udev_device_get_sysattr_value(dev, "removable"));
-            } else {
-                parent = udev_device_get_parent(dev);
-                if (parent && udev_device_get_sysattr_value(parent, "removable")) {
-                    strcpy(removable, udev_device_get_sysattr_value(parent, "removable"));
+            if (device_mode != DEVMON_STARTING) {
+                if (!mount && config.automount) {
+                    mount_fs(name, "Mount", mount);
                 }
-            }
-            int is_loop_dev = !strncmp(name, "/dev/loop", strlen("/dev/loop"));
-            if (!mount && ((config.automount && !strcmp(removable, "1")) || is_loop_dev)) {
-                mount_fs(name, "Mount", mount);
             }
         }
     }
