@@ -11,6 +11,7 @@ void isomount(const char *str);
 #include <libudev.h>
 #include <blkid/blkid.h>
 #include <mntent.h>
+#include <poll.h>
 
 void start_monitor(void);
 void show_devices_tab(void);

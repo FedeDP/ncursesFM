@@ -59,8 +59,8 @@ static void quit_worker_th(void) {
 #ifdef LIBUDEV_PRESENT
 static void quit_monitor_th(void) {
     if ((monitor_th) && (pthread_kill(monitor_th, 0) != ESRCH)) {
-        INFO("removing monitor th...");
-        pthread_cancel(monitor_th);
+        INFO("sending SIGUSR2 signal to monitor th...");
+        pthread_kill(monitor_th, SIGUSR2);
         pthread_join(monitor_th, NULL);
         INFO("monitor th exited without errors.");
     }

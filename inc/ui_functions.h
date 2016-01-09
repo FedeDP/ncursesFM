@@ -1,5 +1,4 @@
-#ifndef UI
-#define UI
+#pragma once
 
 #include "log.h"
 #include "string_constants.h"
@@ -42,5 +41,3 @@ void resize_win(void);
 void change_sort(void);
 void highlight_selected(int line, const char c);
 void erase_selected_highlight(void);
-
-#endif

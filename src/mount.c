@@ -6,7 +6,6 @@ static void mount_fs(const char *str, const char *method, int mount);
 static char mount_str[PATH_MAX + 1];
 
 #ifdef LIBUDEV_PRESENT
-static void cleanup_f(void *x);
 static int init_mbus(void);
 static int check_udisks(void);
 static void enumerate_block_devices(void);
@@ -16,6 +15,7 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
 static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static void *device_monitor(void *x);
+static void sig_handler(int signum);
 static void change_mounted_status(int pos, int mount, const char *name);
 static int add_device(struct udev_device *dev, const char *name);
 static int remove_device(const char *name);
@@ -434,36 +434,48 @@ void leave_device_mode(void) {
 
 static void *device_monitor(void *x) {
     int r;
+    sigset_t mask;
+    sigset_t orig_mask;
+    struct sigaction act;
+    struct pollfd p;
     
-    pthread_cleanup_push(cleanup_f, NULL);
+    memset(&act, 0, sizeof(act));
+    act.sa_handler = sig_handler;
+    sigaction(SIGUSR2, &act, 0);
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGUSR2);
+    sigprocmask(SIG_BLOCK, &mask, &orig_mask);
+    
     pthread_mutex_init(&dev_lock, NULL);
     enumerate_block_devices();
     if (!quit) {
         device_mode = DEVMON_READY;
+        p = (struct pollfd) {
+            .fd = sd_bus_get_fd(mbus),
+            //             .events = sd_bus_get_events(mbus), //not working??
+            .events = POLLIN | POLLOUT,
+        };
     } else {
         device_mode = DEVMON_OFF;
     }
     while (!quit) {
-        r = sd_bus_process(mbus, NULL);
+        r = ppoll(&p, 1, NULL, &orig_mask);
         if (r > 0) {
-            continue;
-        }
-        r = sd_bus_wait(mbus, (uint64_t) -1);
-        if (r < 0) {
-            break;
+            r = sd_bus_process(mbus, NULL);
+            if (r > 0) {
+                continue;
+            }
         }
     }
-    pthread_cleanup_pop(1);
-    pthread_detach(pthread_self());
-    pthread_exit(NULL);
-}
-
-static void cleanup_f(void *x) {
-    INFO("canceling thread...");
     sd_bus_flush_close_unref(mbus);
     pthread_mutex_destroy(&dev_lock);
     free_devices();
     udev_unref(udev);
+    pthread_exit(NULL);
+}
+
+static void sig_handler(int signum) {
+    INFO("received SIGUSR2 signal.");
 }
 
 static int add_device(struct udev_device *dev, const char *name) {
@@ -488,12 +500,13 @@ static int add_device(struct udev_device *dev, const char *name) {
             }
             number_of_devices++;
             INFO("added device.");
-            if (device_mode != DEVMON_STARTING && !mount && config.automount) {
-                    mount_fs(name, "Mount", mount);
+            int is_loop_dev = !strncmp(name, "/dev/loop", strlen("/dev/loop"));
+            if ((is_loop_dev) || (device_mode != DEVMON_STARTING && !mount && config.automount)) {
+                mount_fs(name, "Mount", mount);
             }
         }
     } else {
-        INFO("not mountable fs found. Device discarded.");
+        INFO("not mountable fs found. Discarded.");
     }
     return mount;
 }

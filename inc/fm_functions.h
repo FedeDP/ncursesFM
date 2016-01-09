@@ -1,5 +1,4 @@
-#ifndef FM
-#define FM
+#pragma once
 
 #ifdef SYSTEMD_PRESENT
 #include "install_package.h"
@@ -40,5 +39,3 @@ int paste_file(void);
 int move_file(void);
 void change_tab(void);
 void fast_browse(int c);
-
-#endif
