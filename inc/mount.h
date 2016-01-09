@@ -9,6 +9,8 @@ void isomount(const char *str);
 #ifdef LIBUDEV_PRESENT
 
 #include <libudev.h>
+#include <blkid/blkid.h>
+#include <mntent.h>
 
 void start_monitor(void);
 void show_devices_tab(void);

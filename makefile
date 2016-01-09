@@ -26,7 +26,7 @@ ifneq ("$(DISABLE_LIBSYSTEMD)","1")
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
 endif
 ifneq ("$(DISABLE_LIBUDEV)","1")
-LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
+LIBUDEV=$(shell pkg-config --silence-errors --libs libudev blkid)
 endif
 ifneq ("$(DISABLE_OPENSSL)","1")
 LIBOPENSSL=$(shell pkg-config --silence-errors --libs openssl)

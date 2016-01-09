@@ -62,11 +62,11 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 
 ## Build requirements
 
-* ncurses    -> UI
-* libarchive -> archiving/extracting support
-* pkg-config -> to manage libraries link in makefile
-* glibc      -> to set locale
-* git        -> to clone repo
+* ncurses    -> UI.
+* libarchive -> archiving/extracting support.
+* glibc      -> to set locale and mntent functions.
+* pkg-config -> to manage libraries link in makefile.
+* git        -> to clone repo.
 
 ## Optional compile time dependencies
 
@@ -75,12 +75,13 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 * libx11    -> check whether ncursesFM is started in a X environment or not.
 * sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
 * libudev   -> needed for devices/iso mount, useful only if compiled with sd-bus.
+* libblkid  -> for libblkid functions, useful only if compiled with libudev.
 * openssl   -> for shasum functions support.
 
 ## Runtime dependencies
 
 **required:**
-* ncurses, libarchive, glibc plus every optional build dep if compiled with its support.
+* ncurses, libarchive, glibc, util_linux plus every optional build dep if compiled with its support.
 
 **optional:**
 * if compiled with libx11 support: xdg-utils.
@@ -88,6 +89,7 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 
 ## Known bugs
 * installing packages segfaults if package has wrong arch. Packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.
+* not all memory is correctly freed if leaving the program while initially probing for devices.
 
 ## Install instructions:
 
