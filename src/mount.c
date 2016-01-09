@@ -15,7 +15,7 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
 static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static void *device_monitor(void *x);
 static void sig_handler(int signum);
-static void change_mounted_status(int pos, int mount, const char *name);
+static void change_mounted_status(int pos, const char *name);
 static int add_device(struct udev_device *dev, const char *name);
 static int remove_device(const char *name);
 static int is_present(const char *name);
@@ -393,8 +393,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             sprintf(devname, "/dev/%s", strrchr(name, '/') + 1);
             int present = is_present(devname);
             if (present != -1) {
-                int mount = is_mounted(devname);
-                change_mounted_status(present, mount, devname);
+                change_mounted_status(present, devname);
                 if (!quit && device_mode > DEVMON_READY) {
                     update_devices(number_of_devices, NULL);
                 }
@@ -427,9 +426,10 @@ void manage_enter_device(void) {
     pthread_mutex_unlock(&dev_lock);
 }
 
-static void change_mounted_status(int pos, int mount, const char *name) {
+static void change_mounted_status(int pos, const char *name) {
     int len = strlen(my_devices[pos]);
-    sprintf(my_devices[pos] + len - 1, "%d", mount);
+    int mount = my_devices[pos][len - 1] - '0';
+    sprintf(my_devices[pos] + len - 1, "%d", !mount);
     if (!strlen(mount_str)) {
         if (mount == 1) {
             sprintf(mount_str, "External tool has mounted %s.", name);
@@ -469,18 +469,19 @@ static void *device_monitor(void *x) {
         p = (struct pollfd) {
             .fd = sd_bus_get_fd(mbus),
 //             .events = sd_bus_get_events(mbus), //not working??
-            .events = POLLIN | POLLOUT,
+            .events = POLLIN,
         };
     } else {
         device_mode = DEVMON_OFF;
     }
     while (!quit) {
-        r = ppoll(&p, 1, NULL, &orig_mask);
+        r = sd_bus_process(mbus, NULL);
         if (r > 0) {
-            r = sd_bus_process(mbus, NULL);
-            if (r > 0) {
-                continue;
-            }
+            continue;
+        }
+        r = ppoll(&p, 1, NULL, &orig_mask);
+        if (r < 0) {
+            break;
         }
     }
     sd_bus_flush_close_unref(mbus);
