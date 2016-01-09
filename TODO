@@ -8,7 +8,5 @@
  * 
  * re-add iso unmounting with enter? Test/iso_unmouning_with_enter
  * 
- * fix "mounted in..." print during program start if automount == 1
- * 
  * fix leaving program during blkid_probe_all_removable() call.
  */
