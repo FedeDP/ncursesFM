@@ -71,8 +71,6 @@ static void helper_function(int argc, const char *argv[]) {
     config.starting_helper = 1;
 #ifdef LIBUDEV_PRESENT
     device_mode = DEVMON_STARTING;
-#else
-    device_mode = DEVMON_OFF;
 #endif
     if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
         printf("\n NcursesFM Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
@@ -306,12 +304,14 @@ static void main_loop(void) {
 #endif
 #ifdef LIBUDEV_PRESENT
         case 'm': // m to mount/unmount fs
-            if (device_mode == DEVMON_OFF) {
-                print_info("Monitor is not active. An error occurred, check log file.", INFO_LINE);
-            } else if (device_mode > DEVMON_READY) {
-                print_info("A tab is already in device mode.", INFO_LINE);
-            } else {
+            if (device_mode == DEVMON_STARTING) {
+                print_info("Still polling for initial devices.", INFO_LINE);
+            } else if (device_mode == DEVMON_READY) {
                 show_devices_tab();
+            } else if (device_mode == DEVMON_OFF) {
+                print_info("Monitor is not active. An error occurred, check log file.", INFO_LINE);
+            } else {
+                print_info("A tab is already in device mode.", INFO_LINE);
             }
             break;
 #endif

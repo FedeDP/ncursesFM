@@ -1,7 +1,10 @@
 #include "../inc/mount.h"
 
 #ifdef SYSTEMD_PRESENT
-static void mount_fs(const char *str, const char *method, int mount, int pos);
+static void mount_fs(const char *str, const char *method, int mount);
+
+static char mount_str[PATH_MAX + 1];
+
 #ifdef LIBUDEV_PRESENT
 static void cleanup_f(void *x);
 static int init_mbus(void);
@@ -10,8 +13,9 @@ static void enumerate_block_devices(void);
 static int is_mounted(const char *dev_path);
 static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static void *device_monitor(void *x);
-static void change_mounted_status(int pos, const char *name, int mount);
+static void change_mounted_status(int pos, int mount, const char *name);
 static int add_device(struct udev_device *dev, const char *name);
 static int remove_device(const char *name);
 static int is_present(const char *name);
@@ -23,6 +27,7 @@ static int number_of_devices;
 char (*my_devices)[PATH_MAX + 1];
 static pthread_mutex_t dev_lock;
 static sd_bus *mbus;
+
 #endif
 #endif
 
@@ -30,13 +35,13 @@ static sd_bus *mbus;
 /*
  * Open the bus, and call "method" string on UDisks2.Filesystem.
  */
-static void mount_fs(const char *str, const char *method, int mount, int pos) {
+static void mount_fs(const char *str, const char *method, int mount) {
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_bus_message *mess = NULL;
     sd_bus *mount_bus = NULL;
     const char *path;
     char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
-    char success[PATH_MAX + 1], mount_str[100];
+    char tmp[30];
     int r;
 
     r = sd_bus_open_system(&mount_bus);
@@ -46,8 +51,8 @@ static void mount_fs(const char *str, const char *method, int mount, int pos) {
         return;
     }
     strcat(obj_path, strrchr(str, '/') + 1);
-    sprintf(mount_str, "calling %s on bus.", method);
-    INFO(mount_str);
+    sprintf(tmp, "calling %s on bus.", method);
+    INFO(tmp);
     r = sd_bus_call_method(mount_bus,
                            "org.freedesktop.UDisks2",
                            obj_path,
@@ -61,18 +66,15 @@ static void mount_fs(const char *str, const char *method, int mount, int pos) {
         print_info(error.message, ERR_LINE);
         WARN(error.message);
     } else {
-#ifdef LIBUDEV_PRESENT
-        change_mounted_status(pos, str, !mount);
-#endif
-        if (device_mode != DEVMON_STARTING) {
-            if (!mount) {
-                sd_bus_message_read(mess, "s", &path);
-                sprintf(success, "%s mounted in: %s.", str, path);
-                print_info(success, INFO_LINE);
-            } else {
-                print_info("Unmounted.", INFO_LINE);
-            }
+        if (!mount) {
+            sd_bus_message_read(mess, "s", &path);
+            sprintf(mount_str, "%s mounted in: %s.", str, path);
+        } else {
+            sprintf(mount_str, "%s unmounted.", str);
         }
+#ifndef LIBUDEV_PRESENT
+        print_info(mount_str, INFO_LINE);
+#endif
     }
     close_bus(&error, mess, mount_bus);
 }
@@ -115,7 +117,7 @@ void isomount(const char *str) {
         sd_bus_message_read(mess, "o", &obj_path);
         sd_bus_flush(iso_bus);
 #ifndef LIBUDEV_PRESENT
-        mount_fs(obj_path, "Mount", 0, -1);
+        mount_fs(obj_path, "Mount", 0);
 #endif
         INFO("calling SetAutoClear on bus.");
         r = sd_bus_call_method(iso_bus,
@@ -188,6 +190,16 @@ static int init_mbus(void) {
                          remove_callback, NULL);
             if (r < 0) {
                 WARN(strerror(-r));
+            } else {
+                r = sd_bus_add_match(mbus, NULL, 
+                                 "type='signal',"
+                                 "sender='org.freedesktop.UDisks2',"
+                                 "interface='org.freedesktop.DBus.Properties',"
+                                 "member='PropertiesChanged'",
+                                 change_callback, NULL);
+                if (r < 0) {
+                    WARN(strerror(-r));
+                }
             }
         }
     }
@@ -259,8 +271,8 @@ static int is_mounted(const char *dev_path) {
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_bus_message *mess = NULL;
     int r, ret = 0;
-    const uint8_t bytes;
     char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
+    const uint8_t bytes;
     
     strcat(obj_path, strrchr(dev_path, '/') + 1);
     INFO("getting MountPoints property on bus.");
@@ -313,7 +325,7 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
         WARN(strerror(-r));
     } else {
         if (!strncmp(obj, path, strlen(obj))) {
-            INFO("signal received!");
+            INFO("InterfaceAdded signal received!");
             pthread_mutex_lock(&dev_lock);
             strcpy(name, strrchr(path, '/') + 1);
             dev = udev_device_new_from_subsystem_sysname(udev, "block", name);
@@ -321,7 +333,8 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
                 sprintf(devname, "/dev/%s", name);
                 r = add_device(dev, devname);
                 udev_device_unref(dev);
-                if (!quit && device_mode && r != -1) {
+                if (!quit && device_mode > DEVMON_READY && r != -1) {
+                    print_info("New device connected.", INFO_LINE);
                     update_devices(number_of_devices, my_devices);
                 }
             }
@@ -345,13 +358,44 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
         WARN(strerror(-r));
     } else {
         if (!strncmp(obj, path, strlen(obj))) {
-            INFO("signal received!");
+            INFO("InterfaceRemoved signal received!");
             pthread_mutex_lock(&dev_lock);
             strcpy(name, strrchr(path, '/') + 1);
             sprintf(devname, "/dev/%s", name);
             r = remove_device(devname);
-            if (!quit && device_mode && r != -1) {
+            if (!quit && device_mode > DEVMON_READY && r != -1) {
                 update_devices(number_of_devices, my_devices);
+            }
+            pthread_mutex_unlock(&dev_lock);
+        } else {
+            INFO("signal discarded.");
+        }
+    }
+    return 0;
+}
+
+static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
+    int r;
+    const char *path;
+    const char *obj = "org.freedesktop.UDisks2.Filesystem";
+    char devname[PATH_MAX + 1];
+    
+    r = sd_bus_message_read(m, "s", &path);
+    if (r < 0) {
+        WARN(strerror(-r));
+    } else {
+        if (!strncmp(obj, path, strlen(obj))) {
+            INFO("PropertiesChanged signal received!");
+            pthread_mutex_lock(&dev_lock);
+            const char *name = sd_bus_message_get_path(m);
+            sprintf(devname, "/dev/%s", strrchr(name, '/') + 1);
+            int present = is_present(devname);
+            if (present != -1) {
+                int mount = is_mounted(devname);
+                change_mounted_status(present, mount, devname);
+                if (!quit && device_mode > DEVMON_READY) {
+                    update_devices(number_of_devices, NULL);
+                }
             }
             pthread_mutex_unlock(&dev_lock);
         } else {
@@ -377,19 +421,27 @@ void manage_enter_device(void) {
     } else {
         strcpy(action, "Mount");
     }
-    mount_fs(name, action, mount, pos);
-    update_devices(number_of_devices, NULL);
+    mount_fs(name, action, mount);
     pthread_mutex_unlock(&dev_lock);
 }
 
-static void change_mounted_status(int pos, const char *name, int mount) {
+static void change_mounted_status(int pos, int mount, const char *name) {
     int len = strlen(my_devices[pos]);
     sprintf(my_devices[pos] + len - 1, "%d", mount);
+    if (!strlen(mount_str)) {
+        if (mount == 1) {
+            sprintf(mount_str, "External tool has mounted %s.", name);
+        } else {
+            sprintf(mount_str, "External tool has unmounted %s.", name);
+        }
+    }
+    print_info(mount_str, INFO_LINE);
+    memset(mount_str, 0, strlen(mount_str));
 }
 
 void leave_device_mode(void) {
     pthread_mutex_lock(&fm_lock[active]);
-    device_mode = 0;
+    device_mode = DEVMON_READY;
     pthread_mutex_unlock(&fm_lock[active]);
     change_dir(ps[active].my_cwd);
 }
@@ -450,9 +502,6 @@ static int add_device(struct udev_device *dev, const char *name) {
                         name, s, mount);
             }
             number_of_devices++;
-            if (device_mode != DEVMON_STARTING) {
-                print_info("New device connected.", INFO_LINE);
-            }
             INFO("added device.");
             if (udev_device_get_sysattr_value(dev, "removable")) {
                 strcpy(removable, udev_device_get_sysattr_value(dev, "removable"));
@@ -464,7 +513,7 @@ static int add_device(struct udev_device *dev, const char *name) {
             }
             int is_loop_dev = !strncmp(name, "/dev/loop", strlen("/dev/loop"));
             if (!mount && ((config.automount && !strcmp(removable, "1")) || is_loop_dev)) {
-                mount_fs(name, "Mount", mount, number_of_devices - 1);
+                mount_fs(name, "Mount", mount);
             }
         }
     }
