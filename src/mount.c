@@ -516,7 +516,7 @@ static int add_device(struct udev_device *dev, const char *name) {
             number_of_devices++;
             INFO("added device.");
             int is_loop_dev = !strncmp(name, "/dev/loop", strlen("/dev/loop"));
-            if ((is_loop_dev) || (device_mode != DEVMON_STARTING && !mount && config.automount)) {
+            if ((device_mode != DEVMON_STARTING) && ((is_loop_dev) || (!mount && config.automount))) {
                     mount_fs(name, "Mount", mount);
             }
         }
