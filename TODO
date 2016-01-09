@@ -7,4 +7,8 @@
  * ask to force if unmount fails? -> http://udisks.freedesktop.org/docs/latest/gdbus-org.freedesktop.UDisks2.Filesystem.html#gdbus-method-org-freedesktop-UDisks2-Filesystem.Unmount
  * 
  * re-add iso unmounting with enter? Test/iso_unmouning_with_enter
+ * 
+ * fix "mounted in..." print during program start if automount == 1
+ * 
+ * do not list write-protected fs!
  */

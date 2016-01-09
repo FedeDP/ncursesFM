@@ -69,8 +69,10 @@ static void mount_fs(const char *str, const char *method, int mount) {
         if (!mount) {
             sd_bus_message_read(mess, "s", &path);
             sprintf(mount_str, "%s mounted in: %s.", str, path);
+            INFO("Mounted.");
         } else {
             sprintf(mount_str, "%s unmounted.", str);
+            INFO("Unmounted.");
         }
 #ifndef LIBUDEV_PRESENT
         print_info(mount_str, INFO_LINE);
@@ -450,9 +452,9 @@ static void *device_monitor(void *x) {
     int r;
     
     pthread_cleanup_push(cleanup_f, NULL);
+    pthread_mutex_init(&dev_lock, NULL);
     enumerate_block_devices();
     if (!quit) {
-        pthread_mutex_init(&dev_lock, NULL);
         device_mode = DEVMON_READY;
     } else {
         device_mode = DEVMON_OFF;
