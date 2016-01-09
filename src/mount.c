@@ -1,5 +1,4 @@
 #include "../inc/mount.h"
-#include <poll.h>
 
 #ifdef SYSTEMD_PRESENT
 static void mount_fs(const char *str, const char *method, int mount);
