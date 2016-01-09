@@ -9,4 +9,6 @@
  * re-add iso unmounting with enter? Test/iso_unmouning_with_enter
  * 
  * fix leaving program during blkid_probe_all_removable() call.
+ * 
+ * fix bug: mount_fs call in add_device won't work for iso because they're not mountable fs for libblkid...
  */
