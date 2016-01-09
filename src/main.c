@@ -304,12 +304,14 @@ static void main_loop(void) {
 #endif
 #ifdef LIBUDEV_PRESENT
         case 'm': // m to mount/unmount fs
-            if (device_mode > DEVMON_READY) {
-                print_info("A tab is already in device mode.", INFO_LINE);
+            if (device_mode == DEVMON_STARTING) {
+                print_info("Still polling for initial devices.", INFO_LINE);
+            } else if (device_mode == DEVMON_READY) {
+                show_devices_tab();
             } else if (device_mode == DEVMON_OFF) {
                 print_info("Monitor is not active. An error occurred, check log file.", INFO_LINE);
             } else {
-                show_devices_tab();
+                print_info("A tab is already in device mode.", INFO_LINE);
             }
             break;
 #endif

@@ -69,8 +69,10 @@ static void mount_fs(const char *str, const char *method, int mount) {
         if (!mount) {
             sd_bus_message_read(mess, "s", &path);
             sprintf(mount_str, "%s mounted in: %s.", str, path);
+            INFO("Mounted.");
         } else {
             sprintf(mount_str, "%s unmounted.", str);
+            INFO("Unmounted.");
         }
 #ifndef LIBUDEV_PRESENT
         print_info(mount_str, INFO_LINE);
@@ -232,11 +234,7 @@ void show_devices_tab(void) {
         reset_win(active);
         pthread_mutex_unlock(&fm_lock[active]);
     } else {
-        if (device_mode == DEVMON_STARTING) {
-            print_info("Still polling udev for devices.", INFO_LINE);
-        } else {
-            print_info("No devices found.", INFO_LINE);
-        }
+        print_info("No devices found.", INFO_LINE);
     }
 }
 
@@ -258,12 +256,10 @@ static void enumerate_block_devices(void) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
         dev = udev_device_new_from_syspath(udev, path);
         const char *name = udev_device_get_devnode(dev);
-        int r = add_device(dev, name);
+        add_device(dev, name);
         udev_device_unref(dev);
         if (quit) {
             break;
-        } else if (r && device_mode) {
-            update_devices(number_of_devices, my_devices);
         }
     }
     udev_enumerate_unref(enumerate);
@@ -325,7 +321,7 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
                 sprintf(devname, "/dev/%s", name);
                 r = add_device(dev, devname);
                 udev_device_unref(dev);
-                if (!quit && device_mode && r != -1) {
+                if (!quit && device_mode > DEVMON_READY && r != -1) {
                     print_info("New device connected.", INFO_LINE);
                     update_devices(number_of_devices, my_devices);
                 }
@@ -355,7 +351,7 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             strcpy(name, strrchr(path, '/') + 1);
             sprintf(devname, "/dev/%s", name);
             r = remove_device(devname);
-            if (!quit && device_mode && r != -1) {
+            if (!quit && device_mode > DEVMON_READY && r != -1) {
                 update_devices(number_of_devices, my_devices);
             }
             pthread_mutex_unlock(&dev_lock);
@@ -385,7 +381,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             if (present != -1) {
                 int mount = is_mounted(devname);
                 change_mounted_status(present, mount, devname);
-                if (!quit && device_mode) {
+                if (!quit && device_mode > DEVMON_READY) {
                     update_devices(number_of_devices, NULL);
                 }
             }
@@ -425,15 +421,13 @@ static void change_mounted_status(int pos, int mount, const char *name) {
             sprintf(mount_str, "External tool has unmounted %s.", name);
         }
     }
-    if (device_mode != DEVMON_STARTING) {
-        print_info(mount_str, INFO_LINE);
-    }
+    print_info(mount_str, INFO_LINE);
     memset(mount_str, 0, strlen(mount_str));
 }
 
 void leave_device_mode(void) {
     pthread_mutex_lock(&fm_lock[active]);
-    device_mode = 0;
+    device_mode = DEVMON_READY;
     pthread_mutex_unlock(&fm_lock[active]);
     change_dir(ps[active].my_cwd);
 }
@@ -442,9 +436,9 @@ static void *device_monitor(void *x) {
     int r;
     
     pthread_cleanup_push(cleanup_f, NULL);
+    pthread_mutex_init(&dev_lock, NULL);
     enumerate_block_devices();
     if (!quit) {
-        pthread_mutex_init(&dev_lock, NULL);
         device_mode = DEVMON_READY;
     } else {
         device_mode = DEVMON_OFF;
