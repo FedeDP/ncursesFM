@@ -1,9 +1,13 @@
 # NcursesFM
-Ncurses File Manager for linux.  
+Ncurses File Manager for linux. Libblkid branch.  
 
 It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.  
 Being simple doesn't imply being useless; indeed it is a full featured fm.  
 It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).
+
+In this branch you'll find libblkid version of "is_mountable" function used to check if a device is mountable.  
+While it probably has better performance than "master" method (udisks2 bus call), plus it fixes a minor issue too, it has a huge problem: it is really slow to inspect DVD/CD/floppy reader, and that causes some troubles (eg: leaving program will block while dvd is probed)
+Another issue it raises is that it won't list loop devices (iso files) as mountable.
 
 ## Features:
 
@@ -89,7 +93,8 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 
 ## Known bugs
 * installing packages segfaults if package has wrong arch. Packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.
-* not all memory is correctly freed if leaving the program while initially probing for devices.
+* Leaving program while it is still initially inspecting devices will cause program to block while probe is performed. If there's eg a dvd reader, it can take some time (on my system it takes circa 5s)
+* loop devices (iso files) will not be listed and automounted because libblkid won't catch them as mountable fs.
 
 ## Install instructions:
 
