@@ -6,6 +6,8 @@ static void mount_fs(const char *str, const char *method, int mount);
 static char mount_str[PATH_MAX + 1];
 
 #ifdef LIBUDEV_PRESENT
+static int is_iso_mounted(const char *filename, char *loop_dev);
+static void iso_backing_file(char *s, const char *name);
 static int init_mbus(void);
 static int check_udisks(void);
 static void enumerate_block_devices(void);
@@ -92,7 +94,13 @@ void isomount(const char *str) {
     sd_bus *iso_bus = NULL;
     const char *obj_path;
     int r, fd;
-    
+    char loop_dev[PATH_MAX + 1];
+#ifdef LIBUDEV_PRESENT
+    if (is_iso_mounted(str, loop_dev)) {
+        mount_fs(loop_dev, "Unmount", 1);
+        return;
+    }
+#endif
     fd = open(str, O_RDONLY);
     r = sd_bus_open_system(&iso_bus);
     if (r < 0) {
@@ -141,6 +149,80 @@ void isomount(const char *str) {
 }
 
 #ifdef LIBUDEV_PRESENT
+
+static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
+    struct udev *tmp_udev;
+    struct udev_enumerate *enumerate;
+    struct udev_list_entry *devices, *dev_list_entry;
+    struct udev_device *dev;
+    char s[PATH_MAX + 1] = {0};
+    char resolved_path[PATH_MAX + 1];
+    int mount = 0;
+    
+    realpath(filename, resolved_path);
+    tmp_udev = udev_new();
+    enumerate = udev_enumerate_new(tmp_udev);
+    udev_enumerate_add_match_subsystem(enumerate, "block");
+    udev_enumerate_add_match_property(enumerate, "ID_FS_TYPE", "udf");
+    udev_enumerate_scan_devices(enumerate);
+    devices = udev_enumerate_get_list_entry(enumerate);
+    udev_list_entry_foreach(dev_list_entry, devices) {
+        const char *path = udev_list_entry_get_name(dev_list_entry);
+        dev = udev_device_new_from_syspath(udev, path);
+        strcpy(loop_dev, udev_device_get_devnode(dev));
+        iso_backing_file(s, loop_dev);
+        udev_device_unref(dev);
+        if (strcmp(s, resolved_path) == 0) {
+            mount = 1;
+            break;
+        }
+    }
+    udev_enumerate_unref(enumerate);
+    udev_unref(tmp_udev);
+    return mount;
+}
+
+static void iso_backing_file(char *s, const char *name) {
+    sd_bus_error error = SD_BUS_ERROR_NULL;
+    sd_bus_message *mess = NULL;
+    sd_bus *iso_bus = NULL;
+    int r;
+    const uint8_t bytes;
+    char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
+    
+    r = sd_bus_open_system(&iso_bus);
+    if (r < 0) {
+        print_info(strerror(-r), ERR_LINE);
+        WARN(strerror(-r));
+        return;
+    }
+    strcat(obj_path, strrchr(name, '/') + 1);
+    INFO("getting BackingFile property on bus.");
+    r = sd_bus_get_property(iso_bus,
+                            "org.freedesktop.UDisks2",
+                            obj_path,
+                            "org.freedesktop.UDisks2.Loop",
+                            "BackingFile",
+                            &error,
+                            &mess,
+                            "ay");
+    if (r < 0) {
+        print_info(error.message, ERR_LINE);
+        WARN(error.message);
+    } else {
+        r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "y");
+        if (r < 0) {
+            print_info(strerror(-r), ERR_LINE);
+            WARN(strerror(-r));
+        } else {
+            while ((sd_bus_message_read(mess, "y", &bytes)) > 0) {
+                sprintf(s + strlen(s), "%c", (char)bytes);
+            }
+        }
+    }
+    close_bus(&error, mess, iso_bus);
+}
+
 void start_monitor(void) {
     int fail = 0;
     
@@ -468,7 +550,6 @@ static void *device_monitor(void *x) {
         device_mode = DEVMON_READY;
         p = (struct pollfd) {
             .fd = sd_bus_get_fd(mbus),
-//             .events = sd_bus_get_events(mbus), //not working??
             .events = POLLIN,
         };
     } else {

@@ -15,7 +15,7 @@ void *install_package(void *str) {
     sd_bus_message *mess = NULL;
     sd_bus *install_bus = NULL;
     const char *path;
-    int r, inhibit_fd, finished = 0;
+    int r, inhibit_fd = -1, finished = 0;
     
     r = sd_bus_open_system(&install_bus);
     if (r < 0) {
