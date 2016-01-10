@@ -6,7 +6,7 @@ Being simple doesn't imply being useless; indeed it is a full featured fm.
 It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).
 
 In this branch you'll find libblkid version of "is_mountable" function used to check if a device is mountable.  
-While it probably has better performance than "master" method (udisks2 bus call), plus it fixes a minor issue too, it has a huge problem: it is really slow to inspect DVD/CD/floppy reader, and that causes some troubles (eg: leaving program will block while dvd is probed)
+While it probably has better performance than "master" method (udisks2 bus call), plus it fixes a minor issue too, it has a huge problem: it is really slow to inspect DVD/CD/floppy reader, and that causes some troubles (eg: leaving program will block while dvd is probed).  
 Another issue it raises is that it won't list loop devices (iso files) as mountable.
 
 ## Features:
