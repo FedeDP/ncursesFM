@@ -5,9 +5,6 @@ It aims to be as user friendly and lightweight as possible, while being good loo
 Being simple doesn't imply being useless; indeed it is a full featured fm.  
 It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).
 
-In libblkid branch you'll find libblkid version of "is_mountable" function used to check if a device is mountable.  
-While it probably has better performance and is more reliable than current method (udisks2 bus call), plus it fixes a minor issue too, it has a huge problem: it is really slow to inspect DVD/CD/floppy reader.  
-
 ## Features:
 
 **Press 'l' while in program to view a detailed helper message**
