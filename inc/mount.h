@@ -9,7 +9,6 @@ void isomount(const char *str);
 #ifdef LIBUDEV_PRESENT
 
 #include <libudev.h>
-#include <poll.h>
 
 void start_monitor(void);
 void show_devices_tab(void);

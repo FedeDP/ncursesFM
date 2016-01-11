@@ -30,7 +30,7 @@ void scroll_up(void);
 void trigger_show_helper_message(void);
 void trigger_stats(void);
 void change_unit(float size, char *str);
-int win_getch(void);
+int win_getch(WINDOW *win);
 void tab_refresh(int win);
 #ifdef LIBUDEV_PRESENT
 void update_devices(int num,  char (*str)[PATH_MAX + 1]);

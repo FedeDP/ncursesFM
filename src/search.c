@@ -14,6 +14,9 @@ void search(void) {
         sv.found_cont = 0;
         sv.search_archive = 0;
         ask_user(search_archives, &c, 1, 'n');
+        if (quit) {
+            return;
+        }
         if (c == 'y') {
             sv.search_archive = 1;
         }

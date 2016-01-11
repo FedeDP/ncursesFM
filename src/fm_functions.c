@@ -135,7 +135,7 @@ static void open_file(const char *str, float size) {
 
     if (size > BIG_FILE_THRESHOLD) { // 5 Mb
         ask_user(big_file, &c, 1, 'y');
-        if (c == 'n') {
+        if (quit || c == 'n') {
             return;
         }
     }

@@ -1,6 +1,8 @@
 #include <dirent.h>
 #include <errno.h>
 #include <pthread.h>
+#include <poll.h>
+#include <signal.h>
 
 #define MAX_TABS 2
 #define MAX_NUMBER_OF_FOUND 100
@@ -109,6 +111,8 @@ typedef struct thread_list {
     int type;
 } thread_job_list;
 
+struct pollfd main_p;
+sigset_t main_mask;
 thread_job_list *thread_h;
 file_list *selected;
 struct conf config;

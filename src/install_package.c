@@ -40,7 +40,6 @@ void *install_package(void *str) {
     }
     if (config.inhibit) {
         inhibit_fd = inhibit_suspend("Package installation...");
-        INFO("power management functions inhibition started.");
     }
     sd_bus_message_read(mess, "o", &path);
     r = sd_bus_add_match(install_bus, NULL, "type='signal',interface='org.freedesktop.PackageKit.Transaction',member='Finished'", match_callback, &finished);

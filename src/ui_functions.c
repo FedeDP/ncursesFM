@@ -92,6 +92,8 @@ static void term_size_check(void) {
 static void info_win_init(void) {
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, LINES - INFO_HEIGHT, 0);
     keypad(info_win, TRUE);
+    nodelay(info_win, TRUE);
+    notimeout(info_win, TRUE);
     for (int i = 0; i < INFO_HEIGHT; i++) {
         mvwprintw(info_win, i, 1, "%s", info_win_str[i]);
     }
@@ -266,6 +268,8 @@ void new_tab(int win) {
     keypad(mywin[win].fm, TRUE);
     scrollok(mywin[win].fm, TRUE);
     idlok(mywin[win].fm, TRUE);
+    notimeout(mywin[win].fm, TRUE);
+    nodelay(mywin[win].fm, TRUE);
     initialize_tab_cwd(win);
 }
 
@@ -325,6 +329,7 @@ void scroll_down(void) {
         } else {
             mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta, 1, "  ");
             mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 1, 1, "->");
+            wrefresh(mywin[active].fm);
         }
         pthread_mutex_unlock(&fm_lock[active]);
     }
@@ -343,6 +348,7 @@ void scroll_up(void) {
         } else {
             mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 2, 1, "  ");
             mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 1, 1, "->");
+            wrefresh(mywin[active].fm);
         }
         pthread_mutex_unlock(&fm_lock[active]);
     }
@@ -589,20 +595,17 @@ void ask_user(const char *str, char *input, int d, char c) {
     int s, len, i = 0;
 
     print_info(str, ASK_LINE);
-    do {
-        s = wgetch(info_win);
+    while ((i < d) && (!quit)) {
+        wrefresh(info_win);
+        s = win_getch(info_win);
         if (s == KEY_RESIZE) {
             resize_win();
-            if (quit) {
-                memset(input, 0, strlen(input));
-                return;
-            }
             char resize_str[200];
             sprintf(resize_str, "%s%s", str, input);
             print_info(resize_str, ASK_LINE);
         } else if (s == 10) { // enter to exit
             break;
-        } else {
+        } else if (s != ERR) {
             len = strlen(str) + strlen(info_win_str[ASK_LINE]) + i;
             if ((s == 127) && (i)) {    // backspace!
                 input[--i] = '\0';
@@ -621,15 +624,23 @@ void ask_user(const char *str, char *input, int d, char c) {
                 pthread_mutex_unlock(&info_lock);
             }
         }
-    } while (i < d);
-    if (i == 0) {
+    }
+    if (quit) {
+        memset(input, 0, strlen(input));
+    } else if (i == 0) {
         input[0] = c;
     }
     print_info("", ASK_LINE);
 }
 
-int win_getch(void) {
-    return wgetch(mywin[active].fm);
+int win_getch(WINDOW *win) {
+    ppoll(&main_p, 1, NULL, &main_mask);
+    if (!win) {
+        return wgetch(mywin[active].fm);
+    } else {
+        INFO("TOP");
+        return wgetch(win);
+    }
 }
 
 /*

@@ -69,7 +69,6 @@ void init_thread(int type, int (* const f)(void)) {
 #ifdef SYSTEMD_PRESENT
         if (config.inhibit) {
             inhibit_fd = inhibit_suspend("Job in process...");
-            INFO("power management functions inhibition started.");
         }
 #endif
         thread_m.str = "";
@@ -93,6 +92,9 @@ static void init_thread_helper(void) {
         selected = NULL;
         if (current_th->type == ARCHIVER_TH && !quit) {
             ask_user(archiving_mesg, name, NAME_MAX, 0);
+            if (quit) {
+                return;
+            }
             if (!strlen(name)) {
                 strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
             }

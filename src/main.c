@@ -38,6 +38,7 @@ static int check_init(int index);
 static int check_access(void);
 static void set_signals(void);
 static void sig_handler(int signum);
+static void sigsegv_handler(int signum);
 
 /*
  * pointers to long_file_operations functions, used in main loop;
@@ -190,7 +191,6 @@ static void config_checks(void) {
     }
     if ((config.loglevel < LOG_ERR) || (config.loglevel > NO_LOG)) {
         config.loglevel = LOG_ERR;
-        WARN("wrong loglevel value. Back to default value.");
     }
 }
 
@@ -209,7 +209,7 @@ static void main_loop(void) {
     struct stat current_file_stat;
 
     while (!quit) {
-        c = win_getch();
+        c = win_getch(NULL);
         if ((fast_browse_mode == 1 + active) && isprint(c) && (c != ',')) {
             fast_browse(c);
             continue;
@@ -393,23 +393,34 @@ static int check_access(void) {
 }
 
 static void set_signals(void) {
-    signal(SIGSEGV, sig_handler);
-    signal(SIGINT, sig_handler);
-    signal(SIGTERM, sig_handler);
+    struct sigaction main_act;
+    sigset_t mask;
+    
+    main_act.sa_handler = sig_handler;
+    sigaction(SIGINT, &main_act, 0);
+    sigaction(SIGTERM, &main_act, 0);
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGTERM);
+    sigprocmask(SIG_BLOCK, &mask, &main_mask);
+    main_p = (struct pollfd) {
+        .fd = STDIN_FILENO,
+        .events = POLLIN,
+    };
+    signal(SIGSEGV, sigsegv_handler);
 }
 
 static void sig_handler(int signum) {
     char str[100];
     
     sprintf(str, "received signal %d. Leaving.", signum);
-    if (signum == SIGSEGV) {
-        ERROR(str);
-        close_log();
-        signal(signum, SIG_DFL);
-        kill(getpid(), signum);
-    } else {
-        WARN(str);
-        quit = NORM_QUIT;
-        program_quit(signum);
-    }
+    WARN(str);
+    quit = NORM_QUIT;
+}
+
+static void sigsegv_handler(int signum) {
+    ERROR("received sigsegv signal. Aborting.");
+    close_log();
+    signal(signum, SIG_DFL);
+    kill(getpid(), signum);
 }
