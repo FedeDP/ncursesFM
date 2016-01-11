@@ -54,7 +54,7 @@ NcursesFM ships an autocompletion script for cmdline options. It supports follow
 * "--loglevel" {0,1,2,3} to change program loglevel.
 * "--persistent_log" {0,1} -> to disable(enable) log persistency across program restarts.
 
-Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time ncursesFM starts. Log levels:
+Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time ncursesFM starts (unless persistent_log option is != 0). Log levels:
 * 0 : log errors only.
 * 1 : log warnings and errors.
 * 2 : log info messages, warnings and errors.

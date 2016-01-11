@@ -543,7 +543,6 @@ static void *device_monitor(void *x) {
     sigemptyset(&mask);
     sigaddset(&mask, SIGUSR2);
     sigprocmask(SIG_BLOCK, &mask, &orig_mask);
-    
     pthread_mutex_init(&dev_lock, NULL);
     enumerate_block_devices();
     if (!quit) {

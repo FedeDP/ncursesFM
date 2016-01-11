@@ -80,7 +80,7 @@ static void term_size_check(void) {
             c = getch();
             if (tolower(c) == 'q') {
                 quit = NORM_QUIT;
-                program_quit();
+                program_quit(0);
             }
         } while (c != KEY_RESIZE);
     }

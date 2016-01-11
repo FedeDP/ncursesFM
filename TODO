@@ -5,6 +5,4 @@
  * improve doc
  * 
  * ask to force if unmount fails? -> http://udisks.freedesktop.org/docs/latest/gdbus-org.freedesktop.UDisks2.Filesystem.html#gdbus-method-org-freedesktop-UDisks2-Filesystem.Unmount
- * 
- * do not list write-protected fs!
  */

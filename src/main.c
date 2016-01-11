@@ -63,7 +63,7 @@ int main(int argc, const char *argv[])
     screen_init();
     chdir(ps[active].my_cwd);
     main_loop();
-    program_quit();
+    program_quit(0);
 }
 
 static void helper_function(int argc, const char *argv[]) {
@@ -134,7 +134,7 @@ static void parse_cmd(int argc, const char *argv[]) {
         j += 2;
     }
     if (j != argc) {
-        printf("Option not recognized. Use '--help' to view helper message.\n");
+        printf("Options not recognized. Use '--help' to view helper message.\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -401,9 +401,15 @@ static void set_signals(void) {
 static void sig_handler(int signum) {
     char str[100];
     
-    sprintf(str, "received signal %d.", signum);
-    ERROR(str);
-    close_log();
-    signal(signum, SIG_DFL);
-    kill(getpid(), signum);
+    sprintf(str, "received signal %d. Leaving.", signum);
+    if (signum == SIGSEGV) {
+        ERROR(str);
+        close_log();
+        signal(signum, SIG_DFL);
+        kill(getpid(), signum);
+    } else {
+        WARN(str);
+        quit = NORM_QUIT;
+        program_quit(signum);
+    }
 }

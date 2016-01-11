@@ -3,15 +3,18 @@
 static void free_everything(void);
 static void quit_thread_func(void);
 static void quit_worker_th(void);
+#ifdef SYSTEMD_PRESENT
+static void quit_install_th(void);
 #ifdef LIBUDEV_PRESENT
 static void quit_monitor_th(void);
 #endif
-#ifdef SYSTEMD_PRESENT
-static void quit_install_th(void);
 #endif
 static void quit_search_th(void);
 
-int program_quit(void) {
+static int sig_flag;
+
+int program_quit(int sig_received) {
+    sig_flag = sig_received;
     free_everything();
     screen_end();
     if (quit == MEM_ERR_QUIT) {
@@ -35,9 +38,9 @@ static void quit_thread_func(void) {
     quit_worker_th();
 #ifdef SYSTEMD_PRESENT
     quit_install_th();
-#endif
 #ifdef LIBUDEV_PRESENT
     quit_monitor_th();
+#endif
 #endif
     quit_search_th();
 }
@@ -46,13 +49,36 @@ static void quit_worker_th(void) {
     char c;
     
     if (thread_h) {
-        ask_user(quit_with_running_thread, &c, 1, 'y');
-        if (c == 'n') {
-            INFO("sending SIGUSR1 signal to worker th...");
-            pthread_kill(worker_th, SIGUSR1);
+        /* 
+         * if we received an external signal, waits until worker thread ends its job list
+         * or until a SIGKILL is sent to the process
+         */
+        if (!sig_flag) {
+            ask_user(quit_with_running_thread, &c, 1, 'y');
+            if (c == 'n') {
+                INFO("sending SIGUSR1 signal to worker th...");
+                pthread_kill(worker_th, SIGUSR1);
+            }
         }
         pthread_join(worker_th, NULL);
         INFO("worker th exited without errors.");
+    }
+}
+
+#ifdef SYSTEMD_PRESENT
+static void quit_install_th(void) {
+    int installing = 0;
+    
+    if (install_th) {
+        if (pthread_kill(install_th, 0) != ESRCH) {
+            print_info(install_th_wait, INFO_LINE);
+            INFO("waiting for package installation to finish...");
+            installing = 1;
+        }
+        pthread_join(install_th, NULL);
+        if (installing) {
+            INFO("package installation finished. Leaving.");
+        }
     }
 }
 
@@ -66,18 +92,6 @@ static void quit_monitor_th(void) {
     }
 }
 #endif
-
-#ifdef SYSTEMD_PRESENT
-static void quit_install_th(void) {
-    if (install_th) {
-        if (pthread_kill(install_th, 0) != ESRCH) {
-            print_info(install_th_wait, INFO_LINE);
-        }
-        INFO("waiting for package installation to finish...");
-        pthread_join(install_th, NULL);
-        INFO("package installation finished. Leaving.");
-    }
-}
 #endif
 
 static void quit_search_th(void) {
