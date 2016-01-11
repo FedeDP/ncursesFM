@@ -257,6 +257,7 @@ static int init_mbus(void) {
     if (r < 0) {
         WARN("UDisks2 not present. Disabling udisks2 monitor.");
     } else {
+        INFO("found udisks2.");
         r = sd_bus_add_match(mbus, NULL, 
                          "type='signal',"
                          "sender='org.freedesktop.UDisks2',"
@@ -290,7 +291,7 @@ static int init_mbus(void) {
     if (r < 0) {
         sd_bus_flush_close_unref(mbus);
         return r;
-    } 
+    }
     return 0;
 }
 
@@ -534,15 +535,15 @@ static void *device_monitor(void *x) {
     int r;
     sigset_t mask;
     sigset_t orig_mask;
-    struct sigaction act;
+    struct sigaction act = {0};
     struct pollfd p;
     
-    memset(&act, 0, sizeof(act));
     act.sa_handler = sig_handler;
     sigaction(SIGUSR2, &act, 0);
     sigemptyset(&mask);
     sigaddset(&mask, SIGUSR2);
     sigprocmask(SIG_BLOCK, &mask, &orig_mask);
+    
     pthread_mutex_init(&dev_lock, NULL);
     enumerate_block_devices();
     if (!quit) {
@@ -576,10 +577,16 @@ static void sig_handler(int signum) {
 }
 
 static int add_device(struct udev_device *dev, const char *name) {
+    int mount;
     long size;
     char s[20];
-    int mount = is_mounted(name);
+    const char *ignore = udev_device_get_property_value(dev, "UDISKS_IGNORE");
     
+    if (ignore && !strcmp(ignore, "1")) {
+        mount = -1;
+    } else {
+        mount = is_mounted(name);
+    }
     if (mount != -1) {
         my_devices = safe_realloc((PATH_MAX + 1) * (number_of_devices + 1));
         if (!quit) {
