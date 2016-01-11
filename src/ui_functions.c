@@ -638,7 +638,6 @@ int win_getch(WINDOW *win) {
     if (!win) {
         return wgetch(mywin[active].fm);
     } else {
-        INFO("TOP");
         return wgetch(win);
     }
 }
