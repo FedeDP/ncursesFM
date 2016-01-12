@@ -16,7 +16,7 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
 static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static void get_mount_point(const char *dev_path, char *path);
-static int check_cwd(const char *mounted_path);
+static int check_cwd(char *mounted_path);
 static void *device_monitor(void *x);
 static void sig_handler(int signum);
 static void change_mounted_status(int pos, const char *name);
@@ -84,7 +84,7 @@ static int mount_fs(const char *str, const char *method, int mount) {
 #endif
     }
     close_bus(&error, mess, mount_bus);
-    return r;
+    return ret;
 }
 
 /*
@@ -516,7 +516,7 @@ void manage_mount_device(void) {
     int pos = ps[active].curr_pos;
     int len = strlen(my_devices[pos]);
     char *ptr = strchr(my_devices[pos], ',');
-    char name[PATH_MAX + 1], action[10], mounted_path[PATH_MAX + 1] = {0};
+    char name[PATH_MAX + 1], mounted_path[PATH_MAX + 1] = {0};
     
     pthread_mutex_lock(&dev_lock);
     mount = my_devices[pos][len - 1] - '0';
@@ -527,32 +527,31 @@ void manage_mount_device(void) {
         print_info("Cannot unmount root.", ERR_LINE);
     } else {
         if (mount) {
-            strcpy(action, "Unmount");
             r = check_cwd(mounted_path);
+            int ret = mount_fs(name, "Unmount", mount);
+            if (ret != -1) {
+                getcwd(ps[active].my_cwd, PATH_MAX);
+                if (r != -1) {
+                    change_dir(mounted_path, r);
+                }
+            }
         } else {
-            strcpy(action, "Mount");
-        }
-        mount_fs(name, action, mount);
-        if (r != -1) {
-            change_dir(ps[r].my_cwd, r);
+            mount_fs(name, "Mount", mount);
         }
     }
     pthread_mutex_unlock(&dev_lock);
 }
 
-static int check_cwd(const char *mounted_path) {
-    char path[PATH_MAX + 1];
+static int check_cwd(char *mounted_path) {
     int len, ret = -1;
 
     for (int i = 0; i < cont; i++) {
         if (!strncmp(ps[i].my_cwd, mounted_path, strlen(mounted_path))) {
-            strcpy(path, mounted_path);
-            len = strlen(strrchr(path, '/'));
-            len = strlen(path) - len;
-            path[len] = '\0';
-            strcpy(ps[i].my_cwd, path);
             if (i == active) {
-                chdir(ps[i].my_cwd);
+                len = strlen(strrchr(mounted_path, '/'));
+                len = strlen(mounted_path) - len;
+                mounted_path[len] = '\0';
+                chdir(mounted_path);
             } else {
                 ret = i;
             }
