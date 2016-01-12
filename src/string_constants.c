@@ -25,6 +25,7 @@ const char *already_searching = "There's already a search in progress. Wait for 
 const char *search_mem_fail = "Stopping search as no more memory can be allocated.";
 const char *search_insert_name = "Insert filename to be found, at least 5 chars, max 20 chars.:> ";
 const char *search_archives = "Do you want to search in archives too? y/N:> ";
+const char *lazy_search = "Do you want a lazy search (less precise)? y/N:>";
 const char *searched_string_minimum = "At least 5 chars...";
 const char *too_many_found = "Too many files found; try with a larger string.";
 const char *no_found = "No files found.";

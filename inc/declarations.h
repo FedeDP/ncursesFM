@@ -95,6 +95,7 @@ struct search_vars {
     char found_searched[MAX_NUMBER_OF_FOUND][PATH_MAX + 1];
     int searching;
     int search_archive;
+    int search_lazy;
     int found_cont;
 };
 

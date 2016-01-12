@@ -13,12 +13,20 @@ void search(void) {
     } else {
         sv.found_cont = 0;
         sv.search_archive = 0;
+        sv.search_lazy = 0;
         ask_user(search_archives, &c, 1, 'n');
         if (quit) {
             return;
         }
         if (c == 'y') {
             sv.search_archive = 1;
+        }
+        ask_user(lazy_search, &c, 1, 'n');
+        if (quit) {
+            return;
+        }
+        if (c == 'y') {
+            sv.search_lazy = 1;
         }
         sv.searching = 1;
         print_info("", SEARCH_LINE);
@@ -28,7 +36,7 @@ void search(void) {
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     char fixed_str[NAME_MAX + 1];
-    int len, ret = 0;
+    int len, r = 0, ret = 0;
 
     if (ftwbuf->level == 0) {
         return 0;
@@ -38,7 +46,12 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         return search_inside_archive(path);
     }
     len = strlen(sv.searched_string);
-    if (strncmp(fixed_str, sv.searched_string, len) == 0) {
+    if (!sv.search_lazy) {
+        r = !strncmp(fixed_str, sv.searched_string, len);
+    } else if (strcasestr(fixed_str, sv.searched_string)) {
+        r = 1;
+    }
+    if (r) {
         strcpy(sv.found_searched[sv.found_cont], path);
         if (typeflag == FTW_D) {
             strcat(sv.found_searched[sv.found_cont], "/");
@@ -58,7 +71,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
  */
 static int search_inside_archive(const char *path) {
     char *ptr;
-    int len = 0, ret = 0, string_length;
+    int len = 0, ret = 0, r = 0, string_length;
     struct archive_entry *entry;
     struct archive *a = archive_read_new();
     
@@ -67,7 +80,12 @@ static int search_inside_archive(const char *path) {
     string_length = strlen(sv.searched_string);
     if ((a) && (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK)) {
         while ((!quit) && (!ret) && (archive_read_next_header(a, &entry) == ARCHIVE_OK)) {
-            if (strncmp(archive_entry_pathname(entry) + len, sv.searched_string, string_length) == 0) {
+            if (!sv.search_lazy) {
+                r = !strncmp(archive_entry_pathname(entry) + len, sv.searched_string, string_length);
+            } else if (strcasestr(archive_entry_pathname(entry) + len, sv.searched_string)) {
+                r = 1;
+            }
+            if (r) {
                 sprintf(sv.found_searched[sv.found_cont], "%s/%s", path, archive_entry_pathname(entry));
                 sv.found_cont++;
                 if (sv.found_cont == MAX_NUMBER_OF_FOUND) {

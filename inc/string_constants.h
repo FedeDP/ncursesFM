@@ -24,6 +24,7 @@ const char *already_searching;
 const char *search_mem_fail;
 const char *search_insert_name;
 const char *search_archives;
+const char *lazy_search;
 const char *searched_string_minimum;
 const char *too_many_found;
 const char *no_found;
