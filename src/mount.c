@@ -1,7 +1,7 @@
 #include "../inc/mount.h"
 
 #ifdef SYSTEMD_PRESENT
-static void mount_fs(const char *str, const char *method, int mount);
+static int mount_fs(const char *str, const char *method, int mount);
 
 static char mount_str[PATH_MAX + 1];
 
@@ -16,7 +16,7 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
 static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static void get_mount_point(const char *dev_path, char *path);
-static void check_cwd(const char *mounted_path);
+static int check_cwd(const char *mounted_path);
 static void *device_monitor(void *x);
 static void sig_handler(int signum);
 static void change_mounted_status(int pos, const char *name);
@@ -39,20 +39,20 @@ static sd_bus *mbus;
 /*
  * Open the bus, and call "method" string on UDisks2.Filesystem.
  */
-static void mount_fs(const char *str, const char *method, int mount) {
+static int mount_fs(const char *str, const char *method, int mount) {
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_bus_message *mess = NULL;
     sd_bus *mount_bus = NULL;
     const char *path;
     char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
     char tmp[30];
-    int r;
+    int r, ret = -1;
 
     r = sd_bus_open_system(&mount_bus);
     if (r < 0) {
         print_info(strerror(-r), ERR_LINE);
         WARN(strerror(-r));
-        return;
+        return ret;
     }
     strcat(obj_path, strrchr(str, '/') + 1);
     sprintf(tmp, "calling %s on bus.", method);
@@ -70,6 +70,7 @@ static void mount_fs(const char *str, const char *method, int mount) {
         print_info(error.message, ERR_LINE);
         WARN(error.message);
     } else {
+        ret = 1;
         if (!mount) {
             sd_bus_message_read(mess, "s", &path);
             sprintf(mount_str, "%s mounted in: %s.", str, path);
@@ -83,6 +84,7 @@ static void mount_fs(const char *str, const char *method, int mount) {
 #endif
     }
     close_bus(&error, mess, mount_bus);
+    return r;
 }
 
 /*
@@ -510,7 +512,7 @@ static void get_mount_point(const char *dev_path, char *path) {
 }
 
 void manage_mount_device(void) {
-    int mount;
+    int mount, r = -1;
     int pos = ps[active].curr_pos;
     int len = strlen(my_devices[pos]);
     char *ptr = strchr(my_devices[pos], ',');
@@ -526,18 +528,21 @@ void manage_mount_device(void) {
     } else {
         if (mount) {
             strcpy(action, "Unmount");
-            check_cwd(mounted_path);
+            r = check_cwd(mounted_path);
         } else {
             strcpy(action, "Mount");
         }
         mount_fs(name, action, mount);
+        if (r != -1) {
+            change_dir(ps[r].my_cwd, r);
+        }
     }
     pthread_mutex_unlock(&dev_lock);
 }
 
-static void check_cwd(const char *mounted_path) {
+static int check_cwd(const char *mounted_path) {
     char path[PATH_MAX + 1];
-    int len;
+    int len, ret = -1;
 
     for (int i = 0; i < cont; i++) {
         if (!strncmp(ps[i].my_cwd, mounted_path, strlen(mounted_path))) {
@@ -549,14 +554,15 @@ static void check_cwd(const char *mounted_path) {
             if (i == active) {
                 chdir(ps[i].my_cwd);
             } else {
-                change_dir(ps[i].my_cwd, i);
+                ret = i;
             }
         }
     }
+    return ret;
 }
 
 void manage_enter_device(void) {
-    int mount;
+    int mount, ret = 1;
     int pos = ps[active].curr_pos;
     int len = strlen(my_devices[pos]);
     char *ptr = strchr(my_devices[pos], ',');
@@ -564,14 +570,15 @@ void manage_enter_device(void) {
     
     pthread_mutex_lock(&dev_lock);
     mount = my_devices[pos][len - 1] - '0';
-    if (mount) {
-        strcpy(dev_path, my_devices[pos]);
-        dev_path[len - strlen(ptr)] = '\0';
+    strcpy(dev_path, my_devices[pos]);
+    dev_path[len - strlen(ptr)] = '\0';
+    if (!mount) {
+        ret = mount_fs(dev_path, "Mount", mount);
+    }
+    if (ret == 1) {
         get_mount_point(dev_path, name);
         strcpy(ps[active].my_cwd, name);
         leave_device_mode();
-    } else {
-        print_info("Device is not mounted.", ERR_LINE);
     }
     pthread_mutex_unlock(&dev_lock);
 }
