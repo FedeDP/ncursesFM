@@ -48,7 +48,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 NcursesFM ships an autocompletion script for cmdline options. It supports following options:
 * "--editor" /path/to/editor
 * "--starting_dir" /path/to/dir
-* "--helper" {0,1} to disable(enable) helper window show at program start.
+* "--helper_win" {0,1} to disable(enable) helper window show at program start.
 * "--inhibit" {0,1} to disable(enable) powermanagement inhibition.
 * "--automount" {0,1} to disable(enable) automount of connected devices.
 * "--loglevel" {0,1,2,3} to change program loglevel.
@@ -65,7 +65,7 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * pkg-config -> to manage libraries link in makefile
-* glibc      -> to set locale
+* glibc      -> to set locale and for mnten functions (useful only if compiled with libudev too)
 * git        -> to clone repo
 
 ## Optional compile time dependencies

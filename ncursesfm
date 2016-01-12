@@ -10,7 +10,7 @@ _ncursesFM()
             _filedir
             return 0
             ;;
-        "--helper"|"--inhibit"|"--automount"|"--persistent_log")
+        "--helper_win"|"--inhibit"|"--automount"|"--persistent_log")
             COMPREPLY=( $( compgen -W "0 1" -- ${cur}) )
             return 0
             ;;
@@ -19,7 +19,7 @@ _ncursesFM()
             return 0
             ;;
     esac
-    opts="--editor --helper --inhibit --automount --loglevel --persistent_log --starting_dir --help"
+    opts="--editor --helper_win --inhibit --automount --loglevel --persistent_log --starting_dir --help"
     if [[ "$cur" == -* ]] || [[ -z "$cur" ]]; then
         COMPREPLY=( $( compgen -W "${opts}" -- ${cur}) )
     fi

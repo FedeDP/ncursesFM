@@ -22,11 +22,11 @@ static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
     new_file, new_dir, rename_file_folders
 };
 
-void change_dir(const char *str) {
+void change_dir(const char *str, int win) {
     if (chdir(str) != -1) {
-        getcwd(ps[active].my_cwd, PATH_MAX);
-        sprintf(ps[active].title, "%s", ps[active].my_cwd);
-        tab_refresh(active);
+        getcwd(ps[win].my_cwd, PATH_MAX);
+        sprintf(ps[win].title, "%s", ps[win].my_cwd);
+        tab_refresh(win);
     } else {
         print_info(strerror(errno), ERR_LINE);
     }

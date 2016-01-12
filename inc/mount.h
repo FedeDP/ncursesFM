@@ -9,9 +9,11 @@ void isomount(const char *str);
 #ifdef LIBUDEV_PRESENT
 
 #include <libudev.h>
+#include <mntent.h>
 
 void start_monitor(void);
 void show_devices_tab(void);
+void manage_mount_device(void);
 void manage_enter_device(void);
 void leave_device_mode(void);
 #endif

@@ -15,6 +15,8 @@ static int is_mounted(const char *dev_path);
 static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+static void get_mount_point(const char *dev_path, char *path);
+static void check_cwd(const char *mounted_path);
 static void *device_monitor(void *x);
 static void sig_handler(int signum);
 static void change_mounted_status(int pos, const char *name);
@@ -489,23 +491,88 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
     return 0;
 }
 
-void manage_enter_device(void) {
+static void get_mount_point(const char *dev_path, char *path) {
+    struct mntent *part;
+    FILE *mtab;
+        
+    if (!(mtab = setmntent("/proc/mounts", "r"))) {
+        WARN("could not find /proc/mounts");
+        print_info("could not find /proc/mounts.", ERR_LINE);
+        return;
+    }
+    while ((part = getmntent(mtab))) {
+        if ((part->mnt_fsname) && (!strcmp(part->mnt_fsname, dev_path))) {
+            strcpy(path, part->mnt_dir);
+            break;
+        }
+    }
+    endmntent(mtab);
+}
+
+void manage_mount_device(void) {
     int mount;
     int pos = ps[active].curr_pos;
     int len = strlen(my_devices[pos]);
     char *ptr = strchr(my_devices[pos], ',');
-    char name[PATH_MAX + 1], action[10];
+    char name[PATH_MAX + 1], action[10], mounted_path[PATH_MAX + 1] = {0};
     
     pthread_mutex_lock(&dev_lock);
     mount = my_devices[pos][len - 1] - '0';
     strcpy(name, my_devices[pos]);
     name[len - strlen(ptr)] = '\0';
-    if (mount) {
-        strcpy(action, "Unmount");
+    get_mount_point(name, mounted_path);
+    if (!strcmp(mounted_path, "/")) {
+        print_info("Cannot unmount root.", ERR_LINE);
     } else {
-        strcpy(action, "Mount");
+        if (mount) {
+            strcpy(action, "Unmount");
+            check_cwd(mounted_path);
+        } else {
+            strcpy(action, "Mount");
+        }
+        mount_fs(name, action, mount);
     }
-    mount_fs(name, action, mount);
+    pthread_mutex_unlock(&dev_lock);
+}
+
+static void check_cwd(const char *mounted_path) {
+    char path[PATH_MAX + 1];
+    int len;
+
+    for (int i = 0; i < cont; i++) {
+        if (!strncmp(ps[i].my_cwd, mounted_path, strlen(mounted_path))) {
+            strcpy(path, mounted_path);
+            len = strlen(strrchr(path, '/'));
+            len = strlen(path) - len;
+            path[len] = '\0';
+            strcpy(ps[i].my_cwd, path);
+            if (i == active) {
+                chdir(ps[i].my_cwd);
+            } else {
+                change_dir(ps[i].my_cwd, i);
+            }
+        }
+    }
+}
+
+void manage_enter_device(void) {
+    int mount;
+    int pos = ps[active].curr_pos;
+    int len = strlen(my_devices[pos]);
+    char *ptr = strchr(my_devices[pos], ',');
+    char dev_path[PATH_MAX + 1], name[PATH_MAX + 1] = {0};
+    
+    pthread_mutex_lock(&dev_lock);
+    mount = my_devices[pos][len - 1] - '0';
+    if (mount) {
+        strcpy(dev_path, my_devices[pos]);
+        dev_path[len - strlen(ptr)] = '\0';
+        get_mount_point(dev_path, name);
+        strcpy(ps[active].my_cwd, name);
+        leave_device_mode();
+    } else {
+        print_info("Device is not mounted.", ERR_LINE);
+    }
     pthread_mutex_unlock(&dev_lock);
 }
 
@@ -528,7 +595,7 @@ void leave_device_mode(void) {
     pthread_mutex_lock(&fm_lock[active]);
     device_mode = DEVMON_READY;
     pthread_mutex_unlock(&fm_lock[active]);
-    change_dir(ps[active].my_cwd);
+    change_dir(ps[active].my_cwd, active);
 }
 
 static void *device_monitor(void *x) {

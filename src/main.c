@@ -34,6 +34,7 @@ static void read_config_file(void);
 #endif
 static void config_checks(void);
 static void main_loop(void);
+static void check_device_mode(void);
 static int check_init(int index);
 static int check_access(void);
 static void set_signals(void);
@@ -81,7 +82,7 @@ static void helper_function(int argc, const char *argv[]) {
         printf("\tIt supports following cmdline options (they will override conf file settings):\n");
         printf("\t* --editor /path/to/editor to set an editor for current session. Fallbacks to $EDITOR env var.\n");
         printf("\t* --starting_dir /path/to/dir to set a starting directory for current session. Defaults to current dir.\n");
-        printf("\t* --helper {0,1} to switch (off,on) starting helper message. Defaults to 1.\n");
+        printf("\t* --helper_win {0,1} to switch (off,on) starting helper message. Defaults to 1.\n");
         printf("\t* --inhibit {0,1} to switch {off,on} powermanagement functions while a job is being processed. Defaults to 0.\n");
         printf("\t* --automount {0,1} to switch {off,on} automounting of external drives/usb sticks. Defaults to 0.\n");
         printf("\t* --loglevel {0,1,2,3} to change loglevel. Defaults to 0.\n");
@@ -99,12 +100,12 @@ static void parse_cmd(int argc, const char *argv[]) {
     int j = 1;
 #ifdef SYSTEMD_PRESENT
 #ifdef LIBUDEV_PRESENT
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log", "--inhibit", "--automount"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--inhibit", "--automount"};
 #else
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log", "--inhibit"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--inhibit"};
 #endif
 #else
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper", "--loglevel", "--persistent_log"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log"};
 #endif
 
     while (j < argc) {
@@ -204,7 +205,7 @@ static void main_loop(void) {
     int c, index, fast_browse_mode = 0;
     const char *long_table = "xvrb"; // x to move, v to paste, r to remove, b to compress
     const char *short_table = "ndo";  //n, d to create new file/dir, o to rename.
-    const char *special_mode_allowed_chars = "ltq";
+    const char *special_mode_allowed_chars = "ltqm";
     char *ptr;
     struct stat current_file_stat;
 
@@ -254,7 +255,7 @@ static void main_loop(void) {
             }
 #endif
             else if (S_ISDIR(current_file_stat.st_mode)) {
-                change_dir(ps[active].nl[ps[active].curr_pos]);
+                change_dir(ps[active].nl[ps[active].curr_pos], active);
             } else {
                 manage_file(ps[active].nl[ps[active].curr_pos], current_file_stat.st_size);
             }
@@ -304,15 +305,7 @@ static void main_loop(void) {
 #endif
 #ifdef LIBUDEV_PRESENT
         case 'm': // m to mount/unmount fs
-            if (device_mode == DEVMON_STARTING) {
-                print_info("Still polling for initial devices.", INFO_LINE);
-            } else if (device_mode == DEVMON_READY) {
-                show_devices_tab();
-            } else if (device_mode == DEVMON_OFF) {
-                print_info("Monitor is not active. An error occurred, check log file.", INFO_LINE);
-            } else {
-                print_info("A tab is already in device mode.", INFO_LINE);
-            }
+            check_device_mode();
             break;
 #endif
         case ',': // , to enable/disable fast browse mode
@@ -367,6 +360,23 @@ static void main_loop(void) {
             }
             break;
         }
+    }
+}
+
+static void check_device_mode(void) {
+    if (sv.searching == 3 + active) {
+        return;
+    }
+    if (device_mode == DEVMON_STARTING) {
+        print_info("Still polling for initial devices.", INFO_LINE);
+    } else if (device_mode == DEVMON_READY) {
+        show_devices_tab();
+    } else if (device_mode == DEVMON_OFF) {
+        print_info("Monitor is not active. An error occurred, check log file.", INFO_LINE);
+    } else if (device_mode == 1 + active) {
+        manage_mount_device();
+    } else {
+        print_info("A tab is already in device mode.", INFO_LINE);
     }
 }
 

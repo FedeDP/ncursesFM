@@ -140,7 +140,7 @@ void leave_search_mode(const char *str) {
     sv.searching = 0;
     pthread_mutex_unlock(&fm_lock[active]);
     print_info("", SEARCH_LINE);
-    change_dir(str);
+    change_dir(str, active);
 }
 
 /*
