@@ -42,8 +42,8 @@ static void log_current_options(void) {
 #endif
 #endif
     fprintf(log_file, "* Starting with helper window: %d\n", config.starting_helper);
-    fprintf(log_file, "* Log level: %d\n\n", config.loglevel);
-    fprintf(log_file, "* Log persistency: %d\n\n", config.persistent_log);
+    fprintf(log_file, "* Log level: %d\n", config.loglevel);
+    fprintf(log_file, "* Log persistency: %d\n", config.persistent_log);
     fprintf(log_file, "* Low battery threshold: %d\n\n", config.bat_low_level);
 }
 
