@@ -21,6 +21,7 @@ static void erase_stat(void);
 static void resize_helper_win(void);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
+static void update_batt(void);
 
 struct scrstr {
     WINDOW *fm;
@@ -852,7 +853,54 @@ void update_time(void) {
     sprintf(time, "%02d:%02d", tm.tm_hour, tm.tm_min);
     pthread_mutex_lock(&info_lock);
     wmove(info_win, SYSTEM_INFO_LINE, 1);
+    wclrtoeol(info_win);
     mvwprintw(info_win, SYSTEM_INFO_LINE, 1, "Date: %s, %s", date, time);
+    update_batt();
     wrefresh(info_win);
     pthread_mutex_unlock(&info_lock);
+}
+
+static void update_batt(void) {
+    FILE *f;
+    DIR* d;
+    struct dirent* file;
+    const char *path = "/sys/class/power_supply/";
+    const char *fail = "No battery info available.";
+    const char *ac_online = "On AC";
+    const char *ac_str = "AC";
+    const char *bat_str = "BAT";
+    char batt[100], filename[PATH_MAX + 1];
+    int online, energy_now, energy_full, len = 0;
+    
+    if ((!(d = opendir(path)))) {
+        mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(fail), fail);
+    } else {
+        while ((file = readdir(d))) {
+            if (!strncmp(file->d_name, ac_str, strlen(ac_str))) {
+                sprintf(filename, "%s%s/online", path, file->d_name);
+                f = fopen(filename, "r");
+                fscanf(f, "%d", &online);
+                fclose(f);
+                if (online) {
+                    mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(ac_online), ac_online);
+                    break;
+                }
+            } else if (!strncmp(file->d_name, bat_str, strlen(bat_str))) {
+                sprintf(filename, "%s%s/energy_now", path, file->d_name);
+                f = fopen(filename, "r");
+                fscanf(f, "%d", &energy_now);
+                fclose(f);
+                sprintf(filename, "%s%s/energy_full", path, file->d_name);
+                f = fopen(filename, "r");
+                fscanf(f, "%d", &energy_full);
+                fclose(f);
+                int perc = (float)energy_now / (float)energy_full * 100;
+                sprintf(batt, "%s: %d%%%%", file->d_name, perc);
+                len += strlen(batt) - 1;    /* -1 to delete a space derived from %%%% */
+                mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - len, batt);
+                len++;
+            }
+        }
+        closedir(d);
+    }
 }
