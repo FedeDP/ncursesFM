@@ -5,6 +5,8 @@ It aims to be as user friendly and lightweight as possible, while being good loo
 Being simple doesn't imply being useless; indeed it is a full featured fm.  
 It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).
 
+![](https://raw.github.com/FedeDP/ncursesFM/master/ncursesFM.gif)
+
 ## Features:
 
 **Press 'l' while in program to view a detailed helper message**
@@ -106,5 +108,3 @@ To remove, just move inside the folder and run:
 
 make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets.  
 Be aware that it will disable config file support and bash autocompletion script (you can still source it manually anyway) though.
-
-![Alt text](ncursesfm.png?raw=true)
