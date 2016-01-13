@@ -23,6 +23,7 @@
 
 #include "../inc/fm_functions.h"
 #include "../inc/time.h"
+#include "../inc/bookmarks.h"
 
 #ifdef LIBCONFIG_PRESENT
 #include <libconfig.h>
@@ -38,9 +39,6 @@ static void main_loop(void);
 static void check_device_mode(void);
 static int check_init(int index);
 static int check_access(void);
-static void get_bookmarks(void);
-static void show_bookmarks(void);
-static void leave_bookmarks_mode(void);
 static void set_signals(void);
 static void sig_handler(int signum);
 static void sigsegv_handler(int signum);
@@ -52,7 +50,6 @@ static void sigsegv_handler(int signum);
 static int (*const long_func[LONG_FILE_OPERATIONS - 1])(void) = {
     move_file, paste_file, remove_file, create_archive
 };
-static int num_bookmarks, bookmarks_mode[MAX_TABS];
 
 int main(int argc, const char *argv[])
 {
@@ -270,7 +267,7 @@ static void main_loop(void) {
             }
 #endif
             else if (bookmarks_mode[active]) {
-                bookmarks_mode[active] = 0;
+                leave_bookmarks_mode();
                 change_dir(bookmarks[ps[active].curr_pos], active);
             } else if (S_ISDIR(current_file_stat.st_mode)) {
                 change_dir(ps[active].nl[ps[active].curr_pos], active);
@@ -305,6 +302,9 @@ static void main_loop(void) {
         case 's': // show stat about files (size and perms)
             trigger_stats();
             break;
+        case 'e': // add dir to bookmarks
+            add_dir_to_bookmarks(ps[active].my_cwd);
+            break;
         case 'f': // f to search
             if (sv.searching == 0) {
                 search();
@@ -336,7 +336,7 @@ static void main_loop(void) {
             }
             break;
 #endif
-        case 'q': /* q to exit/leave search mode/leave device_mode */
+        case 'q': /* q to exit/leave special mode */
             if (sv.searching == 3 + active) {
                 leave_search_mode(ps[active].my_cwd);
             }
@@ -347,6 +347,7 @@ static void main_loop(void) {
 #endif  
             else if (bookmarks_mode[active]) {
                 leave_bookmarks_mode();
+                change_dir(ps[active].my_cwd, active);
             }
             else {
                 quit = NORM_QUIT;
@@ -365,7 +366,7 @@ static void main_loop(void) {
                 fast_file_operations(index);
             }
             break;
-        case 'g':
+        case 'g': // g to show bookmarks
             if (!bookmarks_mode[active]) {
                 show_bookmarks();
             }
@@ -420,57 +421,6 @@ static int check_access(void) {
         return 0;
     }
     return 1;
-}
-
-static void get_bookmarks(void) {
-    int i = 0;
-    FILE *f;
-    char str[PATH_MAX + 1] = {0};
-    char line[1000], file_path[PATH_MAX + 1];
-    const char *home_dir = getpwuid(getuid())->pw_dir;
-    const char *path = "/.config/user-dirs.dirs";
-    
-    sprintf(file_path, "%s/.%s", home_dir, path);
-    f = fopen(file_path, "r");
-    if (f) {
-        while (fgets(line, sizeof(line), f)) {
-            if (*line == '#') {
-                continue;
-            }
-            strcpy(str, strchr(line, '/') + 1);
-            str[strlen(str) - 2] = '\0'; // -1 for newline - 1 for closing Double quotation mark
-            sprintf(bookmarks[i], "%s/%s", home_dir, str);
-            i++;
-            if (i == MAX_BOOKMARKS) {
-                WARN("Too many bookmarks. Max 30.");
-                break;
-            }
-        }
-    }
-    num_bookmarks = i;
-}
-
-static void show_bookmarks(void) {
-    if (num_bookmarks) {
-        pthread_mutex_lock(&fm_lock[active]);
-        ps[active].number_of_files = num_bookmarks;
-        str_ptr[active] = bookmarks;
-        bookmarks_mode[active] = 1;
-        special_mode[active] = 1;
-        sprintf(ps[active].title, bookmarks_mode_str);
-        reset_win(active);
-        pthread_mutex_unlock(&fm_lock[active]);
-    } else {
-        print_info("No bookmarks found.", INFO_LINE);
-    }
-}
-
-static void leave_bookmarks_mode(void) {
-    pthread_mutex_lock(&fm_lock[active]);
-    bookmarks_mode[active] = 0;
-    special_mode[active] = 0;
-    pthread_mutex_unlock(&fm_lock[active]);
-    change_dir(ps[active].my_cwd, active);
 }
 
 static void set_signals(void) {
