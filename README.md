@@ -6,7 +6,6 @@ Being simple doesn't imply being useless; indeed it is a full featured fm.
 It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).
 
 ![](https://github.com/FedeDP/ncursesFM/raw/master/ncursesFM.gif)
-![alt text][ncursesFM.git]
 
 ## Features:
 
