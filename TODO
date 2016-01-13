@@ -2,13 +2,13 @@
  *
  * https://github.com/hughsie/PackageKit/issues/87
  *
- * improve doc
+ * improve and update doc (ui_functions.c and mount.c surely need some new DOC).
  * 
  * ask to force if unmount fails? -> http://udisks.freedesktop.org/docs/latest/gdbus-org.freedesktop.UDisks2.Filesystem.html#gdbus-method-org-freedesktop-UDisks2-Filesystem.Unmount
  * 
  * bookmarks { "add dir to bookmarks" command? how?
  *             extend bookmars to N? (limit of 30 now)
- * }
+ *           }
  * 
  * sshfs support?
  */

@@ -7,6 +7,12 @@ void start_time(void) {
     pthread_create(&time_th, NULL, time_func, NULL);
 }
 
+/*
+ * It will monitor time and battery level every 30 sec.
+ * As a signal to leave it only needs that program_quit()
+ * unlocks its mutex. It will then see that !quit is false
+ * and leave.
+ */
 static void *time_func(void *x) {
     struct timespec absolute_time;
     int ret;

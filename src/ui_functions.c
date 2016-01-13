@@ -906,7 +906,10 @@ static void open_file_and_read(const char *path, const char *dir_name, const cha
     char filename[PATH_MAX + 1];
     
     sprintf(filename, "%s%s/%s", path, dir_name, query);
-    f = fopen(filename, "r");
-    fscanf(f, "%d", result);
-    fclose(f);
+    if (f = fopen(filename, "r")) {
+        fscanf(f, "%d", result);
+        fclose(f);
+    } else {
+        WARN("missing file.");
+    }
 }

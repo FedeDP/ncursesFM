@@ -7,7 +7,7 @@ static void extractor_thread(struct archive *a, const char *current_dir);
 static struct archive *archive;
 
 /*
- * It tries to create a new archive for writing inside,
+ * It tries to create a new archive to write inside it,
  * it fails if it cannot add the proper filter, or cannot set proper format, or
  * if it cannot open thread_h->filename (ie, the desired pathname of the new archive)
  */
