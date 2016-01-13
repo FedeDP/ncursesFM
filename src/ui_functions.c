@@ -22,6 +22,8 @@ static void resize_helper_win(void);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
 static void update_batt(void);
+static void open_file_and_read(const char *path, const char *dir_name,
+                               const char *query, int *result);
 
 struct scrstr {
     WINDOW *fm;
@@ -861,7 +863,6 @@ void update_time(void) {
 }
 
 static void update_batt(void) {
-    FILE *f;
     DIR* d;
     struct dirent* file;
     const char *path = "/sys/class/power_supply/";
@@ -869,7 +870,7 @@ static void update_batt(void) {
     const char *ac_online = "On AC";
     const char *ac_str = "AC";
     const char *bat_str = "BAT";
-    char batt[100], filename[PATH_MAX + 1];
+    char batt[20];
     int online, energy_now, energy_full, len = 0;
     
     if ((!(d = opendir(path)))) {
@@ -877,30 +878,35 @@ static void update_batt(void) {
     } else {
         while ((file = readdir(d))) {
             if (!strncmp(file->d_name, ac_str, strlen(ac_str))) {
-                sprintf(filename, "%s%s/online", path, file->d_name);
-                f = fopen(filename, "r");
-                fscanf(f, "%d", &online);
-                fclose(f);
+                open_file_and_read(path, file->d_name, "online", &online);
                 if (online) {
                     mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(ac_online), ac_online);
                     break;
                 }
             } else if (!strncmp(file->d_name, bat_str, strlen(bat_str))) {
-                sprintf(filename, "%s%s/energy_now", path, file->d_name);
-                f = fopen(filename, "r");
-                fscanf(f, "%d", &energy_now);
-                fclose(f);
-                sprintf(filename, "%s%s/energy_full", path, file->d_name);
-                f = fopen(filename, "r");
-                fscanf(f, "%d", &energy_full);
-                fclose(f);
+                open_file_and_read(path, file->d_name, "energy_now", &energy_now);
+                open_file_and_read(path, file->d_name, "energy_full", &energy_full);
                 int perc = (float)energy_now / (float)energy_full * 100;
+                if (perc <= 15) {
+                    wattron(info_win, COLOR_PAIR(5));
+                }
                 sprintf(batt, "%s: %d%%%%", file->d_name, perc);
                 len += strlen(batt) - 1;    /* -1 to delete a space derived from %%%% */
                 mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - len, batt);
-                len++;
+                wattroff(info_win, COLOR_PAIR);
+                len++;  /* if there's another bat, at least divide the two batteries by 1 space */
             }
         }
         closedir(d);
     }
+}
+
+static void open_file_and_read(const char *path, const char *dir_name, const char *query, int *result) {
+    FILE *f;
+    char filename[PATH_MAX + 1];
+    
+    sprintf(filename, "%s%s/%s", path, dir_name, query);
+    f = fopen(filename, "r");
+    fscanf(f, "%d", result);
+    fclose(f);
 }
