@@ -53,12 +53,12 @@ static void get_xdg_dirs(const char *home_dir) {
     }
 }
 
-void add_dir_to_bookmarks(const char *str) {
+void add_file_to_bookmarks(const char *str) {
     FILE *f;
     const char *home_dir = getpwuid(getuid())->pw_dir;
     char fullpath[PATH_MAX + 1], c;
     
-    ask_user("Adding current folder to bookmarks. Proceed? Y/n:> ", &c, 1, 'y');
+    ask_user("Adding current file to bookmarks. Proceed? Y/n:> ", &c, 1, 'y');
     if (c == 'n' || quit) {
         return;
     }

@@ -232,9 +232,8 @@ static void main_loop(void) {
             if (isprint(c) && (!strchr(special_mode_allowed_chars, c))) {
                 continue;
             }
-        } else {
-            stat(ps[active].nl[ps[active].curr_pos], &current_file_stat);
         }
+        stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
         switch (c) {
         case KEY_UP:
             scroll_up();
@@ -265,14 +264,14 @@ static void main_loop(void) {
             else if (device_mode == 1 + active) {
                 manage_enter_device();
             }
-#endif
-            else if (bookmarks_mode[active]) {
-                leave_bookmarks_mode();
-                change_dir(bookmarks[ps[active].curr_pos], active);
-            } else if (S_ISDIR(current_file_stat.st_mode)) {
-                change_dir(ps[active].nl[ps[active].curr_pos], active);
+#endif  
+            else if (S_ISDIR(current_file_stat.st_mode)) {
+                if (bookmarks_mode[active]) {
+                    leave_bookmarks_mode();
+                }
+                change_dir(str_ptr[active][ps[active].curr_pos], active);
             } else {
-                manage_file(ps[active].nl[ps[active].curr_pos], current_file_stat.st_size);
+                manage_file(str_ptr[active][ps[active].curr_pos], current_file_stat.st_size);
             }
             break;
         case 't': // t to open second tab
@@ -292,8 +291,8 @@ static void main_loop(void) {
             }
             break;
         case 32: // space to select files
-            if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
-                manage_space_press(ps[active].nl[ps[active].curr_pos]);
+            if (strcmp(strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1, "..") != 0) {
+                manage_space_press(str_ptr[active][ps[active].curr_pos]);
             }
             break;
         case 'l':  // show helper mess
@@ -303,7 +302,7 @@ static void main_loop(void) {
             trigger_stats();
             break;
         case 'e': // add dir to bookmarks
-            add_dir_to_bookmarks(ps[active].my_cwd);
+            add_file_to_bookmarks(str_ptr[active][ps[active].curr_pos]);
             break;
         case 'f': // f to search
             if (sv.searching == 0) {
@@ -317,7 +316,7 @@ static void main_loop(void) {
 #ifdef LIBCUPS_PRESENT
         case 'p': // p to print
             if ((S_ISREG(current_file_stat.st_mode)) && !(current_file_stat.st_mode & S_IXUSR)) {
-                print_support(ps[active].nl[ps[active].curr_pos]);
+                print_support(str_ptr[active][ps[active].curr_pos]);
             }
             break;
 #endif
@@ -331,8 +330,8 @@ static void main_loop(void) {
             break;
 #ifdef OPENSSL_PRESENT
         case 'u': // u to check current file's shasum
-            if (strcmp(strrchr(ps[active].nl[ps[active].curr_pos], '/') + 1, "..") != 0) {
-                shasum_func(ps[active].nl[ps[active].curr_pos]);
+            if (strcmp(strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1, "..") != 0) {
+                shasum_func(str_ptr[active][ps[active].curr_pos]);
             }
             break;
 #endif
@@ -446,7 +445,7 @@ static void set_signals(void) {
  * just switch the quit flag to 1 and log a warn.
  */
 static void sig_handler(int signum) {
-    char str[100];
+    char str[50];
     
     sprintf(str, "received signal %d. Leaving.", signum);
     WARN(str);
