@@ -68,6 +68,7 @@ struct conf {
     int starting_helper;
     int loglevel;
     int persistent_log;
+    int bat_low_level;
 };
 
 /*
