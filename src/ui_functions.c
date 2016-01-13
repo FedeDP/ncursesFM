@@ -887,7 +887,7 @@ static void update_batt(void) {
                 open_file_and_read(path, file->d_name, "energy_now", &energy_now);
                 open_file_and_read(path, file->d_name, "energy_full", &energy_full);
                 int perc = (float)energy_now / (float)energy_full * 100;
-                if (perc <= 15) {
+                if (perc <= config.bat_low_level) {
                     wattron(info_win, COLOR_PAIR(5));
                 }
                 sprintf(batt, "%s: %d%%%%", file->d_name, perc);

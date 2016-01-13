@@ -78,11 +78,13 @@ int main(int argc, const char *argv[])
 }
 
 static void helper_function(int argc, const char *argv[]) {
-    /* default value for starting_helper */
+    /* default value for starting_helper, bat_low_level and device_mode */
     config.starting_helper = 1;
+    config.bat_low_level = 15;
 #ifdef LIBUDEV_PRESENT
     device_mode = DEVMON_STARTING;
 #endif
+    
     if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
         printf("\n NcursesFM Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
@@ -97,7 +99,8 @@ static void helper_function(int argc, const char *argv[]) {
         printf("\t* --loglevel {0,1,2,3} to change loglevel. Defaults to 0.\n");
         printf("\t\t* 0 to log only errors.\n\t\t* 1 to log warn messages and errors.\n");
         printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable log.\n");
-        printf("\t* --persistent_log {0,1} to switch {off,on} persistent log across program restarts. Defaults to 0.\n\n");
+        printf("\t* --persistent_log {0,1} to switch {off,on} persistent log across program restarts. Defaults to 0.\n");
+        printf("\t* --low_level {$level} to set low battery signal's threshold. Defaults to 15%.\n\n");
         printf(" Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
         printf(" Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
         printf(" Press 'l' while in program to view a more detailed helper message.\n\n");
@@ -109,12 +112,12 @@ static void parse_cmd(int argc, const char *argv[]) {
     int j = 1;
 #ifdef SYSTEMD_PRESENT
 #ifdef LIBUDEV_PRESENT
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--inhibit", "--automount"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--low_level", "--inhibit", "--automount"};
 #else
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--inhibit"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--low_level", "--inhibit"};
 #endif
 #else
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--low_level"};
 #endif
 
     while (j < argc) {
@@ -128,13 +131,15 @@ static void parse_cmd(int argc, const char *argv[]) {
             config.loglevel = atoi(argv[j + 1]);
         } else if ((strcmp(cmd_switch[4], argv[j]) == 0) && (argv[j + 1])) {
             config.persistent_log = atoi(argv[j + 1]);
+        } else if ((strcmp(cmd_switch[5], argv[j]) == 0) && (argv[j + 1])) {
+            config.bat_low_level = atoi(argv[j + 1]);
         }
 #ifdef SYSTEMD_PRESENT
-        else if ((strcmp(cmd_switch[5], argv[j]) == 0) && (argv[j + 1])) {
+        else if ((strcmp(cmd_switch[6], argv[j]) == 0) && (argv[j + 1])) {
             config.inhibit = atoi(argv[j + 1]);
         }
 #ifdef LIBUDEV_PRESENT
-        else if ((strcmp(cmd_switch[6], argv[j]) == 0) && (argv[j + 1])) {
+        else if ((strcmp(cmd_switch[7], argv[j]) == 0) && (argv[j + 1])) {
             config.automount = atoi(argv[j + 1]);
         }
 #endif
@@ -175,6 +180,7 @@ static void read_config_file(void) {
 #endif
         config_lookup_int(&cfg, "loglevel", &config.loglevel);
         config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
+        config_lookup_int(&cfg, "bat_low_level", &config.bat_low_level);
     } else {
         fprintf(stderr, "Config file: %s at line %d.\n",
                 config_error_text(&cfg),

@@ -48,6 +48,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 * automount -> whether to enable devices automount. Defaults to 0.
 * loglevel -> to change program loglevel. Defaults to 0.
 * persistent_log -> to enable log persistency across program restarts. Defaults to 0.
+* bat_low_level -> to set threshold to signal user about low battery.
 
 NcursesFM ships an autocompletion script for cmdline options. It supports following options:
 * "--editor" /path/to/editor
@@ -57,6 +58,7 @@ NcursesFM ships an autocompletion script for cmdline options. It supports follow
 * "--automount" {0,1} to disable(enable) automount of connected devices.
 * "--loglevel" {0,1,2,3} to change program loglevel.
 * "--persistent_log" {0,1} -> to disable(enable) log persistency across program restarts.
+* "--low_level" {$level} -> threshold to signal user about low battery.
 
 Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time ncursesFM starts (unless persistent_log option is != 0). Log levels:
 * 0 : log errors only.
