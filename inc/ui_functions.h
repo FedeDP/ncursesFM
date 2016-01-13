@@ -19,6 +19,9 @@
 #define STATS_ON 1
 #define STATS_IDLE 2
 
+#define ACTIVE_COL 2
+#define FAST_BROWSE_COL 5
+
 void screen_init(void);
 void screen_end(void);
 void reset_win(int win);
@@ -36,8 +39,11 @@ void tab_refresh(int win);
 void update_devices(int num,  char (*str)[PATH_MAX + 1]);
 #endif
 void print_info(const char *str, int i);
+void print_and_warn(const char *err, int line);
 void ask_user(const char *str, char *input, int d, char c);
 void resize_win(void);
 void change_sort(void);
 void highlight_selected(int line, const char c);
 void erase_selected_highlight(void);
+void change_tab(void);
+void switch_fast_browse_mode(void);

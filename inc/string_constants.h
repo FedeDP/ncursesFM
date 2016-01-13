@@ -1,4 +1,4 @@
-#define HELPER_HEIGHT 13
+#define HELPER_HEIGHT 14
 #define LONG_FILE_OPERATIONS 5
 #define SHORT_FILE_OPERATIONS 3
 
@@ -59,9 +59,9 @@ const char *pkg_quest;
 const char *install_th_wait;
 const char *package_warn;
 #endif
+
 #ifdef LIBUDEV_PRESENT
 const char *device_mode_str;
 #endif
-
-
+const char *bookmarks_mode_str;
 const char *special_mode_title;

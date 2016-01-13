@@ -19,8 +19,7 @@ void *install_package(void *str) {
     
     r = sd_bus_open_system(&install_bus);
     if (r < 0) {
-        print_info(strerror(-r), ERR_LINE);
-        WARN(strerror(-r));
+        print_and_warn(strerror(-r), ERR_LINE);
         pthread_exit(NULL);
     }
     INFO("calling CreateTransaction on bus.");
@@ -33,8 +32,7 @@ void *install_package(void *str) {
                            &mess,
                            NULL);
     if (r < 0) {
-        print_info(error.message, ERR_LINE);
-        WARN(error.message);
+        print_and_warn(error.message, ERR_LINE);
         close_bus(&error, mess, install_bus);
         pthread_exit(NULL);
     }
@@ -60,8 +58,7 @@ void *install_package(void *str) {
                            1,
                            (char *)str);
         if (r < 0) {
-            print_info(error.message, ERR_LINE);
-            WARN(error.message);
+            print_and_warn(error.message, ERR_LINE);
         } else {
             while (!finished) {
                 r = sd_bus_process(install_bus, NULL);

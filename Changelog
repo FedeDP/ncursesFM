@@ -1,3 +1,23 @@
+01 / 13 / 2016
+* fixes for udisks2 monitor.
+* added a "PropertiesChanged" signal match too, this way i can notify user if external tool has mounted some device
+* added a new way of interacting with devices: 'm' to mount/unmount them, enter to move to current device mount point (after mounting it, if unmounted)
+* now if unmounting a device, and 1 or both tab is inside it, move them in the folder that contains device's mountpoint before unmounting.
+* added "unmount" with enter for iso files.
+* initial implementation of bookmarks...it will just load bookmarks from $HOME/.config/user-dirs.dirs for now.
+* added a "lazy" search mode: it will just check if searched string is contained inside inspected string (and it is case-insensitive too)
+* using blocking ppoll instead of sd_bus_wait to make wait on bus signal-aware (i can interrupt it with a signal, and gracefully leave monitor thread/program)
+* using blocking ppoll in conjunction with nodelayed getch in main thread and whenever a getch is performed; this way program can be externally interrupted by SIGINT or SIGTERM, 
+and everything is managed correctly (signal will only switch quit to 1)
+* fixed a small bug in screen_init() related to term_size_check()
+* switch to win_getch (ppoll + wgetch) in term_size_check() too.
+* now you can select files even in fast_browse_mode
+* now fast_browse_mode is a per-tab property
+* highlighting active tab with green arrow.
+* highlighting fast_browse_mode AND active tab with red arrow.
+* some internal changes (improvements in readability)
+* cleaned up some code
+
 01 / 08 / 2016
 * using an udisks2 monitor instead of libudev monitor to monitor new devices. It is simplier and far more reliable.
 * device monitor will now show only mountable devices.

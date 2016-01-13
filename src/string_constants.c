@@ -61,19 +61,20 @@ const char *helper_string[] = { "Enter to surf between folders or to open files.
                                 "'.' to change files/dirs sorting function: alphabetically (default), by size, by last modified or by type.",
                                 "Space to select files. Twice to remove the file from selected files. 'u' to check shasum of current file.",
                                 "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files. 'p' to print a file.",
+                                "'g' to switch to bookmarks window. Enter on a bookmark to switch to that folder.",
                                 "'o' to rename current file/dir; 'n'/'d' to create new file/dir. 'f' to search (case sensitive) for a file.",
                                 "'t' to create new tab (at most one more). 'w' to close tab. Arrow left or right to switch between tabs.",
                                 "'m' to switch to devices tab. 'm' on a device to (un)mount it, enter to move to its mountpoint, mounting it if necessary.",
                                 "You can't close first tab. Use 'q' to quit/leave current mode."};
-
-
+                                
 #ifdef SYSTEMD_PRESENT
 const char *pkg_quest = "Do you really want to install this package? y/N:> ";
 const char *install_th_wait = "Waiting for package installation to finish before exiting. It can really harm your OS otherwise.";
 const char *package_warn = "Currently there is no check against wrong package arch: it will crash packagekit and ncursesfm.";
 #endif
+
 #ifdef LIBUDEV_PRESENT
 const char *device_mode_str =  "Choose your desired device to (un)mount it";
 #endif
-
+const char *bookmarks_mode_str = "Bookmarks:";
 const char *special_mode_title = "q to return to normal mode";

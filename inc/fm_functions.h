@@ -37,5 +37,4 @@ int remove_file(void);
 void manage_space_press(const char *str);
 int paste_file(void);
 int move_file(void);
-void change_tab(void);
 void fast_browse(int c);

@@ -7,6 +7,7 @@ static int sizesort(const struct dirent **d1, const struct dirent **d2);
 static int last_mod_sort(const struct dirent **d1, const struct dirent **d2);
 static int typesort(const struct dirent **d1, const struct dirent **d2);
 static void list_everything(int win, int old_dim, int end);
+static void print_arrow(int win, int y);
 static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
 static void initialize_tab_cwd(int win);
@@ -52,15 +53,22 @@ void screen_init(void) {
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
     init_pair(3, COLOR_CYAN, COLOR_BLACK);
     init_pair(4, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(5, COLOR_RED, COLOR_BLACK);
     noecho();
     curs_set(0);
     raw();
+    nodelay(stdscr, TRUE);
+    notimeout(stdscr, TRUE);
     term_size_check();
-    cont = 1;
+    if (quit) {
+        return;
+    }
     dim = LINES - INFO_HEIGHT;
     if (config.starting_helper) {
         create_helper_win();
+        config.starting_helper = 0;
     }
+    cont = 1;
     new_tab(0);
     info_win_init();
 }
@@ -70,19 +78,24 @@ static void term_size_check(void) {
     int min_lines = INFO_HEIGHT + 3;
     int min_cols = MAX_TABS * (STAT_LENGTH + 5);
     
-    if (helper_win) {
+    if (helper_win || config.starting_helper) {
         min_lines += HELPER_HEIGHT;
     }
-    while ((LINES < min_lines) || (COLS < min_cols)) {
+    if ((LINES < min_lines) || (COLS < min_cols)) {
         clear();
         printw("Window too small, enlarge it. Q to exit.");
+        refresh();
+    }
+    while ((LINES < min_lines) || (COLS < min_cols)) {
         do {
-            c = getch();
+            c = win_getch(stdscr);
             if (tolower(c) == 'q') {
                 quit = NORM_QUIT;
-                program_quit(0);
             }
-        } while (c != KEY_RESIZE);
+        } while (c != KEY_RESIZE && !quit);
+        if (quit) {
+            break;
+        }
     }
 }
 
@@ -206,12 +219,12 @@ static void list_everything(int win, int old_dim, int end) {
     if (end == 0) {
         end = dim - 2;
     }
-    if ((sv.searching != 3 + win) && (device_mode != 1 + win)) {
+    if (!special_mode[win]) {
         width -= STAT_LENGTH;
     }
     wattron(mywin[win].fm, A_BOLD);
     for (int i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
-        if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
+        if (special_mode[win]) {
             str = *(str_ptr[win] + i);
         } else {
             check_selected(*(str_ptr[win] + i), win, i);
@@ -221,12 +234,25 @@ static void list_everything(int win, int old_dim, int end) {
         mvwprintw(mywin[win].fm, 1 + i - mywin[win].delta, 4, "%.*s", width, str);
         wattroff(mywin[win].fm, COLOR_PAIR);
     }
-    wattroff(mywin[win].fm, A_BOLD);
-    mvwprintw(mywin[win].fm, 1 + ps[win].curr_pos - mywin[win].delta, 1, "->");
-    if ((sv.searching != 3 + win) && (device_mode != 1 + win) && (mywin[win].stat_active == STATS_ON)) {
+    print_arrow(win, 1 + ps[win].curr_pos - mywin[win].delta);
+    if (!special_mode[win] && mywin[win].stat_active == STATS_ON) {
         show_stat(old_dim, end, win);
     }
     print_border_and_title(win);
+}
+
+static void print_arrow(int win, int y) {
+    if (active == win) {
+        wattron(mywin[win].fm, A_BOLD);
+        if (fast_browse_mode[win]) {
+            wattron(mywin[win].fm, COLOR_PAIR(FAST_BROWSE_COL));
+        } else {
+            wattron(mywin[win].fm, COLOR_PAIR(ACTIVE_COL));
+        }
+    }
+    mvwprintw(mywin[win].fm, y, 1, "->");
+    wattroff(mywin[win].fm, COLOR_PAIR);
+    wattroff(mywin[win].fm, A_BOLD);
 }
 
 /*
@@ -237,7 +263,7 @@ static void list_everything(int win, int old_dim, int end) {
 static void print_border_and_title(int win) {
     wborder(mywin[win].fm, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(mywin[win].fm, 0, 0, "%.*s", mywin[win].width - 1, ps[win].title);
-    if ((sv.searching == 3 + win) || (device_mode == 1 + win)) {
+    if (special_mode[win]) {
         mvwprintw(mywin[win].fm, 0, mywin[win].width - strlen(special_mode_title), special_mode_title);
     } else {
         mvwprintw(mywin[win].fm, 0, mywin[win].width - strlen(mywin[win].tot_size), mywin[win].tot_size);
@@ -260,7 +286,7 @@ static int is_hidden(const struct dirent *current_file) {
 
 /*
  * Creates a new tab.
- * Then, only if !resizing, calls initialize_tab_cwd().
+ * Then calls initialize_tab_cwd().
  */
 void new_tab(int win) {
     mywin[win].width = COLS / cont + win * (COLS % cont);
@@ -277,13 +303,13 @@ void new_tab(int win) {
  * Helper functions called in main.c before creating/after deleting second tab.
  */
 void change_first_tab_size(void) {
-    wclear(mywin[active].fm);
-    mywin[active].width = COLS / cont;
-    wresize(mywin[active].fm, dim, mywin[active].width);
-    if (mywin[active].stat_active) {
-        mywin[active].stat_active = STATS_ON;
+    wclear(mywin[0].fm);
+    mywin[0].width = COLS / cont;
+    wresize(mywin[0].fm, dim, mywin[0].width);
+    if (mywin[0].stat_active) {
+        mywin[0].stat_active = STATS_ON;
     }
-    list_everything(active, mywin[active].delta, 0);
+    list_everything(0, mywin[0].delta, 0);
 }
 
 /*
@@ -328,7 +354,7 @@ void scroll_down(void) {
             list_everything(active, ps[active].curr_pos, 1);
         } else {
             mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta, 1, "  ");
-            mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 1, 1, "->");
+            print_arrow(active, ps[active].curr_pos - mywin[active].delta + 1);
             wrefresh(mywin[active].fm);
         }
         pthread_mutex_unlock(&fm_lock[active]);
@@ -347,7 +373,7 @@ void scroll_up(void) {
             list_everything(active, mywin[active].delta, 1);
         } else {
             mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 2, 1, "  ");
-            mvwprintw(mywin[active].fm, ps[active].curr_pos - mywin[active].delta + 1, 1, "->");
+            print_arrow(active, ps[active].curr_pos - mywin[active].delta + 1);
             wrefresh(mywin[active].fm);
         }
         pthread_mutex_unlock(&fm_lock[active]);
@@ -411,7 +437,7 @@ static void create_helper_win(void) {
         print_border_and_title(i);
         if (ps[i].curr_pos > dim - 3 + mywin[i].delta) {
             ps[i].curr_pos = dim - 3 + mywin[i].delta;
-            mvwprintw(mywin[i].fm, dim - 3 + 1, 1, "->");
+            print_arrow(i, dim - 3 + 1);
         }
         wrefresh(mywin[i].fm);
     }
@@ -582,6 +608,11 @@ void print_info(const char *str, int i) {
     pthread_mutex_unlock(&info_lock);
 }
 
+void print_and_warn(const char *err, int line) {
+    print_info(err, line);
+    WARN(err);
+}
+
 /*
  * Given a str, a char input[d], and a char c (that is default value if enter is pressed, if dim == 1),
  * asks the user "str" and saves in input the user response.
@@ -600,9 +631,11 @@ void ask_user(const char *str, char *input, int d, char c) {
         s = win_getch(info_win);
         if (s == KEY_RESIZE) {
             resize_win();
-            char resize_str[200];
-            sprintf(resize_str, "%s%s", str, input);
-            print_info(resize_str, ASK_LINE);
+            if (!quit) {
+                char resize_str[200];
+                sprintf(resize_str, "%s%s", str, input);
+                print_info(resize_str, ASK_LINE);
+            }
         } else if (s == 10) { // enter to exit
             break;
         } else if (s != ERR) {
@@ -647,7 +680,7 @@ int win_getch(WINDOW *win) {
  * Mutex is needed because worker thread can call this function too.
  */
 void tab_refresh(int win) {
-    if ((sv.searching != 3 + win) && (device_mode != 1 + win)) {
+    if (!special_mode[win]) {
         pthread_mutex_lock(&fm_lock[win]);
         generate_list(win);
         pthread_mutex_unlock(&fm_lock[win]);
@@ -686,6 +719,9 @@ void update_devices(int num,  char (*str)[PATH_MAX + 1]) {
  */
 void resize_win(void) {
     term_size_check();
+    if (quit) {
+        return;
+    }
     pthread_mutex_lock(&info_lock);
     delwin(info_win);
     dim = LINES - INFO_HEIGHT;
@@ -753,7 +789,7 @@ void change_sort(void) {
  */
 void highlight_selected(int line, const char c) {
     for (int i = 0; i < cont; i++) {
-        if ((sv.searching != 3 + i) && (device_mode != 1 + i)) {
+        if (!special_mode[i]) {
             if ((i == active) || ((strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0)
             && (line - mywin[i].delta > 0) && (line - mywin[i].delta < dim - 2))) {
                 wattron(mywin[i].fm, A_BOLD);
@@ -784,4 +820,25 @@ void erase_selected_highlight(void) {
         }
         wrefresh(mywin[j].fm);
     }
+}
+
+void change_tab(void) {
+    active = !active;
+    chdir(ps[active].my_cwd);
+    print_arrow(!active, 1 + ps[!active].curr_pos - mywin[!active].delta);
+    print_arrow(active, 1 + ps[active].curr_pos - mywin[active].delta);
+    wrefresh(mywin[!active].fm);
+    wrefresh(mywin[active].fm);
+}
+
+void switch_fast_browse_mode(void) {
+    if (!fast_browse_mode[active]) {
+        fast_browse_mode[active] = 1;
+        print_info("Fast browse mode enabled for active tab.", INFO_LINE);
+    } else {
+        fast_browse_mode[active] = 0;
+        print_info("Fast browse mode disabled for active tab.", INFO_LINE);
+    }
+    print_arrow(active, 1 + ps[active].curr_pos - mywin[active].delta);
+    wrefresh(mywin[active].fm);
 }

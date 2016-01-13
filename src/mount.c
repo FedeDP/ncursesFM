@@ -50,8 +50,7 @@ static int mount_fs(const char *str, const char *method, int mount) {
 
     r = sd_bus_open_system(&mount_bus);
     if (r < 0) {
-        print_info(strerror(-r), ERR_LINE);
-        WARN(strerror(-r));
+        print_and_warn(strerror(-r), ERR_LINE);
         return ret;
     }
     strcat(obj_path, strrchr(str, '/') + 1);
@@ -67,8 +66,7 @@ static int mount_fs(const char *str, const char *method, int mount) {
                            "a{sv}",
                            NULL);
     if (r < 0) {
-        print_info(error.message, ERR_LINE);
-        WARN(error.message);
+        print_and_warn(error.message, ERR_LINE);
     } else {
         ret = 1;
         if (!mount) {
@@ -108,8 +106,7 @@ void isomount(const char *str) {
     fd = open(str, O_RDONLY);
     r = sd_bus_open_system(&iso_bus);
     if (r < 0) {
-        print_info(strerror(-r), ERR_LINE);
-        WARN(strerror(-r));
+        print_and_warn(strerror(-r), ERR_LINE);
         return;
     }
     INFO("calling LoopSetup method on bus.");
@@ -125,8 +122,7 @@ void isomount(const char *str) {
                            NULL);
     close(fd);
     if (r < 0) {
-        print_info(error.message, ERR_LINE);
-        WARN(error.message);
+        print_and_warn(error.message, ERR_LINE);
     } else {
         sd_bus_message_read(mess, "o", &obj_path);
         sd_bus_flush(iso_bus);
@@ -145,8 +141,7 @@ void isomount(const char *str) {
                                TRUE,
                                NULL);
         if (r < 0) {
-            print_info(error.message, ERR_LINE);
-            WARN(error.message);
+            print_and_warn(error.message, ERR_LINE);
         }
     }
     close_bus(&error, mess, iso_bus);
@@ -196,8 +191,7 @@ static void iso_backing_file(char *s, const char *name) {
     
     r = sd_bus_open_system(&iso_bus);
     if (r < 0) {
-        print_info(strerror(-r), ERR_LINE);
-        WARN(strerror(-r));
+        print_and_warn(strerror(-r), ERR_LINE);
         return;
     }
     strcat(obj_path, strrchr(name, '/') + 1);
@@ -211,13 +205,11 @@ static void iso_backing_file(char *s, const char *name) {
                             &mess,
                             "ay");
     if (r < 0) {
-        print_info(error.message, ERR_LINE);
-        WARN(error.message);
+        print_and_warn(error.message, ERR_LINE);
     } else {
         r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "y");
         if (r < 0) {
-            print_info(strerror(-r), ERR_LINE);
-            WARN(strerror(-r));
+            print_and_warn(strerror(-r), ERR_LINE);
         } else {
             while ((sd_bus_message_read(mess, "y", &bytes)) > 0) {
                 sprintf(s + strlen(s), "%c", (char)bytes);
@@ -317,6 +309,7 @@ void show_devices_tab(void) {
         ps[active].number_of_files = number_of_devices;
         str_ptr[active] = my_devices;
         device_mode = 1 + active;
+        special_mode[active] = 1;
         sprintf(ps[active].title, device_mode_str);
         reset_win(active);
         pthread_mutex_unlock(&fm_lock[active]);
@@ -383,13 +376,11 @@ static int is_mounted(const char *dev_path) {
     } else {
         r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "ay");
         if (r < 0) {
-            print_info(strerror(-r), ERR_LINE);
-            WARN(strerror(-r));
+            print_and_warn(strerror(-r), ERR_LINE);
         } else {
             r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "y");
             if (r < 0) {
-                print_info(strerror(-r), ERR_LINE);
-                WARN(strerror(-r));
+                print_and_warn(strerror(-r), ERR_LINE);
             } else {
                 if (sd_bus_message_read(mess, "y", &bytes) > 0) {
                     ret = 1;
@@ -600,6 +591,7 @@ static void change_mounted_status(int pos, const char *name) {
 void leave_device_mode(void) {
     pthread_mutex_lock(&fm_lock[active]);
     device_mode = DEVMON_READY;
+    special_mode[active] = 0;
     pthread_mutex_unlock(&fm_lock[active]);
     change_dir(ps[active].my_cwd, active);
 }

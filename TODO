@@ -6,6 +6,11 @@
  * 
  * ask to force if unmount fails? -> http://udisks.freedesktop.org/docs/latest/gdbus-org.freedesktop.UDisks2.Filesystem.html#gdbus-method-org-freedesktop-UDisks2-Filesystem.Unmount
  * 
- * bookmarks win
+ * bookmarks { "add dir to bookmarks" command? how?
+ *             extend bookmars to N? (limit of 30 now)
+ * }
+ * 
  * sshfs support?
+ * 
+ * add a bottom bar with time/date/battery? (useful as ncursesFM targets mainy no-X users)
  */

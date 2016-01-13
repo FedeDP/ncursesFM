@@ -346,11 +346,6 @@ static void rmrf(const char *path) {
     nftw(path, recursive_remove, 64, FTW_DEPTH | FTW_PHYS | FTW_MOUNT);
 }
 
-void change_tab(void) {
-    active = !active;
-    chdir(ps[active].my_cwd);
-}
-
 /*
  * It calculates the time diff since previous call. If it is lower than 0,5s,
  * will start from last char of fast_browse_str, otherwise it will start from scratch.

@@ -37,6 +37,9 @@ static void main_loop(void);
 static void check_device_mode(void);
 static int check_init(int index);
 static int check_access(void);
+static void get_bookmarks(void);
+static void show_bookmarks(void);
+static void leave_bookmarks_mode(void);
 static void set_signals(void);
 static void sig_handler(int signum);
 static void sigsegv_handler(int signum);
@@ -48,6 +51,7 @@ static void sigsegv_handler(int signum);
 static int (*const long_func[LONG_FILE_OPERATIONS - 1])(void) = {
     move_file, paste_file, remove_file, create_archive
 };
+static int num_bookmarks, bookmarks_mode[MAX_TABS];
 
 int main(int argc, const char *argv[])
 {
@@ -62,9 +66,12 @@ int main(int argc, const char *argv[])
 #ifdef LIBUDEV_PRESENT
     start_monitor();
 #endif
+    get_bookmarks();
     screen_init();
-    chdir(ps[active].my_cwd);
-    main_loop();
+    if (!quit) {
+        chdir(ps[active].my_cwd);
+        main_loop();
+    }
     program_quit(0);
 }
 
@@ -202,7 +209,7 @@ static void config_checks(void) {
  * else stat current file and enter switch case.
  */
 static void main_loop(void) {
-    int c, index, fast_browse_mode = 0;
+    int c, index;
     const char *long_table = "xvrb"; // x to move, v to paste, r to remove, b to compress
     const char *short_table = "ndo";  //n, d to create new file/dir, o to rename.
     const char *special_mode_allowed_chars = "ltqm";
@@ -211,12 +218,12 @@ static void main_loop(void) {
 
     while (!quit) {
         c = win_getch(NULL);
-        if ((fast_browse_mode == 1 + active) && isprint(c) && (c != ',')) {
+        if ((fast_browse_mode[active]) && isgraph(c) && (c != ',')) {
             fast_browse(c);
             continue;
         }
         c = tolower(c);
-        if ((device_mode == 1 + active) || (sv.searching == 3 + active)) {
+        if (special_mode[active]) {
             if (isprint(c) && (!strchr(special_mode_allowed_chars, c))) {
                 continue;
             }
@@ -254,7 +261,10 @@ static void main_loop(void) {
                 manage_enter_device();
             }
 #endif
-            else if (S_ISDIR(current_file_stat.st_mode)) {
+            else if (bookmarks_mode[active]) {
+                bookmarks_mode[active] = 0;
+                change_dir(bookmarks[ps[active].curr_pos], active);
+            } else if (S_ISDIR(current_file_stat.st_mode)) {
                 change_dir(ps[active].nl[ps[active].curr_pos], active);
             } else {
                 manage_file(ps[active].nl[ps[active].curr_pos], current_file_stat.st_size);
@@ -309,13 +319,7 @@ static void main_loop(void) {
             break;
 #endif
         case ',': // , to enable/disable fast browse mode
-            if (!fast_browse_mode) {
-                fast_browse_mode = 1 + active;
-                print_info("Fast browse mode enabled.", INFO_LINE);
-            } else {
-                fast_browse_mode = 0;
-                print_info("Fast browse mode disabled.", INFO_LINE);
-            }
+            switch_fast_browse_mode();
             break;
 #ifdef OPENSSL_PRESENT
         case 'u': // u to check current file's shasum
@@ -332,7 +336,10 @@ static void main_loop(void) {
             else if (device_mode == 1 + active) {
                 leave_device_mode();
             }
-#endif
+#endif  
+            else if (bookmarks_mode[active]) {
+                leave_bookmarks_mode();
+            }
             else {
                 quit = NORM_QUIT;
             }
@@ -350,6 +357,11 @@ static void main_loop(void) {
                 fast_file_operations(index);
             }
             break;
+        case 'g':
+            if (!bookmarks_mode[active]) {
+                show_bookmarks();
+            }
+            break;
         default:
             ptr = strchr(long_table, c);
             if (ptr) {
@@ -364,7 +376,7 @@ static void main_loop(void) {
 }
 
 static void check_device_mode(void) {
-    if (sv.searching == 3 + active) {
+    if (sv.searching == 3 + active || bookmarks_mode[active]) {
         return;
     }
     if (device_mode == DEVMON_STARTING) {
@@ -400,6 +412,57 @@ static int check_access(void) {
         return 0;
     }
     return 1;
+}
+
+static void get_bookmarks(void) {
+    int i = 0;
+    FILE *f;
+    char str[PATH_MAX + 1] = {0};
+    char line[1000], file_path[PATH_MAX + 1];
+    const char *home_dir = getpwuid(getuid())->pw_dir;
+    const char *path = "/.config/user-dirs.dirs";
+    
+    sprintf(file_path, "%s/.%s", home_dir, path);
+    f = fopen(file_path, "r");
+    if (f) {
+        while (fgets(line, sizeof(line), f)) {
+            if (*line == '#') {
+                continue;
+            }
+            strcpy(str, strchr(line, '/') + 1);
+            str[strlen(str) - 2] = '\0'; // -1 for newline - 1 for closing Double quotation mark
+            sprintf(bookmarks[i], "%s/%s", home_dir, str);
+            i++;
+            if (i == MAX_BOOKMARKS) {
+                WARN("Too many bookmarks. Max 30.");
+                break;
+            }
+        }
+    }
+    num_bookmarks = i;
+}
+
+static void show_bookmarks(void) {
+    if (num_bookmarks) {
+        pthread_mutex_lock(&fm_lock[active]);
+        ps[active].number_of_files = num_bookmarks;
+        str_ptr[active] = bookmarks;
+        bookmarks_mode[active] = 1;
+        special_mode[active] = 1;
+        sprintf(ps[active].title, bookmarks_mode_str);
+        reset_win(active);
+        pthread_mutex_unlock(&fm_lock[active]);
+    } else {
+        print_info("No bookmarks found.", INFO_LINE);
+    }
+}
+
+static void leave_bookmarks_mode(void) {
+    pthread_mutex_lock(&fm_lock[active]);
+    bookmarks_mode[active] = 0;
+    special_mode[active] = 0;
+    pthread_mutex_unlock(&fm_lock[active]);
+    change_dir(ps[active].my_cwd, active);
 }
 
 static void set_signals(void) {
