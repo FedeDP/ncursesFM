@@ -21,6 +21,7 @@ int program_quit(int sig_received) {
     if (quit == MEM_ERR_QUIT) {
         fprintf(stderr, "%s\n", generic_mem_error);
         ERROR("program exited with errors.");
+        close_log();
         exit(EXIT_FAILURE);
     }
     INFO("program exited without errors.");
@@ -52,7 +53,7 @@ static void quit_worker_th(void) {
     
     if (thread_h) {
         /* 
-         * if we received an external signal, waits until worker thread ends its job list
+         * if we received an external signal (SIGINT or SIGTERM), waits until worker thread ends its job list
          * or until a SIGKILL is sent to the process
          */
         if (!sig_flag) {

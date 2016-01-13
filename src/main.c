@@ -491,6 +491,10 @@ static void set_signals(void) {
     signal(SIGSEGV, sigsegv_handler);
 }
 
+/*
+ * if received an external SIGINT or SIGTERM,
+ * just switch the quit flag to 1 and log a warn.
+ */
 static void sig_handler(int signum) {
     char str[100];
     
@@ -499,6 +503,11 @@ static void sig_handler(int signum) {
     quit = NORM_QUIT;
 }
 
+/*
+ * If received a sigsegv, only log a message then
+ * set sigsegv signal handler to default (SIG_DFL),
+ * and send again the signal to the process.
+ */
 static void sigsegv_handler(int signum) {
     ERROR("received sigsegv signal. Aborting.");
     close_log();

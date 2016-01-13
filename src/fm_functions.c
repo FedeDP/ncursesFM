@@ -40,7 +40,7 @@ void switch_hidden(void) {
 }
 
 /*
- * Check if filename has "." in it (otherwise surely it has not extension.
+ * Check if filename has "." in it (otherwise surely it has not extension)
  * Then for each extension in *ext[], check if last strlen(ext[i]) chars of filename are 
  * equals to ext[i].
  */
@@ -63,7 +63,7 @@ int is_ext(const char *filename, const char *ext[], int size) {
  * If it is a package, ask user to mount it.
  * If it is an archive, initialize a thread job to extract it.
  * if compiled with X11 support, and xdg-open is found, open the file,
- * else open the file with $config.editor.
+ * else open the file with config.editor.
  */
 void manage_file(const char *str, float size) {
     char c;
