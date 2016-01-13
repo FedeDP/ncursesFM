@@ -10,7 +10,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-#define INFO_HEIGHT 3
+#define INFO_HEIGHT 4
 #define SEL_COL 3
 #define STAT_LENGTH 20
 #define PERM_LENGTH 10
@@ -47,3 +47,4 @@ void highlight_selected(int line, const char c);
 void erase_selected_highlight(void);
 void change_tab(void);
 void switch_fast_browse_mode(void);
+void update_time(void);

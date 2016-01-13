@@ -10,6 +10,7 @@ static void quit_monitor_th(void);
 #endif
 #endif
 static void quit_search_th(void);
+static void quit_time_th(void);
 
 static int sig_flag;
 
@@ -43,6 +44,7 @@ static void quit_thread_func(void) {
 #endif
 #endif
     quit_search_th();
+    quit_time_th();
 }
 
 static void quit_worker_th(void) {
@@ -99,6 +101,15 @@ static void quit_search_th(void) {
         INFO("waiting for search thread to leave...");
         pthread_join(search_th, NULL);
         INFO("search th left.");
+    }
+}
+
+static void quit_time_th(void) {
+    if (pthread_kill(time_th, 0) != ESRCH) {
+        INFO("waiting for time thread to leave...");
+        pthread_mutex_unlock(&time_lock);
+        pthread_join(time_th, NULL);
+        INFO("time thread exited.");
     }
 }
 

@@ -15,6 +15,7 @@
 #define ASK_LINE 0
 #define INFO_LINE 1
 #define ERR_LINE 2
+#define SYSTEM_INFO_LINE 3
 
 /*
  * Long operations that require a worker thread
@@ -121,13 +122,13 @@ struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
 int active, quit, num_of_jobs, cont, distance_from_root, device_mode, special_mode[MAX_TABS], fast_browse_mode[MAX_TABS];
-pthread_mutex_t fm_lock[MAX_TABS];
+pthread_mutex_t fm_lock[MAX_TABS], time_lock;
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;
 #ifdef LIBUDEV_PRESENT
 pthread_t monitor_th;
 #endif
 #endif
-pthread_t worker_th, search_th;
+pthread_t worker_th, search_th, time_th;
 char (*str_ptr[MAX_TABS])[PATH_MAX + 1]; // pointer to abstract which list of strings i have to print in list_everything()
 char (bookmarks[MAX_BOOKMARKS])[PATH_MAX + 1];

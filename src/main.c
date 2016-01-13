@@ -22,6 +22,7 @@
  * END_COMMON_COPYRIGHT_HEADER */
 
 #include "../inc/fm_functions.h"
+#include "../inc/time.h"
 
 #ifdef LIBCONFIG_PRESENT
 #include <libconfig.h>
@@ -68,6 +69,7 @@ int main(int argc, const char *argv[])
 #endif
     get_bookmarks();
     screen_init();
+    start_time();
     if (!quit) {
         chdir(ps[active].my_cwd);
         main_loop();
@@ -466,7 +468,7 @@ static void leave_bookmarks_mode(void) {
 }
 
 static void set_signals(void) {
-    struct sigaction main_act;
+    struct sigaction main_act = {0};
     sigset_t mask;
     
     main_act.sa_handler = sig_handler;

@@ -107,7 +107,7 @@ static void info_win_init(void) {
     keypad(info_win, TRUE);
     nodelay(info_win, TRUE);
     notimeout(info_win, TRUE);
-    for (int i = 0; i < INFO_HEIGHT; i++) {
+    for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because i won't print anything on last line */
         mvwprintw(info_win, i, 1, "%s", info_win_str[i]);
     }
     wrefresh(info_win);
@@ -841,4 +841,18 @@ void switch_fast_browse_mode(void) {
     }
     print_arrow(active, 1 + ps[active].curr_pos - mywin[active].delta);
     wrefresh(mywin[active].fm);
+}
+
+void update_time(void) {
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    char date[30], time[10];
+    
+    sprintf(date, "%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+    sprintf(time, "%02d:%02d", tm.tm_hour, tm.tm_min);
+    pthread_mutex_lock(&info_lock);
+    wmove(info_win, SYSTEM_INFO_LINE, 1);
+    mvwprintw(info_win, SYSTEM_INFO_LINE, 1, "Date: %s, %s", date, time);
+    wrefresh(info_win);
+    pthread_mutex_unlock(&info_lock);
 }
