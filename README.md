@@ -17,6 +17,7 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
 Otherwise, it will use $editor (config file defined) var. It fallbacks to environment $EDITOR if none is set.
 * Stats support (permissions and sizes).
+* Bookmarks initial support (needs to be improved): it will load bookmarks from $HOME/.config/user-dirs.dirs.
 * Search support: it will search your string in current directory tree. It can search your string inside archives too.
 * Basic print support through libcups.
 * shasum support (both printing file shasum/checking a given one), if built with openssl support.
