@@ -12,7 +12,7 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
-* Simple clock and battery monitor (it will check every 30s for changes).
+* Simple clock and battery monitor (it will check every 30s for changes). It will list every battery.
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
 * '.' to change files/dirs sorting mode: alphabetically (default), by size, by last modified or by type.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
