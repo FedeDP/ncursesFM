@@ -30,13 +30,14 @@ You can add whatever type of file you wish as bookmark from within ncursesFM. Yo
 * Long file operations are performed in a different thread. You'll get a notification when the job is done.
 * If you try to quit while a job is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
-* It has an internal udisks2 monitor, to poll for new devices. It can automount new connected devices too.
-Device monitor will list only mountable devices, eg: dvd reader will not be listed until a cd/dvd is inserted.
 
 **Optional (compile time) features that require sd-bus API (systemd)**
 * Powermanagement inhibition while processing a job (eg: while pasting a file) to avoid data loss.
-* It can (un)mount drives/usb sticks/ISO files through udisks2. For drives/usb sticks mount, you also need libudev.
-* It can install your distro package files: pressing enter on a package file will ask user if he wants to install the package. It relies upon packagekit, so it should be distro agnostic.
+* Internal udisks2 monitor, to poll for new devices. It can automount new connected devices too.
+Device monitor will list only mountable devices, eg: dvd reader will not be listed until a cd/dvd is inserted.
+* Drives/usb sticks/ISO files (un)mount through udisks2. For drives/usb sticks mount, you also need libudev.
+* Distro package files installation.
+* It can reveice AC (dis)connection events from upower, to instantly update battery monitor.
 
 ---
 
