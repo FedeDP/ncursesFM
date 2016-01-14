@@ -3,15 +3,15 @@
  * https://github.com/hughsie/PackageKit/issues/87
  *
  * improve and update doc (ui_functions.c and mount.c surely need some new DOC).
- * 
+ *
  * ask to force if unmount fails? -> http://udisks.freedesktop.org/docs/latest/gdbus-org.freedesktop.UDisks2.Filesystem.html#gdbus-method-org-freedesktop-UDisks2-Filesystem.Unmount
- * 
+ *
  * bookmarks: {
- *              extend bookmars to N? (limit of 30 now)
+ *              extend bookmars to N? (limit of 30 now)? Not sure if this will be implemented. It seems useless to me having too many bookmarks.
  *              optimize remove_from_bookmarks
  *           }
- * 
- * clock: optimize
- * 
+ *
+ * optimize update_batt() function.
+ *
  * sshfs support?
  */
