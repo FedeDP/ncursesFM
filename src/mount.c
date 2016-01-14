@@ -305,14 +305,12 @@ static int check_udisks(void) {
 
 void show_devices_tab(void) {
     if (number_of_devices) {
-        pthread_mutex_lock(&fm_lock[active]);
         ps[active].number_of_files = number_of_devices;
         str_ptr[active] = my_devices;
         device_mode = 1 + active;
         special_mode[active] = 1;
         sprintf(ps[active].title, device_mode_str);
         reset_win(active);
-        pthread_mutex_unlock(&fm_lock[active]);
     } else {
         print_info("No devices found.", INFO_LINE);
     }
@@ -589,10 +587,8 @@ static void change_mounted_status(int pos, const char *name) {
 }
 
 void leave_device_mode(void) {
-    pthread_mutex_lock(&fm_lock[active]);
     device_mode = DEVMON_READY;
     special_mode[active] = 0;
-    pthread_mutex_unlock(&fm_lock[active]);
     change_dir(ps[active].my_cwd, active);
 }
 

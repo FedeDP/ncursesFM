@@ -21,7 +21,7 @@ It can be built with a very small set of dependencies, as i tried to make as man
 Otherwise, it will use $editor (config file defined) var. It fallbacks to environment $EDITOR if none is set.
 * Stats support (permissions and sizes).
 * Bookmarks support: it will load bookmarks from $HOME/.config/user-dirs.dirs and $HOME/.config/ncursesFM-bookmarks.
-You can add a bookmark from withing ncursesFM, but you cannot remove a bookmark (for now). You can add whatever type of file you wish as bookmark.
+You can add whatever type of file you wish as bookmark from within ncursesFM. You can remove bookmarks too.
 * Search support: it will search your string in current directory tree. It can search your string inside archives too.
 * Basic print support through libcups.
 * shasum support (both printing file shasum/checking a given one), if built with openssl support.

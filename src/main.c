@@ -217,20 +217,21 @@ static void main_loop(void) {
     int c, index;
     const char *long_table = "xvrb"; // x to move, v to paste, r to remove, b to compress
     const char *short_table = "ndo";  //n, d to create new file/dir, o to rename.
-    const char *special_mode_allowed_chars = "ltqm";
+    const char *special_mode_allowed_chars = "ltqme";
     char *ptr;
     struct stat current_file_stat;
 
     while (!quit) {
         c = win_getch(NULL);
+        pthread_mutex_lock(&fm_lock);
         if ((fast_browse_mode[active]) && isgraph(c) && (c != ',')) {
             fast_browse(c);
-            continue;
+            goto unlock;
         }
         c = tolower(c);
         if (special_mode[active]) {
             if (isprint(c) && (!strchr(special_mode_allowed_chars, c))) {
-                continue;
+                goto unlock;
             }
         }
         stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
@@ -302,7 +303,11 @@ static void main_loop(void) {
             trigger_stats();
             break;
         case 'e': // add dir to bookmarks
-            add_file_to_bookmarks(str_ptr[active][ps[active].curr_pos]);
+            if (!special_mode[active]) {
+                add_file_to_bookmarks(str_ptr[active][ps[active].curr_pos]);
+            } else if (bookmarks_mode[active]) {
+                remove_bookmark_from_file();
+            }
             break;
         case 'f': // f to search
             if (sv.searching == 0) {
@@ -380,6 +385,7 @@ static void main_loop(void) {
             }
             break;
         }
+unlock:     pthread_mutex_unlock(&fm_lock);
     }
 }
 

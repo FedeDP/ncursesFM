@@ -124,7 +124,7 @@ struct vars ps[MAX_TABS];
 struct search_vars sv;
 int active, quit, num_of_jobs, cont, distance_from_root;
 int device_mode, special_mode[MAX_TABS], fast_browse_mode[MAX_TABS], bookmarks_mode[MAX_TABS];
-pthread_mutex_t fm_lock[MAX_TABS], time_lock;
+pthread_mutex_t fm_lock, time_lock;
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;
 #ifdef LIBUDEV_PRESENT

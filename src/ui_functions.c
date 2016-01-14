@@ -46,8 +46,7 @@ static int sorting_index;
  * Initializes screen, colors etc etc, and calls fm_scr_init.
  */
 void screen_init(void) {
-    pthread_mutex_init(&fm_lock[0], NULL);
-    pthread_mutex_init(&fm_lock[1], NULL);
+    pthread_mutex_init(&fm_lock, NULL);
     pthread_mutex_init(&info_lock, NULL);
     setlocale(LC_ALL, "");
     initscr();
@@ -128,8 +127,7 @@ void screen_end(void) {
     }
     delwin(stdscr);
     endwin();
-    pthread_mutex_destroy(&fm_lock[0]);
-    pthread_mutex_destroy(&fm_lock[1]);
+    pthread_mutex_destroy(&fm_lock);
     pthread_mutex_destroy(&info_lock);
 }
 
@@ -347,7 +345,6 @@ void delete_tab(int win) {
 
 void scroll_down(void) {
     if (ps[active].curr_pos < ps[active].number_of_files - 1) {
-        pthread_mutex_lock(&fm_lock[active]);
         ps[active].curr_pos++;
         if (ps[active].curr_pos - (dim - 2) == mywin[active].delta) {
             scroll_helper_func(dim - 2, 1);
@@ -360,13 +357,11 @@ void scroll_down(void) {
             print_arrow(active, ps[active].curr_pos - mywin[active].delta + 1);
             wrefresh(mywin[active].fm);
         }
-        pthread_mutex_unlock(&fm_lock[active]);
     }
 }
 
 void scroll_up(void) {
     if (ps[active].curr_pos > 0) {
-        pthread_mutex_lock(&fm_lock[active]);
         ps[active].curr_pos--;
         if (ps[active].curr_pos < mywin[active].delta) {
             scroll_helper_func(1, -1);
@@ -379,7 +374,6 @@ void scroll_up(void) {
             print_arrow(active, ps[active].curr_pos - mywin[active].delta + 1);
             wrefresh(mywin[active].fm);
         }
-        pthread_mutex_unlock(&fm_lock[active]);
     }
 }
 
@@ -412,8 +406,6 @@ static void colored_folders(int win, const char *name) {
 }
 
 void trigger_show_helper_message(void) {
-    pthread_mutex_lock(&fm_lock[0]);
-    pthread_mutex_lock(&fm_lock[1]);
     if (!helper_win) {
         if (LINES >= HELPER_HEIGHT + INFO_HEIGHT + 3) {
             create_helper_win();
@@ -423,8 +415,6 @@ void trigger_show_helper_message(void) {
     } else {
         remove_helper_win();
     }
-    pthread_mutex_unlock(&fm_lock[0]);
-    pthread_mutex_unlock(&fm_lock[1]);
 }
 
 /*
@@ -549,7 +539,6 @@ void change_unit(float size, char *str) {
  * Then release the mutex.
  */
 void trigger_stats(void) {
-    pthread_mutex_lock(&fm_lock[active]);
     mywin[active].stat_active = !mywin[active].stat_active;
     if (mywin[active].stat_active) {
         show_stat(mywin[active].delta, dim - 2, active);
@@ -557,7 +546,6 @@ void trigger_stats(void) {
         erase_stat();
     }
     print_border_and_title(active);
-    pthread_mutex_unlock(&fm_lock[active]);
 }
 
 /*
@@ -627,7 +615,8 @@ void print_and_warn(const char *err, int line) {
  */
 void ask_user(const char *str, char *input, int d, char c) {
     int s, len, i = 0;
-
+    
+    pthread_mutex_unlock(&fm_lock);
     print_info(str, ASK_LINE);
     while ((i < d) && (!quit)) {
         wrefresh(info_win);
@@ -667,6 +656,7 @@ void ask_user(const char *str, char *input, int d, char c) {
         input[0] = c;
     }
     print_info("", ASK_LINE);
+    pthread_mutex_lock(&fm_lock);
 }
 
 int win_getch(WINDOW *win) {
@@ -684,9 +674,7 @@ int win_getch(WINDOW *win) {
  */
 void tab_refresh(int win) {
     if (!special_mode[win]) {
-        pthread_mutex_lock(&fm_lock[win]);
         generate_list(win);
-        pthread_mutex_unlock(&fm_lock[win]);
     }
 }
 
@@ -694,7 +682,7 @@ void tab_refresh(int win) {
 void update_devices(int num,  char (*str)[PATH_MAX + 1]) {
     int check;
     
-    pthread_mutex_lock(&fm_lock[device_mode - 1]);
+    pthread_mutex_lock(&fm_lock);
     if (str) {
         /* Do not reset win if a device has been added. Just print next line */
         check = num - ps[device_mode - 1].number_of_files;
@@ -708,7 +696,7 @@ void update_devices(int num,  char (*str)[PATH_MAX + 1]) {
     } else {
         list_everything(device_mode - 1, 0, 0);
     }
-    pthread_mutex_unlock(&fm_lock[device_mode - 1]);
+    pthread_mutex_unlock(&fm_lock);
 }
 #endif
 
@@ -721,18 +709,17 @@ void update_devices(int num,  char (*str)[PATH_MAX + 1]) {
  * then prints again any "sticky" message (eg: "searching"/"pasting...")
  */
 void resize_win(void) {
-    term_size_check();
-    if (quit) {
-        return;
-    }
     pthread_mutex_lock(&info_lock);
-    delwin(info_win);
-    dim = LINES - INFO_HEIGHT;
-    if (helper_win) {
-        resize_helper_win();
+    term_size_check();
+    if (!quit) {
+        delwin(info_win);
+        dim = LINES - INFO_HEIGHT;
+        if (helper_win) {
+            resize_helper_win();
+        }
+        resize_fm_win();
+        info_win_init();
     }
-    resize_fm_win();
-    info_win_init();
     pthread_mutex_unlock(&info_lock);
     print_info("", INFO_LINE);
 }
@@ -755,8 +742,6 @@ static void resize_helper_win(void) {
  * Then list_everything, being careful if stat_active is ON.
  */
 static void resize_fm_win(void) {
-    pthread_mutex_lock(&fm_lock[0]);
-    pthread_mutex_lock(&fm_lock[1]);
     for (int i = 0; i < cont; i++) {
         wclear(mywin[i].fm);
         mywin[i].width = COLS / cont + i * (COLS % cont);
@@ -772,8 +757,6 @@ static void resize_fm_win(void) {
         }
         list_everything(i, mywin[i].delta, 0);
     }
-    pthread_mutex_unlock(&fm_lock[0]);
-    pthread_mutex_unlock(&fm_lock[1]);
 }
 
 void change_sort(void) {
