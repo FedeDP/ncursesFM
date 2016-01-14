@@ -296,7 +296,7 @@ static void main_loop(void) {
         }
         c = tolower(c);
         if (special_mode[active] && isprint(c) && !strchr(special_mode_allowed_chars, c)) {
-                goto unlock;
+            goto unlock;
         }
         stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
         switch (c) {
