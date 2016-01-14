@@ -10,7 +10,7 @@ void get_bookmarks(void) {
     FILE *f;
     const char *home_dir = getpwuid(getuid())->pw_dir;
     char fullpath[PATH_MAX + 1];
-    
+
     get_xdg_dirs(home_dir);
     if (num_bookmarks < MAX_BOOKMARKS) {
         sprintf(fullpath, "%s%s", home_dir, bookmarks_path);
@@ -36,7 +36,7 @@ static void get_xdg_dirs(const char *home_dir) {
     char str[PATH_MAX + 1] = {0};
     char line[1000], file_path[PATH_MAX + 1];
     const char *path = "/.config/user-dirs.dirs";
-    
+
     sprintf(file_path, "%s%s", home_dir, path);
     if ((f = fopen(file_path, "r"))) {
         while (fgets(line, sizeof(line), f) && i < MAX_BOOKMARKS) {
@@ -61,7 +61,7 @@ void add_file_to_bookmarks(const char *str) {
     FILE *f;
     const char *home_dir = getpwuid(getuid())->pw_dir;
     char fullpath[PATH_MAX + 1], c;
-    
+
     ask_user(bookmarks_add_quest, &c, 1, 'y');
     if (c == 'n' || quit) {
         return;
@@ -86,7 +86,7 @@ void remove_bookmark_from_file(void) {
     FILE *f;
     const char *home_dir = getpwuid(getuid())->pw_dir;
     char fullpath[PATH_MAX + 1], c;
-    
+
     if (ps[active].curr_pos < xdg_bookmarks) {
         print_info(bookmarks_xdg_err, ERR_LINE);
     } else {
