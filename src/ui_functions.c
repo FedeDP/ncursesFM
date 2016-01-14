@@ -79,7 +79,7 @@ static void term_size_check(void) {
     int c;
     int min_lines = INFO_HEIGHT + 3;
     int min_cols = MAX_TABS * (STAT_LENGTH + 5);
-    
+
     if (helper_win || config.starting_helper) {
         min_lines += HELPER_HEIGHT;
     }
@@ -181,7 +181,7 @@ static int last_mod_sort(const struct dirent **d1, const struct dirent **d2) {
 
 static int typesort(const struct dirent **d1, const struct dirent **d2) {
     int ret;
-    
+
     if ((*d1)->d_type == (*d2)->d_type) {
         return alphasort(d1, d2);
     }
@@ -615,7 +615,7 @@ void print_and_warn(const char *err, int line) {
  */
 void ask_user(const char *str, char *input, int d, char c) {
     int s, len, i = 0;
-    /* 
+    /*
      * Do not keep fm_lock locked while waiting
      * for user input (we won't print anything to fm win here)
      */
@@ -684,7 +684,7 @@ void tab_refresh(int win) {
 #ifdef LIBUDEV_PRESENT
 void update_devices(int num,  char (*str)[PATH_MAX + 1]) {
     int check;
-    
+
     pthread_mutex_lock(&fm_lock);
     if (str) {
         /* Do not reset win if a device has been added. Just print next line */
@@ -836,7 +836,7 @@ void update_time(void) {
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     char date[30], time[10];
-    
+
     sprintf(date, "%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
     sprintf(time, "%02d:%02d", tm.tm_hour, tm.tm_min);
     pthread_mutex_lock(&info_lock);
@@ -857,8 +857,8 @@ static void update_batt(void) {
     const char *ac_str = "AC";
     const char *bat_str = "BAT";
     char batt[20];
-    int online, energy_now, energy_full, len = 0;
-    
+    int online = 0, energy_now, energy_full, len = 0;
+
     if ((!(d = opendir(path)))) {
         mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(fail), fail);
     } else {
@@ -890,7 +890,7 @@ static void update_batt(void) {
 static void open_file_and_read(const char *path, const char *dir_name, const char *query, int *result) {
     FILE *f;
     char filename[PATH_MAX + 1];
-    
+
     sprintf(filename, "%s%s/%s", path, dir_name, query);
     if (f = fopen(filename, "r")) {
         fscanf(f, "%d", result);

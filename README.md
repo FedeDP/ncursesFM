@@ -1,8 +1,8 @@
 # NcursesFM
-Ncurses File Manager for linux.  
+Ncurses File Manager for linux.
 
-It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.  
-Being simple doesn't imply being useless; indeed it is a full featured fm.  
+It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.
+Being simple doesn't imply being useless; indeed it is a full featured fm.
 It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).
 
 ![](https://github.com/FedeDP/ncursesFM/raw/master/ncursesFM.gif)
@@ -15,6 +15,7 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
 * Simple clock and battery monitor (it will check every 30s for changes). It will list every battery.
+If you've got Upower installed, AC (dis)connection will refresh battery status instantly, instead of waiting up to 30s until next refresh.
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
 * '.' to change files/dirs sorting mode: alphabetically (default), by size, by last modified or by type.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
@@ -91,10 +92,10 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 
 **optional:**
 * if compiled with libx11 support: xdg-utils.
-* if compiled with sd-bus support: a message bus (dbus/kdbus) plus logind (for inhibition support), udisks2 (for mount support), packagekit (for packages installation support).
+* if compiled with sd-bus support: a message bus (dbus/kdbus) plus logind (for inhibition support), udisks2 (for mount support), packagekit (for packages installation support) and upower (to get AC (dis)connection events).
 
 ## Known bugs
-* installing packages segfaults if package has wrong arch. Packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.
+* installing packages segfaults if package is for the wrong arch, and packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.
 
 ## Install instructions:
 
@@ -109,5 +110,5 @@ To remove, just move inside the folder and run:
 
     $ make uninstall
 
-make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets.  
+make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets.
 Be aware that it will disable config file support and bash autocompletion script (you can still source it manually anyway) though.

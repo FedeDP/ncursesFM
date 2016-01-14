@@ -18,11 +18,11 @@ static void *time_func(void *x) {
     int ret;
 
     pthread_mutex_init(&time_lock, NULL);
+    clock_gettime(CLOCK_REALTIME, &absolute_time);
     while (!quit) {
-        clock_gettime(CLOCK_REALTIME, &absolute_time);
         absolute_time.tv_sec += 30;
         ret = pthread_mutex_timedlock(&time_lock, &absolute_time);
-        if (!ret || ret == ETIMEDOUT) {
+        if ((!quit) && (!ret || ret == ETIMEDOUT)) {
             update_time();
         } else {
             WARN("an error occurred. Leaving.");
