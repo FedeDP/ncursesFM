@@ -20,7 +20,7 @@ void *install_package(void *str) {
     r = sd_bus_open_system(&install_bus);
     if (r < 0) {
         print_and_warn(strerror(-r), ERR_LINE);
-        pthread_exit(NULL);
+        goto finish;
     }
     INFO("calling CreateTransaction on bus.");
     r = sd_bus_call_method(install_bus,
@@ -33,8 +33,7 @@ void *install_package(void *str) {
                            NULL);
     if (r < 0) {
         print_and_warn(error.message, ERR_LINE);
-        close_bus(&error, mess, install_bus);
-        pthread_exit(NULL);
+        goto finish;
     }
     if (config.inhibit) {
         inhibit_fd = inhibit_suspend("Package installation...");
@@ -43,35 +42,37 @@ void *install_package(void *str) {
     r = sd_bus_add_match(install_bus, NULL, "type='signal',interface='org.freedesktop.PackageKit.Transaction',member='Finished'", match_callback, &finished);
     if (r < 0) {
         print_info(strerror(-r), ERR_LINE);
-    } else {
-        sd_bus_flush(install_bus);
-        INFO("calling InstallFiles on bus.");
-        r = sd_bus_call_method(install_bus,
-                           "org.freedesktop.PackageKit",
-                           path,
-                           "org.freedesktop.PackageKit.Transaction",
-                           "InstallFiles",
-                           &error,
-                           NULL,
-                           "tas",
-                           0,
-                           1,
-                           (char *)str);
+        goto finish;
+    }
+    sd_bus_flush(install_bus);
+    INFO("calling InstallFiles on bus.");
+    r = sd_bus_call_method(install_bus,
+                        "org.freedesktop.PackageKit",
+                        path,
+                        "org.freedesktop.PackageKit.Transaction",
+                        "InstallFiles",
+                        &error,
+                        NULL,
+                        "tas",
+                        0,
+                        1,
+                        (char *)str);
+    if (r < 0) {
+        print_and_warn(error.message, ERR_LINE);
+        goto finish;
+    }
+    while (!finished) {
+        r = sd_bus_process(install_bus, NULL);
+        if (r > 0) {
+            continue;
+        }
+        r = sd_bus_wait(install_bus, (uint64_t) -1);
         if (r < 0) {
-            print_and_warn(error.message, ERR_LINE);
-        } else {
-            while (!finished) {
-                r = sd_bus_process(install_bus, NULL);
-                if (r > 0) {
-                    continue;
-                }
-                r = sd_bus_wait(install_bus, (uint64_t) -1);
-                if (r < 0) {
-                    break;
-                }
-            }
+            break;
         }
     }
+
+finish:
     if (config.inhibit) {
         INFO("power management functions inhibition stopped.");
         close(inhibit_fd);

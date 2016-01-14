@@ -51,7 +51,7 @@ static int mount_fs(const char *str, const char *method, int mount) {
     r = sd_bus_open_system(&mount_bus);
     if (r < 0) {
         print_and_warn(strerror(-r), ERR_LINE);
-        return ret;
+        goto finish;
     }
     strcat(obj_path, strrchr(str, '/') + 1);
     sprintf(tmp, "calling %s on bus.", method);
@@ -67,20 +67,22 @@ static int mount_fs(const char *str, const char *method, int mount) {
                            NULL);
     if (r < 0) {
         print_and_warn(error.message, ERR_LINE);
-    } else {
-        ret = 1;
-        if (!mount) {
-            sd_bus_message_read(mess, "s", &path);
-            sprintf(mount_str, "%s mounted in: %s.", str, path);
-            INFO("Mounted.");
-        } else {
-            sprintf(mount_str, "%s unmounted.", str);
-            INFO("Unmounted.");
-        }
-#ifndef LIBUDEV_PRESENT
-        print_info(mount_str, INFO_LINE);
-#endif
+        goto finish;
     }
+    ret = 1;
+    if (!mount) {
+        sd_bus_message_read(mess, "s", &path);
+        sprintf(mount_str, "%s mounted in: %s.", str, path);
+        INFO("Mounted.");
+    } else {
+        sprintf(mount_str, "%s unmounted.", str);
+        INFO("Unmounted.");
+    }
+#ifndef LIBUDEV_PRESENT
+    print_info(mount_str, INFO_LINE);
+#endif
+
+finish:
     close_bus(&error, mess, mount_bus);
     return ret;
 }
@@ -97,6 +99,7 @@ void isomount(const char *str) {
     const char *obj_path;
     int r, fd;
     char loop_dev[PATH_MAX + 1];
+
 #ifdef LIBUDEV_PRESENT
     if (is_iso_mounted(str, loop_dev)) {
         mount_fs(loop_dev, "Unmount", 1);
@@ -107,7 +110,7 @@ void isomount(const char *str) {
     r = sd_bus_open_system(&iso_bus);
     if (r < 0) {
         print_and_warn(strerror(-r), ERR_LINE);
-        return;
+        goto finish;
     }
     INFO("calling LoopSetup method on bus.");
     r = sd_bus_call_method(iso_bus,
@@ -123,27 +126,29 @@ void isomount(const char *str) {
     close(fd);
     if (r < 0) {
         print_and_warn(error.message, ERR_LINE);
-    } else {
-        sd_bus_message_read(mess, "o", &obj_path);
-        sd_bus_flush(iso_bus);
+        goto finish;
+    } 
+    sd_bus_message_read(mess, "o", &obj_path);
+    sd_bus_flush(iso_bus);
 #ifndef LIBUDEV_PRESENT
-        mount_fs(obj_path, "Mount", 0);
+    mount_fs(obj_path, "Mount", 0);
 #endif
-        INFO("calling SetAutoClear on bus.");
-        r = sd_bus_call_method(iso_bus,
-                               "org.freedesktop.UDisks2",
-                               obj_path,
-                               "org.freedesktop.UDisks2.Loop",
-                               "SetAutoclear",
-                               &error,
-                               NULL,
-                               "ba{sv}",
-                               TRUE,
-                               NULL);
-        if (r < 0) {
-            print_and_warn(error.message, ERR_LINE);
-        }
+    INFO("calling SetAutoClear on bus.");
+    r = sd_bus_call_method(iso_bus,
+                            "org.freedesktop.UDisks2",
+                            obj_path,
+                            "org.freedesktop.UDisks2.Loop",
+                            "SetAutoclear",
+                            &error,
+                            NULL,
+                            "ba{sv}",
+                            TRUE,
+                            NULL);
+    if (r < 0) {
+        print_and_warn(error.message, ERR_LINE);
     }
+    
+finish:
     close_bus(&error, mess, iso_bus);
 }
 
@@ -192,7 +197,7 @@ static void iso_backing_file(char *s, const char *name) {
     r = sd_bus_open_system(&iso_bus);
     if (r < 0) {
         print_and_warn(strerror(-r), ERR_LINE);
-        return;
+        goto finish;
     }
     strcat(obj_path, strrchr(name, '/') + 1);
     INFO("getting BackingFile property on bus.");
@@ -206,16 +211,18 @@ static void iso_backing_file(char *s, const char *name) {
                             "ay");
     if (r < 0) {
         print_and_warn(error.message, ERR_LINE);
-    } else {
-        r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "y");
-        if (r < 0) {
-            print_and_warn(strerror(-r), ERR_LINE);
-        } else {
-            while ((sd_bus_message_read(mess, "y", &bytes)) > 0) {
-                sprintf(s + strlen(s), "%c", (char)bytes);
-            }
-        }
+        goto finish;
     }
+    r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "y");
+    if (r < 0) {
+        print_and_warn(strerror(-r), ERR_LINE);
+        goto finish;
+    }
+    while ((sd_bus_message_read(mess, "y", &bytes)) > 0) {
+        sprintf(s + strlen(s), "%c", (char)bytes);
+    }
+
+finish:
     close_bus(&error, mess, iso_bus);
 }
 
@@ -225,20 +232,21 @@ void start_monitor(void) {
     udev = udev_new();
     if (!udev) {
         WARN("could not create udev.");
-        fail = 1;
+        goto fail;
     }
-    if (!fail) {
-        fail = init_mbus();
-    }
+    fail = init_mbus();
     if (fail) {
-        if (udev) {
-            udev_unref(udev);
-        }
-        device_mode = DEVMON_OFF;
-    } else {
-        INFO("started device monitor th.");
-        pthread_create(&monitor_th, NULL, device_monitor, NULL);
+        goto fail;
     }
+    INFO("started device monitor th.");
+    pthread_create(&monitor_th, NULL, device_monitor, NULL);
+    return;
+    
+fail:
+    if (udev) {
+        udev_unref(udev);
+    }
+    device_mode = DEVMON_OFF;
 }
 
 static int init_mbus(void) {
@@ -246,53 +254,51 @@ static int init_mbus(void) {
     
     r = sd_bus_open_system(&mbus);
     if (r < 0) {
-        WARN(strerror(-r));
-        return r;
+        goto fail;
     }
     r = check_udisks();
     if (r < 0) {
         WARN("UDisks2 not present. Disabling udisks2 monitor.");
-    } else {
-        INFO("found udisks2.");
-        r = sd_bus_add_match(mbus, NULL, 
-                         "type='signal',"
-                         "sender='org.freedesktop.UDisks2',"
-                         "interface='org.freedesktop.DBus.ObjectManager',"
-                         "member='InterfacesAdded'",
-                         add_callback, NULL);
-        if (r < 0) {
-            WARN(strerror(-r));
-        } else {
-            r = sd_bus_add_match(mbus, NULL, 
-                         "type='signal',"
-                         "sender='org.freedesktop.UDisks2',"
-                         "interface='org.freedesktop.DBus.ObjectManager',"
-                         "member='InterfacesRemoved'",
-                         remove_callback, NULL);
-            if (r < 0) {
-                WARN(strerror(-r));
-            } else {
-                r = sd_bus_add_match(mbus, NULL, 
-                                 "type='signal',"
-                                 "sender='org.freedesktop.UDisks2',"
-                                 "interface='org.freedesktop.DBus.Properties',"
-                                 "member='PropertiesChanged'",
-                                 change_callback, NULL);
-                if (r < 0) {
-                    WARN(strerror(-r));
-                }
-            }
-        }
+        goto fail;
     }
+    INFO("found udisks2.");
+    r = sd_bus_add_match(mbus, NULL, 
+                        "type='signal',"
+                        "sender='org.freedesktop.UDisks2',"
+                        "interface='org.freedesktop.DBus.ObjectManager',"
+                        "member='InterfacesAdded'",
+                        add_callback, NULL);
     if (r < 0) {
-        sd_bus_flush_close_unref(mbus);
-        return r;
+        goto fail;
+    }
+    r = sd_bus_add_match(mbus, NULL, 
+                    "type='signal',"
+                    "sender='org.freedesktop.UDisks2',"
+                    "interface='org.freedesktop.DBus.ObjectManager',"
+                    "member='InterfacesRemoved'",
+                    remove_callback, NULL);
+    if (r < 0) {
+        goto fail;
+    }
+    r = sd_bus_add_match(mbus, NULL, 
+                        "type='signal',"
+                        "sender='org.freedesktop.UDisks2',"
+                        "interface='org.freedesktop.DBus.Properties',"
+                        "member='PropertiesChanged'",
+                        change_callback, NULL);
+    if (r < 0) {
+        goto fail;
     }
     return 0;
+
+fail:
+    WARN(strerror(-r));
+    sd_bus_flush_close_unref(mbus);
+    return r;
 }
 
 static int check_udisks(void) {
-    INFO("Checking for udisks2");
+    INFO("checking for udisks2");
     return sd_bus_call_method(mbus,
                             "org.freedesktop.UDisks2",
                             "/org/freedesktop/UDisks2",
@@ -371,21 +377,25 @@ static int is_mounted(const char *dev_path) {
         } else {
             WARN(error.message);
         }
-    } else {
-        r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "ay");
-        if (r < 0) {
-            print_and_warn(strerror(-r), ERR_LINE);
-        } else {
-            r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "y");
-            if (r < 0) {
-                print_and_warn(strerror(-r), ERR_LINE);
-            } else {
-                if (sd_bus_message_read(mess, "y", &bytes) > 0) {
-                    ret = 1;
-                }
-            }
-        }
+        goto finish;
     }
+    r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "ay");
+    if (r < 0) {
+        goto fail;
+    } 
+    r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "y");
+    if (r < 0) {
+        goto fail;
+    }
+    if (sd_bus_message_read(mess, "y", &bytes) > 0) {
+        ret = 1;
+    }
+    goto finish;
+
+fail:
+    print_and_warn(strerror(-r), ERR_LINE);
+
+finish:
     close_bus(&error, mess, NULL);
     return ret;
 }

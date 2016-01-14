@@ -615,7 +615,10 @@ void print_and_warn(const char *err, int line) {
  */
 void ask_user(const char *str, char *input, int d, char c) {
     int s, len, i = 0;
-    
+    /* 
+     * Do not keep fm_lock locked while waiting
+     * for user input (we won't print anything to fm win here)
+     */
     pthread_mutex_unlock(&fm_lock);
     print_info(str, ASK_LINE);
     while ((i < d) && (!quit)) {
