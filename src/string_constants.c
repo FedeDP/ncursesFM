@@ -13,6 +13,15 @@ const char *sorting_str[] = {"Files will be sorted alphabetically now.",
                              "Files will be sorted by last access now.",
                              "Files will be sorted by type now."};
 
+const char *too_many_bookmarks = "Too many bookmarks. Max 30.";
+const char *bookmarks_add_quest = "Adding current file to bookmarks. Proceed? Y/n:> ";
+const char *bookmarks_rm_quest = "Removing current file from bookmarks. Proceed? Y/n:> ";
+const char *bookmarks_xdg_err = "You cannot remove xdg defined user dirs.";
+const char *bookmarks_file_err = "Could not open bookmarks file.";
+const char *bookmark_added = "Added to bookmarks!";
+const char *bookmarks_rm = "Removed fron bookmarks!";
+const char *no_bookmarks = "No bookmarks found.";
+
 const char *file_selected = "This file is already selected. Cancel its selection before.";
 const char *no_selected_files = "There are no selected files.";
 const char *file_sel[] = {"File selected.", "File deleted from selected list.", "File deleted from selected list. Selected list empty."};
@@ -61,7 +70,7 @@ const char *helper_string[] = { "Enter to surf between folders or to open files.
                                 "'.' to change files/dirs sorting function: alphabetically (default), by size, by last modified or by type.",
                                 "Space to select files. Twice to remove the file from selected files. 'u' to check shasum of current file.",
                                 "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files. 'p' to print a file.",
-                                "'g' to switch to bookmarks window. 'e' to add current folder to bookmarks.",
+                                "'g' to switch to bookmarks window. 'e' to add current file to bookmarks/remove it if in bookmarks_mode.",
                                 "'o' to rename current file/dir; 'n'/'d' to create new file/dir. 'f' to search (case sensitive) for a file.",
                                 "'t' to create new tab (at most one more). 'w' to close tab. Arrow left or right to switch between tabs.",
                                 "'m' to switch to devices tab. 'm' on a device to (un)mount it, enter to move to its mountpoint, mounting it if necessary.",

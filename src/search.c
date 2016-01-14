@@ -124,7 +124,6 @@ static void *search_thread(void *x) {
 }
 
 void list_found(void) {
-    pthread_mutex_lock(&fm_lock[active]);
     ps[active].number_of_files = sv.found_cont;
     str_ptr[active] = sv.found_searched;
     sv.searching = 3 + active;
@@ -132,15 +131,12 @@ void list_found(void) {
     sprintf(ps[active].title, "Files found searching %s:", sv.searched_string);
     sprintf(searching_mess[sv.searching - 1], "%d files found.", sv.found_cont);
     reset_win(active);
-    pthread_mutex_unlock(&fm_lock[active]);
     print_info("", SEARCH_LINE);
 }
 
 void leave_search_mode(const char *str) {
-    pthread_mutex_lock(&fm_lock[active]);
     sv.searching = 0;
     special_mode[active] = 0;
-    pthread_mutex_unlock(&fm_lock[active]);
     print_info("", SEARCH_LINE);
     change_dir(str, active);
 }

@@ -12,6 +12,15 @@ const char *arch_ext[6];
 
 const char *sorting_str[4];
 
+const char *too_many_bookmarks;
+const char *bookmarks_add_quest;
+const char *bookmarks_rm_quest;
+const char *bookmarks_xdg_err;
+const char *bookmarks_file_err;
+const char *bookmark_added;
+const char *bookmarks_rm;
+const char *no_bookmarks;
+
 const char *file_selected;
 const char *no_selected_files;
 const char *file_sel[3];

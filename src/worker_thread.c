@@ -142,11 +142,13 @@ static void *execute_thread(void *x) {
 }
 
 static void check_refresh(void) {
+    pthread_mutex_lock(&fm_lock);
     for (int i = 0; i < cont; i++) {
         if ((thread_h->type != RM_TH && strcmp(ps[i].my_cwd, thread_h->full_path) == 0) || refresh_needed(ps[i].my_cwd)) {
             tab_refresh(i);
         }
     }
+    pthread_mutex_unlock(&fm_lock);
 }
 
 /*
