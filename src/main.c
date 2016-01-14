@@ -29,6 +29,9 @@
 #include <libconfig.h>
 #endif
 
+static void set_signals(void);
+static void sig_handler(int signum);
+static void sigsegv_handler(int signum);
 static void helper_function(int argc, const char *argv[]);
 static void parse_cmd(int argc, const char *argv[]);
 #ifdef LIBCONFIG_PRESENT
@@ -37,11 +40,11 @@ static void read_config_file(void);
 static void config_checks(void);
 static void main_loop(void);
 static void check_device_mode(void);
+static void manage_enter(struct stat current_file_stat);
+static void manage_quit(void);
+static void switch_search(void);
 static int check_init(int index);
 static int check_access(void);
-static void set_signals(void);
-static void sig_handler(int signum);
-static void sigsegv_handler(int signum);
 
 /*
  * pointers to long_file_operations functions, used in main loop;
@@ -74,6 +77,48 @@ int main(int argc, const char *argv[])
     program_quit(0);
 }
 
+static void set_signals(void) {
+    struct sigaction main_act = {0};
+    sigset_t mask;
+
+    main_act.sa_handler = sig_handler;
+    sigaction(SIGINT, &main_act, 0);
+    sigaction(SIGTERM, &main_act, 0);
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGTERM);
+    sigprocmask(SIG_BLOCK, &mask, &main_mask);
+    main_p = (struct pollfd) {
+        .fd = STDIN_FILENO,
+        .events = POLLIN,
+    };
+    signal(SIGSEGV, sigsegv_handler);
+}
+
+/*
+ * if received an external SIGINT or SIGTERM,
+ * just switch the quit flag to 1 and log a warn.
+ */
+static void sig_handler(int signum) {
+    char str[50];
+
+    sprintf(str, "received signal %d. Leaving.", signum);
+    WARN(str);
+    quit = NORM_QUIT;
+}
+
+/*
+ * If received a sigsegv, only log a message then
+ * set sigsegv signal handler to default (SIG_DFL),
+ * and send again the signal to the process.
+ */
+static void sigsegv_handler(int signum) {
+    ERROR("received sigsegv signal. Aborting.");
+    close_log();
+    signal(signum, SIG_DFL);
+    kill(getpid(), signum);
+}
+
 static void helper_function(int argc, const char *argv[]) {
     /* default value for starting_helper, bat_low_level and device_mode */
     config.starting_helper = 1;
@@ -81,7 +126,7 @@ static void helper_function(int argc, const char *argv[]) {
 #ifdef LIBUDEV_PRESENT
     device_mode = DEVMON_STARTING;
 #endif
-    
+
     if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
         printf("\n NcursesFM Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
@@ -215,9 +260,30 @@ static void config_checks(void) {
  */
 static void main_loop(void) {
     int c, index;
-    const char *long_table = "xvrb"; // x to move, v to paste, r to remove, b to compress
-    const char *short_table = "ndo";  //n, d to create new file/dir, o to rename.
+
+    /*
+     * x to move,
+     * v to paste,
+     * r to remove,
+     * b to compress
+     */
+    const char *long_table = "xvrb";
+
+    /*
+     * n, d to create new file/dir
+     * o to rename.
+     */
+    const char *short_table = "ndo";
+
+    /*
+     * l switch helper_win,
+     * t new tab,
+     * q to leave current mode,
+     * m only in device_mode to {un}mount device,
+     * e only in bookmarks_mode to remove device from bookmarks
+     */
     const char *special_mode_allowed_chars = "ltqme";
+
     char *ptr;
     struct stat current_file_stat;
 
@@ -229,10 +295,8 @@ static void main_loop(void) {
             goto unlock;
         }
         c = tolower(c);
-        if (special_mode[active]) {
-            if (isprint(c) && (!strchr(special_mode_allowed_chars, c))) {
+        if (special_mode[active] && isprint(c) && !strchr(special_mode_allowed_chars, c)) {
                 goto unlock;
-            }
         }
         stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
         switch (c) {
@@ -256,24 +320,7 @@ static void main_loop(void) {
             switch_hidden();
             break;
         case 10: // enter to change dir or open a file.
-            if (sv.searching == 3 + active) {
-                index = search_enter_press(sv.found_searched[ps[active].curr_pos]);
-                sv.found_searched[ps[active].curr_pos][index] = '\0';
-                leave_search_mode(sv.found_searched[ps[active].curr_pos]);
-            }
-#ifdef LIBUDEV_PRESENT
-            else if (device_mode == 1 + active) {
-                manage_enter_device();
-            }
-#endif  
-            else if (S_ISDIR(current_file_stat.st_mode)) {
-                if (bookmarks_mode[active]) {
-                    leave_bookmarks_mode();
-                }
-                change_dir(str_ptr[active][ps[active].curr_pos], active);
-            } else {
-                manage_file(str_ptr[active][ps[active].curr_pos], current_file_stat.st_size);
-            }
+            manage_enter(current_file_stat);
             break;
         case 't': // t to open second tab
             if (cont < MAX_TABS) {
@@ -310,13 +357,7 @@ static void main_loop(void) {
             }
             break;
         case 'f': // f to search
-            if (sv.searching == 0) {
-                search();
-            } else if (sv.searching == 1) {
-                print_info(already_searching, INFO_LINE);
-            } else if (sv.searching == 2) {
-                list_found();
-            }
+            switch_search();
             break;
 #ifdef LIBCUPS_PRESENT
         case 'p': // p to print
@@ -341,21 +382,7 @@ static void main_loop(void) {
             break;
 #endif
         case 'q': /* q to exit/leave special mode */
-            if (sv.searching == 3 + active) {
-                leave_search_mode(ps[active].my_cwd);
-            }
-#ifdef LIBUDEV_PRESENT
-            else if (device_mode == 1 + active) {
-                leave_device_mode();
-            }
-#endif  
-            else if (bookmarks_mode[active]) {
-                leave_bookmarks_mode();
-                change_dir(ps[active].my_cwd, active);
-            }
-            else {
-                quit = NORM_QUIT;
-            }
+            manage_quit();
             break;
         case KEY_RESIZE:
             resize_win();
@@ -385,7 +412,8 @@ static void main_loop(void) {
             }
             break;
         }
-unlock:     pthread_mutex_unlock(&fm_lock);
+unlock:
+        pthread_mutex_unlock(&fm_lock);
     }
 }
 
@@ -403,6 +431,54 @@ static void check_device_mode(void) {
         manage_mount_device();
     } else {
         print_info("A tab is already in device mode.", INFO_LINE);
+    }
+}
+
+static void manage_enter(struct stat current_file_stat) {
+    if (sv.searching == 3 + active) {
+        int index = search_enter_press(sv.found_searched[ps[active].curr_pos]);
+        sv.found_searched[ps[active].curr_pos][index] = '\0';
+        leave_search_mode(sv.found_searched[ps[active].curr_pos]);
+    }
+#ifdef LIBUDEV_PRESENT
+    else if (device_mode == 1 + active) {
+        manage_enter_device();
+    }
+#endif
+    else if (S_ISDIR(current_file_stat.st_mode)) {
+        if (bookmarks_mode[active]) {
+            leave_bookmarks_mode();
+        }
+        change_dir(str_ptr[active][ps[active].curr_pos], active);
+    } else {
+        manage_file(str_ptr[active][ps[active].curr_pos], current_file_stat.st_size);
+    }
+}
+
+static void manage_quit(void) {
+    if (sv.searching == 3 + active) {
+        leave_search_mode(ps[active].my_cwd);
+    }
+#ifdef LIBUDEV_PRESENT
+    else if (device_mode == 1 + active) {
+        leave_device_mode();
+    }
+#endif
+    else if (bookmarks_mode[active]) {
+        leave_bookmarks_mode();
+        change_dir(ps[active].my_cwd, active);
+    } else {
+        quit = NORM_QUIT;
+    }
+}
+
+static void switch_search(void) {
+    if (sv.searching == 0) {
+        search();
+    } else if (sv.searching == 1) {
+        print_info(already_searching, INFO_LINE);
+    } else if (sv.searching == 2) {
+        list_found();
     }
 }
 
@@ -426,46 +502,4 @@ static int check_access(void) {
         return 0;
     }
     return 1;
-}
-
-static void set_signals(void) {
-    struct sigaction main_act = {0};
-    sigset_t mask;
-    
-    main_act.sa_handler = sig_handler;
-    sigaction(SIGINT, &main_act, 0);
-    sigaction(SIGTERM, &main_act, 0);
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGINT);
-    sigaddset(&mask, SIGTERM);
-    sigprocmask(SIG_BLOCK, &mask, &main_mask);
-    main_p = (struct pollfd) {
-        .fd = STDIN_FILENO,
-        .events = POLLIN,
-    };
-    signal(SIGSEGV, sigsegv_handler);
-}
-
-/*
- * if received an external SIGINT or SIGTERM,
- * just switch the quit flag to 1 and log a warn.
- */
-static void sig_handler(int signum) {
-    char str[50];
-    
-    sprintf(str, "received signal %d. Leaving.", signum);
-    WARN(str);
-    quit = NORM_QUIT;
-}
-
-/*
- * If received a sigsegv, only log a message then
- * set sigsegv signal handler to default (SIG_DFL),
- * and send again the signal to the process.
- */
-static void sigsegv_handler(int signum) {
-    ERROR("received sigsegv signal. Aborting.");
-    close_log();
-    signal(signum, SIG_DFL);
-    kill(getpid(), signum);
 }
