@@ -16,7 +16,7 @@ int inhibit_suspend(const char *str) {
     
     if (r < 0) {
         print_and_warn(strerror(-r), ERR_LINE);
-        return r;
+        goto finish;
     }
     INFO("calling Inhibit method on bus.");
     r = sd_bus_call_method(bus,
@@ -33,15 +33,17 @@ int inhibit_suspend(const char *str) {
                            "block");
     if (r < 0) {
         print_and_warn(error.message, ERR_LINE);
-    } else {
-        r = sd_bus_message_read_basic(reply, SD_BUS_TYPE_UNIX_FD, &fd);
-        if (r < 0) {
-            print_info(strerror(-r), ERR_LINE);
-        } else {
-            r = fcntl(fd, F_DUPFD, 3);
-            INFO("power management functions inhibition started.");
-        }
+        goto finish;
     }
+    r = sd_bus_message_read_basic(reply, SD_BUS_TYPE_UNIX_FD, &fd);
+    if (r < 0) {
+        print_info(strerror(-r), ERR_LINE);
+        goto finish;
+    }
+    r = fcntl(fd, F_DUPFD, 3);
+    INFO("power management functions inhibition started.");
+
+finish:
     close_bus(&error, reply, bus);
     return r;
 }
