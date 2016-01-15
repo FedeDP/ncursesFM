@@ -5,9 +5,10 @@ language: c
 
 compiler: gcc
 
-script: make
-
-env: GCC_VERSION=5
+script:
+        - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
+        - gcc --version
+        - make
 
 notifications:
   email:
@@ -19,13 +20,13 @@ addons:
   apt:
     sources: ubuntu-toolchain-r-test
     packages:
-      - gcc-5
-      - libncursesw5-dev
-      - libarchive-dev
-      - pkg-config
-      - libcups2-dev
-      - libudev-dev
-      - libconfig-dev
-      - libx11-dev
-      - libsystemd-dev
-      - libssl-dev
+        - gcc-5
+        - libncursesw5-dev
+        - libarchive-dev
+        - pkg-config
+        - libcups2-dev
+        - libudev-dev
+        - libconfig-dev
+        - libx11-dev
+        - libsystemd-dev
+        - libssl-dev
