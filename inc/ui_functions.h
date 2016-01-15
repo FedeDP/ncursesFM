@@ -48,3 +48,4 @@ void erase_selected_highlight(void);
 void change_tab(void);
 void switch_fast_browse_mode(void);
 void update_time(void);
+int query_file(const char *path, const char *query, int *result);

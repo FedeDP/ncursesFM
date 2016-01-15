@@ -115,6 +115,11 @@ typedef struct thread_list {
     int type;
 } thread_job_list;
 
+struct supply {
+    char path[PATH_MAX + 1];
+    int energy_full;
+};
+
 struct pollfd main_p;
 sigset_t main_mask;
 thread_job_list *thread_h;
@@ -122,7 +127,7 @@ file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
-int active, quit, num_of_jobs, cont, distance_from_root;
+int active, quit, num_of_jobs, cont, distance_from_root, num_of_batt;
 int device_mode, special_mode[MAX_TABS], fast_browse_mode[MAX_TABS], bookmarks_mode[MAX_TABS];
 pthread_mutex_t fm_lock, time_lock;
 #ifdef SYSTEMD_PRESENT
@@ -133,4 +138,5 @@ pthread_t monitor_th;
 #endif
 pthread_t worker_th, search_th, time_th;
 char (*str_ptr[MAX_TABS])[PATH_MAX + 1]; // pointer to abstract which list of strings i have to print in list_everything()
-char (bookmarks[MAX_BOOKMARKS])[PATH_MAX + 1];
+char (bookmarks[MAX_BOOKMARKS])[PATH_MAX + 1], ac_path[PATH_MAX + 1];
+struct supply *batt;

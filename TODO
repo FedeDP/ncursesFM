@@ -11,7 +11,5 @@
  *              optimize remove_from_bookmarks
  *           }
  *
- * optimize update_batt() function.
- *
  * sshfs support?
  */

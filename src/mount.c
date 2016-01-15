@@ -432,7 +432,6 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
  */
 static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
     const char *obj = "/org/freedesktop/UPower";
-    int r;
 
     const char *path = sd_bus_message_get_path(m);
     if (!strcmp(path, obj)) {
