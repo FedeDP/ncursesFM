@@ -22,8 +22,10 @@ static void *time_func(void *x) {
     while (!quit) {
         absolute_time.tv_sec += 30;
         ret = pthread_mutex_timedlock(&time_lock, &absolute_time);
-        if ((!quit) && (!ret || ret == ETIMEDOUT)) {
-            update_time();
+        if (!ret || ret == ETIMEDOUT) {
+            if (!quit) {
+                update_time();
+            }
         } else {
             WARN("an error occurred. Leaving.");
             pthread_mutex_unlock(&time_lock);
