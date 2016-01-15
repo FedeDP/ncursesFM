@@ -39,7 +39,9 @@ static void read_config_file(void);
 #endif
 static void config_checks(void);
 static void main_loop(void);
+#ifdef LIBUDEV_PRESENT
 static void check_device_mode(void);
+#endif
 static void manage_enter(struct stat current_file_stat);
 static void manage_quit(void);
 static void switch_search(void);
@@ -417,6 +419,7 @@ unlock:
     }
 }
 
+#ifdef LIBUDEV_PRESENT
 static void check_device_mode(void) {
     if (sv.searching == 3 + active || bookmarks_mode[active]) {
         return;
@@ -433,6 +436,7 @@ static void check_device_mode(void) {
         print_info("A tab is already in device mode.", INFO_LINE);
     }
 }
+#endif
 
 static void manage_enter(struct stat current_file_stat) {
     if (sv.searching == 3 + active) {
