@@ -468,7 +468,7 @@ void show_devices_tab(void) {
         str_ptr[active] = my_devices;
         device_mode = 1 + active;
         special_mode[active] = 1;
-        sprintf(ps[active].title, device_mode_str);
+        strcpy(ps[active].title, device_mode_str);
         reset_win(active);
     } else {
         print_info("No devices found.", INFO_LINE);

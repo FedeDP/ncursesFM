@@ -122,7 +122,7 @@ void show_bookmarks(void) {
         str_ptr[active] = bookmarks;
         bookmarks_mode[active] = 1;
         special_mode[active] = 1;
-        sprintf(ps[active].title, bookmarks_mode_str);
+        strcpy(ps[active].title, bookmarks_mode_str);
         reset_win(active);
     } else {
         print_info(no_bookmarks, INFO_LINE);

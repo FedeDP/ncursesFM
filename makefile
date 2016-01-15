@@ -77,7 +77,7 @@ objects:
 	cd $(SRCDIR); $(CC) -c *.c $(CFLAGS) -std=c99
 
 objects-debug:
-	cd $(SRCDIR); $(CC) -c *.c -Wall $(CFLAGS) -std=c99 -Wpedantic -Werror -Wshadow -Wstrict-overflow -fno-strict-aliasing -g
+	cd $(SRCDIR); $(CC) -c *.c -Wall $(CFLAGS) -std=c99 -Wpedantic -Werror -Wshadow -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security -g
 
 ncursesFM: objects
 	cd $(SRCDIR); $(CC) -o ../ncursesFM *.o $(LIBS)
