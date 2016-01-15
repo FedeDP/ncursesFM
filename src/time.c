@@ -4,7 +4,7 @@ static void *time_func(void *x);
 static void poll_batteries(void);
 
 void start_time(void) {
-    INFO("started time thread.");
+    INFO("started time/battery thread.");
     pthread_create(&time_th, NULL, time_func, NULL);
 }
 
@@ -53,13 +53,15 @@ static void poll_batteries(void) {
             if (!strncmp(file->d_name, ac_str, strlen(ac_str))) {
                 sprintf(ac_path, "%s%s", path, file->d_name);
             } else {
-                num_of_batt++;
-                batt = realloc(batt, sizeof(struct supply) * num_of_batt);
-                int i = num_of_batt - 1;
-                sprintf(batt[i].path, "%s%s", path, file->d_name);
-                if (!query_file(batt[i].path, "energy_full", &(batt[i].energy_full))) {
-                    WARN("could not read energy_full from current battery.");
-                    batt[i].energy_full = -1;
+                batt = realloc(batt, sizeof(struct supply) * (num_of_batt + 1));
+                if (batt) {
+                    num_of_batt++;
+                    int i = num_of_batt - 1;
+                    sprintf(batt[i].path, "%s%s", path, file->d_name);
+                    if (!query_file(batt[i].path, "energy_full", &(batt[i].energy_full))) {
+                        WARN("could not read energy_full from current battery.");
+                        batt[i].energy_full = -1;
+                    }
                 }
             }
         }

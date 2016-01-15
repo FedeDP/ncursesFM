@@ -115,6 +115,10 @@ typedef struct thread_list {
     int type;
 } thread_job_list;
 
+/*
+ * Stuct that keeps system path (eg: /sys/class/power_supply/BAT0)
+ * and energy_full for every battery.
+ */
 struct supply {
     char path[PATH_MAX + 1];
     int energy_full;
