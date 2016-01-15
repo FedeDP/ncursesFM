@@ -1,0 +1,31 @@
+sudo: required
+dist: trusty
+
+language: c
+
+compiler:
+  - gcc
+
+script:
+  - make debug
+
+notifications:
+  email:
+    recipients:
+      - nierro92@gmail.com
+    on_success: never
+    on_failure: always
+
+addons:
+  apt:
+    packages:
+      - libncursesw5-dev
+      - libarchive-dev
+      - pkg-config
+      - glibc-source
+      - libcups2-dev
+      - libudev-dev
+      - libconfig-dev
+      - libx11-dev
+      - libsystemd-dev
+      - libssl-dev

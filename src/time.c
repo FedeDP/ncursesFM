@@ -34,7 +34,9 @@ static void *time_func(void *x) {
             break;
         }
     }
-    free(batt);
+    if (batt) {
+        free(batt);
+    }
     pthread_mutex_destroy(&time_lock);
     pthread_exit(NULL);
 }

@@ -74,17 +74,17 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * pkg-config -> to manage libraries link in makefile
-* glibc      -> to set locale and for mnten functions (useful only if compiled with libudev too)
+* glibc      -> to set locale and for mntent functions (useful only if compiled with libudev too)
 * git        -> to clone repo
 
 ## Optional compile time dependencies
 
 * libcups   -> print support.
 * libconfig -> config file parsing.
-* libx11    -> check whether ncursesFM is started in a X environment or not.
+* libx11    -> check whether ncursesFM is started in a X environment or not, and xdg-open support.
 * sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
 * libudev   -> needed for devices/iso mount, useful only if compiled with sd-bus.
-* openssl   -> for shasum functions support.
+* openssl   -> for shasum function support.
 
 ## Runtime dependencies
 
@@ -102,14 +102,22 @@ Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time n
 
 *Archlinux users can install ncursesFM from aur*: https://aur.archlinux.org/packages/ncursesfm-git/
 
+On Ubuntu install required packages:
+
+    # apt-get install libncursesw5-dev libarchive-dev pkg-config git glibc-source
+
+Optional:
+
+    # apt-get install libcups2-dev libconfig-dev libx11-dev libsystemd-dev libudev-dev libssl-dev
+
 Clone the repo and move inside new dir, then:
 
     $ make
-    $ make install
+    # make install
 
 To remove, just move inside the folder and run:
 
-    $ make uninstall
+    # make uninstall
 
 make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets.
 Be aware that it will disable config file support and bash autocompletion script (you can still source it manually anyway) though.

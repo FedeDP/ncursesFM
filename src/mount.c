@@ -154,7 +154,12 @@ finish:
 }
 
 #ifdef LIBUDEV_PRESENT
-
+/*
+ * Check if iso is already mounted.
+ * For each /dev/loop device present, calls iso_backing_file on bus.
+ * As soon as it finds a matching backing_file with current file's filename,
+ * it breaks the cycle and returns 1;
+ */
 static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
     struct udev *tmp_udev;
     struct udev_enumerate *enumerate;
@@ -187,6 +192,9 @@ static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
     return mount;
 }
 
+/*
+ * Given a loop device, returns the iso file mounted on it.
+ */
 static void iso_backing_file(char *s, const char *name) {
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_bus_message *mess = NULL;
@@ -227,6 +235,9 @@ finish:
     close_bus(&error, mess, iso_bus);
 }
 
+/*
+ * Starts udisks2 bus monitor.
+ */
 void start_monitor(void) {
     udev = udev_new();
     if (!udev) {
@@ -247,6 +258,11 @@ fail:
     device_mode = DEVMON_OFF;
 }
 
+/*
+ * Add matches to bus; first 3 matches are related to udisks2 signals,
+ * last match is related to upower signals.
+ * If last add_match fails, it won't be fatal (ie: monitor will start anyway)
+ */
 static int init_mbus(void) {
     int r;
 
@@ -294,7 +310,7 @@ static int init_mbus(void) {
                          "member='PropertiesChanged'",
                          change_power_callback, NULL);
     if (r < 0) {
-        INFO("UPower PropertiesChanged signals' reception disabled.");
+        WARN("UPower PropertiesChanged signals disabled.");
     }
     return 0;
 
@@ -441,6 +457,11 @@ static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error
     return 0;
 }
 
+/*
+ * Updates current tab str_ptr and number of files,
+ * set device_mode and special_mode bits,
+ * change tab title, and calls reset_win()
+ */
 void show_devices_tab(void) {
     if (number_of_devices) {
         ps[active].number_of_files = number_of_devices;
@@ -482,8 +503,10 @@ static void enumerate_block_devices(void) {
 }
 
 /*
- * Check through udisks2 for at least 1 mountpoint. If there is no mountpoint, device is not mounted.
- * If sd_bus_get_property failes with "-EINVAL" error code, it means there's no a mountable fs on the device and i won't list it.
+ * Check through udisks2 for at least 1 mountpoint.
+ * If there is no mountpoint, device is not mounted.
+ * If sd_bus_get_property failes with "-EINVAL" error code,
+ * it means there's no a mountable fs on the device and i won't list it.
  */
 static int is_mounted(const char *dev_path) {
     sd_bus_error error = SD_BUS_ERROR_NULL;
@@ -532,6 +555,9 @@ finish:
     return ret;
 }
 
+/*
+ * Getting mountpoint for a device through mtab.
+ */
 static void get_mount_point(const char *dev_path, char *path) {
     struct mntent *part;
     FILE *mtab;
@@ -550,6 +576,14 @@ static void get_mount_point(const char *dev_path, char *path) {
     endmntent(mtab);
 }
 
+/*
+ * Check what action should be performed (mount or unmount),
+ * if unmount action, checks if tabs are inside the mounted device;
+ * if that's the case, change cwd to path just before the mountpoint,
+ * then proceed with the action.
+ * If not active tab was inside mounted folder, after the unmount action,
+ * it moves the tab to the path just before the mountpoint.
+ */
 void manage_mount_device(void) {
     int mount, r = -1;
     int pos = ps[active].curr_pos;
@@ -569,9 +603,8 @@ void manage_mount_device(void) {
             r = check_cwd(mounted_path);
             int ret = mount_fs(name, "Unmount", mount);
             if (ret != -1) {
-                getcwd(ps[active].my_cwd, PATH_MAX);
-                if (r != -1) {
-                    change_dir(mounted_path, r);
+                if (r) {
+                    change_dir(mounted_path, !active);
                 }
             }
         } else {
@@ -581,8 +614,13 @@ void manage_mount_device(void) {
     pthread_mutex_unlock(&dev_lock);
 }
 
+/*
+ * For each tab, checks if it is inside mounted_path.
+ * If the active tab is inside, calculate the path just before the mountpoint,
+ * and chdir there. Else, returns 1.
+ */
 static int check_cwd(char *mounted_path) {
-    int len, ret = -1;
+    int len, ret = 0;
 
     for (int i = 0; i < cont; i++) {
         if (!strncmp(ps[i].my_cwd, mounted_path, strlen(mounted_path))) {
@@ -591,14 +629,19 @@ static int check_cwd(char *mounted_path) {
                 len = strlen(mounted_path) - len;
                 mounted_path[len] = '\0';
                 chdir(mounted_path);
+                strcpy(ps[active].my_cwd, mounted_path);
             } else {
-                ret = i;
+                ret = 1;
             }
         }
     }
     return ret;
 }
 
+/*
+ * Pressing enter on a device will move to its mountpoint.
+ * If device is not mounted, it will mount it too.
+ */
 void manage_enter_device(void) {
     int mount, ret = 1;
     int pos = ps[active].curr_pos;
