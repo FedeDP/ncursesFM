@@ -5,9 +5,9 @@ language: c
 
 compiler: gcc
 
-env: GCC_VERSION=5
-
 script: make
+
+env: GCC_VERSION=5
 
 notifications:
   email:
