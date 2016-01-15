@@ -3,16 +3,13 @@ dist: trusty
 
 language: c
 
-compiler:
-  - gcc
+compiler: gcc
 
-script:
-  - make debug
+script: make
 
 notifications:
   email:
-    recipients:
-      - nierro92@gmail.com
+    recipients: nierro92@gmail.com
     on_success: never
     on_failure: always
 
@@ -22,10 +19,10 @@ addons:
       - libncursesw5-dev
       - libarchive-dev
       - pkg-config
-      - glibc-source
       - libcups2-dev
       - libudev-dev
       - libconfig-dev
       - libx11-dev
-      - libsystemd-dev
+      - libsystemd-login-dev
+      - libsystemd-daemon-dev
       - libssl-dev
