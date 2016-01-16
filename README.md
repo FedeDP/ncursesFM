@@ -107,7 +107,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 
 On Ubuntu install required packages:
 
-    # apt-get install libncursesw5-dev libarchive-dev pkg-config git glibc-source
+    # apt-get install libncursesw5-dev libarchive-dev pkg-config git build-essential
 
 Optional:
 
