@@ -694,12 +694,31 @@ void update_devices(int num,  char (*str)[PATH_MAX + 1]) {
         } else {
             list_everything(device_mode - 1, num - 1, 0);
         }
-    } else {
+    } else {    /* change mounted status event */
         list_everything(device_mode - 1, 0, 0);
     }
     pthread_mutex_unlock(&fm_lock);
 }
 #endif
+
+void update_bookmarks(int num, int win) {
+    int check = num - ps[win].number_of_files;
+    ps[win].number_of_files = num;
+    str_ptr[win] = bookmarks;
+    if (check < 0) {
+        reset_win(win);
+    } else {
+        list_everything(win, num - 1, 0);
+    }
+}
+
+void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title) {
+    ps[active].number_of_files = num;
+    str_ptr[active] = str;
+    special_mode[active] = 1;
+    strcpy(ps[active].title, title);
+    reset_win(active);
+}
 
 /*
  * Removes info win;

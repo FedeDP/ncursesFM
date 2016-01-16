@@ -5,9 +5,7 @@ language: c
 
 compiler: gcc
 
-script:
-        - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
-        - make debug
+script: make
 
 notifications:
   email:
@@ -17,9 +15,8 @@ notifications:
 
 addons:
   apt:
-    sources: ubuntu-toolchain-r-test
+    sources: pitti-systemd
     packages:
-        - gcc-5
         - libncursesw5-dev
         - libarchive-dev
         - pkg-config
@@ -28,4 +25,5 @@ addons:
         - libconfig-dev
         - libx11-dev
         - libsystemd-dev
+        - systemd
         - libssl-dev

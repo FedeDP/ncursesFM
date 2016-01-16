@@ -464,12 +464,8 @@ static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error
  */
 void show_devices_tab(void) {
     if (number_of_devices) {
-        ps[active].number_of_files = number_of_devices;
-        str_ptr[active] = my_devices;
         device_mode = 1 + active;
-        special_mode[active] = 1;
-        strcpy(ps[active].title, device_mode_str);
-        reset_win(active);
+        show_special_tab(number_of_devices, my_devices, device_mode_str);
     } else {
         print_info("No devices found.", INFO_LINE);
     }

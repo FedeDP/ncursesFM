@@ -2,6 +2,7 @@
 
 static void get_xdg_dirs(const char *home_dir);
 static void remove_bookmark(void);
+static void update_bookmarks_tabs(void);
 
 static int num_bookmarks, xdg_bookmarks;
 const char *bookmarks_path = "/.config/ncursesFM-bookmarks";
@@ -74,6 +75,7 @@ void add_file_to_bookmarks(const char *str) {
         if (num_bookmarks < MAX_BOOKMARKS) {
             strcpy(bookmarks[num_bookmarks], str);
             num_bookmarks++;
+            update_bookmarks_tabs();
         } else {
             print_info(too_many_bookmarks, ERR_LINE);
         }
@@ -101,7 +103,7 @@ void remove_bookmark_from_file(void) {
                 fprintf(f, "%s\n", bookmarks[i]);
             }
             fclose(f);
-            show_bookmarks();
+            update_bookmarks_tabs();
         } else {
             print_info(bookmarks_file_err, ERR_LINE);
         }
@@ -116,14 +118,18 @@ static void remove_bookmark(void) {
     print_info(bookmarks_rm, INFO_LINE);
 }
 
+static void update_bookmarks_tabs(void) {
+    for (int i = 0; i < cont; i++) {
+        if (bookmarks_mode[i]) {
+            update_bookmarks(num_bookmarks, i);
+        }
+    }
+}
+
 void show_bookmarks(void) {
     if (num_bookmarks) {
-        ps[active].number_of_files = num_bookmarks;
-        str_ptr[active] = bookmarks;
         bookmarks_mode[active] = 1;
-        special_mode[active] = 1;
-        strcpy(ps[active].title, bookmarks_mode_str);
-        reset_win(active);
+        show_special_tab(num_bookmarks, bookmarks, bookmarks_mode_str);
     } else {
         print_info(no_bookmarks, INFO_LINE);
     }

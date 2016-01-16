@@ -38,6 +38,8 @@ void tab_refresh(int win);
 #ifdef LIBUDEV_PRESENT
 void update_devices(int num,  char (*str)[PATH_MAX + 1]);
 #endif
+void update_bookmarks(int num, int win);
+void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title);
 void print_info(const char *str, int i);
 void print_and_warn(const char *err, int line);
 void ask_user(const char *str, char *input, int d, char c);

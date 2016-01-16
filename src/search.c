@@ -66,7 +66,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
 
 /*
  * For each entry in the archive, it checks "entry + len" pointer against searched string.
- * Len is always the offset of the current dir inside archive, eg: foo.tgz/bar/x, 
+ * Len is always the offset of the current dir inside archive, eg: foo.tgz/bar/x,
  * while checking x, len will be strlen("bar/")
  */
 static int search_inside_archive(const char *path) {
@@ -74,7 +74,7 @@ static int search_inside_archive(const char *path) {
     int len = 0, ret = 0, r = 0, string_length;
     struct archive_entry *entry;
     struct archive *a = archive_read_new();
-    
+
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
     string_length = strlen(sv.searched_string);
@@ -124,13 +124,12 @@ static void *search_thread(void *x) {
 }
 
 void list_found(void) {
-    ps[active].number_of_files = sv.found_cont;
-    str_ptr[active] = sv.found_searched;
+    char str[100];
+
+    sprintf(str, "Files found searching %s:", sv.searched_string);
     sv.searching = 3 + active;
-    special_mode[active] = 1;
-    sprintf(ps[active].title, "Files found searching %s:", sv.searched_string);
     sprintf(searching_mess[sv.searching - 1], "%d files found.", sv.found_cont);
-    reset_win(active);
+    show_special_tab(sv.found_cont, sv.found_searched, str);
     print_info("", SEARCH_LINE);
 }
 
