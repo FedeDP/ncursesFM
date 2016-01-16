@@ -679,36 +679,19 @@ void tab_refresh(int win) {
     }
 }
 
-#ifdef LIBUDEV_PRESENT
-void update_devices(int num,  char (*str)[PATH_MAX + 1]) {
-    int check;
-
-    pthread_mutex_lock(&fm_lock);
+void update_special_mode(int num,  int win, char (*str)[PATH_MAX + 1]) {
     if (str) {
-        /* Do not reset win if a device has been added. Just print next line */
-        check = num - ps[device_mode - 1].number_of_files;
-        ps[device_mode - 1].number_of_files = num;
-        str_ptr[device_mode - 1] = str;
+        /* Do not reset win if a device/bookmark has been added. Just print next line */
+        int check = num - ps[win].number_of_files;
+        ps[win].number_of_files = num;
+        str_ptr[win] = str;
         if (check < 0) {
-            reset_win(device_mode - 1);
+            reset_win(win);
         } else {
-            list_everything(device_mode - 1, num - 1, 0);
+            list_everything(win, num - 1, 0);
         }
-    } else {    /* change mounted status event */
-        list_everything(device_mode - 1, 0, 0);
-    }
-    pthread_mutex_unlock(&fm_lock);
-}
-#endif
-
-void update_bookmarks(int num, int win, char (*str)[PATH_MAX + 1]) {
-    int check = num - ps[win].number_of_files;
-    ps[win].number_of_files = num;
-    str_ptr[win] = str;
-    if (check < 0) {
-        reset_win(win);
-    } else {
-        list_everything(win, num - 1, 0);
+    } else {    /* only for device_mode: change mounted status event */
+        list_everything(win, 0, 0);
     }
 }
 

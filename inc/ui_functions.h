@@ -35,10 +35,7 @@ void trigger_stats(void);
 void change_unit(float size, char *str);
 int win_getch(WINDOW *win);
 void tab_refresh(int win);
-#ifdef LIBUDEV_PRESENT
-void update_devices(int num,  char (*str)[PATH_MAX + 1]);
-#endif
-void update_bookmarks(int num, int win, char (*str)[PATH_MAX + 1]);
+void update_special_mode(int num, int win, char (*str)[PATH_MAX + 1]);
 void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title);
 void print_info(const char *str, int i);
 void print_and_warn(const char *err, int line);

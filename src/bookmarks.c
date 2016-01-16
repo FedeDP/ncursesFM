@@ -122,7 +122,7 @@ static void remove_bookmark(void) {
 static void update_bookmarks_tabs(void) {
     for (int i = 0; i < cont; i++) {
         if (bookmarks_mode[i]) {
-            update_bookmarks(num_bookmarks, i, bookmarks);
+            update_special_mode(num_bookmarks, i, bookmarks);
         }
     }
 }

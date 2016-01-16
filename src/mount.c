@@ -14,6 +14,7 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
 static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+static void update_devices(char (*str)[PATH_MAX + 1]);
 static void enumerate_block_devices(void);
 static int is_mounted(const char *dev_path);
 static void get_mount_point(const char *dev_path, char *path);
@@ -99,9 +100,10 @@ void isomount(const char *str) {
     sd_bus *iso_bus = NULL;
     const char *obj_path;
     int r, fd;
-    char loop_dev[PATH_MAX + 1];
 
 #ifdef LIBUDEV_PRESENT
+    char loop_dev[PATH_MAX + 1];
+    
     if (is_iso_mounted(str, loop_dev)) {
         mount_fs(loop_dev, "Unmount", 1);
         return;
@@ -362,7 +364,7 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
                 udev_device_unref(dev);
                 if (!quit && device_mode > DEVMON_READY && r != -1) {
                     print_info("New device connected.", INFO_LINE);
-                    update_devices(number_of_devices, my_devices);
+                    update_devices(my_devices);
                 }
             }
             pthread_mutex_unlock(&dev_lock);
@@ -395,7 +397,7 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             sprintf(devname, "/dev/%s", name);
             r = remove_device(devname);
             if (!quit && device_mode > DEVMON_READY && r != -1) {
-                update_devices(number_of_devices, my_devices);
+                update_devices(my_devices);
             }
             pthread_mutex_unlock(&dev_lock);
         } else {
@@ -429,7 +431,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             if (present != -1) {
                 change_mounted_status(present, devname);
                 if (!quit && device_mode > DEVMON_READY) {
-                    update_devices(number_of_devices, NULL);
+                    update_devices(NULL);
                 }
             }
             pthread_mutex_unlock(&dev_lock);
@@ -455,6 +457,12 @@ static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error
         pthread_mutex_unlock(&time_lock);
     }
     return 0;
+}
+
+static void update_devices(char (*str)[PATH_MAX + 1]) {
+    pthread_mutex_lock(&fm_lock);
+    update_special_mode(number_of_devices, device_mode - 1, str);
+    pthread_mutex_unlock(&fm_lock);
 }
 
 /*
