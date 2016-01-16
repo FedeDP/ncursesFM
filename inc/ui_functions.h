@@ -38,7 +38,7 @@ void tab_refresh(int win);
 #ifdef LIBUDEV_PRESENT
 void update_devices(int num,  char (*str)[PATH_MAX + 1]);
 #endif
-void update_bookmarks(int num, int win);
+void update_bookmarks(int num, int win, char (*str)[PATH_MAX + 1]);
 void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title);
 void print_info(const char *str, int i);
 void print_and_warn(const char *err, int line);
@@ -49,5 +49,5 @@ void highlight_selected(int line, const char c);
 void erase_selected_highlight(void);
 void change_tab(void);
 void switch_fast_browse_mode(void);
-void update_time(void);
+void update_time(const char *ac_path, struct supply *batt);
 int query_file(const char *path, const char *query, int *result);

@@ -5,7 +5,8 @@ static void remove_bookmark(void);
 static void update_bookmarks_tabs(void);
 
 static int num_bookmarks, xdg_bookmarks;
-const char *bookmarks_path = "/.config/ncursesFM-bookmarks";
+static const char *bookmarks_path = "/.config/ncursesFM-bookmarks";
+static char (bookmarks[MAX_BOOKMARKS])[PATH_MAX + 1];
 
 void get_bookmarks(void) {
     FILE *f;
@@ -121,7 +122,7 @@ static void remove_bookmark(void) {
 static void update_bookmarks_tabs(void) {
     for (int i = 0; i < cont; i++) {
         if (bookmarks_mode[i]) {
-            update_bookmarks(num_bookmarks, i);
+            update_bookmarks(num_bookmarks, i, bookmarks);
         }
     }
 }

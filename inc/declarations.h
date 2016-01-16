@@ -124,16 +124,37 @@ struct supply {
     int energy_full;
 };
 
+/*
+ * Needed to interrupt main cycles getch
+ * from external signals
+ */
 struct pollfd main_p;
 sigset_t main_mask;
+
 thread_job_list *thread_h;
 file_list *selected;
 struct conf config;
 struct vars ps[MAX_TABS];
 struct search_vars sv;
+
+/*
+ * active win, quit status, number of worker thread jobs,
+ * tabs counter, number of found batteries.
+ * Distance_from_root is used in both archiver and fm_functions (paste)
+ */
 int active, quit, num_of_jobs, cont, distance_from_root, num_of_batt;
+
+/*
+ * ncursesFM working modalities
+ */
 int device_mode, special_mode[MAX_TABS], fast_browse_mode[MAX_TABS], bookmarks_mode[MAX_TABS];
+
+/*
+ * fm_lock -> locked before touching any fm window.
+ * time_lock -> timedlocked in time_func() in time.c, with timeout of 30s
+ */
 pthread_mutex_t fm_lock, time_lock;
+
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;
 #ifdef LIBUDEV_PRESENT
@@ -141,6 +162,9 @@ pthread_t monitor_th;
 #endif
 #endif
 pthread_t worker_th, search_th, time_th;
-char (*str_ptr[MAX_TABS])[PATH_MAX + 1]; // pointer to abstract which list of strings i have to print in list_everything()
-char (bookmarks[MAX_BOOKMARKS])[PATH_MAX + 1], ac_path[PATH_MAX + 1];
-struct supply *batt;
+
+/*
+ * pointer to abstract which list of strings currently 
+ * is active for current tab
+ */
+char (*str_ptr[MAX_TABS])[PATH_MAX + 1];

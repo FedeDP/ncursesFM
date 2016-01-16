@@ -3,6 +3,10 @@
 static void *time_func(void *x);
 static void poll_batteries(void);
 
+
+static char ac_path[PATH_MAX + 1];
+static struct supply *batt;
+
 void start_time(void) {
     INFO("started time/battery thread.");
     pthread_create(&time_th, NULL, time_func, NULL);
@@ -26,7 +30,7 @@ static void *time_func(void *x) {
         ret = pthread_mutex_timedlock(&time_lock, &absolute_time);
         if (!ret || ret == ETIMEDOUT) {
             if (!quit) {
-                update_time();
+                update_time(ac_path, batt);
             }
         } else {
             WARN("an error occurred. Leaving.");

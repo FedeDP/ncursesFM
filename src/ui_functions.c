@@ -21,7 +21,7 @@ static void erase_stat(void);
 static void resize_helper_win(void);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
-static void update_batt(void);
+static void update_batt(const char *ac_path, struct supply *batt);
 
 struct scrstr {
     WINDOW *fm;
@@ -701,10 +701,10 @@ void update_devices(int num,  char (*str)[PATH_MAX + 1]) {
 }
 #endif
 
-void update_bookmarks(int num, int win) {
+void update_bookmarks(int num, int win, char (*str)[PATH_MAX + 1]) {
     int check = num - ps[win].number_of_files;
     ps[win].number_of_files = num;
-    str_ptr[win] = bookmarks;
+    str_ptr[win] = str;
     if (check < 0) {
         reset_win(win);
     } else {
@@ -849,7 +849,7 @@ void switch_fast_browse_mode(void) {
     wrefresh(mywin[active].fm);
 }
 
-void update_time(void) {
+void update_time(const char *ac_path, struct supply *batt) {
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     char date[30], time[10];
@@ -860,12 +860,12 @@ void update_time(void) {
     wmove(info_win, SYSTEM_INFO_LINE, 1);
     wclrtoeol(info_win);
     mvwprintw(info_win, SYSTEM_INFO_LINE, 1, "Date: %s, %s", date, time);
-    update_batt();
+    update_batt(ac_path, batt);
     wrefresh(info_win);
     pthread_mutex_unlock(&info_lock);
 }
 
-static void update_batt(void) {
+static void update_batt(const char *ac_path, struct supply *batt) {
     const char *fail = "No AC/battery info available.";
     const char *ac_online = "On AC";
     char batt_str[20];
