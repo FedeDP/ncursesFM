@@ -1,11 +1,4 @@
 sudo: required
-dist: trusty
-
-language: c
-
-compiler: gcc
-
-script: make
 
 notifications:
   email:
@@ -13,17 +6,19 @@ notifications:
     on_success: never
     on_failure: always
 
-addons:
-  apt:
-   #sources: pitti-systemd
+arch:
     packages:
-        - libncursesw5-dev
-        - libarchive-dev
-        - pkg-config
-        - libcups2-dev
-        - libudev-dev
-        - libconfig-dev
-        - libx11-dev
-        #- libsystemd-dev
-        #- systemd
-        - libssl-dev
+        - systemd
+        - libconfig
+        - glibc
+        - libarchive
+        - libudev
+        - ncurses
+        - libcups
+        - libx11
+        - openssl
+    script: make
+
+script:
+  - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
+
