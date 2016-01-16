@@ -12,7 +12,6 @@ arch:
         - libconfig
         - glibc
         - libarchive
-        - libudev
         - ncurses
         - libcups
         - libx11
@@ -20,5 +19,5 @@ arch:
     script: make
 
 script:
-  - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
+    - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
 
