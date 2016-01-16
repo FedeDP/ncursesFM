@@ -1,4 +1,7 @@
+[![Build Status](https://travis-ci.org/FedeDP/ncursesFM.svg?branch=master)](https://travis-ci.org/FedeDP/ncursesFM)
+
 # NcursesFM
+
 Ncurses File Manager for linux.
 
 It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.

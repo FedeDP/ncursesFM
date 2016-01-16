@@ -15,7 +15,7 @@ notifications:
 
 addons:
   apt:
-    sources: pitti-systemd
+   #sources: pitti-systemd
     packages:
         - libncursesw5-dev
         - libarchive-dev
@@ -24,6 +24,6 @@ addons:
         - libudev-dev
         - libconfig-dev
         - libx11-dev
-        - libsystemd-dev
-        - systemd
+        #- libsystemd-dev
+        #- systemd
         - libssl-dev

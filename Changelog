@@ -1,11 +1,16 @@
-01 / 14 / 2016
+01 / 16 / 2016
 * added a clock + battery level line (useful as ncursesfm mainly targets non-X users, or users with a small X environment).
 * added configuration entry to set low_level battery threshold. After this level, battery level will be printed in red.
 * better bookmarks: you can now save new bookmarks from within ncursesFM.
-* better mutexes (info_lock and fm_lock); main_loop will now lock fm_mutex, worker thread (before calling tab_refresh) and mounter thread (in update_devices) too. 
-Way simplier than before. Every other draw is made within the main thread so no problem. 
+* you can add whatever type of file you wish to bookmarks.
+* better mutexes (info_lock and fm_lock); main_loop will now lock fm_mutex, worker thread (before calling tab_refresh) and mounter thread (in update_devices) too.
+Way simplier than before. Every other draw is made within the main thread so no problem.
 * fixed a small bug: info_lock must be locked before calling term_size_check() in resize_win().
 * finalized bookmarks support. You can now add/delete bookmarks.
+* fixed other bugs.
+* added travis build.
+* Using upower to get battery/ac status changes (connected/disconnected only)
+* cleaned up some code
 
 01 / 13 / 2016
 * fixes for udisks2 monitor.
@@ -16,7 +21,7 @@ Way simplier than before. Every other draw is made within the main thread so no 
 * initial implementation of bookmarks...it will just load bookmarks from $HOME/.config/user-dirs.dirs for now.
 * added a "lazy" search mode: it will just check if searched string is contained inside inspected string (and it is case-insensitive too)
 * using blocking ppoll instead of sd_bus_wait to make wait on bus signal-aware (i can interrupt it with a signal, and gracefully leave monitor thread/program)
-* using blocking ppoll in conjunction with nodelayed getch in main thread and whenever a getch is performed; this way program can be externally interrupted by SIGINT or SIGTERM, 
+* using blocking ppoll in conjunction with nodelayed getch in main thread and whenever a getch is performed; this way program can be externally interrupted by SIGINT or SIGTERM,
 and everything is managed correctly (signal will only switch quit to 1)
 * fixed a small bug in screen_init() related to term_size_check()
 * switch to win_getch (ppoll + wgetch) in term_size_check() too.
