@@ -4,8 +4,8 @@
 
 Ncurses File Manager for linux.
 
-It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.
-Being simple doesn't imply being useless; indeed it is a full featured fm.
+It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.  
+Being simple doesn't imply being useless; indeed it is a full featured fm.  
 It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).
 
 ![](https://github.com/FedeDP/ncursesFM/raw/master/ncursesFM.png)
@@ -66,7 +66,7 @@ NcursesFM ships an autocompletion script for cmdline options. It supports follow
 * "--persistent_log" {0,1} -> to disable(enable) log persistency across program restarts.
 * "--low_level" {$level} -> threshold to signal user about low battery.
 
-Log file is located at "$USERHOME/.ncursesfm.log". It is overwritten each time ncursesFM starts (unless persistent_log option is != 0). Log levels:
+Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncursesFM starts (unless persistent_log option is != 0). Log levels:
 * 0 : log errors only.
 * 1 : log warnings and errors.
 * 2 : log info messages, warnings and errors.
