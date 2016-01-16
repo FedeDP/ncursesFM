@@ -145,7 +145,7 @@ struct search_vars sv;
 int active, quit, num_of_jobs, cont, distance_from_root, num_of_batt;
 
 /*
- * ncursesFM working modalities
+ * ncursesFM working modalities, plus sv.searching == 3 is another modality (missing here as declared before)
  */
 int device_mode, special_mode[MAX_TABS], fast_browse_mode[MAX_TABS], bookmarks_mode[MAX_TABS];
 

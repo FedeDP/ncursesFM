@@ -56,7 +56,6 @@ const char *thread_job_mesg[] = {"Moving...", "Pasting...", "Removing...", "Arch
 const char *thread_str[] = {"Every file has been moved.", "Every files has been copied.", "File/dir removed.", "The archive is ready.", "Succesfully extracted."};
 const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not remove every file.", "Could not archive.", "Could not extract."};
 const char *short_msg[] = {"File created.", "Dir created.", "File renamed."};
-const char *short_fail_msg[] = {"Could not create file.", "Could not create folder.", "Could not rename."};
 
 const char *selected_mess = "There are selected files.";
 
@@ -80,10 +79,10 @@ const char *helper_string[] = { "Enter to surf between folders or to open files.
 const char *pkg_quest = "Do you really want to install this package? y/N:> ";
 const char *install_th_wait = "Waiting for package installation to finish before exiting. It can really harm your OS otherwise.";
 const char *package_warn = "Currently there is no check against wrong package arch: it will crash packagekit and ncursesfm.";
-#endif
-
 #ifdef LIBUDEV_PRESENT
 const char *device_mode_str =  "Choose your desired device to (un)mount it";
 #endif
+#endif
+
 const char *bookmarks_mode_str = "Bookmarks:";
 const char *special_mode_title = "q to return to normal mode";

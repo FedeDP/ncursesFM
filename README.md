@@ -46,15 +46,15 @@ Device monitor will list only mountable devices, eg: dvd reader will not be list
 
 If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf...remember to set them!
 * editor -> editor used to open files, in non X environment (or when xdg-open is not available)
-* show_hidden -> whether to show hidden files by default or not.
+* show_hidden -> whether to show hidden files by default or not. Defaults to 0.
 * starting_directory -> default starting directory.
-* use_default_starting_dir_second_tab -> whether to use "starting_directory" when opening second tab, or to open it in current directory.
+* use_default_starting_dir_second_tab -> whether to use "starting_directory" when opening second tab, or to open it in current directory. Defaults to 0.
 * inhibit -> whether to inhibit powermanagement functions. Defaults to 0.
 * starting_helper -> whether to show helper win after program started. Defaults to 1.
 * automount -> whether to enable devices automount. Defaults to 0.
 * loglevel -> to change program loglevel. Defaults to 0.
 * persistent_log -> to enable log persistency across program restarts. Defaults to 0.
-* bat_low_level -> to set threshold to signal user about low battery.
+* bat_low_level -> to set threshold to signal user about low battery. Defaults to 15%.
 
 NcursesFM ships an autocompletion script for cmdline options. It supports following options:
 * "--editor" /path/to/editor

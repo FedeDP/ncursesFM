@@ -76,7 +76,7 @@ void screen_init(void) {
 static void term_size_check(void) {
     int c;
     int min_lines = INFO_HEIGHT + 3;
-    int min_cols = MAX_TABS * (STAT_LENGTH + 5);
+    int min_cols = MAX_TABS * (STAT_LENGTH + 6);
 
     if (helper_win || config.starting_helper) {
         min_lines += HELPER_HEIGHT;

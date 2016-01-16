@@ -156,27 +156,26 @@ static void open_file(const char *str, float size) {
 /*
  * Ask user for "new_name" var to be passed to short_func[],
  * then calls short_func[index]; only refresh UI if the call was successful.
- * Notyfies user.
+ * Notifies user.
  */
 void fast_file_operations(const int index) {
     char new_name[NAME_MAX + 1];
-    const char *str = short_fail_msg[index];
-    int line = ERR_LINE;
 
     ask_user(ask_name, new_name, NAME_MAX, 0);
     if (!strlen(new_name)) {
         return;
     }
-    if (short_func[index](new_name) == 0) {
-        str = short_msg[index];
-        line = INFO_LINE;
+    int r = short_func[index](new_name);
+    if (r == 0) {
         for (int i = 0; i < cont; i++) {
             if (strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) {
                 tab_refresh(i);
             }
         }
+        print_info(short_msg[index], INFO_LINE);
+    } else {
+        print_info(strerror(-r), ERR_LINE);
     }
-    print_info(str, line);
 }
 
 int new_file(const char *name) {
@@ -187,7 +186,7 @@ int new_file(const char *name) {
         close(fd);
         return 0;
     }
-    return -1;
+    return fd;
 }
 
 static int new_dir(const char *name) {

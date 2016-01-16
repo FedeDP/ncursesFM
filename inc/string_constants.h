@@ -55,7 +55,6 @@ const char *thread_job_mesg[LONG_FILE_OPERATIONS];
 const char *thread_str[LONG_FILE_OPERATIONS];
 const char *thread_fail_str[LONG_FILE_OPERATIONS];
 const char *short_msg[SHORT_FILE_OPERATIONS];
-const char *short_fail_msg[SHORT_FILE_OPERATIONS];
 const char *selected_mess;
 
 const char *thread_running;
