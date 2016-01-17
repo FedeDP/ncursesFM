@@ -7,4 +7,6 @@
  * ask to force if unmount fails? -> http://udisks.freedesktop.org/docs/latest/gdbus-org.freedesktop.UDisks2.Filesystem.html#gdbus-method-org-freedesktop-UDisks2-Filesystem.Unmount
  *
  * sshfs support?
+ * 
+ * http://man7.org/linux/man-pages/man2/sysinfo.2.html -> last line to become a "system monitor" line?
  */
