@@ -21,7 +21,7 @@ static void erase_stat(void);
 static void resize_helper_win(void);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
-static void update_batt(const char *ac_path, struct supply *batt);
+static void update_batt(const char *ac_path, struct supply *batt, int num_of_batt);
 
 struct scrstr {
     WINDOW *fm;
@@ -661,12 +661,29 @@ void ask_user(const char *str, char *input, int d, char c) {
 }
 
 int win_getch(WINDOW *win) {
-    ppoll(&main_p, 1, NULL, &main_mask);
-    if (!win) {
-        return wgetch(mywin[active].fm);
-    } else {
-        return wgetch(win);
+    ppoll(main_p, nfds, NULL, &main_mask);
+    for (int i = 0; i < nfds; i++) {
+        if(main_p[i].revents == POLLIN) {
+            switch (i) {
+            case GETCH_IX:
+                if (!win) {
+                    return wgetch(mywin[active].fm);
+                } else {
+                    return wgetch(win);
+                }
+            case TIMER_IX:
+                read(main_p[i].fd, NULL, 8);
+                timer_func();
+                return ERR;
+#ifdef LIBUDEV_PRESENT
+            case DEVMON_IX:
+                devices_bus_process();
+                return ERR;
+#endif
+            }
+        }
     }
+    return 0;
 }
 
 /*
@@ -832,7 +849,7 @@ void switch_fast_browse_mode(void) {
     wrefresh(mywin[active].fm);
 }
 
-void update_time(const char *ac_path, struct supply *batt) {
+void update_time(const char *ac_path, struct supply *batt, int num_of_batt) {
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     char date[30], time[10];
@@ -843,12 +860,12 @@ void update_time(const char *ac_path, struct supply *batt) {
     wmove(info_win, SYSTEM_INFO_LINE, 1);
     wclrtoeol(info_win);
     mvwprintw(info_win, SYSTEM_INFO_LINE, 1, "Date: %s, %s", date, time);
-    update_batt(ac_path, batt);
+    update_batt(ac_path, batt, num_of_batt);
     wrefresh(info_win);
     pthread_mutex_unlock(&info_lock);
 }
 
-static void update_batt(const char *ac_path, struct supply *batt) {
+static void update_batt(const char *ac_path, struct supply *batt, int num_of_batt) {
     const char *fail = "No AC/battery info available.";
     const char *ac_online = "On AC";
     char batt_str[20];
@@ -877,7 +894,7 @@ static void update_batt(const char *ac_path, struct supply *batt) {
             len++;  /* if there's another bat, at least divide the two batteries by 1 space */
         }
     }
-    /* query_file energy_now always returned fail status */
+    /* query_file "energy_now" always returned failed status */
     if (!len) {
         mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(fail), fail);
     }

@@ -1,48 +1,45 @@
 #include "../inc/time.h"
 
-static void *time_func(void *x);
 static void poll_batteries(void);
 
 
 static char ac_path[PATH_MAX + 1];
+static int num_of_batt, timerfd;
 static struct supply *batt;
 
-void start_time(void) {
-    INFO("started time/battery thread.");
-    pthread_create(&time_th, NULL, time_func, NULL);
+/*
+ * Create 30s timer and returns its fd to
+ * the main struct pollfd
+ */
+int start_timer(void) {
+    struct itimerspec timerValue;
+    
+    timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
+    if (timerfd == -1) {
+        WARN("could not start timer.");
+    } else {
+        poll_batteries();
+        bzero(&timerValue, sizeof(timerValue));
+        timerValue.it_value.tv_sec = 30;
+        timerValue.it_value.tv_nsec = 0;
+        timerValue.it_interval.tv_sec = 30;
+        timerValue.it_interval.tv_nsec = 0;
+        timerfd_settime(timerfd, 0, &timerValue, NULL);
+        INFO("started time/battery monitor.");
+        update_time(ac_path, batt, num_of_batt);
+    }
+    return timerfd;
 }
 
-/*
- * It will monitor time and battery level every 30 sec.
- * As a signal to leave it only needs that program_quit()
- * unlocks its mutex. It will then see that !quit is false
- * and leave.
- */
-static void *time_func(void *x) {
-    struct timespec absolute_time;
-    int ret;
+void timer_func(void) {
+    update_time(ac_path, batt, num_of_batt);
+}
 
-    poll_batteries();
-    pthread_mutex_init(&time_lock, NULL);
-    clock_gettime(CLOCK_REALTIME, &absolute_time);
-    while (!quit) {
-        absolute_time.tv_sec += 30;
-        ret = pthread_mutex_timedlock(&time_lock, &absolute_time);
-        if (!ret || ret == ETIMEDOUT) {
-            if (!quit) {
-                update_time(ac_path, batt);
-            }
-        } else {
-            WARN("an error occurred. Leaving.");
-            pthread_mutex_unlock(&time_lock);
-            break;
-        }
-    }
+void free_timer(void) {
     if (batt) {
         free(batt);
     }
-    pthread_mutex_destroy(&time_lock);
-    pthread_exit(NULL);
+    close(timerfd);
 }
 
 static void poll_batteries(void) {

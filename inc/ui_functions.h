@@ -1,6 +1,8 @@
 #pragma once
 
 #include "log.h"
+#include "time.h"
+#include "mount.h"
 #include "string_constants.h"
 #include "quit_functions.h"
 #include <locale.h>
@@ -46,5 +48,5 @@ void highlight_selected(int line, const char c);
 void erase_selected_highlight(void);
 void change_tab(void);
 void switch_fast_browse_mode(void);
-void update_time(const char *ac_path, struct supply *batt);
+void update_time(const char *ac_path, struct supply *batt, int num_of_batt);
 int query_file(const char *path, const char *query, int *result);

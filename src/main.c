@@ -30,6 +30,7 @@
 #endif
 
 static void set_signals(void);
+static void set_pollfd(void);
 static void sig_handler(int signum);
 static void sigsegv_handler(int signum);
 static void helper_function(int argc, const char *argv[]);
@@ -66,12 +67,9 @@ int main(int argc, const char *argv[])
     parse_cmd(argc, argv);
     open_log();
     config_checks();
-#ifdef LIBUDEV_PRESENT
-    start_monitor();
-#endif
     get_bookmarks();
     screen_init();
-    start_time();
+    set_pollfd();
     if (!quit) {
         chdir(ps[active].my_cwd);
         main_loop();
@@ -90,11 +88,31 @@ static void set_signals(void) {
     sigaddset(&mask, SIGINT);
     sigaddset(&mask, SIGTERM);
     sigprocmask(SIG_BLOCK, &mask, &main_mask);
-    main_p = (struct pollfd) {
+    signal(SIGSEGV, sigsegv_handler);
+}
+
+static void set_pollfd(void) {
+#ifdef LIBUDEV_PRESENT
+    nfds = 3;
+#else
+    nfds = 2;
+#endif
+    
+    main_p = malloc(nfds * sizeof(struct pollfd));
+    main_p[GETCH_IX] = (struct pollfd) {
         .fd = STDIN_FILENO,
         .events = POLLIN,
     };
-    signal(SIGSEGV, sigsegv_handler);
+    main_p[TIMER_IX] = (struct pollfd) {
+        .fd = start_timer(),
+        .events = POLLIN,
+    };
+#ifdef LIBUDEV_PRESENT
+    main_p[DEVMON_IX] = (struct pollfd) {
+        .fd = start_monitor(),
+        .events = POLLIN,
+    };
+#endif
 }
 
 /*

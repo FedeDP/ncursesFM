@@ -14,24 +14,19 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
 static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
-static void update_devices(char (*str)[PATH_MAX + 1]);
 static void enumerate_block_devices(void);
 static int is_mounted(const char *dev_path);
 static void get_mount_point(const char *dev_path, char *path);
 static int check_cwd(char *mounted_path);
-static void *device_monitor(void *x);
-static void sig_handler(int signum);
 static void change_mounted_status(int pos, const char *name);
 static int add_device(struct udev_device *dev, const char *name);
 static int remove_device(const char *name);
 static int is_present(const char *name);
 static void *safe_realloc(const size_t size);
-static void free_devices(void);
 
 static struct udev *udev;
 static int number_of_devices;
 char (*my_devices)[PATH_MAX + 1];
-static pthread_mutex_t dev_lock;
 static sd_bus *bus;
 
 #endif
@@ -240,7 +235,7 @@ finish:
 /*
  * Starts udisks2 bus monitor.
  */
-void start_monitor(void) {
+int start_monitor(void) {
     udev = udev_new();
     if (!udev) {
         WARN("could not create udev.");
@@ -249,15 +244,19 @@ void start_monitor(void) {
     if (init_mbus()) {
         goto fail;
     }
-    INFO("started device monitor th.");
-    pthread_create(&monitor_th, NULL, device_monitor, NULL);
-    return;
+    enumerate_block_devices();
+    if (quit) {
+        goto fail;
+    }
+    device_mode = DEVMON_READY;
+    sd_bus_process(bus, NULL);
+    INFO("started device monitor.");
+    return sd_bus_get_fd(bus);
 
 fail:
-    if (udev) {
-        udev_unref(udev);
-    }
+    free_device_monitor();
     device_mode = DEVMON_OFF;
+    return -1;
 }
 
 /*
@@ -318,7 +317,6 @@ static int init_mbus(void) {
 
 fail:
     WARN(strerror(-r));
-    sd_bus_flush_close_unref(bus);
     return r;
 }
 
@@ -355,7 +353,6 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
     } else {
         if (!strncmp(obj, path, strlen(obj))) {
             INFO("InterfaceAdded signal received!");
-            pthread_mutex_lock(&dev_lock);
             strcpy(name, strrchr(path, '/') + 1);
             dev = udev_device_new_from_subsystem_sysname(udev, "block", name);
             if (dev) {
@@ -364,10 +361,9 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
                 udev_device_unref(dev);
                 if (!quit && device_mode > DEVMON_READY && r != -1) {
                     print_info("New device connected.", INFO_LINE);
-                    update_devices(my_devices);
+                    update_special_mode(number_of_devices, device_mode - 1, my_devices);
                 }
             }
-            pthread_mutex_unlock(&dev_lock);
         } else {
             INFO("signal discarded.");
         }
@@ -392,14 +388,12 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
     } else {
         if (!strncmp(obj, path, strlen(obj))) {
             INFO("InterfaceRemoved signal received!");
-            pthread_mutex_lock(&dev_lock);
             strcpy(name, strrchr(path, '/') + 1);
             sprintf(devname, "/dev/%s", name);
             r = remove_device(devname);
             if (!quit && device_mode > DEVMON_READY && r != -1) {
-                update_devices(my_devices);
+                update_special_mode(number_of_devices, device_mode - 1, my_devices);
             }
-            pthread_mutex_unlock(&dev_lock);
         } else {
             INFO("signal discarded.");
         }
@@ -424,17 +418,15 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
     } else {
         if (!strncmp(obj, path, strlen(obj))) {
             INFO("PropertiesChanged UDisks2 signal received!");
-            pthread_mutex_lock(&dev_lock);
             const char *name = sd_bus_message_get_path(m);
             sprintf(devname, "/dev/%s", strrchr(name, '/') + 1);
             int present = is_present(devname);
             if (present != -1) {
                 change_mounted_status(present, devname);
                 if (!quit && device_mode > DEVMON_READY) {
-                    update_devices(NULL);
+                    update_special_mode(number_of_devices, device_mode - 1, NULL);
                 }
             }
-            pthread_mutex_unlock(&dev_lock);
         } else {
             INFO("signal discarded.");
         }
@@ -445,8 +437,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
 /*
  * Monitor UPower too, for AC (dis)connected events.
  * It won't monitor battery level changes (THIS IS NOT A BATTERY MONITOR!).
- * After receiving a signal, just unlock time_lock, this way
- * time_th will call update_time and reset it's 30s timeout.
+ * After receiving a signal, just calls timer_func() to update time/battery.
  */
 static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
     const char *obj = "/org/freedesktop/UPower";
@@ -454,15 +445,13 @@ static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error
     const char *path = sd_bus_message_get_path(m);
     if (!strcmp(path, obj)) {
         INFO("PropertiesChanged UPower signal received!");
-        pthread_mutex_unlock(&time_lock);
+        timer_func();
     }
     return 0;
 }
 
-static void update_devices(char (*str)[PATH_MAX + 1]) {
-    pthread_mutex_lock(&fm_lock);
-    update_special_mode(number_of_devices, device_mode - 1, str);
-    pthread_mutex_unlock(&fm_lock);
+void devices_bus_process(void) {
+    sd_bus_process(bus, NULL);
 }
 
 /*
@@ -595,7 +584,6 @@ void manage_mount_device(void) {
     char *ptr = strchr(my_devices[pos], ',');
     char name[PATH_MAX + 1], mounted_path[PATH_MAX + 1] = {0};
 
-    pthread_mutex_lock(&dev_lock);
     mount = my_devices[pos][len - 1] - '0';
     strcpy(name, my_devices[pos]);
     name[len - strlen(ptr)] = '\0';
@@ -615,7 +603,6 @@ void manage_mount_device(void) {
             mount_fs(name, "Mount", mount);
         }
     }
-    pthread_mutex_unlock(&dev_lock);
 }
 
 /*
@@ -653,7 +640,6 @@ void manage_enter_device(void) {
     char *ptr = strchr(my_devices[pos], ',');
     char dev_path[PATH_MAX + 1], name[PATH_MAX + 1] = {0};
 
-    pthread_mutex_lock(&dev_lock);
     mount = my_devices[pos][len - 1] - '0';
     strcpy(dev_path, my_devices[pos]);
     dev_path[len - strlen(ptr)] = '\0';
@@ -665,7 +651,6 @@ void manage_enter_device(void) {
         strcpy(ps[active].my_cwd, name);
         leave_device_mode();
     }
-    pthread_mutex_unlock(&dev_lock);
 }
 
 static void change_mounted_status(int pos, const char *name) {
@@ -689,49 +674,14 @@ void leave_device_mode(void) {
     change_dir(ps[active].my_cwd, active);
 }
 
-static void *device_monitor(void *x) {
-    int r;
-    sigset_t mask;
-    sigset_t orig_mask;
-    struct sigaction act = {0};
-    struct pollfd p;
-
-    act.sa_handler = sig_handler;
-    sigaction(SIGUSR2, &act, 0);
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGUSR2);
-    sigprocmask(SIG_BLOCK, &mask, &orig_mask);
-
-    pthread_mutex_init(&dev_lock, NULL);
-    enumerate_block_devices();
-    if (!quit) {
-        device_mode = DEVMON_READY;
-        p = (struct pollfd) {
-            .fd = sd_bus_get_fd(bus),
-            .events = POLLIN,
-        };
-    } else {
-        device_mode = DEVMON_OFF;
-    }
-    while (!quit) {
-        r = sd_bus_process(bus, NULL);
-        if (r > 0) {
-            continue;
-        }
-        r = ppoll(&p, 1, NULL, &orig_mask);
-        if (r < 0) {
-            break;
-        }
-    }
+void free_device_monitor(void) {
+    INFO("freeing device monitor resources...");
     sd_bus_flush_close_unref(bus);
-    pthread_mutex_destroy(&dev_lock);
-    free_devices();
+    if (my_devices) {
+        free(my_devices);
+    }
     udev_unref(udev);
-    pthread_exit(NULL);
-}
-
-static void sig_handler(int signum) {
-    INFO("received SIGUSR2 signal.");
+    INFO("freed.");
 }
 
 static int add_device(struct udev_device *dev, const char *name) {
@@ -806,14 +756,6 @@ static void *safe_realloc(const size_t size) {
         return my_devices;
     }
     return tmp;
-}
-
-static void free_devices(void) {
-    INFO("freeing resources...");
-    if (my_devices) {
-        free(my_devices);
-    }
-    INFO("freed.");
 }
 
 #endif

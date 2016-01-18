@@ -5,12 +5,8 @@ static void quit_thread_func(void);
 static void quit_worker_th(void);
 #ifdef SYSTEMD_PRESENT
 static void quit_install_th(void);
-#ifdef LIBUDEV_PRESENT
-static void quit_monitor_th(void);
-#endif
 #endif
 static void quit_search_th(void);
-static void quit_time_th(void);
 
 static int sig_flag;
 
@@ -31,6 +27,11 @@ int program_quit(int sig_received) {
 
 static void free_everything(void) {
     quit_thread_func();
+#ifdef LIBUDEV_PRESENT
+    free_device_monitor();
+#endif
+    free_timer();
+    free(main_p);
     if (selected) {
         free_copied_list(selected);
     }
@@ -40,12 +41,8 @@ static void quit_thread_func(void) {
     quit_worker_th();
 #ifdef SYSTEMD_PRESENT
     quit_install_th();
-#ifdef LIBUDEV_PRESENT
-    quit_monitor_th();
-#endif
 #endif
     quit_search_th();
-    quit_time_th();
 }
 
 static void quit_worker_th(void) {
@@ -85,16 +82,6 @@ static void quit_install_th(void) {
     }
 }
 
-#ifdef LIBUDEV_PRESENT
-static void quit_monitor_th(void) {
-    if ((monitor_th) && (pthread_kill(monitor_th, 0) != ESRCH)) {
-        INFO("sending SIGUSR2 signal to monitor th...");
-        pthread_kill(monitor_th, SIGUSR2);
-        pthread_join(monitor_th, NULL);
-        INFO("monitor th exited without errors.");
-    }
-}
-#endif
 #endif
 
 static void quit_search_th(void) {
@@ -102,15 +89,6 @@ static void quit_search_th(void) {
         INFO("waiting for search thread to leave...");
         pthread_join(search_th, NULL);
         INFO("search th left.");
-    }
-}
-
-static void quit_time_th(void) {
-    if (pthread_kill(time_th, 0) != ESRCH) {
-        INFO("waiting for time thread to leave...");
-        pthread_mutex_unlock(&time_lock);
-        pthread_join(time_th, NULL);
-        INFO("time thread exited.");
     }
 }
 

@@ -46,6 +46,10 @@
 #define DEVMON_STARTING -1
 #define DEVMON_READY 0
 
+#define GETCH_IX 0
+#define TIMER_IX 1
+#define DEVMON_IX 2
+
 /*
  * Useful macro to know number of elements in arrays
  */
@@ -116,7 +120,7 @@ typedef struct thread_list {
 } thread_job_list;
 
 /*
- * Stuct that keeps system path (eg: /sys/class/power_supply/BAT0)
+ * Struct that keeps system path (eg: /sys/class/power_supply/BAT0)
  * and energy_full for every battery.
  */
 struct supply {
@@ -128,8 +132,9 @@ struct supply {
  * Needed to interrupt main cycles getch
  * from external signals
  */
-struct pollfd main_p;
+struct pollfd *main_p;
 sigset_t main_mask;
+int nfds;
 
 thread_job_list *thread_h;
 file_list *selected;
@@ -138,11 +143,10 @@ struct vars ps[MAX_TABS];
 struct search_vars sv;
 
 /*
- * active win, quit status, number of worker thread jobs,
- * tabs counter, number of found batteries.
+ * active win, quit status, number of worker thread jobs, tabs counter.
  * Distance_from_root is used in both archiver and fm_functions (paste)
  */
-int active, quit, num_of_jobs, cont, distance_from_root, num_of_batt;
+int active, quit, num_of_jobs, cont, distance_from_root;
 
 /*
  * ncursesFM working modalities, plus sv.searching == 3 is another modality (missing here as declared before)
@@ -151,17 +155,13 @@ int device_mode, special_mode[MAX_TABS], fast_browse_mode[MAX_TABS], bookmarks_m
 
 /*
  * fm_lock -> locked before touching any fm window.
- * time_lock -> timedlocked in time_func() in time.c, with timeout of 30s
  */
-pthread_mutex_t fm_lock, time_lock;
+pthread_mutex_t fm_lock;
 
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;
-#ifdef LIBUDEV_PRESENT
-pthread_t monitor_th;
 #endif
-#endif
-pthread_t worker_th, search_th, time_th;
+pthread_t worker_th, search_th;
 
 /*
  * pointer to abstract which list of strings currently 

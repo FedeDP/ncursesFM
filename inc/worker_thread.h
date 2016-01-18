@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef SYSTEMD_PRESENT
 #include "inhibit.h"
 #else
