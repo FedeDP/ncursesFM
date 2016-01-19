@@ -3,6 +3,7 @@
 Reduced number of static thread from 3 to only 1 (main thread).
 Now it is slightly lighter on resources. There are less mutexes...overall code is way better than before.
 * switch to libudev to poll for batteries. Way simplier and reliable than looking /sys/class/power_supply/.
+* added some useful system informations print (uptime, ram usage...)
 * fixed some bugs: new win_getch() implementation couldn't get resize event. When connecting new device, no info was printed.
 * dropped term_size_check(), it was useless and too complicated (win_getch caused a deadlock with info_lock inside there. And there were other problems too.)
 I hope nobody resizes the win so small it causes drawing issues. In that case, enlarge it.
