@@ -48,5 +48,5 @@ void highlight_selected(int line, const char c);
 void erase_selected_highlight(void);
 void change_tab(void);
 void switch_fast_browse_mode(void);
-void update_time(const char *ac_path, struct supply *batt, int num_of_batt);
-int query_file(const char *path, const char *query, int *result);
+void update_time(void);
+void update_batt(int online, int perc[], int num_of_batt, char (*name)[NAME_MAX + 1]);

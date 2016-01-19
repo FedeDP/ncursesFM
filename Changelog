@@ -2,6 +2,7 @@
 * main ppoll will catch events from a timerfd (time + battery monitor's events) and sd_bus_get_fd (device monitor's events). 
 Reduced number of static thread from 3 to only 1 (main thread).
 Now it is slightly lighter on resources. There are less mutexes...overall code is way better than before.
+* switch to libudev to poll for batteries. Way simplier and reliable than looking /sys/class/power_supply/*.
 
 01 / 16 / 2016
 * added a clock + battery level line (useful as ncursesfm mainly targets non-X users, or users with a small X environment).

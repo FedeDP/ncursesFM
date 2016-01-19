@@ -40,7 +40,7 @@ static void read_config_file(void);
 #endif
 static void config_checks(void);
 static void main_loop(void);
-#ifdef LIBUDEV_PRESENT
+#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
 static void check_device_mode(void);
 #endif
 static void manage_enter(struct stat current_file_stat);
@@ -92,7 +92,7 @@ static void set_signals(void) {
 }
 
 static void set_pollfd(void) {
-#ifdef LIBUDEV_PRESENT
+#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
     nfds = 3;
 #else
     nfds = 2;
@@ -107,7 +107,7 @@ static void set_pollfd(void) {
         .fd = start_timer(),
         .events = POLLIN,
     };
-#ifdef LIBUDEV_PRESENT
+#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
     main_p[DEVMON_IX] = (struct pollfd) {
         .fd = start_monitor(),
         .events = POLLIN,
@@ -142,9 +142,11 @@ static void sigsegv_handler(int signum) {
 static void helper_function(int argc, const char *argv[]) {
     /* default value for starting_helper, bat_low_level and device_mode */
     config.starting_helper = 1;
-    config.bat_low_level = 15;
 #ifdef LIBUDEV_PRESENT
+    config.bat_low_level = 15;
+#ifdef SYSTEMD_PRESENT
     device_mode = DEVMON_STARTING;
+#endif
 #endif
 
     if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
@@ -386,7 +388,7 @@ static void main_loop(void) {
             }
             break;
 #endif
-#ifdef LIBUDEV_PRESENT
+#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
         case 'm': // m to mount/unmount fs
             check_device_mode();
             break;
@@ -437,7 +439,7 @@ unlock:
     }
 }
 
-#ifdef LIBUDEV_PRESENT
+#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
 static void check_device_mode(void) {
     if (sv.searching == 3 + active || bookmarks_mode[active]) {
         return;
@@ -462,7 +464,7 @@ static void manage_enter(struct stat current_file_stat) {
         sv.found_searched[ps[active].curr_pos][index] = '\0';
         leave_search_mode(sv.found_searched[ps[active].curr_pos]);
     }
-#ifdef LIBUDEV_PRESENT
+#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
     else if (device_mode == 1 + active) {
         manage_enter_device();
     }
@@ -481,7 +483,7 @@ static void manage_quit(void) {
     if (sv.searching == 3 + active) {
         leave_search_mode(ps[active].my_cwd);
     }
-#ifdef LIBUDEV_PRESENT
+#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
     else if (device_mode == 1 + active) {
         leave_device_mode();
     }

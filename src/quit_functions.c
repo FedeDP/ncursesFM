@@ -27,7 +27,7 @@ int program_quit(int sig_received) {
 
 static void free_everything(void) {
     quit_thread_func();
-#ifdef LIBUDEV_PRESENT
+#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
     free_device_monitor();
 #endif
     free_timer();

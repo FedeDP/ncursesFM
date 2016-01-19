@@ -21,7 +21,6 @@ static void erase_stat(void);
 static void resize_helper_win(void);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
-static void update_batt(const char *ac_path, struct supply *batt, int num_of_batt);
 
 struct scrstr {
     WINDOW *fm;
@@ -661,29 +660,34 @@ void ask_user(const char *str, char *input, int d, char c) {
 }
 
 int win_getch(WINDOW *win) {
+    int ret;
+    
     ppoll(main_p, nfds, NULL, &main_mask);
     for (int i = 0; i < nfds; i++) {
         if(main_p[i].revents == POLLIN) {
             switch (i) {
             case GETCH_IX:
                 if (!win) {
-                    return wgetch(mywin[active].fm);
+                    ret = wgetch(mywin[active].fm);
                 } else {
-                    return wgetch(win);
+                    ret = wgetch(win);
                 }
+                break;
             case TIMER_IX:
                 read(main_p[i].fd, NULL, 8);
                 timer_func();
-                return ERR;
-#ifdef LIBUDEV_PRESENT
+                ret = ERR;
+                break;
+#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
             case DEVMON_IX:
                 devices_bus_process();
-                return ERR;
+                ret = ERR;
+                break;
 #endif
             }
         }
     }
-    return 0;
+    return ret;
 }
 
 /*
@@ -849,7 +853,7 @@ void switch_fast_browse_mode(void) {
     wrefresh(mywin[active].fm);
 }
 
-void update_time(const char *ac_path, struct supply *batt, int num_of_batt) {
+void update_time(void) {
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     char date[30], time[10];
@@ -860,58 +864,33 @@ void update_time(const char *ac_path, struct supply *batt, int num_of_batt) {
     wmove(info_win, SYSTEM_INFO_LINE, 1);
     wclrtoeol(info_win);
     mvwprintw(info_win, SYSTEM_INFO_LINE, 1, "Date: %s, %s", date, time);
-    update_batt(ac_path, batt, num_of_batt);
-    wrefresh(info_win);
-    pthread_mutex_unlock(&info_lock);
 }
 
-static void update_batt(const char *ac_path, struct supply *batt, int num_of_batt) {
-    const char *fail = "No AC/battery info available.";
-    const char *ac_online = "On AC";
+void update_batt(int online, int perc[], int num_of_batt, char (*name)[NAME_MAX + 1]) {
+    const char *ac_online = "On AC", *fail = "No power supply info available.";
     char batt_str[20];
-    int online, energy_now, len = 0;
-
-    if (query_file(ac_path, "online", &online)) {
-        if (online) {
-            mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(ac_online), ac_online);
-            return;
-        }
-    } else {
+    int len = 0;
+    
+    switch (online) {
+    case -1:
         mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(fail), fail);
-        return;
-    }
-    for (int i = 0; i < num_of_batt; i++) {
-        if ((batt[i].energy_full != -1) && (query_file(batt[i].path, "energy_now", &energy_now))) {
-            int perc = (float)energy_now / (float)batt[i].energy_full * 100;
-            if (perc <= config.bat_low_level) {
+        break;
+    case 1:
+        mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(ac_online), ac_online);
+        break;
+    default:
+        for (int i = 0; i < num_of_batt; i++) {
+            sprintf(batt_str, "%s: %d%%%%", name[i], perc[i]);
+            len += strlen(batt_str) - 1;    /* -1 to delete a space derived from %%%% */
+            if (perc[i] <= config.bat_low_level) {
                 wattron(info_win, COLOR_PAIR(5));
             }
-            char *str = strrchr(batt[i].path, '/') + 1;
-            sprintf(batt_str, "%s: %d%%%%", str, perc);
-            len += strlen(batt_str) - 1;    /* -1 to delete a space derived from %%%% */
             mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - len, batt_str);
             wattroff(info_win, COLOR_PAIR);
             len++;  /* if there's another bat, at least divide the two batteries by 1 space */
         }
+        break;
     }
-    /* query_file "energy_now" always returned failed status */
-    if (!len) {
-        mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(fail), fail);
-    }
-}
-
-int query_file(const char *path, const char *query, int *result) {
-    FILE *f;
-    char filename[PATH_MAX + 1];
-    int ret = 1;
-
-    sprintf(filename, "%s/%s", path, query);
-    if ((f = fopen(filename, "r"))) {
-        fscanf(f, "%d", result);
-        fclose(f);
-    } else {
-        WARN("missing file.");
-        ret = 0;
-    }
-    return ret;
+    wrefresh(info_win);
+    pthread_mutex_unlock(&info_lock);
 }

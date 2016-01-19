@@ -60,11 +60,11 @@ endif
 ifneq ("$(LIBSYSTEMD)","")
 CFLAGS+=-DSYSTEMD_PRESENT
 $(info libsystemd support enabled.)
+endif
 
 ifneq ("$(LIBUDEV)","")
 CFLAGS+=-DLIBUDEV_PRESENT
 $(info libudev support enabled.)
-endif
 endif
 
 endif

@@ -17,7 +17,7 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
-* Simple clock and battery monitor (it will check every 30s for changes). It will list every battery.
+* Simple clock and battery monitor (it will check every 30s for changes). It will list every battery. Battmon needs libudev.
 If you've got Upower installed, AC (dis)connection will refresh battery status instantly, instead of waiting up to 30s until next refresh.
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
 * '.' to change files/dirs sorting mode: alphabetically (default), by size, by last modified or by type.
@@ -86,7 +86,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * libconfig -> config file parsing.
 * libx11    -> check whether ncursesFM is started in a X environment or not, and xdg-open support.
 * sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
-* libudev   -> needed for devices/iso mount, useful only if compiled with sd-bus.
+* libudev   -> needed for devices/iso mount, and batteries polling.
 * openssl   -> for shasum function support.
 
 ## Runtime dependencies
