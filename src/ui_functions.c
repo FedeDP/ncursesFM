@@ -593,11 +593,9 @@ void ask_user(const char *str, char *input, int d, char c) {
         s = win_getch(info_win);
         if (s == KEY_RESIZE) {
             resize_win();
-            if (!quit) {
-                char resize_str[200];
-                sprintf(resize_str, "%s%s", str, input);
-                print_info(resize_str, ASK_LINE);
-            }
+            char resize_str[200];
+            sprintf(resize_str, "%s%s", str, input);
+            print_info(resize_str, ASK_LINE);
         } else if (s == 10) { // enter to exit
             break;
         } else if (s != ERR) {
@@ -631,7 +629,6 @@ void ask_user(const char *str, char *input, int d, char c) {
 
 int win_getch(WINDOW *win) {
     int ret = ERR;
-    
     /*
      * resize event returns EPERM error with ppoll
      * see here: http://keyvanfatehi.com/2011/08/03/asynchronous-c-programs-an-event-loop-and-ncurses/
@@ -691,7 +688,7 @@ void update_special_mode(int num,  int win, char (*str)[PATH_MAX + 1]) {
         } else {
             list_everything(win, num - 1, 0);
         }
-    } else {    /* only for device_mode: change mounted status event */
+    } else {    /* only used in device_monitor: change mounted status event */
         list_everything(win, 0, 0);
     }
 }
@@ -862,7 +859,7 @@ static void update_sysinfo(void) {
                                                         si.loads[2] / (float)(1 << SI_LOAD_SHIFT));
     float used_ram = (si.totalram - si.freeram) / megabyte;
     len = strlen(sys_str);
-    sprintf(sys_str + len, "procs: %d, free ram: %.1fMb/%.1fMb", si.procs, used_ram, si.totalram / megabyte);
+    sprintf(sys_str + len, "procs: %d, ram usage: %.1fMb/%.1fMb", si.procs, used_ram, si.totalram / megabyte);
     len = strlen(sys_str);
     mvwprintw(info_win, SYSTEM_INFO_LINE, (COLS - len) / 2, "%.*s", COLS, sys_str);
 }
