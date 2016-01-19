@@ -833,12 +833,12 @@ void update_time(void) {
     struct tm tm = *localtime(&t);
     char date[30], time[10];
 
-    sprintf(date, "%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-    sprintf(time, "%02d:%02d", tm.tm_hour, tm.tm_min);
     wmove(info_win, SYSTEM_INFO_LINE, 1);
     wclrtoeol(info_win);
-    mvwprintw(info_win, SYSTEM_INFO_LINE, 1, "Date: %s, %s", date, time);
     update_sysinfo();
+    sprintf(date, "%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+    sprintf(time, "%02d:%02d", tm.tm_hour, tm.tm_min);
+    mvwprintw(info_win, SYSTEM_INFO_LINE, 1, "Date: %s, %s", date, time);
 }
 
 static void update_sysinfo(void) {
