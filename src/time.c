@@ -33,7 +33,6 @@ int start_timer(void) {
         timerValue.it_interval.tv_nsec = 0;
         timerfd_settime(timerfd, 0, &timerValue, NULL);
         INFO("started time/battery monitor.");
-        timer_func();
     }
     return timerfd;
 }

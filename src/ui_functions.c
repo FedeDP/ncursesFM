@@ -1,6 +1,5 @@
 #include "../inc/ui_functions.h"
 
-static void term_size_check(void);
 static void info_win_init(void);
 static void generate_list(int win);
 static int sizesort(const struct dirent **d1, const struct dirent **d2);
@@ -21,6 +20,7 @@ static void erase_stat(void);
 static void resize_helper_win(void);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
+static void update_sysinfo(void);
 
 struct scrstr {
     WINDOW *fm;
@@ -58,10 +58,6 @@ void screen_init(void) {
     raw();
     nodelay(stdscr, TRUE);
     notimeout(stdscr, TRUE);
-    term_size_check();
-    if (quit) {
-        return;
-    }
     dim = LINES - INFO_HEIGHT;
     if (config.starting_helper) {
         create_helper_win();
@@ -70,32 +66,6 @@ void screen_init(void) {
     cont = 1;
     new_tab(0);
     info_win_init();
-}
-
-static void term_size_check(void) {
-    int c;
-    int min_lines = INFO_HEIGHT + 3;
-    int min_cols = MAX_TABS * (STAT_LENGTH + 6);
-
-    if (helper_win || config.starting_helper) {
-        min_lines += HELPER_HEIGHT;
-    }
-    if ((LINES < min_lines) || (COLS < min_cols)) {
-        clear();
-        printw("Window too small, enlarge it. Q to exit.");
-        refresh();
-    }
-    while ((LINES < min_lines) || (COLS < min_cols)) {
-        do {
-            c = win_getch(stdscr);
-            if (tolower(c) == 'q') {
-                quit = NORM_QUIT;
-            }
-        } while (c != KEY_RESIZE && !quit);
-        if (quit) {
-            break;
-        }
-    }
 }
 
 /*
@@ -109,7 +79,7 @@ static void info_win_init(void) {
     for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because i won't print anything on last line */
         mvwprintw(info_win, i, 1, "%s", info_win_str[i]);
     }
-    wrefresh(info_win);
+    timer_func();
 }
 /*
  * Clear any existing window, and destroy mutexes
@@ -660,30 +630,40 @@ void ask_user(const char *str, char *input, int d, char c) {
 }
 
 int win_getch(WINDOW *win) {
-    int ret;
+    int ret = ERR;
     
-    ppoll(main_p, nfds, NULL, &main_mask);
-    for (int i = 0; i < nfds; i++) {
-        if(main_p[i].revents == POLLIN) {
-            switch (i) {
-            case GETCH_IX:
-                if (!win) {
-                    ret = wgetch(mywin[active].fm);
-                } else {
-                    ret = wgetch(win);
+    /*
+     * resize event returns EPERM error with ppoll
+     * see here: http://keyvanfatehi.com/2011/08/03/asynchronous-c-programs-an-event-loop-and-ncurses/
+     */
+    if (ppoll(main_p, nfds, NULL, &main_mask) == -EPERM) {
+        if (!win) {
+            ret = wgetch(mywin[active].fm);
+        } else {
+            ret = wgetch(win);
+        }
+    } else {
+        for (int i = 0; i < nfds; i++) {
+            if(main_p[i].revents & POLLIN) {
+                switch (i) {
+                case GETCH_IX:
+                    if (!win) {
+                        ret = wgetch(mywin[active].fm);
+                    } else {
+                        ret = wgetch(win);
+                    }
+                    break;
+                case TIMER_IX:
+                    read(main_p[i].fd, NULL, 8);
+                    timer_func();
+                    break;
+#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
+                case DEVMON_IX:
+                    devices_bus_process();
+                    break;
+#endif
                 }
                 break;
-            case TIMER_IX:
-                read(main_p[i].fd, NULL, 8);
-                timer_func();
-                ret = ERR;
-                break;
-#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
-            case DEVMON_IX:
-                devices_bus_process();
-                ret = ERR;
-                break;
-#endif
             }
         }
     }
@@ -734,16 +714,14 @@ void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title) {
  */
 void resize_win(void) {
     pthread_mutex_lock(&info_lock);
-    term_size_check();
-    if (!quit) {
-        delwin(info_win);
-        dim = LINES - INFO_HEIGHT;
-        if (helper_win) {
-            resize_helper_win();
-        }
-        resize_fm_win();
-        info_win_init();
+    wclear(info_win);
+    delwin(info_win);
+    dim = LINES - INFO_HEIGHT;
+    if (helper_win) {
+        resize_helper_win();
     }
+    resize_fm_win();
+    info_win_init();
     pthread_mutex_unlock(&info_lock);
     print_info("", INFO_LINE);
 }
@@ -860,10 +838,33 @@ void update_time(void) {
 
     sprintf(date, "%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
     sprintf(time, "%02d:%02d", tm.tm_hour, tm.tm_min);
-    pthread_mutex_lock(&info_lock);
     wmove(info_win, SYSTEM_INFO_LINE, 1);
     wclrtoeol(info_win);
     mvwprintw(info_win, SYSTEM_INFO_LINE, 1, "Date: %s, %s", date, time);
+    update_sysinfo();
+}
+
+static void update_sysinfo(void) {
+    const long minute = 60;
+    const long hour = minute * 60;
+    const long day = hour * 24;
+    const double megabyte = 1024 * 1024;
+    char sys_str[100];
+    int len;
+    struct sysinfo si;
+    
+    sysinfo (&si);
+    sprintf(sys_str, "up: %ldd, %ldh, %02ldm, ", si.uptime / day, (si.uptime % day) / hour, 
+                                                    (si.uptime % hour) / minute);
+    len = strlen(sys_str);
+    sprintf(sys_str + len, "loads: %.2f, %.2f, %.2f. ", si.loads[0] / (float)(1 << SI_LOAD_SHIFT),
+                                                        si.loads[1] / (float)(1 << SI_LOAD_SHIFT),
+                                                        si.loads[2] / (float)(1 << SI_LOAD_SHIFT));
+    float used_ram = (si.totalram - si.freeram) / megabyte;
+    len = strlen(sys_str);
+    sprintf(sys_str + len, "procs: %d, free ram: %.1fMb/%.1fMb", si.procs, used_ram, si.totalram / megabyte);
+    len = strlen(sys_str);
+    mvwprintw(info_win, SYSTEM_INFO_LINE, (COLS - len) / 2, "%.*s", COLS, sys_str);
 }
 
 void update_batt(int online, int perc[], int num_of_batt, char (*name)[NAME_MAX + 1]) {
@@ -872,10 +873,10 @@ void update_batt(int online, int perc[], int num_of_batt, char (*name)[NAME_MAX 
     int len = 0;
     
     switch (online) {
-    case -1:
+    case -1:    /* build without libudev support. No info available. */
         mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(fail), fail);
         break;
-    case 1:
+    case 1:     /* ac connected */
         mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(ac_online), ac_online);
         break;
     default:
@@ -892,5 +893,4 @@ void update_batt(int online, int perc[], int num_of_batt, char (*name)[NAME_MAX 
         break;
     }
     wrefresh(info_win);
-    pthread_mutex_unlock(&info_lock);
 }

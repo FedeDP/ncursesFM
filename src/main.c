@@ -68,9 +68,9 @@ int main(int argc, const char *argv[])
     open_log();
     config_checks();
     get_bookmarks();
-    screen_init();
     set_pollfd();
     if (!quit) {
+        screen_init();
         chdir(ps[active].my_cwd);
         main_loop();
     }

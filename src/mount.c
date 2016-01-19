@@ -359,8 +359,8 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
                 sprintf(devname, "/dev/%s", name);
                 r = add_device(dev, devname);
                 udev_device_unref(dev);
+                print_info("New device connected.", INFO_LINE);
                 if (!quit && device_mode > DEVMON_READY && r != -1) {
-                    print_info("New device connected.", INFO_LINE);
                     update_special_mode(number_of_devices, device_mode - 1, my_devices);
                 }
             }

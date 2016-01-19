@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <archive.h>
 #include <archive_entry.h>
+#include <sys/sysinfo.h>
 
 #define INFO_HEIGHT 4
 #define SEL_COL 3
