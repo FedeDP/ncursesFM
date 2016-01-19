@@ -42,6 +42,9 @@ Device monitor will list only mountable devices, eg: dvd reader will not be list
 * Distro package files installation.
 * It can reveice AC (dis)connection events from upower, to instantly update battery monitor.
 
+Despite all of these features, it still manages to be very light on resources: full build uses only c3.2Mb of (private + shared)ram; disabling libcups cuts down ram usage to c2.5Mb; of these, c50% are used by ncurses screen.  
+Ncurses screen ram usage depends upon window size; my tests were made on a fullscreen session on my 15" laptop, using ps_mem.
+
 ---
 
 If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf...remember to set them!

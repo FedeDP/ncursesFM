@@ -854,7 +854,7 @@ static void update_sysinfo(void) {
     sprintf(sys_str, "up: %ldd, %ldh, %02ldm, ", si.uptime / day, (si.uptime % day) / hour, 
                                                     (si.uptime % hour) / minute);
     len = strlen(sys_str);
-    sprintf(sys_str + len, "loads: %.2f, %.2f, %.2f. ", si.loads[0] / (float)(1 << SI_LOAD_SHIFT),
+    sprintf(sys_str + len, "loads: %.2f, %.2f, %.2f, ", si.loads[0] / (float)(1 << SI_LOAD_SHIFT),
                                                         si.loads[1] / (float)(1 << SI_LOAD_SHIFT),
                                                         si.loads[2] / (float)(1 << SI_LOAD_SHIFT));
     float used_ram = (si.totalram - si.freeram) / megabyte;
