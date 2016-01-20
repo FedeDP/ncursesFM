@@ -7,9 +7,6 @@ Ncurses File Manager for linux.
 It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.  
 Being simple doesn't imply being useless; indeed it is a full featured fm.  
 It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).  
-As already stated, it manages to be very light on resources: full build uses only c3.2Mb of (private + shared) ram.  
-Disabling libcups cuts down ram usage to c2.5Mb; of these, c50% are used by ncurses screen.  
-Ncurses screen ram usage depends upon window size; my tests were made on a fullscreen session on my 15" laptop, using ps_mem.
 
 ![](https://github.com/FedeDP/ncursesFM/raw/master/ncursesFM.png)
 
