@@ -1,7 +1,7 @@
 #pragma once
 
 #include "log.h"
-#include "time.h"
+#include "timer.h"
 #include "mount.h"
 #include "string_constants.h"
 #include "quit_functions.h"
@@ -36,7 +36,7 @@ void scroll_up(void);
 void trigger_show_helper_message(void);
 void trigger_stats(void);
 void change_unit(float size, char *str);
-int win_getch(WINDOW *win);
+int main_poll(WINDOW *win);
 void tab_refresh(int win);
 void update_special_mode(int num, int win, char (*str)[PATH_MAX + 1]);
 void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title);

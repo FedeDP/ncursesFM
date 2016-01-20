@@ -46,9 +46,13 @@
 #define DEVMON_STARTING -1
 #define DEVMON_READY 0
 
+/*
+ * struct pollfd indexes
+ */
 #define GETCH_IX 0
 #define TIMER_IX 1
-#define DEVMON_IX 2
+#define WORKER_IX 2
+#define DEVMON_IX 3
 
 /*
  * Useful macro to know number of elements in arrays
@@ -130,11 +134,14 @@ struct supply {
 
 /*
  * Needed to interrupt main cycles getch
- * from external signals
+ * from external signals.
+ * nfds: number of elements in main_p struct.
+ * worker_fd: eventfd used to signal main_poll() that worker th 
+ * requested a refresh.
  */
 struct pollfd *main_p;
 sigset_t main_mask;
-int nfds;
+int nfds, worker_fd;
 
 thread_job_list *thread_h;
 file_list *selected;
@@ -152,11 +159,6 @@ int active, quit, num_of_jobs, cont, distance_from_root;
  * ncursesFM working modalities, plus sv.searching == 3 is another modality (missing here as declared before)
  */
 int device_mode, special_mode[MAX_TABS], fast_browse_mode[MAX_TABS], bookmarks_mode[MAX_TABS];
-
-/*
- * fm_lock -> locked before touching any fm window.
- */
-pthread_mutex_t fm_lock;
 
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;

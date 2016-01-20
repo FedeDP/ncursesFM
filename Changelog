@@ -7,6 +7,7 @@ Now it is slightly lighter on resources. There are less mutexes...overall code i
 * fixed some bugs: new win_getch() implementation couldn't get resize event. When connecting new device, no info was printed.
 * dropped term_size_check(), it was useless and too complicated (win_getch caused a deadlock with info_lock inside there. And there were other problems too.)
 I hope nobody resizes the win so small it causes drawing issues. In that case, enlarge it.
+* now using a eventfd in worker_th to signal main_poll that a refresh is needed for some tab.
 
 01 / 16 / 2016
 * added a clock + battery level line (useful as ncursesfm mainly targets non-X users, or users with a small X environment).

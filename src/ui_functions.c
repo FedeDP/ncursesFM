@@ -17,6 +17,7 @@ static void create_helper_win(void);
 static void remove_helper_win(void);
 static void show_stat(int init, int end, int win);
 static void erase_stat(void);
+static void worker_th_refresh(uint64_t val);
 static void resize_helper_win(void);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
@@ -43,7 +44,6 @@ static int sorting_index;
  * Initializes screen, colors etc etc, and calls fm_scr_init.
  */
 void screen_init(void) {
-    pthread_mutex_init(&fm_lock, NULL);
     pthread_mutex_init(&info_lock, NULL);
     setlocale(LC_ALL, "");
     initscr();
@@ -94,7 +94,6 @@ void screen_end(void) {
     }
     delwin(stdscr);
     endwin();
-    pthread_mutex_destroy(&fm_lock);
     pthread_mutex_destroy(&info_lock);
 }
 
@@ -582,15 +581,11 @@ void print_and_warn(const char *err, int line) {
  */
 void ask_user(const char *str, char *input, int d, char c) {
     int s, len, i = 0;
-    /*
-     * Do not keep fm_lock locked while waiting
-     * for user input (we won't print anything to fm win here)
-     */
-    pthread_mutex_unlock(&fm_lock);
+
     print_info(str, ASK_LINE);
     while ((i < d) && (!quit)) {
         wrefresh(info_win);
-        s = win_getch(info_win);
+        s = main_poll(info_win);
         if (s == KEY_RESIZE) {
             resize_win();
             char resize_str[200];
@@ -624,26 +619,28 @@ void ask_user(const char *str, char *input, int d, char c) {
         input[0] = c;
     }
     print_info("", ASK_LINE);
-    pthread_mutex_lock(&fm_lock);
 }
 
-int win_getch(WINDOW *win) {
+int main_poll(WINDOW *win) {
     int ret = ERR;
+    uint64_t tab;
     /*
      * resize event returns EPERM error with ppoll
      * see here: http://keyvanfatehi.com/2011/08/03/asynchronous-c-programs-an-event-loop-and-ncurses/
      */
-    if (ppoll(main_p, nfds, NULL, &main_mask) == -EPERM) {
+    int r = ppoll(main_p, nfds, NULL, &main_mask);
+    if (r == -EPERM) {
         if (!win) {
             ret = wgetch(mywin[active].fm);
         } else {
             ret = wgetch(win);
         }
     } else {
-        for (int i = 0; i < nfds; i++) {
+        for (int i = 0; i < nfds && r > 0; i++) {
             if(main_p[i].revents & POLLIN) {
                 switch (i) {
                 case GETCH_IX:
+                /* we received an user input */
                     if (!win) {
                         ret = wgetch(mywin[active].fm);
                     } else {
@@ -651,20 +648,42 @@ int win_getch(WINDOW *win) {
                     }
                     break;
                 case TIMER_IX:
+                /* we received a timer expiration signal on timerfd */
                     read(main_p[i].fd, NULL, 8);
                     timer_func();
                     break;
+                case WORKER_IX:
+                /* we received a refresh needed signal by worker_th */
+                    read(main_p[i].fd, &tab, sizeof(tab));
+                    worker_th_refresh(tab);
+                    break;
 #if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
                 case DEVMON_IX:
+                /* we received a bus event */
                     devices_bus_process();
                     break;
 #endif
                 }
-                break;
+                r--;
             }
         }
     }
     return ret;
+}
+
+/*
+ * val will carry the sum of tabs numbers that need refresh (+ 1).
+ * If val == 3 -> then we need to update both (1 + 2),
+ * else we only need to update one tab (val - 1)
+ */
+static void worker_th_refresh(uint64_t val) {
+    if (val == 3) {
+        for (int i = 0; i < cont; i++) {
+            tab_refresh(i);
+        }
+    } else {
+        tab_refresh(val - 1);
+    }
 }
 
 /*
@@ -850,7 +869,7 @@ static void update_sysinfo(void) {
     int len;
     struct sysinfo si;
     
-    sysinfo (&si);
+    sysinfo(&si);
     sprintf(sys_str, "up: %ldd, %ldh, %02ldm, ", si.uptime / day, (si.uptime % day) / hour, 
                                                     (si.uptime % hour) / minute);
     len = strlen(sys_str);

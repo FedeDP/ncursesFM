@@ -22,8 +22,8 @@
  * END_COMMON_COPYRIGHT_HEADER */
 
 #include "../inc/fm_functions.h"
-#include "../inc/time.h"
 #include "../inc/bookmarks.h"
+#include <sys/eventfd.h>
 
 #ifdef LIBCONFIG_PRESENT
 #include <libconfig.h>
@@ -93,9 +93,9 @@ static void set_signals(void) {
 
 static void set_pollfd(void) {
 #if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
-    nfds = 3;
+    nfds = 4;
 #else
-    nfds = 2;
+    nfds = 3;
 #endif
     
     main_p = malloc(nfds * sizeof(struct pollfd));
@@ -105,6 +105,11 @@ static void set_pollfd(void) {
     };
     main_p[TIMER_IX] = (struct pollfd) {
         .fd = start_timer(),
+        .events = POLLIN,
+    };
+    worker_fd = eventfd(0, 0);
+    main_p[WORKER_IX] = (struct pollfd) {
+        .fd = worker_fd,
         .events = POLLIN,
     };
 #if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
@@ -310,15 +315,14 @@ static void main_loop(void) {
     struct stat current_file_stat;
 
     while (!quit) {
-        c = win_getch(NULL);
-        pthread_mutex_lock(&fm_lock);
+        c = main_poll(NULL);
         if ((fast_browse_mode[active]) && isgraph(c) && (c != ',')) {
             fast_browse(c);
-            goto unlock;
+            continue;
         }
         c = tolower(c);
         if (special_mode[active] && isprint(c) && !strchr(special_mode_allowed_chars, c)) {
-            goto unlock;
+            continue;
         }
         stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
         switch (c) {
@@ -434,8 +438,6 @@ static void main_loop(void) {
             }
             break;
         }
-unlock:
-        pthread_mutex_unlock(&fm_lock);
     }
 }
 

@@ -141,14 +141,22 @@ static void *execute_thread(void *x) {
     pthread_exit(NULL);
 }
 
+/*
+ * check if a refresh is needed; value will carry the sum of tabs 
+ * that need refresh (+1 to avoid writing 0 for only first tab)
+ */
 static void check_refresh(void) {
-    pthread_mutex_lock(&fm_lock);
+    uint64_t value = 0;
+
     for (int i = 0; i < cont; i++) {
         if ((thread_h->type != RM_TH && strcmp(ps[i].my_cwd, thread_h->full_path) == 0) || refresh_needed(ps[i].my_cwd)) {
-            tab_refresh(i);
+            value += (i + 1);
         }
     }
-    pthread_mutex_unlock(&fm_lock);
+    /* tell main_poll() that current dir needs refreshing */
+    if (value != 0) {
+        write(worker_fd, &value, sizeof(uint64_t));
+    }
 }
 
 /*
