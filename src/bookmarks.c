@@ -141,7 +141,6 @@ void manage_enter_bookmarks(void) {
     char c;
     
     if (change_dir(str_ptr[active][ps[active].curr_pos], active) == -1) {
-        update_special_mode(num_bookmarks, active, NULL);
         ask_user(inexistent_bookmark, &c, 1, 'y');
         if (c != 'n') {
             remove_bookmark();
