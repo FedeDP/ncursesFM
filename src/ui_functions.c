@@ -645,6 +645,7 @@ int main_poll(WINDOW *win) {
             ret = wgetch(win);
         }
     } else {
+        /* check if we received more than 1 event at the same time */
         for (int i = 0; i < nfds && r > 0; i++) {
             if(main_p[i].revents & POLLIN) {
                 switch (i) {
@@ -677,6 +678,12 @@ int main_poll(WINDOW *win) {
             }
         }
     }
+    /*
+     * if ret == ERR - 1, it means we did not receive a getch event.
+     * it would be useless to return to main_cycle, because there would be
+     * a switch case, a stat call, and other checks completely useless in this case.
+     * Return directly main_poll to resume waiting on fds.
+     */
     if (ret == ERR - 1) {
         return main_poll(win);
     }
