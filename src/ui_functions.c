@@ -621,8 +621,17 @@ void ask_user(const char *str, char *input, int d, char c) {
     print_info("", ASK_LINE);
 }
 
+/*
+ * call ppoll; it is interruptable from SIGINT and SIGTERM signals.
+ * It will poll for getch events, timerfd events, 
+ * worker_thread events (eventfd) and bus events.
+ * If occurred event is not a getch event, return recursively main_poll
+ * (ie: we don't need to come back to the cycle that called main_poll, because no buttons has been pressed)
+ * else return getch value (it will be ERR if a signal has been received, as ppoll gets interrupted but
+ * getch is in notimeout mode)
+ */
 int main_poll(WINDOW *win) {
-    int ret = ERR;
+    int ret = ERR - 1;
     uint64_t tab;
     /*
      * resize event returns EPERM error with ppoll
@@ -667,6 +676,9 @@ int main_poll(WINDOW *win) {
                 r--;
             }
         }
+    }
+    if (ret == ERR - 1) {
+        return main_poll(win);
     }
     return ret;
 }
