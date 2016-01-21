@@ -20,6 +20,7 @@ const char *bookmarks_file_err;
 const char *bookmark_added;
 const char *bookmarks_rm;
 const char *no_bookmarks;
+const char *inexistent_bookmark;
 
 const char *file_selected;
 const char *no_selected_files;

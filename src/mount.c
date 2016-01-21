@@ -233,7 +233,8 @@ finish:
 }
 
 /*
- * Starts udisks2 bus monitor.
+ * Starts udisks2 bus monitor and returns the
+ * fd associated with the bus connection.
  */
 int start_monitor(void) {
     udev = udev_new();
@@ -670,7 +671,6 @@ static void change_mounted_status(int pos, const char *name) {
 
 void leave_device_mode(void) {
     device_mode = DEVMON_READY;
-    special_mode[active] = 0;
     change_dir(ps[active].my_cwd, active);
 }
 
@@ -684,6 +684,13 @@ void free_device_monitor(void) {
     INFO("freed.");
 }
 
+/*
+ * Check if dev must be ignored, then
+ * check if it is a mountable fs (eg: a dvd reader without a dvd inserted, is NOT a moutable fs),
+ * and its mount status. Then add the device to my_devices.
+ * If the dev is a loop_dev or if config.automount is == 1 and the dev is not mounted,
+ * it will mount the device.
+ */
 static int add_device(struct udev_device *dev, const char *name) {
     int mount;
     long size;
@@ -724,10 +731,7 @@ static int remove_device(const char *name) {
     int i = is_present(name);
 
     if (i != -1) {
-        while (i < number_of_devices - 1) {
-            strcpy(my_devices[i], my_devices[i + 1]);
-            i++;
-        }
+        memmove(&my_devices[i], &my_devices[i + 1], (number_of_devices - 1 - i) * sizeof(my_devices[0]));
         my_devices = safe_realloc(PATH_MAX * (number_of_devices - 1));
         if (!quit) {
             number_of_devices--;

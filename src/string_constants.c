@@ -21,6 +21,7 @@ const char *bookmarks_file_err = "Could not open bookmarks file.";
 const char *bookmark_added = "Added to bookmarks!";
 const char *bookmarks_rm = "Removed fron bookmarks!";
 const char *no_bookmarks = "No bookmarks found.";
+const char *inexistent_bookmark = "It seems current bookmark no longer exists. Remove it? Y/n:>";
 
 const char *file_selected = "This file is already selected. Cancel its selection before.";
 const char *no_selected_files = "There are no selected files.";

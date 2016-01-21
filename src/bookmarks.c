@@ -86,9 +86,7 @@ void add_file_to_bookmarks(const char *str) {
 }
 
 void remove_bookmark_from_file(void) {
-    FILE *f;
-    const char *home_dir = getpwuid(getuid())->pw_dir;
-    char fullpath[PATH_MAX + 1], c;
+    char c;
 
     if (ps[active].curr_pos < xdg_bookmarks) {
         print_info(bookmarks_xdg_err, ERR_LINE);
@@ -97,26 +95,29 @@ void remove_bookmark_from_file(void) {
         if (c == 'n' || quit) {
             return;
         }
-        sprintf(fullpath, "%s%s", home_dir, bookmarks_path);
-        if ((f = fopen(fullpath, "w"))) {
-            remove_bookmark();
-            for (int i = xdg_bookmarks; i < num_bookmarks; i++) {
-                fprintf(f, "%s\n", bookmarks[i]);
-            }
-            fclose(f);
-            update_bookmarks_tabs();
-        } else {
-            print_info(bookmarks_file_err, ERR_LINE);
-        }
+        remove_bookmark();
     }
 }
 
 static void remove_bookmark(void) {
-    for (int i = ps[active].curr_pos; i < num_bookmarks - 1; i++) {
-        strcpy(bookmarks[i], bookmarks[i + 1]);
+    FILE *f;
+    const char *home_dir = getpwuid(getuid())->pw_dir;
+    char fullpath[PATH_MAX + 1];
+    int i = ps[active].curr_pos;
+    
+    sprintf(fullpath, "%s%s", home_dir, bookmarks_path);
+    if ((f = fopen(fullpath, "w"))) {
+        memmove(&bookmarks[i], &bookmarks[i + 1], (num_bookmarks - 1 - i) * sizeof(bookmarks[0]));
+        num_bookmarks--;
+        print_info(bookmarks_rm, INFO_LINE);
+        for (int i = xdg_bookmarks; i < num_bookmarks; i++) {
+            fprintf(f, "%s\n", bookmarks[i]);
+        }
+        fclose(f);
+        update_bookmarks_tabs();
+    } else {
+        print_info(bookmarks_file_err, ERR_LINE);
     }
-    num_bookmarks--;
-    print_info(bookmarks_rm, INFO_LINE);
 }
 
 static void update_bookmarks_tabs(void) {
@@ -136,7 +137,21 @@ void show_bookmarks(void) {
     }
 }
 
+void manage_enter_bookmarks(void) {
+    char c;
+    
+    if (change_dir(str_ptr[active][ps[active].curr_pos], active) == -1) {
+        update_special_mode(num_bookmarks, active, NULL);
+        ask_user(inexistent_bookmark, &c, 1, 'y');
+        if (c != 'n') {
+            remove_bookmark();
+        }
+    } else {
+        bookmarks_mode[active] = 0;
+    }
+}
+
 void leave_bookmarks_mode(void) {
     bookmarks_mode[active] = 0;
-    special_mode[active] = 0;
+    change_dir(ps[active].my_cwd, active);
 }

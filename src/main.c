@@ -471,10 +471,9 @@ static void manage_enter(struct stat current_file_stat) {
         manage_enter_device();
     }
 #endif
-    else if (S_ISDIR(current_file_stat.st_mode)) {
-        if (bookmarks_mode[active]) {
-            leave_bookmarks_mode();
-        }
+    else if (bookmarks_mode[active]) {
+        manage_enter_bookmarks();
+    } else if (S_ISDIR(current_file_stat.st_mode)) {
         change_dir(str_ptr[active][ps[active].curr_pos], active);
     } else {
         manage_file(str_ptr[active][ps[active].curr_pos], current_file_stat.st_size);
@@ -492,7 +491,6 @@ static void manage_quit(void) {
 #endif
     else if (bookmarks_mode[active]) {
         leave_bookmarks_mode();
-        change_dir(ps[active].my_cwd, active);
     } else {
         quit = NORM_QUIT;
     }

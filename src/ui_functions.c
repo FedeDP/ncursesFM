@@ -705,9 +705,13 @@ void update_special_mode(int num,  int win, char (*str)[PATH_MAX + 1]) {
         if (check < 0) {
             reset_win(win);
         } else {
-            list_everything(win, num - 1, 0);
+            list_everything(win, num - 1, 1);
         }
-    } else {    /* only used in device_monitor: change mounted status event */
+    } else {    
+        /* 
+         * Used in device_monitor: change mounted status event and
+         * in bookmarks mode if changing dir fails (ie: bookmark no longer exists)
+         */
         list_everything(win, 0, 0);
     }
 }

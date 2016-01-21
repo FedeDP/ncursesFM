@@ -22,14 +22,20 @@ static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
     new_file, new_dir, rename_file_folders
 };
 
-void change_dir(const char *str, int win) {
+int change_dir(const char *str, int win) {
+    int ret;
+    
     if (chdir(str) != -1) {
+        special_mode[win] = 0;
         getcwd(ps[win].my_cwd, PATH_MAX);
         sprintf(ps[win].title, "%s", ps[win].my_cwd);
         tab_refresh(win);
+        ret = 0;
     } else {
         print_info(strerror(errno), ERR_LINE);
+        ret = -1;
     }
+    return ret;
 }
 
 void switch_hidden(void) {
