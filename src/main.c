@@ -107,15 +107,15 @@ static void set_pollfd(void) {
         .fd = start_timer(),
         .events = POLLIN,
     };
-    inotify_fd[0] = inotify_init();
-    inotify_fd[1] = inotify_init();
+    inot[0].fd = inotify_init();
+    inot[1].fd = inotify_init();
     event_mask = IN_MODIFY | IN_ATTRIB | IN_CREATE | IN_DELETE | IN_MOVE;
     main_p[INOTIFY_IX1] = (struct pollfd) {
-        .fd = inotify_fd[0],
+        .fd = inot[0].fd,
         .events = POLLIN,
     };
     main_p[INOTIFY_IX2] = (struct pollfd) {
-        .fd = inotify_fd[1],
+        .fd = inot[1].fd,
         .events = POLLIN,
     };
     info_fd = eventfd(0, 0);

@@ -312,7 +312,7 @@ static void initialize_tab_cwd(int win) {
         getcwd(ps[win].my_cwd, PATH_MAX);
     }
     sprintf(ps[win].title, "%s", ps[win].my_cwd);
-    inotify_wd[win] = inotify_add_watch(inotify_fd[win], ps[win].my_cwd, event_mask);
+    inot[win].wd = inotify_add_watch(inot[win].fd, ps[win].my_cwd, event_mask);
     tab_refresh(win);
 }
 
@@ -326,7 +326,7 @@ void delete_tab(int win) {
     memset(mywin[win].tot_size, 0, strlen(mywin[win].tot_size));
     mywin[win].stat_active = STATS_OFF;
     free(ps[win].nl);
-    inotify_rm_watch(inotify_fd[win], inotify_wd[win]);
+    inotify_rm_watch(inot[win].fd, inot[win].wd);
     ps[win].nl = NULL;
 }
 
@@ -707,7 +707,7 @@ int main_poll(WINDOW *win) {
                     inotify_refresh(1);
                     break;
                 case INFO_IX:
-                    /* we received an event from inotify for the second tab */
+                    /* we received an event from eventf to print a info msg */
                     pthread_mutex_lock(&info_lock);
                     read(main_p[i].fd, &x, sizeof(uint64_t));
                     print_info_str();
@@ -744,7 +744,7 @@ static void inotify_refresh(int win) {
     int i = 0;
     char buffer[BUF_LEN];
     
-    len = read(inotify_fd[win], buffer, BUF_LEN);
+    len = read(inot[win].fd, buffer, BUF_LEN);
     while (i < len) {
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
         /* ignore events for hidden files if config.show_hidden is false */

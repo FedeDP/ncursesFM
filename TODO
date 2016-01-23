@@ -7,4 +7,6 @@
  * ask to force if unmount fails? -> http://udisks.freedesktop.org/docs/latest/gdbus-org.freedesktop.UDisks2.Filesystem.html#gdbus-method-org-freedesktop-UDisks2-Filesystem.Unmount
  *
  * sshfs support?
+ * 
+ * cleanup code: check for useless functions, static functions...etc etc
  */

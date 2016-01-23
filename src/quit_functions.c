@@ -35,8 +35,8 @@ static void free_everything(void) {
     if (selected) {
         free_copied_list(selected);
     }
-    close(inotify_fd[0]);
-    close(inotify_fd[1]);
+    close(inot[0].fd);
+    close(inot[1].fd);
 }
 
 static void quit_thread_func(void) {

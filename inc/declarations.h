@@ -142,15 +142,26 @@ struct supply {
 };
 
 /*
- * Needed to interrupt main cycles getch
- * from external signals.
- * nfds: number of elements in main_p struct.
- * worker_fd: eventfd used to signal main_poll() that worker th 
- * requested a refresh.
+ * for each tab: an fd to catch inotify events,
+ * and a wd, that uniquely represents an inotify watch.
+ */
+struct inotify {
+    int fd;
+    int wd;
+};
+
+/*
+ * main_p: Needed to interrupt main cycles getch
+ * from external signals;
+ * nfds: number of elements in main_p struct;
+ * event_mask: bit mask used for inotify_add_watch;
+ * info_fd: eventfd used to signal main_poll() that 
+ * a info_msg is waiting to be printed;
  */
 struct pollfd *main_p;
 sigset_t main_mask;
-int nfds, inotify_fd[MAX_TABS], inotify_wd[MAX_TABS], event_mask, info_fd;
+int nfds, event_mask, info_fd;
+struct inotify inot[MAX_TABS];
 
 thread_job_list *thread_h;
 file_list *selected;

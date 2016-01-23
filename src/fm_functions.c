@@ -30,8 +30,8 @@ int change_dir(const char *str, int win) {
         getcwd(ps[win].my_cwd, PATH_MAX);
         sprintf(ps[win].title, "%s", ps[win].my_cwd);
         tab_refresh(win);
-        inotify_rm_watch(inotify_fd[win], inotify_wd[win]);
-        inotify_wd[win] = inotify_add_watch(inotify_fd[win], ps[win].my_cwd, event_mask);
+        inotify_rm_watch(inot[win].fd, inot[win].wd);
+        inot[win].wd = inotify_add_watch(inot[win].fd, ps[win].my_cwd, event_mask);
         ret = 0;
     } else {
         print_info(strerror(errno), ERR_LINE);
