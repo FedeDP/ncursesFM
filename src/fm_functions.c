@@ -30,6 +30,8 @@ int change_dir(const char *str, int win) {
         getcwd(ps[win].my_cwd, PATH_MAX);
         sprintf(ps[win].title, "%s", ps[win].my_cwd);
         tab_refresh(win);
+        inotify_rm_watch(inotify_fd[win], inotify_wd[win]);
+        inotify_wd[win] = inotify_add_watch(inotify_fd[win], ps[win].my_cwd, event_mask);
         ret = 0;
     } else {
         print_info(strerror(errno), ERR_LINE);
@@ -173,11 +175,6 @@ void fast_file_operations(const int index) {
     }
     int r = short_func[index](new_name);
     if (r == 0) {
-        for (int i = 0; i < cont; i++) {
-            if (strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0) {
-                tab_refresh(i);
-            }
-        }
         print_info(short_msg[index], INFO_LINE);
     } else {
         print_info(strerror(-r), ERR_LINE);

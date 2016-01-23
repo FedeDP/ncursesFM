@@ -110,7 +110,7 @@ static void remove_bookmark(void) {
         memmove(&bookmarks[i], &bookmarks[i + 1], (num_bookmarks - 1 - i) * sizeof(bookmarks[0]));
         num_bookmarks--;
         print_info(bookmarks_rm, INFO_LINE);
-        for (int i = xdg_bookmarks; i < num_bookmarks; i++) {
+        for (i = xdg_bookmarks; i < num_bookmarks; i++) {
             fprintf(f, "%s\n", bookmarks[i]);
         }
         fclose(f);

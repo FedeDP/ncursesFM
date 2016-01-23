@@ -93,9 +93,9 @@ static void set_signals(void) {
 
 static void set_pollfd(void) {
 #if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
-    nfds = 4;
+    nfds = 6;
 #else
-    nfds = 3;
+    nfds = 5;
 #endif
     
     main_p = malloc(nfds * sizeof(struct pollfd));
@@ -107,9 +107,20 @@ static void set_pollfd(void) {
         .fd = start_timer(),
         .events = POLLIN,
     };
-    worker_fd = eventfd(0, 0);
-    main_p[WORKER_IX] = (struct pollfd) {
-        .fd = worker_fd,
+    inotify_fd[0] = inotify_init();
+    inotify_fd[1] = inotify_init();
+    event_mask = IN_MODIFY | IN_ATTRIB | IN_CREATE | IN_DELETE | IN_MOVE;
+    main_p[INOTIFY_IX1] = (struct pollfd) {
+        .fd = inotify_fd[0],
+        .events = POLLIN,
+    };
+    main_p[INOTIFY_IX2] = (struct pollfd) {
+        .fd = inotify_fd[1],
+        .events = POLLIN,
+    };
+    info_fd = eventfd(0, 0);
+    main_p[INFO_IX] = (struct pollfd) {
+        .fd = info_fd,
         .events = POLLIN,
     };
 #if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT

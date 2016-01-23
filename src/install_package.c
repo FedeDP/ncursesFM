@@ -41,7 +41,7 @@ void *install_package(void *str) {
     sd_bus_message_read(mess, "o", &path);
     r = sd_bus_add_match(install_bus, NULL, "type='signal',interface='org.freedesktop.PackageKit.Transaction',member='Finished'", match_callback, &finished);
     if (r < 0) {
-        print_info(strerror(-r), ERR_LINE);
+        print_and_warn(strerror(-r), ERR_LINE);
         goto finish;
     }
     sd_bus_flush(install_bus);
@@ -73,10 +73,7 @@ void *install_package(void *str) {
     }
 
 finish:
-    if (config.inhibit) {
-        INFO("power management functions inhibition stopped.");
-        close(inhibit_fd);
-    }
+    stop_inhibition(inhibit_fd);
     close_bus(&error, mess, install_bus);
     pthread_exit(NULL);
 }

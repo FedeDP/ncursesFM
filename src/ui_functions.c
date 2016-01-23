@@ -17,7 +17,9 @@ static void create_helper_win(void);
 static void remove_helper_win(void);
 static void show_stat(int init, int end, int win);
 static void erase_stat(void);
-static void worker_th_refresh(uint64_t val);
+static void print_info_str(void);
+static void info_print(const char *str, int i);
+static void inotify_refresh(int win);
 static void resize_helper_win(void);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
@@ -31,14 +33,19 @@ struct scrstr {
     char tot_size[30];
 };
 
+struct info_msg {
+    char msg[100];
+    int line;
+};
+
 static struct scrstr mywin[MAX_TABS];
 static WINDOW *helper_win, *info_win;
-static int dim;
-static pthread_mutex_t info_lock;
+static int dim, sorting_index, msg_num;
 static int (*const sorting_func[])(const struct dirent **d1, const struct dirent **d2) = {
     alphasort, sizesort, last_mod_sort, typesort
 };
-static int sorting_index;
+static struct info_msg *info;
+static pthread_mutex_t info_lock;
 
 /*
  * Initializes screen, colors etc etc, and calls fm_scr_init.
@@ -88,6 +95,10 @@ void screen_end(void) {
     for (int i = 0; i < cont; i++) {
         delete_tab(i);
     }
+    if (info) {
+        free(info);
+    }
+    close(info_fd);
     delwin(info_win);
     if (helper_win) {
         delwin(helper_win);
@@ -287,12 +298,21 @@ static void initialize_tab_cwd(int win) {
     if (strlen(config.starting_dir)) {
         if ((cont == 1) || (config.second_tab_starting_dir)) {
             strcpy(ps[win].my_cwd, config.starting_dir);
+            /* 
+             * this is needed to avoid errors with
+             * --starting_dir /foo/bar/ with the ending slash
+             */
+            int len = strlen(ps[win].my_cwd);
+            if (ps[win].my_cwd[len - 1] == '/') {
+                ps[win].my_cwd[len - 1] = '\0';
+            }
         }
     }
     if (!strlen(ps[win].my_cwd)) {
         getcwd(ps[win].my_cwd, PATH_MAX);
     }
     sprintf(ps[win].title, "%s", ps[win].my_cwd);
+    inotify_wd[win] = inotify_add_watch(inotify_fd[win], ps[win].my_cwd, event_mask);
     tab_refresh(win);
 }
 
@@ -306,6 +326,7 @@ void delete_tab(int win) {
     memset(mywin[win].tot_size, 0, strlen(mywin[win].tot_size));
     mywin[win].stat_active = STATS_OFF;
     free(ps[win].nl);
+    inotify_rm_watch(inotify_fd[win], inotify_wd[win]);
     ps[win].nl = NULL;
 }
 
@@ -450,7 +471,7 @@ static void show_stat(int init, int end, int win) {
     int check = strlen(mywin[win].tot_size);
     const int perm_bit[9] = {S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, S_IROTH, S_IWOTH, S_IXOTH};
     const char perm_sign[3] = {'r', 'w', 'x'};
-    char str[20];
+    char str[30];
     float total_size = 0;
     struct stat file_stat;
     int perm_col = mywin[win].width - PERM_LENGTH;
@@ -526,18 +547,26 @@ static void erase_stat(void) {
     memset(mywin[active].tot_size, 0, strlen(mywin[active].tot_size));
 }
 
+static void print_info_str(void) {
+    for (int i = 0; i < msg_num; i++) {
+        info_print(info[i].msg, info[i].line);
+    }
+    msg_num = 0;
+    free(info);
+    info = NULL;
+}
+
 /*
- * It locks info_lock mutex, then clears "i" line of info_win.
+ * It clears "i" line of info_win.
  * Performs various checks: if thread_h is not NULL, prints thread_job_mesg message(depends on current job type) at the end of INFO_LINE.
  * It searches for selected_files too, and prints a message at the end of INFO_LINE (beside thread_job_mesg, if present).
  * If a search is running, prints a message at the end of ERR_LINE;
  * Finally, prints str on the "i" line.
  */
-void print_info(const char *str, int i) {
+static void info_print(const char *str, int i) {
     char st[100] = {0};
     int len = 1 + strlen(info_win_str[i]);
 
-    pthread_mutex_lock(&info_lock);
     wmove(info_win, i, len);
     wclrtoeol(info_win);
     if (i == INFO_LINE) {
@@ -562,6 +591,17 @@ void print_info(const char *str, int i) {
         mvwprintw(info_win, i, COLS - len + strlen(info_win_str[i]) + 1 - 3, "...");
     }
     wrefresh(info_win);
+}
+
+void print_info(const char *str, int line) {
+    uint64_t val = 1;
+    
+    pthread_mutex_lock(&info_lock);
+    msg_num++;
+    info = realloc(info, msg_num * sizeof(struct info_msg));
+    strcpy(info[msg_num - 1].msg, str);
+    info[msg_num - 1].line = line;
+    write(info_fd, &val, sizeof(uint64_t));
     pthread_mutex_unlock(&info_lock);
 }
 
@@ -581,7 +621,7 @@ void print_and_warn(const char *err, int line) {
  */
 void ask_user(const char *str, char *input, int d, char c) {
     int s, len, i = 0;
-
+    
     print_info(str, ASK_LINE);
     while ((i < d) && (!quit)) {
         wrefresh(info_win);
@@ -597,9 +637,7 @@ void ask_user(const char *str, char *input, int d, char c) {
             len = strlen(str) + strlen(info_win_str[ASK_LINE]) + i;
             if ((s == 127) && (i)) {    // backspace!
                 input[--i] = '\0';
-                pthread_mutex_lock(&info_lock);
                 mvwdelch(info_win, ASK_LINE, len);
-                pthread_mutex_unlock(&info_lock);
             } else if (isprint(s)) {
                 if (d == 1) {
                     *input = tolower(s);
@@ -607,9 +645,7 @@ void ask_user(const char *str, char *input, int d, char c) {
                     sprintf(input + i, "%c", s);
                 }
                 i++;
-                pthread_mutex_lock(&info_lock);
                 mvwaddch(info_win, ASK_LINE, len + 1, s);
-                pthread_mutex_unlock(&info_lock);
             }
         }
     }
@@ -632,7 +668,7 @@ void ask_user(const char *str, char *input, int d, char c) {
  */
 int main_poll(WINDOW *win) {
     int ret = ERR - 1;
-    uint64_t tab;
+    uint64_t x;
     /*
      * resize event returns EPERM error with ppoll
      * see here: http://keyvanfatehi.com/2011/08/03/asynchronous-c-programs-an-event-loop-and-ncurses/
@@ -662,10 +698,20 @@ int main_poll(WINDOW *win) {
                     read(main_p[i].fd, NULL, 8);
                     timer_func();
                     break;
-                case WORKER_IX:
-                /* we received a refresh needed signal by worker_th */
-                    read(main_p[i].fd, &tab, sizeof(tab));
-                    worker_th_refresh(tab);
+                case INOTIFY_IX1:
+                /* we received an event from inotify for the first tab */
+                    inotify_refresh(0);
+                    break;
+                case INOTIFY_IX2:
+                    /* we received an event from inotify for the second tab */
+                    inotify_refresh(1);
+                    break;
+                case INFO_IX:
+                    /* we received an event from inotify for the second tab */
+                    pthread_mutex_lock(&info_lock);
+                    read(main_p[i].fd, &x, sizeof(uint64_t));
+                    print_info_str();
+                    pthread_mutex_unlock(&info_lock);
                     break;
 #if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
                 case DEVMON_IX:
@@ -691,17 +737,29 @@ int main_poll(WINDOW *win) {
 }
 
 /*
- * val will carry the sum of tabs numbers that need refresh (+ 1).
- * If val == 3 -> then we need to update both (1 + 2),
- * else we only need to update one tab (val - 1)
+ * thanks: http://stackoverflow.com/questions/13351172/inotify-file-in-c
  */
-static void worker_th_refresh(uint64_t val) {
-    if (val == 3) {
-        for (int i = 0; i < cont; i++) {
-            tab_refresh(i);
+static void inotify_refresh(int win) {
+    size_t len;
+    int i = 0;
+    char buffer[BUF_LEN];
+    
+    len = read(inotify_fd[win], buffer, BUF_LEN);
+    while (i < len) {
+        struct inotify_event *event = (struct inotify_event *)&buffer[i];
+        /* ignore events for hidden files if config.show_hidden is false */
+        if ((event->len) && ((event->name[0] != '.') || (config.show_hidden))) {
+            if ((event->mask & IN_CREATE) || (event->mask & IN_DELETE) || event->mask & IN_MOVE) {
+                tab_refresh(win);
+            } else if (event->mask & IN_MODIFY || event->mask & IN_ATTRIB) {
+                if (!special_mode[win] && mywin[win].stat_active) {
+                    memset(mywin[win].tot_size, 0, strlen(mywin[win].tot_size));
+                    show_stat(mywin[win].delta, dim - 2, win);
+                    print_border_and_title(win);
+                }
+            }
         }
-    } else {
-        tab_refresh(val - 1);
+        i += EVENT_SIZE + event->len;
     }
 }
 
@@ -726,7 +784,7 @@ void update_special_mode(int num,  int win, char (*str)[PATH_MAX + 1]) {
         } else {
             list_everything(win, num - 1, 1);
         }
-    } else {    
+    } else {
         /* Only used in device_monitor: change mounted status event */
         list_everything(win, 0, 0);
     }
@@ -749,7 +807,6 @@ void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title) {
  * then prints again any "sticky" message (eg: "searching"/"pasting...")
  */
 void resize_win(void) {
-    pthread_mutex_lock(&info_lock);
     wclear(info_win);
     delwin(info_win);
     dim = LINES - INFO_HEIGHT;
@@ -758,7 +815,6 @@ void resize_win(void) {
     }
     resize_fm_win();
     info_win_init();
-    pthread_mutex_unlock(&info_lock);
     print_info("", INFO_LINE);
 }
 
@@ -814,7 +870,7 @@ void change_sort(void) {
 void highlight_selected(int line, const char c) {
     for (int i = 0; i < cont; i++) {
         if (!special_mode[i]) {
-            if ((i == active) || ((strcmp(ps[i].my_cwd, ps[active].my_cwd) == 0)
+            if ((i == active) || ((!strcmp(ps[i].my_cwd, ps[active].my_cwd))
             && (line - mywin[i].delta > 0) && (line - mywin[i].delta < dim - 2))) {
                 wattron(mywin[i].fm, A_BOLD);
                 mvwprintw(mywin[i].fm, 1 + line - mywin[i].delta, SEL_COL, "%c", c);

@@ -24,6 +24,7 @@ If you've got Upower installed, AC (dis)connection will refresh battery status i
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
 Otherwise, it will use $editor (config file defined) var. It fallbacks to environment $EDITOR if none is set.
 * Stats support (permissions and sizes).
+* It monitors inotify to check for fs events in current directories (eg: file removed). This way, if you create/remove/modify a file from another fm/command line, your changes will show up in ncursesFM.
 * Bookmarks support: it will load bookmarks from $HOME/.config/user-dirs.dirs and $HOME/.config/ncursesFM-bookmarks.
 You can add whatever type of file you wish as bookmark from within ncursesFM. You can remove bookmarks too.
 * Search support: it will search your string in current directory tree. It can search your string inside archives too.
@@ -77,7 +78,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * pkg-config -> to manage libraries link in makefile
-* glibc      -> to set locale and for mntent functions (useful only if compiled with libudev too)
+* glibc      -> to set locale, for inotify, and for mntent functions (useful only if compiled with libudev too)
 * git        -> to clone repo
 
 ## Optional compile time dependencies

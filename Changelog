@@ -1,3 +1,9 @@
+01 / 23 / 2016
+* using inotify and removed my own code to check for changes inside tab's cwd. Really better, lighter. It can now catch changes made from other fm/command line.
+* fixed some bugs
+* removed eventfd in worker_th (obviously it is useless now)
+* added an eventfd for info print: now every print is done within main thread.
+
 01 / 19 / 2016
 * main ppoll will catch events from a timerfd (time + battery monitor's events) and sd_bus_get_fd (device monitor's events). 
 Reduced number of static thread from 3 to only 1 (main thread).

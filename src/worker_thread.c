@@ -4,11 +4,8 @@ static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void));
 static void free_running_h(void);
 static void init_thread_helper(void);
 static void *execute_thread(void *x);
-static void check_refresh(void);
-static int refresh_needed(const char *dir);
 static void free_thread_job_list(thread_job_list *h);
 static void sig_handler(int signum);
-static void stop_inhibition(void);
 
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
 static struct thread_mesg thread_m;
@@ -125,56 +122,21 @@ static void *execute_thread(void *x) {
         if (thread_h->f() == -1) {
             thread_m.str = thread_fail_str[thread_h->type];
             thread_m.line = ERR_LINE;
-            print_info("", INFO_LINE);
+            print_info("", INFO_LINE);  // remove previous INFO_LINE message
         } else {
             thread_m.str = thread_str[thread_h->type];
             thread_m.line = INFO_LINE;
-            check_refresh();
         }
         free_running_h();
         return execute_thread(NULL);
     }
     INFO("ended all queued jobs.");
     num_of_jobs = 0;
-    stop_inhibition();
+#ifdef SYSTEMD_PRESENT
+    stop_inhibition(inhibit_fd);
+#endif
     pthread_detach(pthread_self()); // to avoid stupid valgrind errors
     pthread_exit(NULL);
-}
-
-/*
- * check if a refresh is needed; value will carry the sum of tabs 
- * that need refresh (+1 to avoid writing 0 for only first tab)
- */
-static void check_refresh(void) {
-    uint64_t value = 0;
-
-    for (int i = 0; i < cont; i++) {
-        if ((thread_h->type != RM_TH && strcmp(ps[i].my_cwd, thread_h->full_path) == 0) || refresh_needed(ps[i].my_cwd)) {
-            value += (i + 1);
-        }
-    }
-    /* tell main_poll() that current dir needs refreshing */
-    if (value != 0) {
-        write(worker_fd, &value, sizeof(uint64_t));
-    }
-}
-
-/*
- * RM_TH and MOVE_TH only: we need cycling through selected_files and
- * check if current selected file is inside win's cwd (to update UI)
- */
-static int refresh_needed(const char *dir) {
-    file_list *tmp = thread_h->selected_files;
-
-    if (thread_h->type == RM_TH || thread_h->type == MOVE_TH) {
-        while (tmp) {
-            if (strncmp(tmp->name, dir, strlen(dir)) == 0) {
-                return 1;
-            }
-            tmp = tmp->next;
-        }
-    }
-    return 0;
 }
 
 int remove_from_list(const char *name) {
@@ -230,15 +192,8 @@ static void sig_handler(int signum) {
     INFO("freeing job's list...");
     free_thread_job_list(thread_h);
     INFO("freed.");
-    stop_inhibition();
+#ifdef SYSTEMD_PRESENT
+    stop_inhibition(inhibit_fd);
+#endif
     pthread_exit(NULL);
-}
-
-static void stop_inhibition(void) {
-    #ifdef SYSTEMD_PRESENT
-    if (config.inhibit) {
-        INFO("power management functions inhibition stopped.");
-        close(inhibit_fd);
-    }
-    #endif
 }

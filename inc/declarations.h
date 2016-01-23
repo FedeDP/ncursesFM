@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <poll.h>
 #include <signal.h>
+#include <sys/inotify.h>
 
 #define MAX_TABS 2
 #define MAX_NUMBER_OF_FOUND 100
@@ -51,8 +52,16 @@
  */
 #define GETCH_IX 0
 #define TIMER_IX 1
-#define WORKER_IX 2
-#define DEVMON_IX 3
+#define INOTIFY_IX1 2
+#define INOTIFY_IX2 3
+#define INFO_IX 4
+#define DEVMON_IX 5
+
+/*
+ * inotify macros
+ */
+#define EVENT_SIZE  (sizeof(struct inotify_event))
+#define BUF_LEN     (1024 * (EVENT_SIZE + 16))
 
 /*
  * Useful macro to know number of elements in arrays
@@ -141,7 +150,7 @@ struct supply {
  */
 struct pollfd *main_p;
 sigset_t main_mask;
-int nfds, worker_fd;
+int nfds, inotify_fd[MAX_TABS], inotify_wd[MAX_TABS], event_mask, info_fd;
 
 thread_job_list *thread_h;
 file_list *selected;
