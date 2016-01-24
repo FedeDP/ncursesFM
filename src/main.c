@@ -21,9 +21,7 @@
  *
  * END_COMMON_COPYRIGHT_HEADER */
 
-#include "../inc/fm_functions.h"
 #include "../inc/bookmarks.h"
-#include <sys/eventfd.h>
 
 #ifdef LIBCONFIG_PRESENT
 #include <libconfig.h>
@@ -118,9 +116,9 @@ static void set_pollfd(void) {
         .fd = inot[1].fd,
         .events = POLLIN,
     };
-    info_fd = eventfd(0, 0);
+    pipe2(info_fd, O_DIRECT);  // linux >= 3.4
     main_p[INFO_IX] = (struct pollfd) {
-        .fd = info_fd,
+        .fd = info_fd[0],
         .events = POLLIN,
     };
 #if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT

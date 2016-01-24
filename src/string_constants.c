@@ -1,5 +1,3 @@
-#include "../inc/string_constants.h"
-
 const char *editor_missing = "You have to specify a valid editor in config file.";
 
 const char *generic_mem_error = "Memory allocation failed.";

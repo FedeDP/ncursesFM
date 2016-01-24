@@ -17,7 +17,6 @@ static void create_helper_win(void);
 static void remove_helper_win(void);
 static void show_stat(int init, int end, int win);
 static void erase_stat(void);
-static void print_info_str(void);
 static void info_print(const char *str, int i);
 static void inotify_refresh(int win);
 static void resize_helper_win(void);
@@ -40,18 +39,15 @@ struct info_msg {
 
 static struct scrstr mywin[MAX_TABS];
 static WINDOW *helper_win, *info_win;
-static int dim, sorting_index, msg_num;
+static int dim, sorting_index;
 static int (*const sorting_func[])(const struct dirent **d1, const struct dirent **d2) = {
     alphasort, sizesort, last_mod_sort, typesort
 };
-static struct info_msg *info;
-static pthread_mutex_t info_lock;
 
 /*
  * Initializes screen, colors etc etc, and calls fm_scr_init.
  */
 void screen_init(void) {
-    pthread_mutex_init(&info_lock, NULL);
     setlocale(LC_ALL, "");
     initscr();
     start_color();
@@ -95,17 +91,14 @@ void screen_end(void) {
     for (int i = 0; i < cont; i++) {
         delete_tab(i);
     }
-    if (info) {
-        free(info);
-    }
-    close(info_fd);
+    close(info_fd[0]);
+    close(info_fd[1]);
     delwin(info_win);
     if (helper_win) {
         delwin(helper_win);
     }
     delwin(stdscr);
     endwin();
-    pthread_mutex_destroy(&info_lock);
 }
 
 /*
@@ -547,15 +540,6 @@ static void erase_stat(void) {
     memset(mywin[active].tot_size, 0, strlen(mywin[active].tot_size));
 }
 
-static void print_info_str(void) {
-    for (int i = 0; i < msg_num; i++) {
-        info_print(info[i].msg, info[i].line);
-    }
-    msg_num = 0;
-    free(info);
-    info = NULL;
-}
-
 /*
  * It clears "i" line of info_win.
  * Performs various checks: if thread_h is not NULL, prints thread_job_mesg message(depends on current job type) at the end of INFO_LINE.
@@ -594,15 +578,12 @@ static void info_print(const char *str, int i) {
 }
 
 void print_info(const char *str, int line) {
-    uint64_t val = 1;
+    struct info_msg *info;
     
-    pthread_mutex_lock(&info_lock);
-    msg_num++;
-    info = realloc(info, msg_num * sizeof(struct info_msg));
-    strcpy(info[msg_num - 1].msg, str);
-    info[msg_num - 1].line = line;
-    write(info_fd, &val, sizeof(uint64_t));
-    pthread_mutex_unlock(&info_lock);
+    info = malloc(sizeof(struct info_msg));
+    strcpy(info->msg, str);
+    info->line = line;
+    write(info_fd[1], &info, sizeof(struct info_msg *));
 }
 
 void print_and_warn(const char *err, int line) {
@@ -668,13 +649,14 @@ void ask_user(const char *str, char *input, int d, char c) {
  */
 int main_poll(WINDOW *win) {
     int ret = ERR - 1;
-    uint64_t x;
+    struct info_msg *info;
     /*
-     * resize event returns EPERM error with ppoll
-     * see here: http://keyvanfatehi.com/2011/08/03/asynchronous-c-programs-an-event-loop-and-ncurses/
+     * resize event returns -EPERM error with ppoll (-1)
+     * see here: http://keyvanfatehi.com/2011/08/03/asynchronous-c-programs-an-event-loop-and-ncurses/.
+     * plus, this is needed when a signal is caught (sigint/sigterm)
      */
     int r = ppoll(main_p, nfds, NULL, &main_mask);
-    if (r == -EPERM) {
+    if (r == -1) {
         if (!win) {
             ret = wgetch(mywin[active].fm);
         } else {
@@ -708,10 +690,9 @@ int main_poll(WINDOW *win) {
                     break;
                 case INFO_IX:
                     /* we received an event from eventf to print a info msg */
-                    pthread_mutex_lock(&info_lock);
-                    read(main_p[i].fd, &x, sizeof(uint64_t));
-                    print_info_str();
-                    pthread_mutex_unlock(&info_lock);
+                    read(main_p[i].fd, &info, sizeof(struct info_msg *));
+                    info_print(info->msg, info->line);
+                    free(info);
                     break;
 #if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
                 case DEVMON_IX:

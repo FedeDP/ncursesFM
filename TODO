@@ -9,4 +9,6 @@
  * sshfs support?
  * 
  * cleanup code: check for useless functions, static functions...etc etc
+ * 
+ * switch to stdint lib
  */

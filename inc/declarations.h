@@ -155,12 +155,12 @@ struct inotify {
  * from external signals;
  * nfds: number of elements in main_p struct;
  * event_mask: bit mask used for inotify_add_watch;
- * info_fd: eventfd used to signal main_poll() that 
- * a info_msg is waiting to be printed;
+ * info_fd: pipe used to pass info_msg waiting 
+ * to be printed to main_poll.
  */
 struct pollfd *main_p;
 sigset_t main_mask;
-int nfds, event_mask, info_fd;
+int nfds, event_mask, info_fd[2];
 struct inotify inot[MAX_TABS];
 
 thread_job_list *thread_h;
