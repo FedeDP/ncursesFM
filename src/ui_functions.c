@@ -35,6 +35,8 @@ struct scrstr {
 /*
  * struct written to the pipe2 (O_DIRECT).
  * Limit for a contiguous (atomic) write is PIPE_BUF.
+ * Keep this limit even if i'm only writing 
+ * address of pointer to the newly allocated struct.
  */
 struct info_msg {
     char msg[PIPE_BUF - 1];
