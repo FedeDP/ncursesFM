@@ -32,9 +32,13 @@ struct scrstr {
     char tot_size[30];
 };
 
+/*
+ * struct written to the pipe2 (O_DIRECT).
+ * Limit for a contiguous (atomic) write is PIPE_BUF.
+ */
 struct info_msg {
-    char msg[100];
-    int line;
+    char msg[PIPE_BUF - 1];
+    uint8_t line;
 };
 
 static struct scrstr mywin[MAX_TABS];
