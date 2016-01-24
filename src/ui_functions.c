@@ -650,6 +650,7 @@ void ask_user(const char *str, char *input, int d, char c) {
 int main_poll(WINDOW *win) {
     int ret = ERR - 1;
     struct info_msg *info;
+    uint64_t t;
     /*
      * resize event returns -EPERM error with ppoll (-1)
      * see here: http://keyvanfatehi.com/2011/08/03/asynchronous-c-programs-an-event-loop-and-ncurses/.
@@ -677,7 +678,7 @@ int main_poll(WINDOW *win) {
                     break;
                 case TIMER_IX:
                 /* we received a timer expiration signal on timerfd */
-                    read(main_p[i].fd, NULL, 8);
+                    read(main_p[i].fd, &t, 8);
                     timer_func();
                     break;
                 case INOTIFY_IX1:
@@ -685,11 +686,11 @@ int main_poll(WINDOW *win) {
                     inotify_refresh(0);
                     break;
                 case INOTIFY_IX2:
-                    /* we received an event from inotify for the second tab */
+                /* we received an event from inotify for the second tab */
                     inotify_refresh(1);
                     break;
                 case INFO_IX:
-                    /* we received an event from eventf to print a info msg */
+                /* we received an event from pipe to print a info msg */
                     read(main_p[i].fd, &info, sizeof(struct info_msg *));
                     info_print(info->msg, info->line);
                     free(info);
