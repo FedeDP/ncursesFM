@@ -581,7 +581,7 @@ void print_info(const char *str, int line) {
     struct info_msg *info;
     
     info = malloc(sizeof(struct info_msg));
-    strcpy(info->msg, str);
+    strncpy(info->msg, str, sizeof(info->msg));
     info->line = line;
     write(info_fd[1], &info, sizeof(struct info_msg *));
 }
