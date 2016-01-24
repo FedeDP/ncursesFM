@@ -305,7 +305,7 @@ void change_first_tab_size(void) {
 
 /*
  * Helper function for new_tab().
- * Calculates new tab's cwd and save new tab's title.
+ * Calculates new tab's cwd and saves new tab's title.
  * Add an inotify_watcher on the new tab's cwd.
  * Then refreshes UI.
  */
@@ -593,7 +593,7 @@ static void info_print(const char *str, int i) {
 /*
  * Need to malloc COLS - len bytes as they're printable chars on the screen.
  * Need malloc because window can be resized (ie: COLS is not a constant)
- * Writes on the pipe, the address of its heap-allocated struct info_msg.
+ * Writes on the pipe the address of its heap-allocated struct info_msg.
  */
 void print_info(const char *str, int line) {
     struct info_msg *info;
