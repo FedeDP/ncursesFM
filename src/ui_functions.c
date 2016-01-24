@@ -553,26 +553,17 @@ static void info_print(const char *str, int i) {
 
     wmove(info_win, i, len);
     wclrtoeol(info_win);
+    mvwprintw(info_win, i, len, "%.*s", COLS, str);
     if (i == INFO_LINE) {
-        if (thread_h) {
-            if (selected) {
-                st[0] = '/';
-            }
-            sprintf(st + strlen(st), "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type]);
-            mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
-            len += strlen(st);
-        }
         if (selected) {
-            mvwprintw(info_win, INFO_LINE, COLS - strlen(st) - strlen(selected_mess), selected_mess);
-            len += strlen(selected_mess);
+            strcpy(st, selected_mess);
         }
+        if (thread_h) {
+            sprintf(st + strlen(st), "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type]);
+        }
+        mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
     } else if ((i == ERR_LINE) && (sv.searching)) {
         mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
-        len += strlen(searching_mess[sv.searching - 1]);
-    }
-    mvwprintw(info_win, i, 1 + strlen(info_win_str[i]), "%.*s", COLS - len, str);
-    if (COLS - len < strlen(str)) {
-        mvwprintw(info_win, i, COLS - len + strlen(info_win_str[i]) + 1 - 3, "...");
     }
     wrefresh(info_win);
 }
