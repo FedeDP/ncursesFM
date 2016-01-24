@@ -18,12 +18,17 @@ static void remove_helper_win(void);
 static void show_stat(int init, int end, int win);
 static void erase_stat(void);
 static void info_print(const char *str, int i);
+static void info_refresh(int fd);
 static void inotify_refresh(int win);
 static void resize_helper_win(void);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
 static void update_sysinfo(void);
 
+/*
+ * Struct that holds informations
+ * about a fm tab
+ */
 struct scrstr {
     WINDOW *fm;
     int width;
@@ -34,12 +39,9 @@ struct scrstr {
 
 /*
  * struct written to the pipe2 (O_DIRECT).
- * Limit for a contiguous (atomic) write is PIPE_BUF.
- * Keep this limit even if i'm only writing 
- * address of pointer to the newly allocated struct.
  */
 struct info_msg {
-    char msg[PIPE_BUF - 1];
+    char *msg;
     uint8_t line;
 };
 
@@ -51,7 +53,7 @@ static int (*const sorting_func[])(const struct dirent **d1, const struct dirent
 };
 
 /*
- * Initializes screen, colors etc etc, and calls fm_scr_init.
+ * Initializes screen, colors etc etc.
  */
 void screen_init(void) {
     setlocale(LC_ALL, "");
@@ -85,13 +87,13 @@ static void info_win_init(void) {
     keypad(info_win, TRUE);
     nodelay(info_win, TRUE);
     notimeout(info_win, TRUE);
-    for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because i won't print anything on last line */
+    for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because i won't print anything on last line (SYSINFO line) */
         mvwprintw(info_win, i, 1, "%s", info_win_str[i]);
     }
     timer_func();
 }
 /*
- * Clear any existing window, and destroy mutexes
+ * Clear any existing window, and close info_pipe
  */
 void screen_end(void) {
     for (int i = 0; i < cont; i++) {
@@ -137,6 +139,9 @@ static void generate_list(int win) {
     }
 }
 
+/*
+ * Callback function to scandir: list files by size.
+ */
 static int sizesort(const struct dirent **d1, const struct dirent **d2) {
     struct stat stat1, stat2;
     float result;
@@ -147,6 +152,9 @@ static int sizesort(const struct dirent **d1, const struct dirent **d2) {
     return (result > 0) ? -1 : 1;
 }
 
+/*
+ * Callback function to scandir: list files by last modified.
+ */
 static int last_mod_sort(const struct dirent **d1, const struct dirent **d2) {
     struct stat stat1, stat2;
 
@@ -155,6 +163,9 @@ static int last_mod_sort(const struct dirent **d1, const struct dirent **d2) {
     return (stat2.st_mtime - stat1.st_mtime);
 }
 
+/*
+ * Callback function to scandir: list files by type.
+ */
 static int typesort(const struct dirent **d1, const struct dirent **d2) {
     int ret;
 
@@ -171,12 +182,16 @@ static int typesort(const struct dirent **d1, const struct dirent **d2) {
     return ret;
 }
 
+/*
+ * Clear tab, reset every var, if stat_active was idle, turn it on,
+ * then call list_everything.
+ */
 void reset_win(int win)
 {
     wclear(mywin[win].fm);
     mywin[win].delta = 0;
     ps[win].curr_pos = 0;
-    if (mywin[win].stat_active) {
+    if (!special_mode[win] && mywin[win].stat_active) {
         memset(mywin[win].tot_size, 0, strlen(mywin[win].tot_size));
         mywin[win].stat_active = STATS_ON;
     }
@@ -185,9 +200,9 @@ void reset_win(int win)
 
 /*
  * Prints to window 'win' "end" strings, startig from old_dim.
- *  If end == 0, it means it needs to print every string until the end of available rows,
- * Checks if window 'win' is in search/device mode, and takes care.
- * If stat_active == STATS_ON for 'win', and 'win' is not in search mode, it prints stats about size and permissions for every file.
+ * If end == 0, it means it needs to print every string until the end of available rows,
+ * If stat_active == STATS_ON for 'win', and 'win' is not in special_mode, 
+ * it prints stats about size and permissions for every file.
  */
 static void list_everything(int win, int old_dim, int end) {
     char *str;
@@ -234,7 +249,6 @@ static void print_arrow(int win, int y) {
 
 /*
  * Helper function that prints borders and title of 'win'.
- * If win has stat_active == (STATS_ON || STATS_IDLE), adds current folder total size
  * to the right border's corner.
  */
 static void print_border_and_title(int win) {
@@ -262,7 +276,7 @@ static int is_hidden(const struct dirent *current_file) {
 }
 
 /*
- * Creates a new tab.
+ * Creates a new tab with right attributes.
  * Then calls initialize_tab_cwd().
  */
 void new_tab(int win) {
@@ -283,7 +297,7 @@ void change_first_tab_size(void) {
     wclear(mywin[0].fm);
     mywin[0].width = COLS / cont;
     wresize(mywin[0].fm, dim, mywin[0].width);
-    if (mywin[0].stat_active) {
+    if (!special_mode[0] && mywin[0].stat_active) {
         mywin[0].stat_active = STATS_ON;
     }
     list_everything(0, mywin[0].delta, 0);
@@ -291,7 +305,9 @@ void change_first_tab_size(void) {
 
 /*
  * Helper function for new_tab().
- * Calculates new tab's cwd and save new tab's title. Then refreshes UI.
+ * Calculates new tab's cwd and save new tab's title.
+ * Add an inotify_watcher on the new tab's cwd.
+ * Then refreshes UI.
  */
 static void initialize_tab_cwd(int win) {
     if (strlen(config.starting_dir)) {
@@ -299,7 +315,8 @@ static void initialize_tab_cwd(int win) {
             strcpy(ps[win].my_cwd, config.starting_dir);
             /* 
              * this is needed to avoid errors with
-             * --starting_dir /foo/bar/ with the ending slash
+             * "--starting_dir /foo/bar/" cmdline switch,
+             * with the ending slash
              */
             int len = strlen(ps[win].my_cwd);
             if (ps[win].my_cwd[len - 1] == '/') {
@@ -316,7 +333,8 @@ static void initialize_tab_cwd(int win) {
 }
 
 /*
- * Removes a tab and frees its list of files.
+ * Removes a tab, reset its attributes,
+ * frees its list of files and removes its inotify watcher.
  */
 void delete_tab(int win) {
     delwin(mywin[win].fm);
@@ -334,7 +352,7 @@ void scroll_down(void) {
         ps[active].curr_pos++;
         if (ps[active].curr_pos - (dim - 2) == mywin[active].delta) {
             scroll_helper_func(dim - 2, 1);
-            if (mywin[active].stat_active == STATS_IDLE) {
+            if (!special_mode[active] && mywin[active].stat_active == STATS_IDLE) {
                 mywin[active].stat_active = STATS_ON;
             }
             list_everything(active, ps[active].curr_pos, 1);
@@ -351,7 +369,7 @@ void scroll_up(void) {
         ps[active].curr_pos--;
         if (ps[active].curr_pos < mywin[active].delta) {
             scroll_helper_func(1, -1);
-            if (mywin[active].stat_active == STATS_IDLE) {
+            if (!special_mode[active] && mywin[active].stat_active == STATS_IDLE) {
                 mywin[active].stat_active = STATS_ON;
             }
             list_everything(active, mywin[active].delta, 1);
@@ -437,7 +455,7 @@ static void remove_helper_win(void) {
     for (int i = 0; i < cont; i++) {
         mvwhline(mywin[i].fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
         wresize(mywin[i].fm, dim, mywin[i].width);
-        if (mywin[i].stat_active == STATS_IDLE) {
+        if (!special_mode[i] && mywin[i].stat_active == STATS_IDLE) {
             mywin[i].stat_active = STATS_ON;
         }
         list_everything(i, dim - 2 - HELPER_HEIGHT + mywin[i].delta, HELPER_HEIGHT);
@@ -547,11 +565,9 @@ static void erase_stat(void) {
 }
 
 /*
- * It clears "i" line of info_win.
- * Performs various checks: if thread_h is not NULL, prints thread_job_mesg message(depends on current job type) at the end of INFO_LINE.
- * It searches for selected_files too, and prints a message at the end of INFO_LINE (beside thread_job_mesg, if present).
- * If a search is running, prints a message at the end of ERR_LINE;
- * Finally, prints str on the "i" line.
+ * Clears i line to the end, then prints str string.
+ * Then performs some checks about some "sticky messages"
+ * (eg: "Pasting..." while a thread is pasting a file)
  */
 static void info_print(const char *str, int i) {
     char st[100] = {0};
@@ -559,7 +575,7 @@ static void info_print(const char *str, int i) {
 
     wmove(info_win, i, len);
     wclrtoeol(info_win);
-    mvwprintw(info_win, i, len, "%.*s", COLS, str);
+    mvwprintw(info_win, i, len, "%.*s", COLS - len, str);
     if (i == INFO_LINE) {
         if (selected) {
             strcpy(st, selected_mess);
@@ -574,11 +590,18 @@ static void info_print(const char *str, int i) {
     wrefresh(info_win);
 }
 
+/*
+ * Need to malloc COLS - len bytes as they're printable chars on the screen.
+ * Need malloc because window can be resized (ie: COLS is not a constant)
+ * Writes on the pipe, the address of its heap-allocated struct info_msg.
+ */
 void print_info(const char *str, int line) {
     struct info_msg *info;
+    int len = 1 + strlen(info_win_str[line]);
     
     info = malloc(sizeof(struct info_msg));
-    strncpy(info->msg, str, sizeof(info->msg));
+    info->msg = malloc(sizeof(char) * (COLS - len));
+    strncpy(info->msg, str, COLS - len);
     info->line = line;
     write(info_fd[1], &info, sizeof(struct info_msg *));
 }
@@ -591,11 +614,9 @@ void print_and_warn(const char *err, int line) {
 /*
  * Given a str, a char input[d], and a char c (that is default value if enter is pressed, if dim == 1),
  * asks the user "str" and saves in input the user response.
- * It does not need its own mutex because as of now only main thread calls it.
  * I needed to replace wgetnstr function with my own wgetch cycle
  * because otherwise that would prevent KEY_RESIZE event to be managed.
  * Plus this way i can reprint the question (str) and the current answer (input) after the resize.
- * Safer: delch and addch function will lock info_lock.
  */
 void ask_user(const char *str, char *input, int d, char c) {
     int s, len, i = 0;
@@ -637,16 +658,16 @@ void ask_user(const char *str, char *input, int d, char c) {
 
 /*
  * call ppoll; it is interruptable from SIGINT and SIGTERM signals.
- * It will poll for getch events, timerfd events, 
- * worker_thread events (eventfd) and bus events.
+ * It will poll for getch, timerfd, inotify, pipe and bus events.
  * If occurred event is not a getch event, return recursively main_poll
  * (ie: we don't need to come back to the cycle that called main_poll, because no buttons has been pressed)
  * else return getch value (it will be ERR if a signal has been received, as ppoll gets interrupted but
  * getch is in notimeout mode)
+ * If ppoll return -1 it means: window has been resized or we received a signal (sigint/sigterm).
+ * Either case, just return wgetch.
  */
 int main_poll(WINDOW *win) {
     int ret = ERR - 1;
-    struct info_msg *info;
     uint64_t t;
     /*
      * resize event returns -EPERM error with ppoll (-1)
@@ -688,9 +709,7 @@ int main_poll(WINDOW *win) {
                     break;
                 case INFO_IX:
                 /* we received an event from pipe to print a info msg */
-                    read(main_p[i].fd, &info, sizeof(struct info_msg *));
-                    info_print(info->msg, info->line);
-                    free(info);
+                    info_refresh(main_p[i].fd);
                     break;
 #if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
                 case DEVMON_IX:
@@ -713,6 +732,21 @@ int main_poll(WINDOW *win) {
         return main_poll(win);
     }
     return ret;
+}
+
+/*
+ * Reads from info_pipe the address of the struct previously
+ * allocated on heap by print_info function(),
+ * and prints it to info_win.
+ * Then free all the resources.
+ */
+static void info_refresh(int fd) {
+    struct info_msg *info;
+    
+    read(fd, &info, sizeof(struct info_msg *));
+    info_print(info->msg, info->line);
+    free(info->msg);
+    free(info);
 }
 
 /*
@@ -742,8 +776,8 @@ static void inotify_refresh(int win) {
 }
 
 /*
- * Refreshes win UI if win is not in searching or device mode.
- * Mutex is needed because worker thread can call this function too.
+ * Refreshes win UI if win is not in special_mode 
+ * (searching, bookmarks or device mode)
  */
 void tab_refresh(int win) {
     if (!special_mode[win]) {
@@ -751,6 +785,9 @@ void tab_refresh(int win) {
     }
 }
 
+/*
+ * Used to refresh special_mode windows.
+ */
 void update_special_mode(int num,  int win, char (*str)[PATH_MAX + 1]) {
     if (str) {
         /* Do not reset win if a device/bookmark has been added. Just print next line */
@@ -768,6 +805,9 @@ void update_special_mode(int num,  int win, char (*str)[PATH_MAX + 1]) {
     }
 }
 
+/*
+ * Used when switching to special_mode.
+ */
 void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title) {
     ps[active].number_of_files = num;
     str_ptr[active] = str;
@@ -780,9 +820,9 @@ void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title) {
  * Removes info win;
  * resizes every fm win, and moves it in the new position.
  * If helper_win != NULL, resizes it too, and moves it in the new position.
- * Then recreates info win.
  * Fixes new current_position of every fm,
- * then prints again any "sticky" message (eg: "searching"/"pasting...")
+ * Then recreates info win.
+ * finally prints again any "sticky" message (eg: "searching"/"pasting...")
  */
 void resize_win(void) {
     wclear(info_win);
@@ -824,7 +864,7 @@ static void resize_fm_win(void) {
         } else {
             mywin[i].delta = 0;
         }
-        if (mywin[i].stat_active == STATS_IDLE) {
+        if (!special_mode[i] && mywin[i].stat_active == STATS_IDLE) {
             mywin[i].stat_active = STATS_ON;
         }
         list_everything(i, mywin[i].delta, 0);
@@ -943,13 +983,15 @@ void update_batt(int online, int perc[], int num_of_batt, char (*name)[NAME_MAX 
     int len = 0;
     
     switch (online) {
-    case -1:    /* build without libudev support. No info available. */
+    case -1:
+        /* built without libudev support. No info available. */
         mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(fail), fail);
         break;
-    case 1:     /* ac connected */
+    case 1:
+        /* ac connected */
         mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(ac_online), ac_online);
         break;
-    default:
+    case 0:
         for (int i = 0; i < num_of_batt; i++) {
             sprintf(batt_str, "%s: %d%%%%", name[i], perc[i]);
             len += strlen(batt_str) - 1;    /* -1 to delete a space derived from %%%% */
