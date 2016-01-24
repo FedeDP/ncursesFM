@@ -25,6 +25,12 @@
 #define ACTIVE_COL 2
 #define FAST_BROWSE_COL 5
 
+/*
+ * inotify macros
+ */
+#define EVENT_SIZE  (sizeof(struct inotify_event))
+#define BUF_LEN     (1024 * (EVENT_SIZE + 16))
+
 void screen_init(void);
 void screen_end(void);
 void reset_win(int win);

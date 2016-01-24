@@ -58,12 +58,6 @@
 #define DEVMON_IX 5
 
 /*
- * inotify macros
- */
-#define EVENT_SIZE  (sizeof(struct inotify_event))
-#define BUF_LEN     (1024 * (EVENT_SIZE + 16))
-
-/*
  * Useful macro to know number of elements in arrays
  */
 #define NUM(a) (sizeof(a) / sizeof(*a))

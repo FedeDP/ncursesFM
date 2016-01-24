@@ -721,8 +721,7 @@ int main_poll(WINDOW *win) {
  * thanks: http://stackoverflow.com/questions/13351172/inotify-file-in-c
  */
 static void inotify_refresh(int win) {
-    size_t len;
-    int i = 0;
+    size_t len, i = 0;
     char buffer[BUF_LEN];
     
     len = read(inot[win].fd, buffer, BUF_LEN);
