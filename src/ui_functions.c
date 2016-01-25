@@ -612,7 +612,12 @@ void print_info(const char *str, int line) {
     }
     strncpy(info->msg, str, COLS - len);
     info->line = line;
-    write(info_fd[1], &info, sizeof(struct info_msg *));
+    size_t r = write(info_fd[1], &info, sizeof(struct info_msg *));
+    if (r <= 0) {
+        free(info->msg);
+        free(info);
+        WARN("a message could not be written.");
+    }
     return;
     
 error:
