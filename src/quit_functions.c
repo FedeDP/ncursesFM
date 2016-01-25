@@ -14,8 +14,8 @@ int program_quit(int sig_received) {
     sig_flag = sig_received;
     free_everything();
     screen_end();
-    if (quit == MEM_ERR_QUIT) {
-        fprintf(stderr, "%s\n", generic_mem_error);
+    if (quit == MEM_ERR_QUIT || quit == GENERIC_ERR_QUIT) {
+        fprintf(stderr, "%s\n", generic_error);
         ERROR("program exited with errors.");
         close_log();
         exit(EXIT_FAILURE);

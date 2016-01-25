@@ -118,7 +118,10 @@ static void generate_list(int win) {
 
     ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func[sorting_index]);
     free(ps[win].nl);
-    if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
+    if (ps[win].number_of_files == -1) {
+        quit = GENERIC_ERR_QUIT;
+        ERROR("could not scan current dir. Leaving.");
+    } else if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
         quit = MEM_ERR_QUIT;
         ERROR("could not malloc. Leaving.");
     }
@@ -133,7 +136,9 @@ static void generate_list(int win) {
         }
         free(files[i]);
     }
-    free(files);
+    if (quit != GENERIC_ERR_QUIT) {
+        free(files);
+    }
     if (!quit) {
         reset_win(win);
     }

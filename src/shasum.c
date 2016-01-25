@@ -19,7 +19,7 @@ void shasum_func(const char *filename) {
     size = ftell(fp);
     rewind(fp);
     if (!(buffer = malloc(size))) {
-        print_info(generic_mem_error, ERR_LINE);
+        print_info("Could not malloc.", ERR_LINE);
         fclose(fp);
         return;
     }
@@ -34,7 +34,7 @@ void shasum_func(const char *filename) {
         length = i / 8;
     }
     if (!(hash = malloc(sizeof(unsigned char) * length))) {
-        print_info(generic_mem_error, ERR_LINE);
+        print_info("Could not malloc.", ERR_LINE);
         return;
     }
     switch(i) {

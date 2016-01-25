@@ -1,6 +1,6 @@
 const char *editor_missing = "You have to specify a valid editor in config file.";
 
-const char *generic_mem_error = "Memory allocation failed.";
+const char *generic_error = "A generic error occurred. Check log.";
 
 const char *info_win_str[] = {"?: ", "I: ", "E: "};
 

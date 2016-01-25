@@ -4,7 +4,7 @@
 
 const char *editor_missing;
 
-const char *generic_mem_error;
+const char *generic_error;
 
 const char *info_win_str[3];
 

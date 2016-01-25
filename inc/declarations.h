@@ -39,6 +39,7 @@
  */
 #define NORM_QUIT 1
 #define MEM_ERR_QUIT 2
+#define GENERIC_ERR_QUIT 3
 
 /*
  * Device monitor status

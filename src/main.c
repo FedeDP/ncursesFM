@@ -69,8 +69,10 @@ int main(int argc, const char *argv[])
     set_pollfd();
     if (!quit) {
         screen_init();
-        chdir(ps[active].my_cwd);
-        main_loop();
+        if (!quit) {
+            chdir(ps[active].my_cwd);
+            main_loop();
+        }
     }
     program_quit(0);
 }
