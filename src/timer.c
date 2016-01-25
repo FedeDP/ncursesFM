@@ -7,8 +7,7 @@ static void poll_batteries(void);
 static int timerfd;
 #ifdef LIBUDEV_PRESENT
 static int num_of_batt;
-static char ac_path[PATH_MAX + 1];
-static char (*batt)[PATH_MAX + 1];
+static char ac_path[PATH_MAX + 1], (*batt)[PATH_MAX + 1];
 static struct udev *udev;
 #endif
 
@@ -43,7 +42,7 @@ void timer_func(void) {
 #ifdef LIBUDEV_PRESENT
     struct udev_device *dev;
     int perc[num_of_batt];
-    char name[num_of_batt][NAME_MAX + 1];
+    char name[num_of_batt][10];
 
     dev = udev_device_new_from_syspath(udev, ac_path);
     int online = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_ONLINE"), NULL, 10);
@@ -51,8 +50,16 @@ void timer_func(void) {
     if (!online) {
         for (int i = 0; i < num_of_batt; i++) {
             dev = udev_device_new_from_syspath(udev, batt[i]);
-            perc[i] = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY"), NULL, 10);
-            strcpy(name[i], udev_device_get_property_value(dev, "POWER_SUPPLY_NAME"));
+            if (udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY")) {
+                perc[i] = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY"), NULL, 10);
+            } else {
+                perc[i] = -1;
+            }
+            if (udev_device_get_property_value(dev, "POWER_SUPPLY_NAME")) {
+                strcpy(name[i], udev_device_get_property_value(dev, "POWER_SUPPLY_NAME"));
+            } else {
+                strcpy(name[i], "BAT");
+            }
             udev_device_unref(dev);
         }
     }

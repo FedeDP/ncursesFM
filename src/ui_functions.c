@@ -982,7 +982,7 @@ static void update_sysinfo(void) {
     mvwprintw(info_win, SYSTEM_INFO_LINE, (COLS - len) / 2, "%.*s", COLS, sys_str);
 }
 
-void update_batt(int online, int perc[], int num_of_batt, char (*name)[NAME_MAX + 1]) {
+void update_batt(int online, int perc[], int num_of_batt, char name[][10]) {
     const char *ac_online = "On AC", *fail = "No power supply info available.";
     char batt_str[20];
     int len = 0;
@@ -997,10 +997,12 @@ void update_batt(int online, int perc[], int num_of_batt, char (*name)[NAME_MAX 
         mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(ac_online), ac_online);
         break;
     case 0:
+        /* on battery */
         for (int i = 0; i < num_of_batt; i++) {
-            sprintf(batt_str, "%s: %d%%%%", name[i], perc[i]);
+            sprintf(batt_str, "%s: ", name[i]);
+            sprintf(batt_str + strlen(batt_str), perc[i] != -1 ? "%d%%%%" : "no info.", perc[i]);
             len += strlen(batt_str) - 1;    /* -1 to delete a space derived from %%%% */
-            if (perc[i] <= config.bat_low_level) {
+            if (perc[i] != -1 && perc[i] <= config.bat_low_level) {
                 wattron(info_win, COLOR_PAIR(5));
             }
             mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - len, batt_str);
