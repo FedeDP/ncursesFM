@@ -604,11 +604,20 @@ void print_info(const char *str, int line) {
     struct info_msg *info;
     int len = 1 + strlen(info_win_str[line]);
     
-    info = malloc(sizeof(struct info_msg));
-    info->msg = malloc(sizeof(char) * (COLS - len));
+    if (!(info = malloc(sizeof(struct info_msg)))) {
+        goto error;
+    }
+    if (!(info->msg = malloc(sizeof(char) * (COLS - len)))) {
+        goto error;
+    }
     strncpy(info->msg, str, COLS - len);
     info->line = line;
     write(info_fd[1], &info, sizeof(struct info_msg *));
+    return;
+    
+error:
+    quit = MEM_ERR_QUIT;
+    ERROR("could not malloc.");
 }
 
 void print_and_warn(const char *err, int line) {
