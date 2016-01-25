@@ -324,7 +324,7 @@ static void initialize_tab_cwd(int win) {
              * with the ending slash
              */
             int len = strlen(ps[win].my_cwd);
-            if (ps[win].my_cwd[len - 1] == '/') {
+            if (len > 1 && ps[win].my_cwd[len - 1] == '/') {
                 ps[win].my_cwd[len - 1] = '\0';
             }
         }
