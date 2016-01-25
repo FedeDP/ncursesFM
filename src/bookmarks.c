@@ -27,7 +27,7 @@ void get_bookmarks(void) {
             }
             num_bookmarks = i;
         } else {
-            print_info(bookmarks_file_err, ERR_LINE);
+            WARN(bookmarks_file_err);
         }
     }
 }

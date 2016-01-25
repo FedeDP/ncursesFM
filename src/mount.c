@@ -255,7 +255,9 @@ int start_monitor(void) {
     return sd_bus_get_fd(bus);
 
 fail:
-    free_device_monitor();
+    if (!quit) {    /* else it is called by program_quit */
+        free_device_monitor();
+    }
     device_mode = DEVMON_OFF;
     return -1;
 }
@@ -676,11 +678,15 @@ void leave_device_mode(void) {
 
 void free_device_monitor(void) {
     INFO("freeing device monitor resources...");
-    sd_bus_flush_close_unref(bus);
+    if (bus) {
+        sd_bus_flush_close_unref(bus);
+    }
     if (my_devices) {
         free(my_devices);
     }
-    udev_unref(udev);
+    if (udev) {
+        udev_unref(udev);
+    }
     INFO("freed.");
 }
 
