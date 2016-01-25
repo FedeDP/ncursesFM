@@ -8,7 +8,7 @@ static int timerfd;
 #ifdef LIBUDEV_PRESENT
 static int num_of_batt;
 static char ac_path[PATH_MAX + 1];
-static struct supply *batt;
+static char (*batt)[PATH_MAX + 1];
 static struct udev *udev;
 #endif
 
@@ -50,9 +50,8 @@ void timer_func(void) {
     udev_device_unref(dev);
     if (!online) {
         for (int i = 0; i < num_of_batt; i++) {
-            dev = udev_device_new_from_syspath(udev, batt[i].path);
-            int energy_now = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_ENERGY_NOW"), NULL, 10);
-            perc[i] = (float)energy_now / (float)batt[i].energy_full * 100;
+            dev = udev_device_new_from_syspath(udev, batt[i]);
+            perc[i] = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY"), NULL, 10);
             strcpy(name[i], udev_device_get_property_value(dev, "POWER_SUPPLY_NAME"));
             udev_device_unref(dev);
         }
@@ -89,11 +88,9 @@ static void poll_batteries(void) {
         if (udev_device_get_property_value(dev, "POWER_SUPPLY_ONLINE")) {
             strcpy(ac_path, path);
         } else {
-            batt = realloc(batt, sizeof(struct supply) * (num_of_batt + 1));
+            batt = realloc(batt, (PATH_MAX + 1) * (num_of_batt + 1));
             if (batt) {
-                strcpy(batt[num_of_batt].path, path);
-                int energy = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_ENERGY_FULL"), NULL, 10);
-                batt[num_of_batt].energy_full = energy;
+                strcpy(batt[num_of_batt], path);
                 num_of_batt++;
             }
         }

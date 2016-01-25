@@ -128,15 +128,6 @@ typedef struct thread_list {
 } thread_job_list;
 
 /*
- * Struct that keeps system path (eg: /sys/class/power_supply/BAT0)
- * and energy_full for every battery.
- */
-struct supply {
-    char path[PATH_MAX + 1];
-    int energy_full;
-};
-
-/*
  * for each tab: an fd to catch inotify events,
  * and a wd, that uniquely represents an inotify watch.
  */
@@ -171,7 +162,7 @@ struct search_vars sv;
 int active, quit, num_of_jobs, cont, distance_from_root;
 
 /*
- * ncursesFM working modalities, plus sv.searching == 3 is another modality (missing here as declared before)
+ * ncursesFM working modalities, plus sv.searching == 3 is another modality too (missing here as declared before)
  */
 int device_mode, special_mode[MAX_TABS], fast_browse_mode[MAX_TABS], bookmarks_mode[MAX_TABS];
 
