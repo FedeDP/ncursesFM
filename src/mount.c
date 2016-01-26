@@ -699,7 +699,7 @@ void free_device_monitor(void) {
  */
 static int add_device(struct udev_device *dev, const char *name) {
     int mount;
-    long size;
+    uint64_t size;
     char s[20];
     const char *ignore = udev_device_get_property_value(dev, "UDISKS_IGNORE");
 
@@ -713,7 +713,7 @@ static int add_device(struct udev_device *dev, const char *name) {
         if (!quit) {
             /* calculates current device size */
             size = strtol(udev_device_get_sysattr_value(dev, "size"), NULL, 10);
-            size = (size / (long) 2) * 1024;
+            size = (size / (uint64_t) 2) * 1024;
             change_unit((float)size, s);
             if (udev_device_get_property_value(dev, "ID_MODEL")) {
                 sprintf(my_devices[number_of_devices], "%s, %s, Size: %s, Mounted: %d",

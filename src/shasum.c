@@ -5,7 +5,7 @@
 void shasum_func(const char *filename) {
     unsigned char *hash = NULL, *buffer = NULL;
     FILE *fp;
-    long size;
+    uint64_t size;
     int i = 1, length = SHA_DIGEST_LENGTH;
     char input[4];
     const char *question = "Which shasum do you want? Choose between 1, 224, 256, 384, 512. Defaults to 1.> ";
