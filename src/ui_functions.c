@@ -96,17 +96,17 @@ static void info_win_init(void) {
  * Clear any existing window, and close info_pipe
  */
 void screen_end(void) {
-    for (int i = 0; i < cont; i++) {
-        delete_tab(i);
+    if (stdscr) {
+        for (int i = 0; i < cont; i++) {
+            delete_tab(i);
+        }
+        delwin(info_win);
+        if (helper_win) {
+            delwin(helper_win);
+        }
+        delwin(stdscr);
+        endwin();
     }
-    close(info_fd[0]);
-    close(info_fd[1]);
-    delwin(info_win);
-    if (helper_win) {
-        delwin(helper_win);
-    }
-    delwin(stdscr);
-    endwin();
 }
 
 /*

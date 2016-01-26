@@ -1,21 +1,22 @@
 #include "../inc/bookmarks.h"
 
-static void get_xdg_dirs(const char *home_dir);
+static void get_xdg_dirs(void);
 static void remove_bookmark(void);
 static void update_bookmarks_tabs(void);
 
 static int num_bookmarks, xdg_bookmarks;
-static const char *bookmarks_path = "/.config/ncursesFM-bookmarks";
+static const char *bookmarks_file = "/.config/ncursesFM-bookmarks";
+static char home_dir[PATH_MAX + 1];
+static char fullpath[PATH_MAX + 1];
 static char (bookmarks[MAX_BOOKMARKS])[PATH_MAX + 1];
 
 void get_bookmarks(void) {
     FILE *f;
-    const char *home_dir = getpwuid(getuid())->pw_dir;
-    char fullpath[PATH_MAX + 1];
-
-    get_xdg_dirs(home_dir);
+    
+    strcpy(home_dir, getpwuid(getuid())->pw_dir);
+    sprintf(fullpath, "%s%s", home_dir, bookmarks_file);
+    get_xdg_dirs();
     if (num_bookmarks < MAX_BOOKMARKS) {
-        sprintf(fullpath, "%s%s", home_dir, bookmarks_path);
         if ((f = fopen(fullpath, "r"))) {
             int i = num_bookmarks;
             while (fscanf(f, "%s", bookmarks[i]) == 1 && i < MAX_BOOKMARKS) {
@@ -32,7 +33,7 @@ void get_bookmarks(void) {
     }
 }
 
-static void get_xdg_dirs(const char *home_dir) {
+static void get_xdg_dirs(void) {
     int i = 0;
     FILE *f;
     char str[PATH_MAX + 1] = {0};
@@ -61,14 +62,12 @@ static void get_xdg_dirs(const char *home_dir) {
 
 void add_file_to_bookmarks(const char *str) {
     FILE *f;
-    const char *home_dir = getpwuid(getuid())->pw_dir;
-    char fullpath[PATH_MAX + 1], c;
+    char c;
 
     ask_user(bookmarks_add_quest, &c, 1, 'y');
     if (c == 'n' || quit) {
         return;
     }
-    sprintf(fullpath, "%s%s", home_dir, bookmarks_path);
     if ((f = fopen(fullpath, "a+"))) {
         fprintf(f, "%s\n", str);
         fclose(f);
@@ -101,11 +100,8 @@ void remove_bookmark_from_file(void) {
 
 static void remove_bookmark(void) {
     FILE *f;
-    const char *home_dir = getpwuid(getuid())->pw_dir;
-    char fullpath[PATH_MAX + 1];
     int i = ps[active].curr_pos;
     
-    sprintf(fullpath, "%s%s", home_dir, bookmarks_path);
     if ((f = fopen(fullpath, "w"))) {
         memmove(&bookmarks[i], &bookmarks[i + 1], (num_bookmarks - 1 - i) * sizeof(bookmarks[0]));
         num_bookmarks--;

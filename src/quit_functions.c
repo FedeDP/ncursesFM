@@ -37,6 +37,8 @@ static void free_everything(void) {
     }
     close(inot[0].fd);
     close(inot[1].fd);
+    close(info_fd[0]);
+    close(info_fd[1]);
 }
 
 static void quit_thread_func(void) {
