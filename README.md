@@ -17,14 +17,14 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
-* Simple clock and battery monitor (it will check every 30s for changes). It will list every battery. Battmon needs libudev.
+* Simple sysinfo monitor that will refresh every 30s: clock, batteries and some system info; battery monitor needs libudev.
 If you've got Upower installed, AC (dis)connection will refresh battery status instantly, instead of waiting up to 30s until next refresh.
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
 * '.' to change files/dirs sorting mode: alphabetically (default), by size, by last modified or by type.
 * If executed on a X screen, and xdg-open is found, ncursesFM will open files with xdg-open.
 Otherwise, it will use $editor (config file defined) var. It fallbacks to environment $EDITOR if none is set.
 * Stats support (permissions and sizes).
-* It monitors inotify to check for fs events in current directories (eg: file removed). This way, if you create/remove/modify a file from another fm/command line, your changes will show up in ncursesFM.
+* Inotify monitor to check for fs events in current directories (eg: file removed). This way, if you create/remove/modify a file from another fm/command line, your changes will still show up in ncursesFM.
 * Bookmarks support: it will load bookmarks from $HOME/.config/user-dirs.dirs and $HOME/.config/ncursesFM-bookmarks.
 You can add whatever type of file you wish as bookmark from within ncursesFM. You can remove bookmarks too.
 * Search support: it will search your string in current directory tree. It can search your string inside archives too.
