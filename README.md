@@ -17,7 +17,7 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
-* Simple sysinfo monitor that will refresh every 30s: clock, batteries and some system info; battery monitor needs libudev.
+* Simple sysinfo monitor that will refresh every 30s: clock, battery and some system info; battery monitor needs libudev.
 If you've got Upower installed, AC (dis)connection will refresh battery status instantly, instead of waiting up to 30s until next refresh.
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
 * '.' to change files/dirs sorting mode: alphabetically (default), by size, by last modified or by type.
