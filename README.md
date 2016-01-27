@@ -90,6 +90,15 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * libudev   -> needed for devices/iso mount, and batteries polling.
 * openssl   -> for shasum function support.
 
+## Build options (to be passed to make)
+
+* DISABLE_LIBX11=1 to disable libx11 support
+* DISABLE_LIBCONFIG=1 to disable libconfig support
+* DISABLE_LIBSYSTEMD=1 to disable libsystemd (sd-bus) support.
+* DISABLE_LIBUDEV=1 to disable libudev support.
+* DISABLE_LIBOPENSSL=1 ti disable openssl support.
+* DISABLE_LIBCUPS=1 to disable libcups support.
+
 ## Runtime dependencies
 
 **required:**
