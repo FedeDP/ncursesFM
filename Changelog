@@ -1,3 +1,10 @@
+01 / 27 / 2016
+* removed eventfd and using a pipe with O_DIRECT to divide main thread read from other threads write on info_fd.
+* print_info will malloc a struct {mesg,line} on heap and will write its address to the fd. This way i haven't got to write/read all the struct.
+* lots of bugfixes, see every commit
+* some small improvements
+* lots of doc added
+
 01 / 23 / 2016
 * using inotify and removed my own code to check for changes inside tab's cwd. Really better, lighter. It can now catch changes made from other fm/command line.
 * fixed some bugs
