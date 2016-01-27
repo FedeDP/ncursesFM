@@ -7,6 +7,7 @@ static void quit_worker_th(void);
 static void quit_install_th(void);
 #endif
 static void quit_search_th(void);
+static void close_fds(void);
 
 static int sig_flag;
 
@@ -14,6 +15,7 @@ int program_quit(int sig_received) {
     sig_flag = sig_received;
     free_everything();
     screen_end();
+    close_fds();
     if (quit == MEM_ERR_QUIT || quit == GENERIC_ERR_QUIT) {
         fprintf(stderr, "%s\n", generic_error);
         ERROR("program exited with errors.");
@@ -35,10 +37,6 @@ static void free_everything(void) {
     if (selected) {
         free_copied_list(selected);
     }
-    close(inot[0].fd);
-    close(inot[1].fd);
-    close(info_fd[0]);
-    close(info_fd[1]);
 }
 
 static void quit_thread_func(void) {
@@ -94,6 +92,13 @@ static void quit_search_th(void) {
         pthread_join(search_th, NULL);
         INFO("search th left.");
     }
+}
+
+static void close_fds(void) {
+    close(inot[0].fd);
+    close(inot[1].fd);
+    close(info_fd[0]);
+    close(info_fd[1]);
 }
 
 void free_copied_list(file_list *h) {
