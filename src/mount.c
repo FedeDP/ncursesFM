@@ -585,7 +585,8 @@ void manage_mount_device(void) {
     int pos = ps[active].curr_pos;
     int len = strlen(my_devices[pos]);
     char *ptr = strchr(my_devices[pos], ',');
-    char name[PATH_MAX + 1], mounted_path[PATH_MAX + 1] = {0};
+    char name[PATH_MAX + 1], old_cwd[PATH_MAX + 1];
+    char mounted_path[PATH_MAX + 1] = {0};
 
     mount = my_devices[pos][len - 1] - '0';
     strcpy(name, my_devices[pos]);
@@ -595,13 +596,30 @@ void manage_mount_device(void) {
         print_info("Cannot unmount root.", ERR_LINE);
     } else {
         if (mount) {
+            /* 
+             * before unmount, save old cwd as we'll need
+             * to chdir anyway to another dir if current cwd 
+             * is inside mounted path.
+             * If unmount fails, we'll restore our previous cwd.
+             */
+            strcpy(old_cwd, ps[active].my_cwd);
             r = check_cwd(mounted_path);
             int ret = mount_fs(name, "Unmount", mount);
+            /* if unmounting was succesful */
             if (ret != -1) {
+                /* if not active tab was inside mountpoint, move it away */
                 if (r) {
                     change_dir(mounted_path, !active);
                 }
+            /* if it was not succesful, restore old_cwd */
+            } else {
+                chdir(old_cwd);
             }
+            /* 
+             * here we don't care about unmount success:
+             * save back in ps[active].my_cwd, process' check_cwd
+             */
+            getcwd(ps[active].my_cwd, PATH_MAX);
         } else {
             mount_fs(name, "Mount", mount);
         }
@@ -623,7 +641,6 @@ static int check_cwd(char *mounted_path) {
                 len = strlen(mounted_path) - len;
                 mounted_path[len] = '\0';
                 chdir(mounted_path);
-                strcpy(ps[active].my_cwd, mounted_path);
             } else {
                 ret = 1;
             }
