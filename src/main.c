@@ -343,12 +343,8 @@ static void main_loop(void) {
             scroll_down();
             break;
         case KEY_RIGHT:
-            if (!active && cont == MAX_TABS) {
-                change_tab();
-            }
-            break;
         case KEY_LEFT:
-            if (active) {
+            if (cont == MAX_TABS) {
                 change_tab();
             }
             break;
