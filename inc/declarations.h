@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <libgen.h>
 #include <errno.h>
 #include <pthread.h>
 #include <poll.h>

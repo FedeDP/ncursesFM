@@ -74,9 +74,9 @@ void screen_init(void) {
         create_helper_win();
         config.starting_helper = 0;
     }
-    cont = 1;
-    new_tab(0);
     info_win_init();
+    cont = 1;
+    new_tab(cont - 1);
 }
 
 /*
@@ -118,27 +118,18 @@ static void generate_list(int win) {
 
     ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func[sorting_index]);
     free(ps[win].nl);
-    if (ps[win].number_of_files == -1) {
-        quit = GENERIC_ERR_QUIT;
-        ERROR("could not scan current dir. Leaving.");
-    } else if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
+    if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
         quit = MEM_ERR_QUIT;
         ERROR("could not malloc. Leaving.");
     }
     str_ptr[win] = ps[win].nl;
     for (int i = 0; i < ps[win].number_of_files; i++) {
         if (!quit) {
-            if (strcmp(ps[win].my_cwd, "/") != 0) {
-                sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
-            } else {
-                sprintf(ps[win].nl[i], "/%s", files[i]->d_name);
-            }
+            sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
         }
         free(files[i]);
     }
-    if (quit != GENERIC_ERR_QUIT) {
-        free(files);
-    }
+    free(files);
     if (!quit) {
         reset_win(win);
     }
@@ -225,7 +216,7 @@ static void list_everything(int win, int old_dim, int end) {
             str = *(str_ptr[win] + i);
         } else {
             check_selected(*(str_ptr[win] + i), win, i);
-            str = strrchr(*(str_ptr[win] + i), '/') + 1;
+            str = basename(*(str_ptr[win] + i));
         }
         colored_folders(win, *(str_ptr[win] + i));
         mvwprintw(mywin[win].fm, 1 + i - mywin[win].delta, 4, "%.*s", width, str);
@@ -318,23 +309,15 @@ static void initialize_tab_cwd(int win) {
     if (strlen(config.starting_dir)) {
         if ((cont == 1) || (config.second_tab_starting_dir)) {
             strcpy(ps[win].my_cwd, config.starting_dir);
-            /* 
-             * this is needed to avoid errors with
-             * "--starting_dir /foo/bar/" cmdline switch,
-             * with the ending slash
-             */
-            int len = strlen(ps[win].my_cwd);
-            if (len > 1 && ps[win].my_cwd[len - 1] == '/') {
-                ps[win].my_cwd[len - 1] = '\0';
-            }
         }
     }
     if (!strlen(ps[win].my_cwd)) {
         getcwd(ps[win].my_cwd, PATH_MAX);
     }
-    sprintf(ps[win].title, "%s", ps[win].my_cwd);
-    inot[win].wd = inotify_add_watch(inot[win].fd, ps[win].my_cwd, event_mask);
-    tab_refresh(win);
+    if (change_dir(ps[win].my_cwd, win) == -1) {
+        quit = GENERIC_ERR_QUIT;
+        ERROR("could not scan current dir. Leaving.");
+    }
 }
 
 /*
@@ -922,7 +905,7 @@ static void check_selected(const char *str, int win, int line) {
     file_list *tmp = selected;
 
     while (tmp) {
-        if (strcmp(tmp->name, str) == 0) {
+        if (!strcmp(tmp->name, str)) {
             mvwprintw(mywin[win].fm, 1 + line - mywin[win].delta, SEL_COL, "*");
             break;
         }
@@ -939,9 +922,7 @@ void erase_selected_highlight(void) {
     }
 }
 
-void change_tab(void) {
-    active = !active;
-    chdir(ps[active].my_cwd);
+void update_arrows(void) {
     print_arrow(!active, 1 + ps[!active].curr_pos - mywin[!active].delta);
     print_arrow(active, 1 + ps[active].curr_pos - mywin[active].delta);
     wrefresh(mywin[!active].fm);

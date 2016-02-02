@@ -1,3 +1,7 @@
+02 / 02 / 2016
+* using basename() and dirname() functions instead of manually strrchr path strings. Way cleaner and probably more reliable.
+* using change_dir when creating new_tab to check for chdir errors and reuse more code.
+
 01 / 27 / 2016
 * removed eventfd and using a pipe with O_DIRECT to divide main thread read from other threads write on info_fd.
 * print_info will malloc a struct {mesg,line} on heap and will write its address to the fd. This way i haven't got to write/read all the struct.

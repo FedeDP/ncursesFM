@@ -179,7 +179,7 @@ static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
         strcpy(loop_dev, udev_device_get_devnode(dev));
         iso_backing_file(s, loop_dev);
         udev_device_unref(dev);
-        if (strcmp(s, resolved_path) == 0) {
+        if (!strcmp(s, resolved_path)) {
             mount = 1;
             break;
         }
@@ -618,6 +618,7 @@ void manage_mount_device(void) {
             /* 
              * here we don't care about unmount success:
              * save back in ps[active].my_cwd, process' check_cwd
+             * to be sure we carry the right cwd
              */
             getcwd(ps[active].my_cwd, PATH_MAX);
         } else {
@@ -637,9 +638,7 @@ static int check_cwd(char *mounted_path) {
     for (int i = 0; i < cont; i++) {
         if (!strncmp(ps[i].my_cwd, mounted_path, strlen(mounted_path))) {
             if (i == active) {
-                len = strlen(strrchr(mounted_path, '/'));
-                len = strlen(mounted_path) - len;
-                mounted_path[len] = '\0';
+                dirname(mounted_path);
                 chdir(mounted_path);
             } else {
                 ret = 1;

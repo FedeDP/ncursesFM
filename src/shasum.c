@@ -66,7 +66,7 @@ void shasum_func(const char *filename) {
         sprintf(s + strlen(s), "%02x", hash[i]);
     }
     if (strlen(matching_hash)) {
-        if (strcmp(s, matching_hash) == 0) {
+        if (!strcmp(s, matching_hash)) {
             print_info("OK", INFO_LINE);
         } else {
             print_info("Shasum not matching.", INFO_LINE);

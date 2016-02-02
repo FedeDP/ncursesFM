@@ -29,6 +29,7 @@
 #define BIG_FILE_THRESHOLD 5000000
 
 int change_dir(const char *str, int win);
+void change_tab(void);
 void switch_hidden(void);
 int is_ext(const char *filename, const char *ext[], int size);
 void manage_file(const char *str, float size);

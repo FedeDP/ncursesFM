@@ -70,7 +70,6 @@ int main(int argc, const char *argv[])
     if (!quit) {
         screen_init();
         if (!quit) {
-            chdir(ps[active].my_cwd);
             main_loop();
         }
     }
@@ -165,7 +164,7 @@ static void helper_function(int argc, const char *argv[]) {
 #endif
 #endif
 
-    if ((argc > 1) && (strcmp(argv[1], "--help") == 0)) {
+    if ((argc > 1) && (!strcmp(argv[1], "--help"))) {
         printf("\n NcursesFM Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
         printf(" This is free software, and you are welcome to redistribute it under certain conditions;\n");
@@ -201,25 +200,25 @@ static void parse_cmd(int argc, const char *argv[]) {
 #endif
 
     while (j < argc) {
-        if ((strcmp(cmd_switch[0], argv[j]) == 0) && (argv[j + 1])) {
+        if ((!strcmp(cmd_switch[0], argv[j])) && (argv[j + 1])) {
             strcpy(config.editor, argv[j + 1]);
-        } else if ((strcmp(cmd_switch[1], argv[j]) == 0) && (argv[j + 1])) {
+        } else if ((!strcmp(cmd_switch[1], argv[j])) && (argv[j + 1])) {
             strcpy(config.starting_dir, argv[j + 1]);
-        } else if ((strcmp(cmd_switch[2], argv[j]) == 0) && (argv[j + 1])) {
+        } else if ((!strcmp(cmd_switch[2], argv[j])) && (argv[j + 1])) {
             config.starting_helper = atoi(argv[j + 1]);
-        } else if ((strcmp(cmd_switch[3], argv[j]) == 0) && (argv[j + 1])) {
+        } else if ((!strcmp(cmd_switch[3], argv[j])) && (argv[j + 1])) {
             config.loglevel = atoi(argv[j + 1]);
-        } else if ((strcmp(cmd_switch[4], argv[j]) == 0) && (argv[j + 1])) {
+        } else if ((!strcmp(cmd_switch[4], argv[j])) && (argv[j + 1])) {
             config.persistent_log = atoi(argv[j + 1]);
-        } else if ((strcmp(cmd_switch[5], argv[j]) == 0) && (argv[j + 1])) {
+        } else if ((!strcmp(cmd_switch[5], argv[j])) && (argv[j + 1])) {
             config.bat_low_level = atoi(argv[j + 1]);
         }
 #ifdef SYSTEMD_PRESENT
-        else if ((strcmp(cmd_switch[6], argv[j]) == 0) && (argv[j + 1])) {
+        else if ((!strcmp(cmd_switch[6], argv[j])) && (argv[j + 1])) {
             config.inhibit = atoi(argv[j + 1]);
         }
 #ifdef LIBUDEV_PRESENT
-        else if ((strcmp(cmd_switch[7], argv[j]) == 0) && (argv[j + 1])) {
+        else if ((!strcmp(cmd_switch[7], argv[j])) && (argv[j + 1])) {
             config.automount = atoi(argv[j + 1]);
         }
 #endif
@@ -369,14 +368,14 @@ static void main_loop(void) {
             break;
         case 'w': // w to close second tab
             if (active) {
-                change_tab();
                 cont--;
-                delete_tab(cont);
+                delete_tab(active);
                 change_first_tab_size();
+                change_tab();
             }
             break;
         case 32: // space to select files
-            if (strcmp(strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1, "..") != 0) {
+            if (strcmp(basename(str_ptr[active][ps[active].curr_pos]), "..")) {
                 manage_space_press(str_ptr[active][ps[active].curr_pos]);
             }
             break;
@@ -413,7 +412,7 @@ static void main_loop(void) {
             break;
 #ifdef OPENSSL_PRESENT
         case 'u': // u to check current file's shasum
-            if (strcmp(strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1, "..") != 0) {
+            if (strcmp(basename(str_ptr[active][ps[active].curr_pos]), "..")) {
                 shasum_func(str_ptr[active][ps[active].curr_pos]);
             }
             break;

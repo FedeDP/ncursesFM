@@ -33,11 +33,11 @@ int create_archive(void) {
  */
 static void archiver_func(void) {
     file_list *tmp = thread_h->selected_files;
-    char *str;
+    char path[PATH_MAX + 1];
 
     while (tmp) {
-        str = strrchr(tmp->name, '/');
-        distance_from_root = strlen(tmp->name) - strlen(str);
+        strcpy(path, tmp->name);
+        distance_from_root = strlen(dirname(path));
         nftw(tmp->name, recursive_archive, 64, FTW_MOUNT | FTW_PHYS);
         tmp = tmp->next;
     }
@@ -69,16 +69,14 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 
 int try_extractor(void) {
     struct archive *a;
-    char current_dir[PATH_MAX + 1];
+    char *current_dir, path[PATH_MAX + 1];
 
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
     if ((a) && (archive_read_open_filename(a, thread_h->filename, BUFF_SIZE) == ARCHIVE_OK)) {
-        strcpy(current_dir, thread_h->filename);
-        char *tmp = strrchr(current_dir, '/');
-        int len = strlen(current_dir) - strlen(tmp);
-        current_dir[len] = '\0';
+        strcpy(path, thread_h->filename);
+        current_dir = dirname(path);
         extractor_thread(a, current_dir);
         return 0;
     }

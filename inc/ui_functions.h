@@ -53,7 +53,7 @@ void resize_win(void);
 void change_sort(void);
 void highlight_selected(int line, const char c);
 void erase_selected_highlight(void);
-void change_tab(void);
+void update_arrows(void);
 void switch_fast_browse_mode(void);
 void update_time(void);
 void update_batt(int online, int perc[], int num_of_batt, char name[][10]);

@@ -35,13 +35,14 @@ void search(void) {
 }
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    char fixed_str[NAME_MAX + 1];
+    char *fixed_str, p[PATH_MAX + 1];
     int len, r = 0, ret = 0;
 
     if (ftwbuf->level == 0) {
         return 0;
     }
-    strcpy(fixed_str, strrchr(path, '/') + 1);
+    strcpy(p, path);
+    fixed_str = basename(p);
     if ((sv.search_archive) && (is_ext(fixed_str, arch_ext, NUM(arch_ext)))) {
         return search_inside_archive(path);
     }

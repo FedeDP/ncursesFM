@@ -93,7 +93,7 @@ static void init_thread_helper(void) {
                 return;
             }
             if (!strlen(name)) {
-                strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
+                strcpy(name, basename(current_th->selected_files->name));
             }
             /* avoid overwriting a compressed file in path if it has the same name of the archive being created there */
             len = strlen(name);
@@ -142,13 +142,13 @@ static void *execute_thread(void *x) {
 int remove_from_list(const char *name) {
     file_list *temp = NULL, *tmp = selected;
 
-    if (strcmp(name, tmp->name) == 0) {
+    if (!strcmp(name, tmp->name)) {
         selected = selected->next;
         free(tmp);
         return 1;
     }
     while(tmp->next) {
-        if (strcmp(name, tmp->next->name) == 0) {
+        if (!strcmp(name, tmp->next->name)) {
             temp = tmp->next;
             tmp->next = tmp->next->next;
             free(temp);

@@ -40,6 +40,12 @@ int change_dir(const char *str, int win) {
     return ret;
 }
 
+void change_tab(void) {
+    active = !active;
+    chdir(ps[active].my_cwd);
+    update_arrows();
+}
+
 void switch_hidden(void) {
     config.show_hidden = !config.show_hidden;
     for (int i = 0; i < cont; i++) {
@@ -57,7 +63,7 @@ int is_ext(const char *filename, const char *ext[], int size) {
     
     if (strrchr(filename, '.')) {
         while (i < size) {
-            if (strcmp(filename + len - strlen(ext[i]), ext[i]) == 0) {
+            if (!strcmp(filename + len - strlen(ext[i]), ext[i])) {
                 return 1;
             }
             i++;
@@ -245,15 +251,12 @@ void manage_space_press(const char *str) {
  * from where it was copied. If it is the case, it does not copy it.
  */
 int paste_file(void) {
-    char copied_file_dir[PATH_MAX + 1], *str;
-    int len;
+    char *copied_file_dir, path[PATH_MAX + 1];
 
     for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
-        strcpy(copied_file_dir, tmp->name);
-        str = strrchr(tmp->name, '/');
-        len = strlen(tmp->name) - strlen(str);
-        copied_file_dir[len] = '\0';
-        if (strcmp(thread_h->full_path, copied_file_dir) != 0) {
+        strcpy(path, tmp->name);
+        copied_file_dir = dirname(path);
+        if (strcmp(thread_h->full_path, copied_file_dir)) {
             cpr(tmp);
         }
     }
@@ -267,20 +270,18 @@ int paste_file(void) {
  * Else, the function has to copy it and rm copied file.
  */
 int move_file(void) {
-    char pasted_file[PATH_MAX + 1], copied_file_dir[PATH_MAX + 1], *str;
+    char pasted_file[PATH_MAX + 1], *copied_file_dir, path[PATH_MAX + 1];
     struct stat file_stat_copied, file_stat_pasted;
-    int len;
 
     lstat(thread_h->full_path, &file_stat_pasted);
     for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
-        strcpy(copied_file_dir, tmp->name);
-        str = strrchr(tmp->name, '/');
-        len = strlen(tmp->name) - strlen(str);
-        copied_file_dir[len] = '\0';
-        if (strcmp(thread_h->full_path, copied_file_dir) != 0) {
+        strcpy(path, tmp->name);
+        copied_file_dir = dirname(path);
+        if (strcmp(thread_h->full_path, copied_file_dir)) {
             lstat(copied_file_dir, &file_stat_copied);
             if (file_stat_copied.st_dev == file_stat_pasted.st_dev) { // if on the same fs, just rename the file
-                sprintf(pasted_file, "%s%s", thread_h->full_path, strrchr(tmp->name, '/'));
+                strcpy(path, tmp->name);
+                sprintf(pasted_file, "%s/%s", thread_h->full_path, basename(path));
                 if (rename(tmp->name, pasted_file) == - 1) {
                     print_info(strerror(errno), ERR_LINE);
                 }
@@ -304,10 +305,10 @@ int move_file(void) {
  * 2) /path/to/pasted/folder/Scripts/me, that is exactly what we wanted.
  */
 static void cpr(file_list *tmp) {
-    char *str;
+    char path[PATH_MAX + 1];
     
-    str = strrchr(tmp->name, '/');
-    distance_from_root = strlen(tmp->name) - strlen(str);
+    strcpy(path, tmp->name);
+    distance_from_root = strlen(dirname(path));
     nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
 }
 
@@ -371,7 +372,7 @@ void fast_browse(int c) {
     sprintf(fast_browse_str + strlen(fast_browse_str), "%c", c);
     print_info(fast_browse_str, INFO_LINE);
     for (; (i < ps[active].number_of_files) && (!found); i++) {
-        str = strrchr(ps[active].nl[i], '/') + 1;
+        str = basename(ps[active].nl[i]);
         len = strlen(fast_browse_str);
         if (strncmp(fast_browse_str, str, len) == 0) {
             found = 1;
