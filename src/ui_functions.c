@@ -579,27 +579,36 @@ static void info_print(const char *str, int i) {
 }
 
 /*
- * Need to malloc COLS - len bytes as they're printable chars on the screen.
- * Need malloc because window can be resized (ie: COLS is not a constant)
- * Writes on the pipe the address of its heap-allocated struct info_msg.
+ * IF it is not called from a quit function:
+ * it needs to malloc COLS - len bytes as they're printable chars on the screen.
+ * we need malloc because window can be resized (ie: COLS is not a constant)
+ * then writes on the pipe the address of its heap-allocated struct info_msg.
+ * ELSE: 
+ * just call info_print as we're leaving and info_fd is closed.
+ * Needed to print information to user while leaving (eg: asking if he wants to wait
+ * for worker thread to finish before leaving)
  */
 void print_info(const char *str, int line) {
-    struct info_msg *info;
-    int len = 1 + strlen(info_win_str[line]);
+    if (!quit) {
+        struct info_msg *info;
+        int len = 1 + strlen(info_win_str[line]);
     
-    if (!(info = malloc(sizeof(struct info_msg)))) {
-        goto error;
-    }
-    if (!(info->msg = malloc(sizeof(char) * (COLS - len)))) {
-        goto error;
-    }
-    strncpy(info->msg, str, COLS - len);
-    info->line = line;
-    size_t r = write(info_fd[1], &info, sizeof(struct info_msg *));
-    if (r <= 0) {
-        free(info->msg);
-        free(info);
-        WARN("a message could not be written.");
+        if (!(info = malloc(sizeof(struct info_msg)))) {
+            goto error;
+        }
+        if (!(info->msg = malloc(sizeof(char) * (COLS - len)))) {
+            goto error;
+        }
+        strncpy(info->msg, str, COLS - len);
+        info->line = line;
+        size_t r = write(info_fd[1], &info, sizeof(struct info_msg *));
+        if (r <= 0) {
+            free(info->msg);
+            free(info);
+            WARN("a message could not be written.");
+        }
+    } else {
+        info_print(str, line);
     }
     return;
     
@@ -624,7 +633,7 @@ void ask_user(const char *str, char *input, int d, char c) {
     int s, len, i = 0;
     
     print_info(str, ASK_LINE);
-    while ((i < d) && (!quit)) {
+    do {
         wrefresh(info_win);
         s = main_poll(info_win);
         if (s == KEY_RESIZE) {
@@ -649,10 +658,8 @@ void ask_user(const char *str, char *input, int d, char c) {
                 mvwaddch(info_win, ASK_LINE, len + 1, s);
             }
         }
-    }
-    if (quit) {
-        memset(input, 0, strlen(input));
-    } else if (i == 0) {
+    } while ((i < d) && (!quit));
+    if (i == 0) {
         input[0] = c;
     }
     print_info("", ASK_LINE);

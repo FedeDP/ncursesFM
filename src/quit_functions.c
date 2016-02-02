@@ -9,10 +9,7 @@ static void quit_install_th(void);
 static void quit_search_th(void);
 static void close_fds(void);
 
-static int sig_flag;
-
-int program_quit(int sig_received) {
-    sig_flag = sig_received;
+int program_quit(void) {
     free_everything();
     screen_end();
     close_fds();
@@ -52,10 +49,10 @@ static void quit_worker_th(void) {
     
     if (thread_h) {
         /* 
-         * if we received an external signal (SIGINT or SIGTERM), waits until worker thread ends its job list
-         * or until a SIGKILL is sent to the process
+         * if we received an external signal (SIGINT or SIGTERM), waits until
+         * worker thread ends its job list or until a SIGKILL is sent to the process
          */
-        if (!sig_flag) {
+        if (quit !=  SIG_QUIT) {
             ask_user(quit_with_running_thread, &c, 1, 'y');
             if (c == 'n') {
                 INFO("sending SIGUSR1 signal to worker th...");

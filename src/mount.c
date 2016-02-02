@@ -633,7 +633,7 @@ void manage_mount_device(void) {
  * and chdir there. Else, returns 1.
  */
 static int check_cwd(char *mounted_path) {
-    int len, ret = 0;
+    int ret = 0;
 
     for (int i = 0; i < cont; i++) {
         if (!strncmp(ps[i].my_cwd, mounted_path, strlen(mounted_path))) {

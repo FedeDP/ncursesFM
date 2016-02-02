@@ -10,7 +10,7 @@ void print_support(char *str) {
     char c;
 
     ask_user(print_question, &c, 1, 'y');
-    if (c == 'y') {
+    if (!quit && c == 'y') {
         pthread_attr_init(&tattr);
         pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
         pthread_create(&print_thread, &tattr, print_file, str);

@@ -2,5 +2,5 @@
 
 #include "ui_functions.h"
 
-int program_quit(int sig_received);
+int program_quit(void);
 void free_copied_list(file_list *h);

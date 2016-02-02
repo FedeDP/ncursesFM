@@ -91,7 +91,7 @@ void manage_file(const char *str, float size) {
         print_info(package_warn, INFO_LINE);
         ask_user(pkg_quest, &c, 1, 'n');
         print_info("", INFO_LINE);
-        if (c == 'y') {
+        if (!quit && c == 'y') {
             pthread_create(&install_th, NULL, install_package, (void *)str);
         }
         return;
@@ -99,7 +99,7 @@ void manage_file(const char *str, float size) {
 #endif
     if (is_ext(str, arch_ext, NUM(arch_ext))) {
         ask_user(extr_question, &c, 1, 'y');
-        if (c == 'y') {
+        if (!quit && c == 'y') {
             init_thread(EXTRACTOR_TH, try_extractor);
         }
         return;
@@ -176,7 +176,7 @@ void fast_file_operations(const int index) {
     char new_name[NAME_MAX + 1];
 
     ask_user(ask_name, new_name, NAME_MAX, 0);
-    if (!strlen(new_name)) {
+    if (quit || !strlen(new_name)) {
         return;
     }
     int r = short_func[index](new_name);

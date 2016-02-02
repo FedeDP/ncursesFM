@@ -73,7 +73,7 @@ int main(int argc, const char *argv[])
             main_loop();
         }
     }
-    program_quit(0);
+    program_quit();
 }
 
 static void set_signals(void) {
@@ -139,7 +139,7 @@ static void sig_handler(int signum) {
 
     sprintf(str, "received signal %d. Leaving.", signum);
     WARN(str);
-    quit = NORM_QUIT;
+    quit = SIG_QUIT;
 }
 
 /*
@@ -525,7 +525,10 @@ static int check_init(int index) {
         return check_access();
     }
     ask_user(sure, &x, 1, 'n');
-    return (x == 'y') ? 1 : 0;
+    if (quit || x != 'y') {
+        return 0;
+    }
+    return 1;
 }
 
 static int check_access(void) {

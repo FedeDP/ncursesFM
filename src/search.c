@@ -8,7 +8,7 @@ void search(void) {
     char c;
 
     ask_user(search_insert_name, sv.searched_string, 20, 0);
-    if (strlen(sv.searched_string) < 5) {
+    if (quit || strlen(sv.searched_string) < 5) {
         print_info(searched_string_minimum, ERR_LINE);
     } else {
         sv.found_cont = 0;
