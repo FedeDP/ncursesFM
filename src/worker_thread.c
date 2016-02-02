@@ -4,8 +4,6 @@ static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void));
 static void free_running_h(void);
 static void init_thread_helper(void);
 static void *execute_thread(void *x);
-static void free_thread_job_list(thread_job_list *h);
-static void sig_handler(int signum);
 
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
 static struct thread_mesg thread_m;
@@ -109,14 +107,11 @@ static void init_thread_helper(void) {
 }
 
 /*
- * It sticks a signal handler to the thread (that is needed if user wants to leave program while worker_thread is still running;
- * we need at least to kill thread and clear job's queue to avoid memleaks)
- * then, while job's queue isn't empty, exec job's queue head function, frees its resources, updates UI and notifies user.
+ * While job's queue isn't empty, exec job's queue head function, frees its resources, updates UI and notifies user.
  * Finally, call itself recursively.
  * When job's queue is empty, reset some vars and returns.
  */
 static void *execute_thread(void *x) {
-    signal(SIGUSR1, sig_handler);
     print_info(thread_m.str, thread_m.line);
     if (thread_h) {
         if (thread_h->f() == -1) {
@@ -172,28 +167,4 @@ file_list *select_file(file_list *h, const char *str) {
         h->next = NULL;
     }
     return h;
-}
-
-static void free_thread_job_list(thread_job_list *h) {
-    thread_job_list *tmp = h;
-    
-    while (h) {
-        h = h->next;
-        if (tmp->selected_files) {
-            free_copied_list(tmp->selected_files);
-        }
-        free(tmp);
-        tmp = h;
-    }
-}
-
-static void sig_handler(int signum) {
-    INFO("received SIGUSR1 signal.");
-    INFO("freeing job's list...");
-    free_thread_job_list(thread_h);
-    INFO("freed.");
-#ifdef SYSTEMD_PRESENT
-    stop_inhibition(inhibit_fd);
-#endif
-    pthread_exit(NULL);
 }

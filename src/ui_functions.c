@@ -579,14 +579,10 @@ static void info_print(const char *str, int i) {
 }
 
 /*
- * IF it is not called from a quit function:
+ * IF it is not called during quit:
  * it needs to malloc COLS - len bytes as they're printable chars on the screen.
  * we need malloc because window can be resized (ie: COLS is not a constant)
  * then writes on the pipe the address of its heap-allocated struct info_msg.
- * ELSE: 
- * just call info_print as we're leaving and info_fd is closed.
- * Needed to print information to user while leaving (eg: asking if he wants to wait
- * for worker thread to finish before leaving)
  */
 void print_info(const char *str, int line) {
     if (!quit) {
@@ -607,8 +603,6 @@ void print_info(const char *str, int line) {
             free(info);
             WARN("a message could not be written.");
         }
-    } else {
-        info_print(str, line);
     }
     return;
     
@@ -634,7 +628,6 @@ void ask_user(const char *str, char *input, int d, char c) {
     
     print_info(str, ASK_LINE);
     do {
-        wrefresh(info_win);
         s = main_poll(info_win);
         if (s == KEY_RESIZE) {
             resize_win();
@@ -658,6 +651,7 @@ void ask_user(const char *str, char *input, int d, char c) {
                 mvwaddch(info_win, ASK_LINE, len + 1, s);
             }
         }
+        wrefresh(info_win);
     } while ((i < d) && (!quit));
     if (i == 0) {
         input[0] = c;

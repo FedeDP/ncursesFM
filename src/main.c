@@ -139,7 +139,7 @@ static void sig_handler(int signum) {
 
     sprintf(str, "received signal %d. Leaving.", signum);
     WARN(str);
-    quit = SIG_QUIT;
+    quit = NORM_QUIT;
 }
 
 /*

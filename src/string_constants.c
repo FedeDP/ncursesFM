@@ -59,7 +59,7 @@ const char *short_msg[] = {"File created.", "Dir created.", "File renamed."};
 const char *selected_mess = "There are selected files.";
 
 const char *thread_running = "There's already a thread working. This thread will be queued.";
-const char *quit_with_running_thread = "A job is still running. Do you want to wait for it?(You should!) Y/n:> ";
+const char *quit_with_running_thread = "Queued jobs still running. Waiting...";
 
 const char *helper_string[] = { "Enter to surf between folders or to open files.",
                                 "It will eventually extract your archives, (un)mount your ISO files or install your distro downloaded packages.",

@@ -13,6 +13,7 @@ int program_quit(void) {
     free_everything();
     screen_end();
     close_fds();
+    quit_thread_func();
     if (quit == MEM_ERR_QUIT || quit == GENERIC_ERR_QUIT) {
         fprintf(stderr, "%s\n", generic_error);
         ERROR("program exited with errors.");
@@ -25,7 +26,6 @@ int program_quit(void) {
 }
 
 static void free_everything(void) {
-    quit_thread_func();
 #if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
     free_device_monitor();
 #endif
@@ -45,22 +45,11 @@ static void quit_thread_func(void) {
 }
 
 static void quit_worker_th(void) {
-    char c;
-    
     if (thread_h) {
-        /* 
-         * if we received an external signal (SIGINT or SIGTERM), waits until
-         * worker thread ends its job list or until a SIGKILL is sent to the process
-         */
-        if (quit !=  SIG_QUIT) {
-            ask_user(quit_with_running_thread, &c, 1, 'y');
-            if (c == 'n') {
-                INFO("sending SIGUSR1 signal to worker th...");
-                pthread_kill(worker_th, SIGUSR1);
-            }
-        }
+        printf("%s\n", quit_with_running_thread);
         pthread_join(worker_th, NULL);
         INFO("worker th exited without errors.");
+        printf("Jobs queue ended.\n");
     }
 }
 
@@ -70,17 +59,17 @@ static void quit_install_th(void) {
     
     if (install_th) {
         if (pthread_kill(install_th, 0) != ESRCH) {
-            print_info(install_th_wait, INFO_LINE);
+            printf("%s\n", install_th_wait);
             INFO("waiting for package installation to finish...");
             installing = 1;
         }
         pthread_join(install_th, NULL);
         if (installing) {
+            printf("Installation finished.\n");
             INFO("package installation finished. Leaving.");
         }
     }
 }
-
 #endif
 
 static void quit_search_th(void) {
