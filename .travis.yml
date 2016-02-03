@@ -1,5 +1,9 @@
 sudo: required
 
+compiler:
+  - clang
+  - gcc
+
 notifications:
   email:
     recipients: nierro92@gmail.com
