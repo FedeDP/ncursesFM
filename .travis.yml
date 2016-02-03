@@ -1,9 +1,5 @@
 sudo: required
 
-compiler:
-  - clang
-  - gcc
-
 notifications:
   email:
     recipients: nierro92@gmail.com
@@ -11,6 +7,9 @@ notifications:
     on_failure: always
 
 arch:
+    compiler:
+        - clang
+        - gcc
     packages:
         - systemd
         - libconfig
