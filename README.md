@@ -13,7 +13,6 @@ It can be built with a very small set of dependencies, as i tried to make as man
 ## Features:
 
 **Press 'l' while in program to view a detailed helper message**
-
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
@@ -73,7 +72,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * 3 : log disabled.
 
 ## Build requirements
-
+* linux>=3.4  -> pipe2() O_DIRECT flag. See: http://man7.org/linux/man-pages/man2/pipe.2.html
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * pkg-config -> to manage libraries link in makefile
@@ -81,7 +80,6 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * git        -> to clone repo
 
 ## Optional compile time dependencies
-
 * libcups   -> print support.
 * libconfig -> config file parsing.
 * libx11    -> check whether ncursesFM is started in a X environment or not, and xdg-open support.
