@@ -5,6 +5,4 @@
  * sshfs support?
  * 
  * switch to stdint lib
- * 
- * fix basename dirname usage (always strcpy string?)
  */

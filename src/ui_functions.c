@@ -216,7 +216,7 @@ static void list_everything(int win, int old_dim, int end) {
             str = *(str_ptr[win] + i);
         } else {
             check_selected(*(str_ptr[win] + i), win, i);
-            str = basename(*(str_ptr[win] + i));
+            str = strrchr(*(str_ptr[win] + i), '/') + 1;
         }
         colored_folders(win, *(str_ptr[win] + i));
         mvwprintw(mywin[win].fm, 1 + i - mywin[win].delta, 4, "%.*s", width, str);
@@ -996,7 +996,11 @@ void update_batt(int online, int perc[], int num_of_batt, char name[][10]) {
         /* on battery */
         for (int i = 0; i < num_of_batt; i++) {
             sprintf(batt_str, "%s: ", name[i]);
-            sprintf(batt_str + strlen(batt_str), perc[i] != -1 ? "%d%%%%" : "no info.", perc[i]);
+            if (perc[i] != -1) {
+                sprintf(batt_str + strlen(batt_str), "%d%%%%", perc[i]);
+            } else {
+                sprintf(batt_str + strlen(batt_str), "no info.");
+            }
             len += strlen(batt_str) - 1;    /* -1 to delete a space derived from %%%% */
             if (perc[i] != -1 && perc[i] <= config.bat_low_level) {
                 wattron(info_win, COLOR_PAIR(5));

@@ -280,8 +280,7 @@ int move_file(void) {
         if (strcmp(thread_h->full_path, copied_file_dir)) {
             lstat(copied_file_dir, &file_stat_copied);
             if (file_stat_copied.st_dev == file_stat_pasted.st_dev) { // if on the same fs, just rename the file
-                strcpy(path, tmp->name);
-                sprintf(pasted_file, "%s/%s", thread_h->full_path, basename(path));
+                sprintf(pasted_file, "%s%s", thread_h->full_path, strrchr(tmp->name, '/'));
                 if (rename(tmp->name, pasted_file) == - 1) {
                     print_info(strerror(errno), ERR_LINE);
                 }
@@ -372,7 +371,7 @@ void fast_browse(int c) {
     sprintf(fast_browse_str + strlen(fast_browse_str), "%c", c);
     print_info(fast_browse_str, INFO_LINE);
     for (; (i < ps[active].number_of_files) && (!found); i++) {
-        str = basename(ps[active].nl[i]);
+        str = strrchr(ps[active].nl[i], '/') + 1;
         len = strlen(fast_browse_str);
         if (strncmp(fast_browse_str, str, len) == 0) {
             found = 1;

@@ -91,7 +91,7 @@ static void init_thread_helper(void) {
                 return;
             }
             if (!strlen(name)) {
-                strcpy(name, basename(current_th->selected_files->name));
+                strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
             }
             /* avoid overwriting a compressed file in path if it has the same name of the archive being created there */
             len = strlen(name);
@@ -130,7 +130,7 @@ static void *execute_thread(void *x) {
 #ifdef SYSTEMD_PRESENT
     stop_inhibition(inhibit_fd);
 #endif
-    pthread_detach(pthread_self()); // to avoid stupid valgrind errors
+    pthread_detach(pthread_self());
     pthread_exit(NULL);
 }
 

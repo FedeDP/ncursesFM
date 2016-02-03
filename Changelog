@@ -1,6 +1,11 @@
 02 / 02 / 2016
 * using basename() and dirname() functions instead of manually strrchr path strings. Way cleaner and probably more reliable.
 * using change_dir when creating new_tab to check for chdir errors and reuse more code.
+* some more cleanup and internal changes. Most noticeably: do not ask user to kill worker th: instead ending screen and signaling user with a printf that a thread is still running
+* fixed some small memleaks.
+* fixed compilation with clang.
+* now using "cc" to compile (ie: not forcing gcc anymore)
+* fixed bug with isomount present since there's no monitor thread.
 
 01 / 27 / 2016
 * removed eventfd and using a pipe with O_DIRECT to divide main thread read from other threads write on info_fd.

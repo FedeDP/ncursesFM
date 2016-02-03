@@ -128,9 +128,7 @@ void isomount(const char *str) {
     }
     sd_bus_message_read(mess, "o", &obj_path);
     sd_bus_flush(iso_bus);
-#ifndef LIBUDEV_PRESENT
     mount_fs(obj_path, "Mount", 0);
-#endif
     INFO("calling SetAutoClear on bus.");
     r = sd_bus_call_method(iso_bus,
                             "org.freedesktop.UDisks2",
@@ -197,7 +195,7 @@ static void iso_backing_file(char *s, const char *name) {
     sd_bus_message *mess = NULL;
     sd_bus *iso_bus = NULL;
     int r;
-    const uint8_t bytes;
+    const uint8_t bytes = '\0';
     char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
 
     r = sd_bus_open_system(&iso_bus);
@@ -638,7 +636,7 @@ static int check_cwd(char *mounted_path) {
     for (int i = 0; i < cont; i++) {
         if (!strncmp(ps[i].my_cwd, mounted_path, strlen(mounted_path))) {
             if (i == active) {
-                dirname(mounted_path);
+                strcpy(mounted_path, dirname(mounted_path));
                 chdir(mounted_path);
             } else {
                 ret = 1;
@@ -740,9 +738,8 @@ static int add_device(struct udev_device *dev, const char *name) {
             }
             number_of_devices++;
             INFO("added device.");
-            int is_loop_dev = !strncmp(name, "/dev/loop", strlen("/dev/loop"));
-            if ((device_mode != DEVMON_STARTING) && ((is_loop_dev) || (!mount && config.automount))) {
-                    mount_fs(name, "Mount", mount);
+            if ((device_mode != DEVMON_STARTING) && (!mount && config.automount)) {
+                mount_fs(name, "Mount", mount);
             }
         }
     }

@@ -75,6 +75,7 @@ void *install_package(void *str) {
 finish:
     stop_inhibition(inhibit_fd);
     close_bus(&error, mess, install_bus);
+    pthread_detach(pthread_self());
     pthread_exit(NULL);
 }
 

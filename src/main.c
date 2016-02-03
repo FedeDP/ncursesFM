@@ -77,7 +77,7 @@ int main(int argc, const char *argv[])
 }
 
 static void set_signals(void) {
-    struct sigaction main_act = {0};
+    struct sigaction main_act = {{0}};
     sigset_t mask;
 
     main_act.sa_handler = sig_handler;
@@ -371,7 +371,7 @@ static void main_loop(void) {
             }
             break;
         case 32: // space to select files
-            if (strcmp(basename(str_ptr[active][ps[active].curr_pos]), "..")) {
+            if (strcmp(strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1, "..")) {
                 manage_space_press(str_ptr[active][ps[active].curr_pos]);
             }
             break;
@@ -408,7 +408,7 @@ static void main_loop(void) {
             break;
 #ifdef OPENSSL_PRESENT
         case 'u': // u to check current file's shasum
-            if (strcmp(basename(str_ptr[active][ps[active].curr_pos]), "..")) {
+            if (strcmp(strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1, "..")) {
                 shasum_func(str_ptr[active][ps[active].curr_pos]);
             }
             break;

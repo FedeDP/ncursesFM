@@ -35,14 +35,13 @@ void search(void) {
 }
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    char *fixed_str, p[PATH_MAX + 1];
+    char *fixed_str;
     int len, r = 0, ret = 0;
 
     if (ftwbuf->level == 0) {
         return 0;
     }
-    strcpy(p, path);
-    fixed_str = basename(p);
+    fixed_str = strrchr(path, '/') + 1;
     if ((sv.search_archive) && (is_ext(fixed_str, arch_ext, NUM(arch_ext)))) {
         return search_inside_archive(path);
     }
@@ -107,20 +106,20 @@ static void *search_thread(void *x) {
     INFO("starting recursive search...");
     nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
     INFO("ended recursive search");
-    if (quit) {
-        pthread_exit(NULL);
-    }
-    if ((sv.found_cont == MAX_NUMBER_OF_FOUND) || (sv.found_cont == 0)) {
-        sv.searching = 0;
-        if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
-            print_info(too_many_found, INFO_LINE);
+    if (!quit) {
+        if ((sv.found_cont == MAX_NUMBER_OF_FOUND) || (sv.found_cont == 0)) {
+            sv.searching = 0;
+            if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
+                print_info(too_many_found, INFO_LINE);
+            } else {
+                print_info(no_found, INFO_LINE);
+            }
         } else {
-            print_info(no_found, INFO_LINE);
+            sv.searching = 2;
         }
-    } else {
-        sv.searching = 2;
+        print_info("", SEARCH_LINE);
     }
-    print_info("", SEARCH_LINE);
+    pthread_detach(pthread_self());
     pthread_exit(NULL);
 }
 

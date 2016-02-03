@@ -16,7 +16,7 @@ static struct udev *udev;
  * the main struct pollfd
  */
 int start_timer(void) {
-    struct itimerspec timerValue = {0};
+    struct itimerspec timerValue = {{0}};
     
     timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
     if (timerfd == -1) {

@@ -1,4 +1,3 @@
-CC = gcc
 LIBS =-lpthread $(shell pkg-config --silence-errors --libs libarchive ncurses)
 CFLAGS =-D_GNU_SOURCE
 RM = rm

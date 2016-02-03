@@ -45,7 +45,8 @@ static void quit_thread_func(void) {
 }
 
 static void quit_worker_th(void) {
-    if (thread_h) {
+    if ((worker_th) && (pthread_kill(worker_th, 0) != ESRCH)) {
+        INFO(quit_with_running_thread);
         printf("%s\n", quit_with_running_thread);
         pthread_join(worker_th, NULL);
         INFO("worker th exited without errors.");
@@ -55,25 +56,18 @@ static void quit_worker_th(void) {
 
 #ifdef SYSTEMD_PRESENT
 static void quit_install_th(void) {
-    int installing = 0;
-    
-    if (install_th) {
-        if (pthread_kill(install_th, 0) != ESRCH) {
-            printf("%s\n", install_th_wait);
-            INFO("waiting for package installation to finish...");
-            installing = 1;
-        }
+    if ((install_th) && (pthread_kill(install_th, 0) != ESRCH)) {
+        printf("%s\n", install_th_wait);
+        INFO(install_th_wait);
         pthread_join(install_th, NULL);
-        if (installing) {
-            printf("Installation finished.\n");
-            INFO("package installation finished. Leaving.");
-        }
+        printf("Installation finished.\n");
+        INFO("package installation finished. Leaving.");
     }
 }
 #endif
 
 static void quit_search_th(void) {
-    if (sv.searching == 1) {
+    if ((search_th) && (pthread_kill(search_th, 0) != ESRCH)) {
         INFO("waiting for search thread to leave...");
         pthread_join(search_th, NULL);
         INFO("search th left.");
