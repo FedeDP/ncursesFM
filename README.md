@@ -32,7 +32,6 @@ You can add whatever type of file you wish as bookmark from within ncursesFM. Yo
 * shasum support (both printing file shasum/checking a given one), if built with openssl support.
 * Extract/compress files/folders through libarchive.
 * Long file operations are performed in a different thread. You'll get a notification when the job is done.
-* If you try to quit while a job is still running, you'll be asked if ncursesFM must wait for the thread to finish its work.
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
 
 **Optional (compile time) features that require sd-bus API (systemd)**
