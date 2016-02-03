@@ -6,10 +6,13 @@ notifications:
     on_success: never
     on_failure: always
 
+language: c
+
+compiler:
+  - gcc
+  - clang
+
 arch:
-    compiler:
-        - clang
-        - gcc
     packages:
         - systemd
         - libconfig
@@ -19,7 +22,9 @@ arch:
         - libcups
         - libx11
         - openssl
-    script: make
+    script: 
+        - "echo $CC"
+        - make
 
 script:
     - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
