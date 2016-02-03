@@ -91,8 +91,9 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * openssl   -> for shasum function support.
 
 **Build options (to be passed to make)**
-* DISABLE_LIBX11=1 to disable libx11 support
-* DISABLE_LIBCONFIG=1 to disable libconfig support
+* CC={gcc/clang} to choose the compiler. By default, env CC will be used.
+* DISABLE_LIBX11=1 to disable libx11 support.
+* DISABLE_LIBCONFIG=1 to disable libconfig support.
 * DISABLE_LIBSYSTEMD=1 to disable libsystemd (sd-bus) support.
 * DISABLE_LIBUDEV=1 to disable libudev support.
 * DISABLE_LIBOPENSSL=1 ti disable openssl support.

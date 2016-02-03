@@ -22,7 +22,7 @@ arch:
         - libcups
         - libx11
         - openssl
-    script: 
+    script:
         - "echo $CC"
         - make
 
