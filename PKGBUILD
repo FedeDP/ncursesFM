@@ -13,10 +13,11 @@ optdepends=('xdg-utils: xdg-open support'
             'udisks2: mountable drives and ISO mount support'
             'packagekit: package installation support'
             'upower: AC (dis)connection events support')
-# libcups, libconfig, libx11, openssl, and systemd are optional build dep.
+# libcups, libconfig, libx11, and openssl are optional build dep.
 # If compiled without them, the program will run just fine;
-# but that would disable xdg-open, config file read, printing, shasum, powermanagement inhibition,
-# drives/iso mount, local packages installation and upower AC (dis)connection signals support.
+# but that would disable xdg-open, config file read, printing, and shasum support.
+# systemd too is an optdep. But in arch libudev is packaged together with it,
+# and libudev is a mandatory dep.
 makedepends=('git')
 source=("git://github.com/FedeDP/${_gitname}.git")
 backup=('etc/default/ncursesFM.conf')

@@ -26,7 +26,7 @@ int program_quit(void) {
 }
 
 static void free_everything(void) {
-#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
+#ifdef SYSTEMD_PRESENT
     free_device_monitor();
 #endif
     free_timer();

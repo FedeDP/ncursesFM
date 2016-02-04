@@ -1,3 +1,16 @@
+02 / 05 / 2016
+* fixed iso files mounting. Now works fine and reliably.
+* removed is_mounted and relying on mntent function (get_mount_points)
+* fixed check_cwd function and moved those checks to mount_fs (only when unmounting), to make them useful even when unmounting an iso.
+* fixed is_iso_mounted check: it will now perform check to see if a loop device with the same backingfile is unmounted (but already present...created by user or another program), and mount the iso on this loop dev, instead of creating another loop dev.
+* moved SetAutoclear on loopdevices to its own function: it has to be called after add_device mounts the loop_dev.
+* fixed a bug if compiled with clang ( uint8_t bytes = '\0' was const, with gcc worked fine, but not with clang)
+* fixed add_device: relying on some udev dev property values instead of is_mounted function.
+* fixed print_info: if info_win is not present, it won't do anything.
+* helper_string (helper_win) content will now change together with compile time options, hiding the useless ones.
+* libudev is now mandatory
+* fixes in add_device: checking if a "size" property is really available for current dev.
+
 02 / 02 / 2016
 * using basename() and dirname() functions instead of manually strrchr path strings. Way cleaner and probably more reliable.
 * using change_dir when creating new_tab to check for chdir errors and reuse more code.

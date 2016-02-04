@@ -37,16 +37,12 @@ static void log_current_options(void) {
     fprintf(log_file, "* Second tab starting dir: %d\n", config.second_tab_starting_dir);
 #ifdef SYSTEMD_PRESENT
     fprintf(log_file, "* Inhibition: %d\n", config.inhibit);
-#ifdef LIBUDEV_PRESENT
     fprintf(log_file, "* Automount: %d\n", config.automount);
-#endif
 #endif
     fprintf(log_file, "* Starting with helper window: %d\n", config.starting_helper);
     fprintf(log_file, "* Log level: %d\n", config.loglevel);
     fprintf(log_file, "* Log persistency: %d\n", config.persistent_log);
-#ifdef LIBUDEV_PRESENT
     fprintf(log_file, "* Low battery threshold: %d\n\n", config.bat_low_level);
-#endif
 }
 
 void log_message(const char *filename, int lineno, const char *funcname, const char *log_msg, char type, int log_level) {

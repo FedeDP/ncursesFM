@@ -38,7 +38,7 @@ static void read_config_file(void);
 #endif
 static void config_checks(void);
 static void main_loop(void);
-#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
+#ifdef SYSTEMD_PRESENT
 static void check_device_mode(void);
 #endif
 static void manage_enter(struct stat current_file_stat);
@@ -91,7 +91,7 @@ static void set_signals(void) {
 }
 
 static void set_pollfd(void) {
-#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
+#ifdef SYSTEMD_PRESENT
     nfds = 6;
 #else
     nfds = 5;
@@ -122,7 +122,7 @@ static void set_pollfd(void) {
         .fd = info_fd[0],
         .events = POLLIN,
     };
-#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
+#ifdef SYSTEMD_PRESENT
     main_p[DEVMON_IX] = (struct pollfd) {
         .fd = start_monitor(),
         .events = POLLIN,
@@ -157,11 +157,9 @@ static void sigsegv_handler(int signum) {
 static void helper_function(int argc, const char *argv[]) {
     /* default value for starting_helper, bat_low_level and device_mode */
     config.starting_helper = 1;
-#ifdef LIBUDEV_PRESENT
     config.bat_low_level = 15;
 #ifdef SYSTEMD_PRESENT
     device_mode = DEVMON_STARTING;
-#endif
 #endif
 
     if ((argc > 1) && (!strcmp(argv[1], "--help"))) {
@@ -190,11 +188,7 @@ static void helper_function(int argc, const char *argv[]) {
 static void parse_cmd(int argc, const char *argv[]) {
     int j = 1;
 #ifdef SYSTEMD_PRESENT
-#ifdef LIBUDEV_PRESENT
     const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--low_level", "--inhibit", "--automount"};
-#else
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--low_level", "--inhibit"};
-#endif
 #else
     const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--low_level"};
 #endif
@@ -217,11 +211,9 @@ static void parse_cmd(int argc, const char *argv[]) {
         else if ((!strcmp(cmd_switch[6], argv[j])) && (argv[j + 1])) {
             config.inhibit = atoi(argv[j + 1]);
         }
-#ifdef LIBUDEV_PRESENT
         else if ((!strcmp(cmd_switch[7], argv[j])) && (argv[j + 1])) {
             config.automount = atoi(argv[j + 1]);
         }
-#endif
 #endif
         else {
             break;
@@ -253,9 +245,7 @@ static void read_config_file(void) {
         config_lookup_int(&cfg, "starting_helper", &config.starting_helper);
 #ifdef SYSTEMD_PRESENT
         config_lookup_int(&cfg, "inhibit", &config.inhibit);
-#ifdef LIBUDEV_PRESENT
         config_lookup_int(&cfg, "automount", &config.automount);
-#endif
 #endif
         config_lookup_int(&cfg, "loglevel", &config.loglevel);
         config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
@@ -398,7 +388,7 @@ static void main_loop(void) {
             }
             break;
 #endif
-#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
+#ifdef SYSTEMD_PRESENT
         case 'm': // m to mount/unmount fs
             check_device_mode();
             break;
@@ -447,7 +437,7 @@ static void main_loop(void) {
     }
 }
 
-#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
+#ifdef SYSTEMD_PRESENT
 static void check_device_mode(void) {
     if (sv.searching == 3 + active || bookmarks_mode[active]) {
         return;
@@ -472,7 +462,7 @@ static void manage_enter(struct stat current_file_stat) {
         sv.found_searched[ps[active].curr_pos][index] = '\0';
         leave_search_mode(sv.found_searched[ps[active].curr_pos]);
     }
-#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
+#ifdef SYSTEMD_PRESENT
     else if (device_mode == 1 + active) {
         manage_enter_device();
     }
@@ -492,7 +482,7 @@ static void manage_quit(void) {
     if (sv.searching == 3 + active) {
         leave_search_mode(ps[active].my_cwd);
     }
-#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
+#ifdef SYSTEMD_PRESENT
     else if (device_mode == 1 + active) {
         leave_device_mode();
     }

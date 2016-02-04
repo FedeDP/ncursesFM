@@ -74,9 +74,7 @@ struct conf {
     int second_tab_starting_dir;
 #ifdef SYSTEMD_PRESENT
     int inhibit;
-#ifdef LIBUDEV_PRESENT
     int automount;
-#endif
 #endif
     int starting_helper;
     int loglevel;

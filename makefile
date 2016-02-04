@@ -1,4 +1,4 @@
-LIBS =-lpthread $(shell pkg-config --silence-errors --libs libarchive ncurses)
+LIBS =-lpthread $(shell pkg-config --silence-errors --libs libarchive ncurses libudev)
 CFLAGS =-D_GNU_SOURCE
 RM = rm
 INSTALL = install -p
@@ -24,14 +24,11 @@ endif
 ifneq ("$(DISABLE_LIBSYSTEMD)","1")
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
 endif
-ifneq ("$(DISABLE_LIBUDEV)","1")
-LIBUDEV=$(shell pkg-config --silence-errors --libs libudev)
-endif
 ifneq ("$(DISABLE_OPENSSL)","1")
 LIBOPENSSL=$(shell pkg-config --silence-errors --libs openssl)
 endif
 
-LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBUDEV) $(LIBOPENSSL)
+LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBOPENSSL)
 
 ifneq ("$(LIBX11)","")
 CFLAGS+=-DLIBX11_PRESENT
@@ -59,11 +56,6 @@ endif
 ifneq ("$(LIBSYSTEMD)","")
 CFLAGS+=-DSYSTEMD_PRESENT
 $(info libsystemd support enabled.)
-endif
-
-ifneq ("$(LIBUDEV)","")
-CFLAGS+=-DLIBUDEV_PRESENT
-$(info libudev support enabled.)
 endif
 
 endif

@@ -101,6 +101,12 @@ void screen_end(void) {
             delete_tab(i);
         }
         delwin(info_win);
+        /*
+         * needed: this way any print_info won't do anything:
+         * to avoid a print_info from a worker thread while we're leaving
+         * or after we left the program.
+         */
+        info_win = NULL;
         if (helper_win) {
             delwin(helper_win);
         }
@@ -585,7 +591,7 @@ static void info_print(const char *str, int i) {
  * then writes on the pipe the address of its heap-allocated struct info_msg.
  */
 void print_info(const char *str, int line) {
-    if (!quit) {
+    if (info_win) {
         struct info_msg *info;
         int len = 1 + strlen(info_win_str[line]);
     
@@ -714,7 +720,7 @@ int main_poll(WINDOW *win) {
                 /* we received an event from pipe to print a info msg */
                     info_refresh(main_p[i].fd);
                     break;
-#if defined SYSTEMD_PRESENT && LIBUDEV_PRESENT
+#ifdef SYSTEMD_PRESENT
                 case DEVMON_IX:
                 /* we received a bus event */
                     devices_bus_process();

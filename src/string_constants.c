@@ -61,26 +61,39 @@ const char *selected_mess = "There are selected files.";
 const char *thread_running = "There's already a thread working. This thread will be queued.";
 const char *quit_with_running_thread = "Queued jobs still running. Waiting...";
 
-const char *helper_string[] = { "Enter to surf between folders or to open files.",
+const char *helper_string[] = { 
+#ifdef SYSTEMD_PRESENT
+                                "Enter to surf between folders or to open files.",
                                 "It will eventually extract your archives, (un)mount your ISO files or install your distro downloaded packages.",
+#else
+                                "Enter to surf between folders or to open files. It will eventually extract your archives.",
+#endif
                                 "',' to enable fast browse mode: it lets you jump between files by just typing their name.",
                                 "'h' to trigger the showing of hidden files; 's' to see stat about files in current folder.",
                                 "'.' to change files/dirs sorting function: alphabetically (default), by size, by last modified or by type.",
+#ifdef OPENSSL_PRESENT
                                 "Space to select files. Twice to remove the file from selected files. 'u' to check shasum of current file.",
+#else
+                                "Space to select files. Twice to remove the file from selected files.",
+#endif
+#ifdef LIBCUPS_PRESENT
                                 "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files. 'p' to print a file.",
+#else
+                                "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files.",
+#endif
                                 "'g' to switch to bookmarks window. 'e' to add current file to bookmarks/remove it if in bookmarks_mode.",
                                 "'o' to rename current file/dir; 'n'/'d' to create new file/dir. 'f' to search (case sensitive) for a file.",
                                 "'t' to create new tab (at most one more). 'w' to close tab. Arrow left or right to switch between tabs.",
+#ifdef SYSTEMD_PRESENT
                                 "'m' to switch to devices tab. 'm' on a device to (un)mount it, enter to move to its mountpoint, mounting it if necessary.",
+#endif
                                 "You can't close first tab. Use 'q' to quit/leave current mode."};
-                                
+
 #ifdef SYSTEMD_PRESENT
 const char *pkg_quest = "Do you really want to install this package? y/N:> ";
 const char *install_th_wait = "Waiting for package installation to finish...";
 const char *package_warn = "Currently there is no check against wrong package arch: it will crash packagekit and ncursesfm.";
-#ifdef LIBUDEV_PRESENT
 const char *device_mode_str =  "Choose your desired device to (un)mount it";
-#endif
 #endif
 
 const char *bookmarks_mode_str = "Bookmarks:";

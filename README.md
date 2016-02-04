@@ -16,7 +16,7 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
-* Simple sysinfo monitor that will refresh every 30s: clock, battery and some system info; battery monitor needs libudev.
+* Simple sysinfo monitor that will refresh every 30s: clock, battery and some system info.
 If you've got Upower installed, AC (dis)connection will refresh battery status instantly, instead of waiting up to 30s until next refresh.
 * Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.
 * '.' to change files/dirs sorting mode: alphabetically (default), by size, by last modified or by type.
@@ -37,7 +37,7 @@ You can add whatever type of file you wish as bookmark from within ncursesFM. Yo
 * Powermanagement inhibition while processing a job (eg: while pasting a file) to avoid data loss.
 * Internal udisks2 monitor, to poll for new devices. It can automount new connected devices too.
 Device monitor will list only mountable devices, eg: dvd reader will not be listed until a cd/dvd is inserted.
-* Drives/usb sticks/ISO files (un)mount through udisks2. For drives/usb sticks mount, you also need libudev.
+* Drives/usb sticks/ISO files (un)mount through udisks2.
 * Distro package files installation.
 * It can reveice AC (dis)connection events from upower, to instantly update battery monitor.
 
@@ -72,11 +72,12 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * 3 : log disabled.
 
 ## Build requirements
-* linux>=3.4  -> pipe2() O_DIRECT flag. See: http://man7.org/linux/man-pages/man2/pipe.2.html
+* linux >= 3.4 -> pipe2() O_DIRECT flag. See: http://man7.org/linux/man-pages/man2/pipe.2.html
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * pkg-config -> to manage libraries link in makefile
-* glibc      -> to set locale, for inotify, and for mntent functions (useful only if compiled with libudev too)
+* glibc      -> to set locale, for inotify, and for mntent functions.
+* libudev    -> needed for devices/iso mount, and batteries polling.
 * git        -> to clone repo
 
 ## Optional compile time dependencies
@@ -84,7 +85,6 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * libconfig -> config file parsing.
 * libx11    -> check whether ncursesFM is started in a X environment or not, and xdg-open support.
 * sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
-* libudev   -> needed for devices/iso mount, and batteries polling.
 * openssl   -> for shasum function support.
 
 **Build options (to be passed to make)**
@@ -92,7 +92,6 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * DISABLE_LIBX11=1 to disable libx11 support.
 * DISABLE_LIBCONFIG=1 to disable libconfig support.
 * DISABLE_LIBSYSTEMD=1 to disable libsystemd (sd-bus) support.
-* DISABLE_LIBUDEV=1 to disable libudev support.
 * DISABLE_LIBOPENSSL=1 ti disable openssl support.
 * DISABLE_LIBCUPS=1 to disable libcups support.
 
@@ -114,11 +113,11 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 
 On Ubuntu install required packages:
 
-    # apt-get install libncursesw5-dev libarchive-dev pkg-config git build-essential
+    # apt-get install libncursesw5-dev libarchive-dev pkg-config git build-essential libudev-dev
 
 Optional:
 
-    # apt-get install libcups2-dev libconfig-dev libx11-dev libsystemd-dev libudev-dev libssl-dev
+    # apt-get install libcups2-dev libconfig-dev libx11-dev libsystemd-dev libssl-dev
 
 Clone the repo and move inside new dir, then:
 

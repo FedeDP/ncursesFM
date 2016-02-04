@@ -1,15 +1,11 @@
 #include "../inc/timer.h"
 
-#ifdef LIBUDEV_PRESENT
 static void poll_batteries(void);
-#endif
 
 static int timerfd;
-#ifdef LIBUDEV_PRESENT
 static int num_of_batt;
 static char ac_path[PATH_MAX + 1], (*batt)[PATH_MAX + 1];
 static struct udev *udev;
-#endif
 
 /*
  * Create 30s timer and returns its fd to
@@ -22,10 +18,8 @@ int start_timer(void) {
     if (timerfd == -1) {
         WARN("could not start timer.");
     } else {
-#ifdef LIBUDEV_PRESENT
         udev = udev_new();
         poll_batteries();
-#endif
         timerValue.it_value.tv_sec = 30;
         timerValue.it_value.tv_nsec = 0;
         timerValue.it_interval.tv_sec = 30;
@@ -39,7 +33,6 @@ int start_timer(void) {
 void timer_func(void) {
     update_time();
 
-#ifdef LIBUDEV_PRESENT
     struct udev_device *dev;
     int perc[num_of_batt];
     char name[num_of_batt][10];
@@ -64,22 +57,16 @@ void timer_func(void) {
         }
     }
     update_batt(online, perc, num_of_batt, name);
-#else
-    update_batt(-1, NULL, 0, NULL);
-#endif
 }
 
 void free_timer(void) {
     close(timerfd);
-#ifdef LIBUDEV_PRESENT
     if (batt) {
         free(batt);
     }
     udev_unref(udev);
-#endif
 }
 
-#ifdef LIBUDEV_PRESENT
 static void poll_batteries(void) {
     struct udev_enumerate *enumerate;
     struct udev_list_entry *devices, *dev_list_entry;
@@ -105,4 +92,3 @@ static void poll_batteries(void) {
     }
     udev_enumerate_unref(enumerate);
 }
-#endif
