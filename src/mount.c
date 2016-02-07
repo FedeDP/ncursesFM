@@ -638,9 +638,9 @@ static void change_mounted_status(int pos, const char *name) {
     sprintf(my_devices[pos] + len - 1, "%d", !mount);
     if (!strlen(mount_str)) {
         if (mount == 1) {
-            sprintf(mount_str, "External tool has mounted %s.", name);
-        } else {
             sprintf(mount_str, "External tool has unmounted %s.", name);
+        } else {
+            sprintf(mount_str, "External tool has mounted %s.", name);
         }
     }
     print_info(mount_str, INFO_LINE);
