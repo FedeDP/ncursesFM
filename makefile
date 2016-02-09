@@ -1,4 +1,4 @@
-LIBS =-lpthread $(shell pkg-config --silence-errors --libs libarchive ncurses libudev)
+LIBS =-lpthread $(shell pkg-config --silence-errors --libs libarchive ncurses libudev mount)
 CFLAGS =-D_GNU_SOURCE
 RM = rm
 INSTALL = install -p

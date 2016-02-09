@@ -2,7 +2,9 @@
  *
  * update doc
  *
- * sshfs support?
+ * sshfs/nfs support?
  * 
  * switch to stdint lib
+ * 
+ * fix mnt_pretty_path() memleak! -> https://github.com/karelzak/util-linux/issues/275
  */

@@ -4,7 +4,6 @@
 static int mount_fs(const char *str, int mount);
 static void set_autoclear(const char *loopname);
 static int is_iso_mounted(const char *filename, char *loop_dev);
-static void iso_backing_file(char *s, const char *name);
 static int init_mbus(void);
 static int check_udisks(void);
 static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
@@ -203,7 +202,6 @@ static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
     struct udev_enumerate *enumerate;
     struct udev_list_entry *devices, *dev_list_entry;
     struct udev_device *dev;
-    char s[PATH_MAX + 1] = {0};
     char resolved_path[PATH_MAX + 1];
     int mount = -1;
     
@@ -218,59 +216,19 @@ static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
         dev = udev_device_new_from_syspath(udev, path);
         strcpy(loop_dev, udev_device_get_devnode(dev));
-        iso_backing_file(s, loop_dev);
-        udev_device_unref(dev);
-        if (!strcmp(s, resolved_path)) {
+        char *str = mnt_pretty_path(loop_dev, NULL);
+        if (!strcmp(str, resolved_path)) {
             mount = get_mount_point(loop_dev, NULL);
+        }
+        free(str);
+        udev_device_unref(dev);
+        if (mount != -1) {
             break;
         }
     }
     udev_enumerate_unref(enumerate);
     udev_unref(tmp_udev);
     return mount;
-}
-
-/*
- * Given a loop device, returns the iso file mounted on it.
- */
-static void iso_backing_file(char *s, const char *name) {
-    sd_bus_error error = SD_BUS_ERROR_NULL;
-    sd_bus_message *mess = NULL;
-    sd_bus *iso_bus = NULL;
-    int r;
-    uint8_t bytes = '\0';
-    char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
-    
-    r = sd_bus_open_system(&iso_bus);
-    if (r < 0) {
-        print_and_warn(strerror(-r), ERR_LINE);
-        goto finish;
-    }
-    strcat(obj_path, strrchr(name, '/') + 1);
-    INFO("getting BackingFile property on bus.");
-    r = sd_bus_get_property(iso_bus,
-                            "org.freedesktop.UDisks2",
-                            obj_path,
-                            "org.freedesktop.UDisks2.Loop",
-                            "BackingFile",
-                            &error,
-                            &mess,
-                            "ay");
-    if (r < 0) {
-        print_and_warn(error.message, ERR_LINE);
-        goto finish;
-    }
-    r = sd_bus_message_enter_container(mess, SD_BUS_TYPE_ARRAY, "y");
-    if (r < 0) {
-        print_and_warn(strerror(-r), ERR_LINE);
-        goto finish;
-    }
-    while ((sd_bus_message_read(mess, "y", &bytes)) > 0) {
-        sprintf(s + strlen(s), "%c", (char)bytes);
-    }
-
-finish:
-    close_bus(&error, mess, iso_bus);
 }
 
 /*
@@ -535,28 +493,30 @@ static void enumerate_block_devices(void) {
 }
 
 /*
- * Getting mountpoint for a device through mtab.
+ * Getting mountpoint for a device through mtab with libmount.
  */
 static int get_mount_point(const char *dev_path, char *path) {
-    struct mntent *part;
-    FILE *mtab;
+    struct libmnt_table *t;
+    struct libmnt_fs *f;
     int ret = 0;
 
-    if (!(mtab = setmntent("/proc/mounts", "r"))) {
-        WARN("could not find /proc/mounts");
-        print_info("could not find /proc/mounts.", ERR_LINE);
+    t = mnt_new_table();
+    if (!t) {
+        ERROR("could not create a new table object.");
         return -1;
     }
-    while ((part = getmntent(mtab))) {
-        if ((part->mnt_fsname) && (!strcmp(part->mnt_fsname, dev_path))) {
-            if (path) {
-                strcpy(path, part->mnt_dir);
-            }
-            ret = 1;
-            break;
+    if (mnt_table_parse_mtab(t, NULL)) {
+        ERROR("could not parse mtab.");
+        return -1;
+    }
+    f = mnt_table_find_srcpath(t, dev_path, MNT_ITER_FORWARD);
+    if (f) {
+        ret = 1;
+        if (path) {
+            strcpy(path, mnt_fs_get_target(f));
         }
     }
-    endmntent(mtab);
+    mnt_free_table(t);
     return ret;
 }
 
