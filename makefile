@@ -1,4 +1,4 @@
-LIBS =-lpthread $(shell pkg-config --silence-errors --libs libarchive ncurses libudev mount)
+LIBS =-lpthread $(shell pkg-config --silence-errors --libs libarchive ncurses libudev)
 CFLAGS =-D_GNU_SOURCE
 RM = rm
 INSTALL = install -p
@@ -22,7 +22,8 @@ ifneq ("$(DISABLE_LIBCONFIG)","1")
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
 endif
 ifneq ("$(DISABLE_LIBSYSTEMD)","1")
-LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
+# libmount is only required if built with libsystemd
+LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd mount)
 endif
 ifneq ("$(DISABLE_OPENSSL)","1")
 LIBOPENSSL=$(shell pkg-config --silence-errors --libs openssl)

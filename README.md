@@ -79,14 +79,15 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * glibc      -> to set locale and for inotify.
 * libudev    -> needed for devices/iso mount, and batteries polling.
 * git        -> to clone repo
-* libmount   -> to get device mount status/mountpoints and iso backing files.
 
 ## Optional compile time dependencies
 * libcups   -> print support.
 * libconfig -> config file parsing.
 * libx11    -> check whether ncursesFM is started in a X environment or not, and xdg-open support.
-* sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
 * openssl   -> for shasum function support.
+* sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
+**if built with sd-bus support, libmount will be a required dep**:
+* libmount   -> to get device mount status/mountpoints and iso backing files.
 
 **Build options (to be passed to make)**
 * CC={gcc/clang} to choose the compiler. By default, env CC will be used.
@@ -99,7 +100,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 ## Runtime dependencies
 
 **required:**
-* ncurses, libarchive, glibc, libmount, libudev plus every optional build dep if compiled with its support.
+* ncurses, libarchive, glibc, libudev plus every optional build dep if compiled with its support.
 
 **optional:**
 * if compiled with libx11 support: xdg-utils.
@@ -107,7 +108,8 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 
 ## Known bugs
 * installing packages segfaults if package is for the wrong arch, and packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.
-* is_iso_mounted() will leak some mem when is called. In my tests, it leaks 19bytes. Again, not my fault: https://github.com/karelzak/util-linux/issues/275.
+* is_iso_mounted() will leak some mem when is called. In my tests, it leaks 19 bytes. Again, not my fault: https://github.com/karelzak/util-linux/issues/275.
+I hope the patch i provided will be included in their next release.
 
 ## Install instructions:
 
@@ -115,11 +117,11 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 
 On Ubuntu install required packages:
 
-    # apt-get install libncursesw5-dev libarchive-dev pkg-config git build-essential libudev-dev libmount-dev
+    # apt-get install libncursesw5-dev libarchive-dev pkg-config git build-essential libudev-dev
 
 Optional:
 
-    # apt-get install libcups2-dev libconfig-dev libx11-dev libsystemd-dev libssl-dev
+    # apt-get install libcups2-dev libconfig-dev libx11-dev libsystemd-dev libmount-dev libssl-dev
 
 Clone the repo and move inside new dir, then:
 
