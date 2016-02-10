@@ -709,9 +709,12 @@ int main_poll(WINDOW *win) {
                     timer_func();
                     break;
                 case INOTIFY_IX1:
+                /* we received an event from inotify for the first tab */
+                    inotify_refresh(0);
+                    break;
                 case INOTIFY_IX2:
-                /* we received an event from inotify for a tab */
-                    inotify_refresh(i - INOTIFY_IX1);
+                /* we received an event from inotify for the second tab */
+                    inotify_refresh(1);
                     break;
                 case INFO_IX:
                 /* we received an event from pipe to print a info msg */

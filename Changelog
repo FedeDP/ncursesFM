@@ -1,6 +1,3 @@
-02 / 09 / 2016
-* removed mntent functions, removed iso_backing_file function. Relying on libmount now. Way simplier and it probably leads to better performance.
-
 02 / 05 / 2016
 * fixed iso files mounting. Now works fine and reliably.
 * removed is_mounted and relying on mntent function (get_mount_points)

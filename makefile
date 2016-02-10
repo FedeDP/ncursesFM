@@ -22,8 +22,7 @@ ifneq ("$(DISABLE_LIBCONFIG)","1")
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
 endif
 ifneq ("$(DISABLE_LIBSYSTEMD)","1")
-# libmount is only required if built with libsystemd
-LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd mount)
+LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
 endif
 ifneq ("$(DISABLE_OPENSSL)","1")
 LIBOPENSSL=$(shell pkg-config --silence-errors --libs openssl)

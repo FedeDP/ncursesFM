@@ -76,7 +76,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * pkg-config -> to manage libraries link in makefile
-* glibc      -> to set locale and for inotify.
+* glibc      -> to set locale, for inotify, and for mntent functions.
 * libudev    -> needed for devices/iso mount, and batteries polling.
 * git        -> to clone repo
 
@@ -84,11 +84,8 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * libcups   -> print support.
 * libconfig -> config file parsing.
 * libx11    -> check whether ncursesFM is started in a X environment or not, and xdg-open support.
+* sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
 * openssl   -> for shasum function support.
-* sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.  
-
-**only if built with sd-bus support**:
-* libmount   -> to get device mount status/mountpoints and iso backing files.
 
 **Build options (to be passed to make)**
 * CC={gcc/clang} to choose the compiler. By default, env CC will be used.
@@ -101,7 +98,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 ## Runtime dependencies
 
 **required:**
-* ncurses, libarchive, glibc, libudev plus every optional build dep if compiled with its support.
+* ncurses, libarchive, glibc plus every optional build dep if compiled with its support.
 
 **optional:**
 * if compiled with libx11 support: xdg-utils.
@@ -109,8 +106,6 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 
 ## Known bugs
 * installing packages segfaults if package is for the wrong arch, and packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.
-* is_iso_mounted() will leak some mem when is called. In my tests, it leaks 19 bytes. Again, not my fault: https://github.com/karelzak/util-linux/issues/275.
-I hope the patch i provided will be included in their next release.
 
 ## Install instructions:
 
@@ -122,7 +117,7 @@ On Ubuntu install required packages:
 
 Optional:
 
-    # apt-get install libcups2-dev libconfig-dev libx11-dev libsystemd-dev libmount-dev libssl-dev
+    # apt-get install libcups2-dev libconfig-dev libx11-dev libsystemd-dev libssl-dev
 
 Clone the repo and move inside new dir, then:
 
