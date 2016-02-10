@@ -85,8 +85,8 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * libconfig -> config file parsing.
 * libx11    -> check whether ncursesFM is started in a X environment or not, and xdg-open support.
 * openssl   -> for shasum function support.
-* sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
-**if built with sd-bus support, libmount will be a required dep**:
+* sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.  
+**only if built with sd-bus support**:
 * libmount   -> to get device mount status/mountpoints and iso backing files.
 
 **Build options (to be passed to make)**
