@@ -117,7 +117,7 @@ static void set_pollfd(void) {
         .fd = inot[1].fd,
         .events = POLLIN,
     };
-    pipe2(info_fd, O_DIRECT);  // linux >= 3.4
+    pipe(info_fd);
     main_p[INFO_IX] = (struct pollfd) {
         .fd = info_fd[0],
         .events = POLLIN,

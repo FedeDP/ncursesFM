@@ -72,7 +72,6 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * 3 : log disabled.
 
 ## Build requirements
-* linux >= 3.4 -> pipe2() O_DIRECT flag. See: http://man7.org/linux/man-pages/man2/pipe.2.html
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * pkg-config -> to manage libraries link in makefile
