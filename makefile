@@ -1,5 +1,5 @@
-LIBS =-lpthread $(shell pkg-config --silence-errors --libs libarchive ncurses libudev)
-CFLAGS =-D_GNU_SOURCE
+LIBS =-lpthread $(shell pkg-config --libs libarchive ncurses libudev)
+CFLAGS =$(shell pkg-config --cflags ncurses)
 RM = rm
 INSTALL = install -p
 INSTALL_PROGRAM = $(INSTALL) -m755

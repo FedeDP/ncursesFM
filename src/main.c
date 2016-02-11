@@ -42,6 +42,7 @@ static void main_loop(void);
 static void check_device_mode(void);
 #endif
 static void manage_enter(struct stat current_file_stat);
+static void manage_space(const char *str);
 static void manage_quit(void);
 static void switch_search(void);
 static int check_init(int index);
@@ -313,6 +314,13 @@ static void main_loop(void) {
 
     char *ptr;
     struct stat current_file_stat;
+    
+    MEVENT event;
+#if NCURSES_MOUSE_VERSION > 1
+    mousemask(BUTTON1_RELEASED | BUTTON3_RELEASED | BUTTON4_PRESSED | BUTTON5_PRESSED, NULL);
+#else
+    mousemask(BUTTON1_RELEASED | BUTTON3_RELEASED, NULL);
+#endif
 
     while (!quit) {
         c = main_poll(NULL);
@@ -361,9 +369,7 @@ static void main_loop(void) {
             }
             break;
         case 32: // space to select files
-            if (strcmp(strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1, "..")) {
-                manage_space_press(str_ptr[active][ps[active].curr_pos]);
-            }
+            manage_space(str_ptr[active][ps[active].curr_pos]);
             break;
         case 'l':  // show helper mess
             trigger_show_helper_message();
@@ -424,6 +430,25 @@ static void main_loop(void) {
                 show_bookmarks();
             }
             break;
+        case KEY_MOUSE:
+            if(getmouse(&event) == OK) {
+                /* left click will send an enter event */
+                if (event.bstate & BUTTON1_RELEASED) {
+                    manage_enter(current_file_stat);
+                /* right click will send a space event */
+                } else if (event.bstate & BUTTON3_RELEASED) {
+                    manage_space(str_ptr[active][ps[active].curr_pos]);
+                }
+#if NCURSES_MOUSE_VERSION > 1
+                /* scroll up and down events associated with mouse wheel */
+                else if (event.bstate & BUTTON4_PRESSED) {
+                    scroll_up();
+                } else if (event.bstate & BUTTON5_PRESSED) {
+                    scroll_down();
+                }
+#endif
+            }
+            break;
         default:
             ptr = strchr(long_table, c);
             if (ptr) {
@@ -475,6 +500,12 @@ static void manage_enter(struct stat current_file_stat) {
         }
     } else {
         manage_file(str_ptr[active][ps[active].curr_pos], current_file_stat.st_size);
+    }
+}
+
+static void manage_space(const char *str) {
+    if (strcmp(strrchr(str, '/') + 1, "..") && !special_mode[active]) {
+        manage_space_press(str);
     }
 }
 

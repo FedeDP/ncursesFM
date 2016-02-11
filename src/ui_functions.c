@@ -66,6 +66,7 @@ void screen_init(void) {
     init_pair(5, COLOR_RED, COLOR_BLACK);
     noecho();
     curs_set(0);
+    mouseinterval(0);
     raw();
     nodelay(stdscr, TRUE);
     notimeout(stdscr, TRUE);
