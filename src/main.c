@@ -486,13 +486,19 @@ static void manage_enter(struct stat current_file_stat) {
         char *str = NULL;
         int index = search_enter_press(sv.found_searched[ps[active].curr_pos]);
         if (!S_ISDIR(current_file_stat.st_mode)) {
+            /* save in str current file's name */
             str = sv.found_searched[ps[active].curr_pos] + index + 1;
+            /* check if this file was an archive and cut useless path inside archive */
             char *ptr = strchr(str, '/');
             if (ptr) {
                 str[strlen(str) - strlen(ptr)] = '\0';
             }
         }
         sv.found_searched[ps[active].curr_pos][index] = '\0';
+        /* 
+         * leave_search_mode will move the cursor right to the selected file position
+         * if str != NULL (ie: if user did not selected a folder)
+         */
         leave_search_mode(sv.found_searched[ps[active].curr_pos], str);
     }
 #ifdef SYSTEMD_PRESENT

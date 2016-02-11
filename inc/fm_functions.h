@@ -39,4 +39,4 @@ void manage_space_press(const char *str);
 int paste_file(void);
 int move_file(void);
 void fast_browse(int c);
-int move_cursor_to_file(int init, const char *name);
+int move_cursor_to_file(int i, const char *filename);
