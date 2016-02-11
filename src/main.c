@@ -483,9 +483,17 @@ static void check_device_mode(void) {
 
 static void manage_enter(struct stat current_file_stat) {
     if (sv.searching == 3 + active) {
+        char *str = NULL;
         int index = search_enter_press(sv.found_searched[ps[active].curr_pos]);
+        if (!S_ISDIR(current_file_stat.st_mode)) {
+            str = sv.found_searched[ps[active].curr_pos] + index + 1;
+            char *ptr = strchr(str, '/');
+            if (ptr) {
+                str[strlen(str) - strlen(ptr)] = '\0';
+            }
+        }
         sv.found_searched[ps[active].curr_pos][index] = '\0';
-        leave_search_mode(sv.found_searched[ps[active].curr_pos]);
+        leave_search_mode(sv.found_searched[ps[active].curr_pos], str);
     }
 #ifdef SYSTEMD_PRESENT
     else if (device_mode == 1 + active) {
@@ -511,7 +519,7 @@ static void manage_space(const char *str) {
 
 static void manage_quit(void) {
     if (sv.searching == 3 + active) {
-        leave_search_mode(ps[active].my_cwd);
+        leave_search_mode(ps[active].my_cwd, NULL);
     }
 #ifdef SYSTEMD_PRESENT
     else if (device_mode == 1 + active) {

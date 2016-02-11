@@ -356,10 +356,8 @@ static void rmrf(const char *path) {
  * If nothing was found, deletes fast_browse_str.
  */
 void fast_browse(int c) {
-    int i = 1, found = 0, len;
-    char *str;
+    int i = 1;
     uint64_t diff = (MILLION * timer.tv_sec) + timer.tv_usec;
-    void (*f)(void);
 
     gettimeofday(&timer, NULL);
     diff = MILLION * (timer.tv_sec) + timer.tv_usec - diff;
@@ -370,10 +368,20 @@ void fast_browse(int c) {
     }
     sprintf(fast_browse_str + strlen(fast_browse_str), "%c", c);
     print_info(fast_browse_str, INFO_LINE);
-    for (; (i < ps[active].number_of_files) && (!found); i++) {
+    if (!move_cursor_to_file(i, fast_browse_str)) {
+        memset(fast_browse_str, 0, strlen(fast_browse_str));
+    }
+}
+
+int move_cursor_to_file(int init, const char *name) {
+    int found = 0, len;
+    char *str;
+    void (*f)(void);
+    
+    for (int i = init; (i < ps[active].number_of_files) && (!found); i++) {
         str = strrchr(ps[active].nl[i], '/') + 1;
-        len = strlen(fast_browse_str);
-        if (strncmp(fast_browse_str, str, len) == 0) {
+        len = strlen(name);
+        if (strncmp(name, str, len) == 0) {
             found = 1;
             if (i != ps[active].curr_pos) {
                 if (i < ps[active].curr_pos) {
@@ -387,7 +395,5 @@ void fast_browse(int c) {
             }
         }
     }
-    if (!found) {
-        memset(fast_browse_str, 0, strlen(fast_browse_str));
-    }
+    return found;
 }

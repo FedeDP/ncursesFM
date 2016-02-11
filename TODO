@@ -1,8 +1,6 @@
 /* TODO:
  *
  * update doc
- *
- * sshfs support?
  * 
  * switch to stdint lib
  * 

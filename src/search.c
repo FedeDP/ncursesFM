@@ -133,10 +133,13 @@ void list_found(void) {
     print_info("", SEARCH_LINE);
 }
 
-void leave_search_mode(const char *str) {
+void leave_search_mode(const char *str, const char *filename) {
     sv.searching = 0;
     print_info("", SEARCH_LINE);
     change_dir(str, active);
+    if (filename) {
+        move_cursor_to_file(1, filename);
+    }
 }
 
 /*
