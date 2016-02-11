@@ -138,7 +138,7 @@ void leave_search_mode(const char *str, const char *filename) {
     print_info("", SEARCH_LINE);
     change_dir(str, active);
     if (filename) {
-        move_cursor_to_file(1, filename);
+        move_cursor_to_file(0, filename);
     }
 }
 

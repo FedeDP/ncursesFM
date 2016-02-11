@@ -356,7 +356,7 @@ static void rmrf(const char *path) {
  * If nothing was found, deletes fast_browse_str.
  */
 void fast_browse(int c) {
-    int i = 1;
+    int i = 0;
     uint64_t diff = (MILLION * timer.tv_sec) + timer.tv_usec;
 
     gettimeofday(&timer, NULL);
