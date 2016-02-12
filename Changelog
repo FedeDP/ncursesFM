@@ -1,3 +1,7 @@
+02 / 12 / 2016
+* added basic mouse support: left click to open files/move between folders, right click to select files, and mouse wheel to scroll up/down.
+* when selecting a file in search mode, you'll be now moved to its folder, and the cursor will automatically highlight the chosen file.
+
 02 / 05 / 2016
 * fixed iso files mounting. Now works fine and reliably.
 * removed is_mounted and relying on mntent function (get_mount_points)

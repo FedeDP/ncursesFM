@@ -374,15 +374,13 @@ void fast_browse(int c) {
 }
 
 int move_cursor_to_file(int i, const char *filename) {
-    int found = 0, len;
     char *str;
     void (*f)(void);
+    int len = strlen(filename);
     
-    len = strlen(filename);
-    for (; (i < ps[active].number_of_files) && (!found); i++) {
+    for (; i < ps[active].number_of_files; i++) {
         str = strrchr(ps[active].nl[i], '/') + 1;
         if (strncmp(filename, str, len) == 0) {
-            found = 1;
             if (i != ps[active].curr_pos) {
                 if (i < ps[active].curr_pos) {
                     f = scroll_up;
@@ -393,7 +391,8 @@ int move_cursor_to_file(int i, const char *filename) {
                     f();
                 }
             }
+            return 1;
         }
     }
-    return found;
+    return 0;
 }
