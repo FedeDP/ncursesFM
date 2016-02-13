@@ -30,6 +30,12 @@ int start_timer(void) {
     return timerfd;
 }
 
+/*
+ * Called from main_poll();
+ * it checks power_supply online status, and if !online,
+ * checks batteries perc level.
+ * Then calls update_batt (ui_functions)
+ */
 void timer_func(void) {
     update_time();
 
@@ -59,6 +65,7 @@ void timer_func(void) {
     update_batt(online, perc, num_of_batt, name);
 }
 
+
 void free_timer(void) {
     close(timerfd);
     if (batt) {
@@ -67,6 +74,12 @@ void free_timer(void) {
     udev_unref(udev);
 }
 
+/*
+ * Initial battery polling: for each system battery,
+ * save its path in batt[].
+ * If property "POWER_SUPPLY_ONLINE" is present, then
+ * current udev device is ac adapter.
+ */
 static void poll_batteries(void) {
     struct udev_enumerate *enumerate;
     struct udev_list_entry *devices, *dev_list_entry;

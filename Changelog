@@ -1,6 +1,8 @@
 02 / 12 / 2016
 * added basic mouse support: left click to open files/move between folders, right click to select files, and mouse wheel to scroll up/down.
 * when selecting a file in search mode, you'll be now moved to its folder, and the cursor will automatically highlight the chosen file.
+* fixed an ui bug: after resize i called print_info("", INFO_LINE), thus rewriting INFO_LINE's only sticky mesg.
+* removed fixed len wprintw in info_print as it is useless: const char *str will always be at most (COLS - len) long as it is mallc'd in print_info.
 
 02 / 05 / 2016
 * fixed iso files mounting. Now works fine and reliably.

@@ -89,7 +89,7 @@ static void info_win_init(void) {
     nodelay(info_win, TRUE);
     notimeout(info_win, TRUE);
     for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because i won't print anything on last line (SYSINFO line) */
-        mvwprintw(info_win, i, 1, "%s", info_win_str[i]);
+        print_info("", i);
     }
     timer_func();
 }
@@ -103,9 +103,9 @@ void screen_end(void) {
         }
         delwin(info_win);
         /*
-         * needed: this way any print_info won't do anything:
-         * to avoid a print_info from a worker thread while we're leaving
-         * or after we left the program.
+         * needed: this way any other call to print_info won't do anything:
+         * to avoid any print_info call by some worker thread
+         * while we're leaving/we left the program.
          */
         info_win = NULL;
         if (helper_win) {
@@ -566,11 +566,10 @@ static void erase_stat(void) {
  */
 static void info_print(const char *str, int i) {
     char st[100] = {0};
-    int len = 1 + strlen(info_win_str[i]);
 
-    wmove(info_win, i, len);
+    wmove(info_win, i, 1);
     wclrtoeol(info_win);
-    mvwprintw(info_win, i, len, "%.*s", COLS - len, str);
+    mvwprintw(info_win, i, 1, "%s%s", info_win_str[i], str);
     if (i == INFO_LINE) {
         if (selected) {
             strcpy(st, selected_mess);
@@ -586,10 +585,10 @@ static void info_print(const char *str, int i) {
 }
 
 /*
- * IF it is not called during quit:
- * it needs to malloc COLS - len bytes as they're printable chars on the screen.
+ * if info_win is not NULL:
+ * it needs to malloc (COLS - len) bytes as they're real printable chars on the screen.
  * we need malloc because window can be resized (ie: COLS is not a constant)
- * then writes on the pipe the address of its heap-allocated struct info_msg.
+ * then writes on the pipe the address of the heap-allocated struct info_msg.
  */
 void print_info(const char *str, int line) {
     if (info_win) {
@@ -840,7 +839,6 @@ void resize_win(void) {
     }
     resize_fm_win();
     info_win_init();
-    print_info("", INFO_LINE);
 }
 
 /*
