@@ -156,9 +156,8 @@ struct search_vars sv;
 
 /*
  * active win, quit status, number of worker thread jobs, tabs counter.
- * Distance_from_root is used in both archiver and fm_functions (paste)
  */
-int active, quit, num_of_jobs, cont, distance_from_root;
+int active, quit, num_of_jobs, cont;
 
 /*
  * ncursesFM working modalities, plus sv.searching == 3 is another modality too (missing here as declared before)

@@ -355,7 +355,7 @@ static void main_loop(void) {
         case 't': // t to open second tab
             if (cont < MAX_TABS) {
                 cont++;
-                change_first_tab_size();
+                resize_tab(0);
                 new_tab(cont - 1);
                 change_tab();
             }
@@ -364,7 +364,7 @@ static void main_loop(void) {
             if (active) {
                 cont--;
                 delete_tab(active);
-                change_first_tab_size();
+                resize_tab(0);
                 change_tab();
             }
             break;
@@ -484,8 +484,8 @@ static void check_device_mode(void) {
 static void manage_enter(struct stat current_file_stat) {
     if (sv.searching == 3 + active) {
         char *str = NULL;
-        int index = search_enter_press(sv.found_searched[ps[active].curr_pos]);
         if (!S_ISDIR(current_file_stat.st_mode)) {
+            int index = search_enter_press(sv.found_searched[ps[active].curr_pos]);
             /* save in str current file's name */
             str = sv.found_searched[ps[active].curr_pos] + index + 1;
             /* check if this file was an archive and cut useless path inside archive */
@@ -493,8 +493,8 @@ static void manage_enter(struct stat current_file_stat) {
             if (ptr) {
                 str[strlen(str) - strlen(ptr)] = '\0';
             }
+            sv.found_searched[ps[active].curr_pos][index] = '\0';
         }
-        sv.found_searched[ps[active].curr_pos][index] = '\0';
         /* 
          * leave_search_mode will move the cursor right to the selected file position
          * if str != NULL (ie: if user did not selected a folder)

@@ -88,7 +88,7 @@ static void info_win_init(void) {
     keypad(info_win, TRUE);
     nodelay(info_win, TRUE);
     notimeout(info_win, TRUE);
-    for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because i won't print anything on last line (SYSINFO line) */
+    for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because SYSINFO line has its own func (timer_func) */
         print_info("", i);
     }
     timer_func();
@@ -294,16 +294,22 @@ void new_tab(int win) {
 }
 
 /*
- * Helper functions called in main.c before creating/after deleting second tab.
+ * Resizes "win" tab and moves it to its new position.
  */
-void change_first_tab_size(void) {
-    wclear(mywin[0].fm);
-    mywin[0].width = COLS / cont;
-    wresize(mywin[0].fm, dim, mywin[0].width);
-    if (!special_mode[0] && mywin[0].stat_active) {
-        mywin[0].stat_active = STATS_ON;
+void resize_tab(int win) {
+    wclear(mywin[win].fm);
+    mywin[win].width = COLS / cont + win * (COLS % cont);
+    wresize(mywin[win].fm, dim, mywin[win].width);
+    mvwin(mywin[win].fm, 0, (COLS * win) / cont);
+    if (ps[win].curr_pos > dim - 3) {
+        mywin[win].delta = ps[win].curr_pos - (dim - 3);
+    } else {
+        mywin[win].delta = 0;
     }
-    list_everything(0, mywin[0].delta, 0);
+    if (!special_mode[win] && mywin[win].stat_active == STATS_IDLE) {
+        mywin[win].stat_active = STATS_ON;
+    }
+    list_everything(win, mywin[win].delta, 0);
 }
 
 /*
@@ -860,19 +866,7 @@ static void resize_helper_win(void) {
  */
 static void resize_fm_win(void) {
     for (int i = 0; i < cont; i++) {
-        wclear(mywin[i].fm);
-        mywin[i].width = COLS / cont + i * (COLS % cont);
-        wresize(mywin[i].fm, dim, mywin[i].width);
-        mvwin(mywin[i].fm, 0, (COLS * i) / cont);
-        if (ps[i].curr_pos > dim - 3) {
-            mywin[i].delta = ps[i].curr_pos - (dim - 3);
-        } else {
-            mywin[i].delta = 0;
-        }
-        if (!special_mode[i] && mywin[i].stat_active == STATS_IDLE) {
-            mywin[i].stat_active = STATS_ON;
-        }
-        list_everything(i, mywin[i].delta, 0);
+      resize_tab(i);
     }
 }
 

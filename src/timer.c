@@ -65,7 +65,6 @@ void timer_func(void) {
     update_batt(online, perc, num_of_batt, name);
 }
 
-
 void free_timer(void) {
     close(timerfd);
     if (batt) {

@@ -35,7 +35,7 @@ void screen_init(void);
 void screen_end(void);
 void reset_win(int win);
 void new_tab(int win);
-void change_first_tab_size(void);
+void resize_tab(int win);
 void delete_tab(int win);
 void scroll_down(void);
 void scroll_up(void);

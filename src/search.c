@@ -37,9 +37,12 @@ void search(void) {
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     char *fixed_str;
     int len, r = 0, ret = 0;
-
+    /*
+     * if searching "pippo" from "/home/pippo",
+     * avoid saving "/home/pippo" as a result.
+     */
     if (ftwbuf->level == 0) {
-        return 0;
+        return ret;
     }
     fixed_str = strrchr(path, '/') + 1;
     if ((sv.search_archive) && (is_ext(fixed_str, arch_ext, NUM(arch_ext)))) {
@@ -53,9 +56,6 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
     }
     if (r) {
         strcpy(sv.found_searched[sv.found_cont], path);
-        if (typeflag == FTW_D) {
-            strcat(sv.found_searched[sv.found_cont], "/");
-        }
         sv.found_cont++;
         if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
             ret = 1;

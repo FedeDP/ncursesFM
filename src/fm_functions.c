@@ -18,6 +18,7 @@ static const char *pkg_ext[] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
 static struct timeval timer;
 static char fast_browse_str[NAME_MAX + 1];
+static int distance_from_root;
 static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
     new_file, new_dir, rename_file_folders
 };

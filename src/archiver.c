@@ -5,6 +5,7 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 static void extractor_thread(struct archive *a, const char *current_dir);
 
 static struct archive *archive;
+static int distance_from_root;
 
 /*
  * It tries to create a new archive to write inside it,
