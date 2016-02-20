@@ -135,6 +135,7 @@ void list_found(void) {
 
 void leave_search_mode(const char *str, const char *filename) {
     sv.searching = 0;
+    special_mode[active] = 0;
     print_info("", SEARCH_LINE);
     change_dir(str, active);
     if (filename) {

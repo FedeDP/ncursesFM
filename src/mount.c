@@ -98,8 +98,8 @@ static int mount_fs(const char *str, int mount) {
         }
         /*
          * here we don't care about unmount success:
-         * save back in ps[active].my_cwd, process' check_cwd
-         * to be sure we carry the right cwd
+         * save back in ps[active].my_cwd, process' cwd
+         * to be sure we carry the right path
          */
         getcwd(ps[active].my_cwd, PATH_MAX);
         sprintf(mount_str, "%s unmounted.", str);
@@ -192,6 +192,7 @@ static void set_autoclear(const char *loopname) {
     }
     close_bus(&error, mess, iso_bus);
 }
+
 /*
  * Check if iso is already mounted.
  * For each /dev/loop device present, calls iso_backing_file on bus.
@@ -649,6 +650,7 @@ static void change_mounted_status(int pos, const char *name) {
 
 void leave_device_mode(void) {
     device_mode = DEVMON_READY;
+    special_mode[active] = 0;
     change_dir(ps[active].my_cwd, active);
 }
 

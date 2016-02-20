@@ -1,3 +1,6 @@
+02 / 20 / 2016
+* fixed some bugs in change_dir: i call that func even when not changing dir but only changing context (eg switch back from special mode to normal mode). I do have to put special_mode[win] = 0 only when really leaving special_mode. Removed that line from change_dir.
+
 02 / 12 / 2016
 * added basic mouse support: left click to open files/move between folders, right click to select files, and mouse wheel to scroll up/down.
 * when selecting a file in search mode, you'll be now moved to its folder, and the cursor will automatically highlight the chosen file.

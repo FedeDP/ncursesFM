@@ -27,7 +27,6 @@ int change_dir(const char *str, int win) {
     int ret;
     
     if (chdir(str) != -1) {
-        special_mode[win] = 0;
         getcwd(ps[win].my_cwd, PATH_MAX);
         sprintf(ps[win].title, "%s", ps[win].my_cwd);
         tab_refresh(win);

@@ -136,11 +136,13 @@ void show_bookmarks(void) {
 void manage_enter_bookmarks(void) {
     char c;
     
+    special_mode[active] = 0;
     if (change_dir(str_ptr[active][ps[active].curr_pos], active) == -1) {
         ask_user(inexistent_bookmark, &c, 1, 'y');
         if (!quit && c != 'n') {
             remove_bookmark();
         }
+        special_mode[active] = 1;
     } else {
         bookmarks_mode[active] = 0;
     }
@@ -148,5 +150,6 @@ void manage_enter_bookmarks(void) {
 
 void leave_bookmarks_mode(void) {
     bookmarks_mode[active] = 0;
+    special_mode[active] = 0;
     change_dir(ps[active].my_cwd, active);
 }
