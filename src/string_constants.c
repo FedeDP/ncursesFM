@@ -37,7 +37,7 @@ const char *lazy_search = "Do you want a lazy search (less precise)? y/N:>";
 const char *searched_string_minimum = "At least 5 chars...";
 const char *too_many_found = "Too many files found; try with a larger string.";
 const char *no_found = "No files found.";
-char searching_mess[4][80] = {"Searching...", "Search finished. Press f anytime to view the results."};
+const char searching_mess[2][80] = {"Searching...", "Search finished. Press f anytime to view the results."};
 
 #ifdef LIBCUPS_PRESENT
 const char *print_question = "Do you really want to print this file? Y/n:> ";

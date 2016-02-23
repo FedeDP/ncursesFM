@@ -25,13 +25,14 @@ static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
 
 int change_dir(const char *str, int win) {
     int ret;
+    const int event_mask = IN_MODIFY | IN_ATTRIB | IN_CREATE | IN_DELETE | IN_MOVE;
     
     if (chdir(str) != -1) {
         getcwd(ps[win].my_cwd, PATH_MAX);
         sprintf(ps[win].title, "%s", ps[win].my_cwd);
         tab_refresh(win);
-        inotify_rm_watch(inot[win].fd, inot[win].wd);
-        inot[win].wd = inotify_add_watch(inot[win].fd, ps[win].my_cwd, event_mask);
+        inotify_rm_watch(ps[win].inot.fd, ps[win].inot.wd);
+        ps[win].inot.wd = inotify_add_watch(ps[win].inot.fd, ps[win].my_cwd, event_mask);
         ret = 0;
     } else {
         print_info(strerror(errno), ERR_LINE);
@@ -49,6 +50,7 @@ void change_tab(void) {
 void switch_hidden(void) {
     config.show_hidden = !config.show_hidden;
     for (int i = 0; i < cont; i++) {
+        save_old_pos(i);
         tab_refresh(i);
     }
 }
@@ -368,31 +370,38 @@ void fast_browse(int c) {
     }
     sprintf(fast_browse_str + strlen(fast_browse_str), "%c", c);
     print_info(fast_browse_str, INFO_LINE);
-    if (!move_cursor_to_file(i, fast_browse_str)) {
+    if (!move_cursor_to_file(i, fast_browse_str, active)) {
         memset(fast_browse_str, 0, strlen(fast_browse_str));
     }
 }
 
-int move_cursor_to_file(int i, const char *filename) {
+int move_cursor_to_file(int i, const char *filename, int win) {
     char *str;
-    void (*f)(void);
+    void (*f)(int);
     int len = strlen(filename);
     
-    for (; i < ps[active].number_of_files; i++) {
-        str = strrchr(ps[active].nl[i], '/') + 1;
+    for (; i < ps[win].number_of_files; i++) {
+        str = strrchr(ps[win].nl[i], '/') + 1;
         if (strncmp(filename, str, len) == 0) {
-            if (i != ps[active].curr_pos) {
-                if (i < ps[active].curr_pos) {
+            if (i != ps[win].curr_pos) {
+                if (i < ps[win].curr_pos) {
                     f = scroll_up;
                 } else {
                     f = scroll_down;
                 }
-                while (ps[active].curr_pos != i) {
-                    f();
+                while (ps[win].curr_pos != i) {
+                    f(win);
                 }
             }
             return 1;
         }
     }
     return 0;
+}
+
+void save_old_pos(int win) {
+    char *str;
+    
+    str = strrchr(ps[win].nl[ps[win].curr_pos], '/') + 1;
+    strcpy(ps[win].old_file, str);
 }

@@ -291,12 +291,12 @@ int start_monitor(void) {
     if (quit) {
         goto fail;
     }
-    device_mode = DEVMON_READY;
+    device_init = DEVMON_READY;
     INFO("started device monitor.");
     return sd_bus_get_fd(bus);
 
 fail:
-    device_mode = DEVMON_OFF;
+    device_init = DEVMON_OFF;
     return -1;
 }
 
@@ -400,8 +400,12 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
                 sprintf(devname, "/dev/%s", name);
                 r = add_device(dev, devname);
                 udev_device_unref(dev);
-                if (!quit && device_mode > DEVMON_READY && r != -1) {
-                    update_special_mode(number_of_devices, device_mode - 1, my_devices);
+                if (!quit && r != -1) {
+                    for (int i = 0; i < cont; i++) {
+                        if (ps[i].mode == device_) {
+                            update_special_mode(number_of_devices, i, my_devices);
+                        }
+                    }
                 }
             }
         } else {
@@ -431,8 +435,12 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             strcpy(name, strrchr(path, '/') + 1);
             sprintf(devname, "/dev/%s", name);
             r = remove_device(devname);
-            if (!quit && device_mode > DEVMON_READY && r != -1) {
-                update_special_mode(number_of_devices, device_mode - 1, my_devices);
+            if (!quit && r != -1) {
+                for (int i = 0; i < cont; i++) {
+                    if (ps[i].mode == device_) {
+                        update_special_mode(number_of_devices, i, my_devices);
+                    }
+                }
             }
         } else {
             INFO("signal discarded.");
@@ -463,8 +471,10 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             int present = is_present(devname);
             if (present != -1) {
                 change_mounted_status(present, devname);
-                if (device_mode > DEVMON_READY) {
-                    update_special_mode(number_of_devices, device_mode - 1, NULL);
+                for (int i = 0; i < cont; i++) {
+                    if (ps[i].mode == device_) {
+                        update_special_mode(number_of_devices, i, NULL);
+                    }
                 }
             }
         } else {
@@ -501,8 +511,7 @@ void devices_bus_process(void) {
  */
 void show_devices_tab(void) {
     if (number_of_devices) {
-        device_mode = 1 + active;
-        show_special_tab(number_of_devices, my_devices, device_mode_str);
+        show_special_tab(number_of_devices, my_devices, device_mode_str, device_);
     } else {
         print_info("No devices found.", INFO_LINE);
     }
@@ -628,8 +637,8 @@ void manage_enter_device(void) {
         ret = mount_fs(dev_path, mount);
     }
     if (ret == 1 && get_mount_point(dev_path, name) != -1) {
-        strcpy(ps[active].my_cwd, name);
-        leave_device_mode();
+        memset(ps[active].old_file, 0, strlen(ps[active].old_file));
+        leave_special_mode(name);
     }
 }
 
@@ -646,12 +655,6 @@ static void change_mounted_status(int pos, const char *name) {
     }
     print_info(mount_str, INFO_LINE);
     memset(mount_str, 0, strlen(mount_str));
-}
-
-void leave_device_mode(void) {
-    device_mode = DEVMON_READY;
-    special_mode[active] = 0;
-    change_dir(ps[active].my_cwd, active);
 }
 
 void free_device_monitor(void) {
@@ -707,7 +710,7 @@ static int add_device(struct udev_device *dev, const char *name) {
             INFO("added device.");
             print_info("New device connected.", INFO_LINE);
             int is_loop_dev = !strncmp(name, "/dev/loop", strlen("/dev/loop"));
-            if (device_mode != DEVMON_STARTING && (!mount && (config.automount || is_loop_dev))) {
+            if (device_init != DEVMON_STARTING && (!mount && (config.automount || is_loop_dev))) {
                 mount_fs(name, mount);
             }
         }

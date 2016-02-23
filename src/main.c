@@ -42,6 +42,7 @@ static void main_loop(void);
 static void check_device_mode(void);
 #endif
 static void manage_enter(struct stat current_file_stat);
+static void manage_enter_search(struct stat current_file_stat);
 static void manage_space(const char *str);
 static void manage_quit(void);
 static void switch_search(void);
@@ -107,15 +108,14 @@ static void set_pollfd(void) {
         .fd = start_timer(),
         .events = POLLIN,
     };
-    inot[0].fd = inotify_init();
-    inot[1].fd = inotify_init();
-    event_mask = IN_MODIFY | IN_ATTRIB | IN_CREATE | IN_DELETE | IN_MOVE;
+    ps[0].inot.fd = inotify_init();
+    ps[1].inot.fd = inotify_init();
     main_p[INOTIFY_IX1] = (struct pollfd) {
-        .fd = inot[0].fd,
+        .fd = ps[0].inot.fd,
         .events = POLLIN,
     };
     main_p[INOTIFY_IX2] = (struct pollfd) {
-        .fd = inot[1].fd,
+        .fd = ps[1].inot.fd,
         .events = POLLIN,
     };
     pipe(info_fd);
@@ -156,11 +156,11 @@ static void sigsegv_handler(int signum) {
 }
 
 static void helper_function(int argc, const char *argv[]) {
-    /* default value for starting_helper, bat_low_level and device_mode */
+    /* default value for starting_helper, bat_low_level and device_init */
     config.starting_helper = 1;
     config.bat_low_level = 15;
 #ifdef SYSTEMD_PRESENT
-    device_mode = DEVMON_STARTING;
+    device_init = DEVMON_STARTING;
 #endif
 
     if ((argc > 1) && (!strcmp(argv[1], "--help"))) {
@@ -324,27 +324,35 @@ static void main_loop(void) {
 
     while (!quit) {
         c = main_poll(NULL);
-        if ((fast_browse_mode[active]) && isgraph(c) && (c != ',')) {
+        if ((ps[active].mode == fast_browse_) && isgraph(c) && (c != ',')) {
             fast_browse(c);
             continue;
         }
         c = tolower(c);
-        if (special_mode[active] && isprint(c) && !strchr(special_mode_allowed_chars, c)) {
+        if (ps[active].mode > fast_browse_ && isprint(c) && !strchr(special_mode_allowed_chars, c)) {
             continue;
         }
         stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
         switch (c) {
         case KEY_UP:
-            scroll_up();
+            scroll_up(active);
             break;
         case KEY_DOWN:
-            scroll_down();
+            scroll_down(active);
             break;
         case KEY_RIGHT:
         case KEY_LEFT:
             if (cont == MAX_TABS) {
                 change_tab();
             }
+            break;
+        case KEY_PPAGE:
+            ptr = strrchr(ps[active].nl[0], '/') + 1;
+            move_cursor_to_file(0, ptr, active);
+            break;
+        case KEY_NPAGE:
+            ptr = strrchr(ps[active].nl[ps[active].number_of_files - 1], '/') + 1;
+            move_cursor_to_file(ps[active].number_of_files - 1, ptr, active);
             break;
         case 'h': // h to show hidden files
             switch_hidden();
@@ -378,9 +386,9 @@ static void main_loop(void) {
             trigger_stats();
             break;
         case 'e': // add dir to bookmarks
-            if (!special_mode[active]) {
+            if (ps[active].mode <= fast_browse_) {
                 add_file_to_bookmarks(str_ptr[active][ps[active].curr_pos]);
-            } else if (bookmarks_mode[active]) {
+            } else if (ps[active].mode == bookmarks_) {
                 remove_bookmark_from_file();
             }
             break;
@@ -426,9 +434,7 @@ static void main_loop(void) {
             }
             break;
         case 'g': // g to show bookmarks
-            if (!bookmarks_mode[active]) {
-                show_bookmarks();
-            }
+            show_bookmarks();
             break;
         case KEY_MOUSE:
             if(getmouse(&event) == OK) {
@@ -442,9 +448,9 @@ static void main_loop(void) {
 #if NCURSES_MOUSE_VERSION > 1
                 /* scroll up and down events associated with mouse wheel */
                 else if (event.bstate & BUTTON4_PRESSED) {
-                    scroll_up();
+                    scroll_up(active);
                 } else if (event.bstate & BUTTON5_PRESSED) {
-                    scroll_down();
+                    scroll_down(active);
                 }
 #endif
             }
@@ -464,50 +470,29 @@ static void main_loop(void) {
 
 #ifdef SYSTEMD_PRESENT
 static void check_device_mode(void) {
-    if (sv.searching == 3 + active || bookmarks_mode[active]) {
-        return;
-    }
-    if (device_mode == DEVMON_STARTING) {
+    if (device_init == DEVMON_STARTING) {
         print_info("Still polling for initial devices.", INFO_LINE);
-    } else if (device_mode == DEVMON_READY) {
+    } else if (device_init == DEVMON_READY && ps[active].mode <= fast_browse_) {
         show_devices_tab();
-    } else if (device_mode == DEVMON_OFF) {
+    } else if (device_init == DEVMON_OFF) {
         print_info("Monitor is not active. An error occurred, check log file.", INFO_LINE);
-    } else if (device_mode == 1 + active) {
+    } else if (ps[active].mode == device_) {
         manage_mount_device();
-    } else {
-        print_info("A tab is already in device mode.", INFO_LINE);
     }
 }
 #endif
 
 static void manage_enter(struct stat current_file_stat) {
-    if (sv.searching == 3 + active) {
-        char *str = NULL;
-        if (!S_ISDIR(current_file_stat.st_mode)) {
-            int index = search_enter_press(sv.found_searched[ps[active].curr_pos]);
-            /* save in str current file's name */
-            str = sv.found_searched[ps[active].curr_pos] + index + 1;
-            /* check if this file was an archive and cut useless path inside archive */
-            char *ptr = strchr(str, '/');
-            if (ptr) {
-                str[strlen(str) - strlen(ptr)] = '\0';
-            }
-            sv.found_searched[ps[active].curr_pos][index] = '\0';
-        }
-        /* 
-         * leave_search_mode will move the cursor right to the selected file position
-         * if str != NULL (ie: if user did not selected a folder)
-         */
-        leave_search_mode(sv.found_searched[ps[active].curr_pos], str);
+    if (ps[active].mode == search_) {
+        manage_enter_search(current_file_stat);
     }
 #ifdef SYSTEMD_PRESENT
-    else if (device_mode == 1 + active) {
+    else if (ps[active].mode == device_) {
         manage_enter_device();
     }
 #endif
     else if (S_ISDIR(current_file_stat.st_mode)) {
-        if (bookmarks_mode[active]) {
+        if (ps[active].mode == bookmarks_) {
             manage_enter_bookmarks();
         } else {
             change_dir(str_ptr[active][ps[active].curr_pos], active);
@@ -517,34 +502,52 @@ static void manage_enter(struct stat current_file_stat) {
     }
 }
 
+static void manage_enter_search(struct stat current_file_stat) {
+    char *str = NULL;
+    char path[PATH_MAX + 1];
+    
+    strcpy(path, sv.found_searched[ps[active].curr_pos]);
+    if (!S_ISDIR(current_file_stat.st_mode)) {
+        int index = search_enter_press(path);
+        /* save in str current file's name */
+        str = path + index + 1;
+        /* check if this file was an archive and cut useless path inside archive */
+        char *ptr = strchr(str, '/');
+        if (ptr) {
+            str[strlen(str) - strlen(ptr)] = '\0';
+        }
+        strcpy(ps[active].old_file, str);
+        path[index] = '\0';
+    } else {
+        memset(ps[active].old_file, 0, strlen(ps[active].old_file));
+    }
+    leave_search_mode(path);
+}
+
 static void manage_space(const char *str) {
-    if (strcmp(strrchr(str, '/') + 1, "..") && !special_mode[active]) {
+    if (strcmp(strrchr(str, '/') + 1, "..") && ps[active].mode <= fast_browse_) {
         manage_space_press(str);
     }
 }
 
 static void manage_quit(void) {
-    if (sv.searching == 3 + active) {
-        leave_search_mode(ps[active].my_cwd, NULL);
-    }
-#ifdef SYSTEMD_PRESENT
-    else if (device_mode == 1 + active) {
-        leave_device_mode();
-    }
-#endif
-    else if (bookmarks_mode[active]) {
-        leave_bookmarks_mode();
+    if (ps[active].mode > fast_browse_) {
+        if (ps[active].mode == search_) {
+            leave_search_mode(ps[active].my_cwd);
+        } else {
+            leave_special_mode(ps[active].my_cwd);
+        }
     } else {
         quit = NORM_QUIT;
     }
 }
 
 static void switch_search(void) {
-    if (sv.searching == 0) {
+    if (sv.searching == NO_SEARCH) {
         search();
-    } else if (sv.searching == 1) {
+    } else if (sv.searching == SEARCHING) {
         print_info(already_searching, INFO_LINE);
-    } else if (sv.searching == 2) {
+    } else if (sv.searching == SEARCHED) {
         list_found();
     }
 }

@@ -5,6 +5,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <sys/inotify.h>
+#include <ncurses.h>
 
 #define MAX_TABS 2
 #define MAX_NUMBER_OF_FOUND 100
@@ -50,6 +51,13 @@
 #define DEVMON_READY 0
 
 /*
+ * Search status
+ */
+#define NO_SEARCH 0
+#define SEARCHING 1
+#define SEARCHED 2
+
+/*
  * struct pollfd indexes
  */
 #define GETCH_IX 0
@@ -91,14 +99,40 @@ typedef struct list {
 } file_list;
 
 /*
+ * for each tab: an fd to catch inotify events,
+ * and a wd, that uniquely represents an inotify watch.
+ */
+struct inotify {
+    int fd;
+    int wd;
+};
+
+/*
+ * Struct that holds UI informations per-tab
+ */
+struct scrstr {
+    WINDOW *fm;
+    int width;
+    int delta;
+    int stat_active;
+    char tot_size[30];
+};
+
+enum working_mode {normal, fast_browse_, bookmarks_, search_, device_};
+
+/*
  * Struct used to store tab's information
  */
-struct vars {
+struct tab {
     int curr_pos;
     char my_cwd[PATH_MAX];
     char (*nl)[PATH_MAX + 1];
     int number_of_files;
     char title[PATH_MAX + 1];
+    struct inotify inot;
+    char old_file[NAME_MAX + 1];
+    struct scrstr mywin;
+    enum working_mode mode;
 };
 
 /*
@@ -127,42 +161,27 @@ typedef struct thread_list {
 } thread_job_list;
 
 /*
- * for each tab: an fd to catch inotify events,
- * and a wd, that uniquely represents an inotify watch.
- */
-struct inotify {
-    int fd;
-    int wd;
-};
-
-/*
  * main_p: Needed to interrupt main cycles getch
  * from external signals;
  * nfds: number of elements in main_p struct;
- * event_mask: bit mask used for inotify_add_watch;
  * info_fd: pipe used to pass info_msg waiting 
  * to be printed to main_poll.
  */
 struct pollfd *main_p;
 sigset_t main_mask;
-int nfds, event_mask, info_fd[2];
-struct inotify inot[MAX_TABS];
+int nfds, info_fd[2];
 
 thread_job_list *thread_h;
 file_list *selected;
 struct conf config;
-struct vars ps[MAX_TABS];
+struct tab ps[MAX_TABS];
 struct search_vars sv;
 
 /*
- * active win, quit status, number of worker thread jobs, tabs counter.
+ * active win, quit status, number of worker thread jobs,
+ * tabs counter and device_init status.
  */
-int active, quit, num_of_jobs, cont;
-
-/*
- * ncursesFM working modalities, plus sv.searching == 3 is another modality too (missing here as declared before)
- */
-int device_mode, special_mode[MAX_TABS], fast_browse_mode[MAX_TABS], bookmarks_mode[MAX_TABS];
+int active, quit, num_of_jobs, cont, device_init;
 
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;

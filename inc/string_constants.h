@@ -43,7 +43,8 @@ const char *lazy_search;
 const char *searched_string_minimum;
 const char *too_many_found;
 const char *no_found;
-char searching_mess[4][80];
+const char *already_search_mode;
+const char searching_mess[2][80];
 
 #ifdef LIBCUPS_PRESENT
 const char *print_question;

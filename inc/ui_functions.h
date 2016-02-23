@@ -6,7 +6,6 @@
 #include "string_constants.h"
 #include "quit_functions.h"
 #include <locale.h>
-#include <ncurses.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <archive.h>
@@ -37,15 +36,16 @@ void reset_win(int win);
 void new_tab(int win);
 void resize_tab(int win);
 void delete_tab(int win);
-void scroll_down(void);
-void scroll_up(void);
+void scroll_down(int win);
+void scroll_up(int win);
 void trigger_show_helper_message(void);
 void trigger_stats(void);
 void change_unit(float size, char *str);
 int main_poll(WINDOW *win);
 void tab_refresh(int win);
 void update_special_mode(int num, int win, char (*str)[PATH_MAX + 1]);
-void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title);
+void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title, int mode);
+void leave_special_mode(const char *str);
 void print_info(const char *str, int i);
 void print_and_warn(const char *err, int line);
 void ask_user(const char *str, char *input, int d, char c);

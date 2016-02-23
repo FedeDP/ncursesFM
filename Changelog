@@ -1,5 +1,8 @@
-02 / 20 / 2016
-* fixed some bugs in change_dir: i call that func even when not changing dir but only changing context (eg switch back from special mode to normal mode). I do have to put special_mode[win] = 0 only when really leaving special_mode. Removed that line from change_dir.
+02 / 24 / 2016
+* fixed a bug in change_dir: i call that func even when not changing dir but only changing context (eg switch back from special mode to normal mode).
+* more functions win independent: even scroll_up/down and move_cursor_to_file. This way, i can properly restore cursor's position after every events: after resorting, switching hidden showing and quitting a special tab.
+* new feature: pg_up, pg_down to move directly to first/last file in current tab.
+* lots of code polishing and internal changes
 
 02 / 12 / 2016
 * added basic mouse support: left click to open files/move between folders, right click to select files, and mouse wheel to scroll up/down.

@@ -1,8 +1,8 @@
 /* TODO:
  *
  * update doc
- * 
- * switch to stdint lib
- * 
- * let ncursesFM build on non-linux systems
+ *
+ * let ncursesFM build on non-linux systems (?)
  */
+
+

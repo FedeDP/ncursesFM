@@ -75,8 +75,8 @@ static void quit_search_th(void) {
 }
 
 static void close_fds(void) {
-    close(inot[0].fd);
-    close(inot[1].fd);
+    close(ps[0].inot.fd);
+    close(ps[1].inot.fd);
     close(info_fd[0]);
     close(info_fd[1]);
 }

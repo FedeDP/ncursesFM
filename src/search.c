@@ -28,7 +28,7 @@ void search(void) {
         if (c == 'y') {
             sv.search_lazy = 1;
         }
-        sv.searching = 1;
+        sv.searching = SEARCHING;
         print_info("", SEARCH_LINE);
         pthread_create(&search_th, NULL, search_thread, NULL);
     }
@@ -108,14 +108,14 @@ static void *search_thread(void *x) {
     INFO("ended recursive search");
     if (!quit) {
         if ((sv.found_cont == MAX_NUMBER_OF_FOUND) || (sv.found_cont == 0)) {
-            sv.searching = 0;
+            sv.searching = NO_SEARCH;
             if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
                 print_info(too_many_found, INFO_LINE);
             } else {
                 print_info(no_found, INFO_LINE);
             }
         } else {
-            sv.searching = 2;
+            sv.searching = SEARCHED;
         }
         print_info("", SEARCH_LINE);
     }
@@ -126,21 +126,17 @@ static void *search_thread(void *x) {
 void list_found(void) {
     char str[100];
 
-    sprintf(str, "Files found searching %s:", sv.searched_string);
-    sv.searching = 3 + active;
-    sprintf(searching_mess[sv.searching - 1], "%d files found.", sv.found_cont);
-    show_special_tab(sv.found_cont, sv.found_searched, str);
+    sprintf(str, "%d files found searching %s:", sv.found_cont, sv.searched_string);
+    show_special_tab(sv.found_cont, sv.found_searched, str, search_);
     print_info("", SEARCH_LINE);
 }
 
-void leave_search_mode(const char *str, const char *filename) {
-    sv.searching = 0;
-    special_mode[active] = 0;
-    print_info("", SEARCH_LINE);
-    change_dir(str, active);
-    if (filename) {
-        move_cursor_to_file(0, filename);
+void leave_search_mode(const char *str) {
+    if (ps[!active].mode != search_) {
+        sv.searching = NO_SEARCH;
+        print_info("", SEARCH_LINE);
     }
+    leave_special_mode(str);
 }
 
 /*

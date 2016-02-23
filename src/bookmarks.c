@@ -118,7 +118,7 @@ static void remove_bookmark(void) {
 
 static void update_bookmarks_tabs(void) {
     for (int i = 0; i < cont; i++) {
-        if (bookmarks_mode[i]) {
+        if (ps[i].mode == bookmarks_) {
             update_special_mode(num_bookmarks, i, bookmarks);
         }
     }
@@ -126,8 +126,7 @@ static void update_bookmarks_tabs(void) {
 
 void show_bookmarks(void) {
     if (num_bookmarks) {
-        bookmarks_mode[active] = 1;
-        show_special_tab(num_bookmarks, bookmarks, bookmarks_mode_str);
+        show_special_tab(num_bookmarks, bookmarks, bookmarks_mode_str, bookmarks_);
     } else {
         print_info(no_bookmarks, INFO_LINE);
     }
@@ -135,21 +134,17 @@ void show_bookmarks(void) {
 
 void manage_enter_bookmarks(void) {
     char c;
+    char old_pos[NAME_MAX + 1];
     
-    special_mode[active] = 0;
+    strcpy(old_pos, ps[active].old_file);
+    memset(ps[active].old_file, 0, strlen(ps[active].old_file));
     if (change_dir(str_ptr[active][ps[active].curr_pos], active) == -1) {
         ask_user(inexistent_bookmark, &c, 1, 'y');
         if (!quit && c != 'n') {
             remove_bookmark();
         }
-        special_mode[active] = 1;
+        strcpy(ps[active].old_file, old_pos);
     } else {
-        bookmarks_mode[active] = 0;
+        ps[active].mode = normal;
     }
-}
-
-void leave_bookmarks_mode(void) {
-    bookmarks_mode[active] = 0;
-    special_mode[active] = 0;
-    change_dir(ps[active].my_cwd, active);
 }
