@@ -44,7 +44,7 @@ endif
 endif
 
 ifneq ("$(LIBCONFIG)","")
-CFLAGS+=-DLIBCONFIG_PRESENT
+CFLAGS+=-DLIBCONFIG_PRESENT -DCONFDIR=\"$(CONFDIR)\"
 $(info libconfig support enabled.)
 endif
 

@@ -1,3 +1,7 @@
+02 / 25 / 2016
+* added "CONFDIR" variable to be passed to makefile, to change default configuration file's folder. Default place is still /etc/default/ncursesFM.conf.
+This way, you can test libconfig support without installing ncursesFM: "make CONFDIR=./" will do the trick.
+
 02 / 24 / 2016
 * fixed a bug in change_dir: i call that func even when not changing dir but only changing context (eg switch back from special mode to normal mode).
 * more functions win independent: even scroll_up/down and move_cursor_to_file. This way, i can properly restore cursor's position after every events: after resorting, switching hidden showing and quitting a special tab.

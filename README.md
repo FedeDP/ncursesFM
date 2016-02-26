@@ -128,5 +128,5 @@ To remove, just move inside the folder and run:
 
     # make uninstall
 
-make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets.
-Be aware that it will disable config file support and bash autocompletion script (you can still source it manually anyway) though.
+make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets. Be aware that it will disable bash autocompletion script (you can still source it manually anyway) and config file support (until you do as described below) though.  
+Moreover, you can specify a $CONFDIR variable that tells ncursesFM where to look for its config file; so something like "make CONFDIR=./" will let you test config file support too without even installing it.

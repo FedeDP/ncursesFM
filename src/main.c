@@ -230,9 +230,10 @@ static void parse_cmd(int argc, const char *argv[]) {
 #ifdef LIBCONFIG_PRESENT
 static void read_config_file(void) {
     config_t cfg;
-    const char *config_file_name = "/etc/default/ncursesFM.conf";
+    char config_file_name[PATH_MAX + 1];
     const char *str_editor, *str_starting_dir;
 
+    sprintf(config_file_name, "%s/ncursesFM.conf", CONFDIR);
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name) == CONFIG_TRUE) {
         if ((!strlen(config.editor)) && (config_lookup_string(&cfg, "editor", &str_editor) == CONFIG_TRUE)) {
