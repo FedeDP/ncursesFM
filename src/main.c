@@ -38,6 +38,7 @@ static void read_config_file(void);
 #endif
 static void config_checks(void);
 static void main_loop(void);
+static void add_new_tab(void);
 #ifdef SYSTEMD_PRESENT
 static void check_device_mode(void);
 #endif
@@ -311,16 +312,16 @@ static void main_loop(void) {
      * m only in device_mode to {un}mount device,
      * e only in bookmarks_mode to remove device from bookmarks
      */
-    const char *special_mode_allowed_chars = "ltqme";
+    const char *special_mode_allowed_chars = "ltqmes";
 
     char *ptr;
     struct stat current_file_stat;
     
     MEVENT event;
 #if NCURSES_MOUSE_VERSION > 1
-    mousemask(BUTTON1_RELEASED | BUTTON3_RELEASED | BUTTON4_PRESSED | BUTTON5_PRESSED, NULL);
+    mousemask(BUTTON1_RELEASED | BUTTON2_RELEASED | BUTTON3_RELEASED | BUTTON4_PRESSED | BUTTON5_PRESSED, NULL);
 #else
-    mousemask(BUTTON1_RELEASED | BUTTON3_RELEASED, NULL);
+    mousemask(BUTTON1_RELEASED | BUTTON2_RELEASED | BUTTON3_RELEASED, NULL);
 #endif
 
     while (!quit) {
@@ -362,12 +363,7 @@ static void main_loop(void) {
             manage_enter(current_file_stat);
             break;
         case 't': // t to open second tab
-            if (cont < MAX_TABS) {
-                cont++;
-                resize_tab(0);
-                new_tab(cont - 1);
-                change_tab();
-            }
+            add_new_tab();
             break;
         case 'w': // w to close second tab
             if (active) {
@@ -411,13 +407,6 @@ static void main_loop(void) {
         case ',': // , to enable/disable fast browse mode
             switch_fast_browse_mode();
             break;
-#ifdef OPENSSL_PRESENT
-        case 'u': // u to check current file's shasum
-            if (strcmp(strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1, "..")) {
-                shasum_func(str_ptr[active][ps[active].curr_pos]);
-            }
-            break;
-#endif
         case 'q': /* q to exit/leave special mode */
             manage_quit();
             break;
@@ -442,6 +431,8 @@ static void main_loop(void) {
                 /* left click will send an enter event */
                 if (event.bstate & BUTTON1_RELEASED) {
                     manage_enter(current_file_stat);
+                } else if (event.bstate & BUTTON2_RELEASED) {
+                    add_new_tab();
                 /* right click will send a space event */
                 } else if (event.bstate & BUTTON3_RELEASED) {
                     manage_space(str_ptr[active][ps[active].curr_pos]);
@@ -469,6 +460,15 @@ static void main_loop(void) {
     }
 }
 
+static void add_new_tab(void) {
+    if (cont < MAX_TABS) {
+        cont++;
+        resize_tab(0);
+        new_tab(cont - 1);
+        change_tab();
+    }
+}
+
 #ifdef SYSTEMD_PRESENT
 static void check_device_mode(void) {
     if (device_init == DEVMON_STARTING) {
@@ -492,12 +492,10 @@ static void manage_enter(struct stat current_file_stat) {
         manage_enter_device();
     }
 #endif
-    else if (S_ISDIR(current_file_stat.st_mode)) {
-        if (ps[active].mode == bookmarks_) {
-            manage_enter_bookmarks();
-        } else {
-            change_dir(str_ptr[active][ps[active].curr_pos], active);
-        }
+    else if (ps[active].mode == bookmarks_) {
+        manage_enter_bookmarks(current_file_stat);
+    } else if (S_ISDIR(current_file_stat.st_mode)) {
+        change_dir(str_ptr[active][ps[active].curr_pos], active);
     } else {
         manage_file(str_ptr[active][ps[active].curr_pos], current_file_stat.st_size);
     }

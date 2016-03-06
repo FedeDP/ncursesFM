@@ -3,6 +3,15 @@
  * update doc
  *
  * let ncursesFM build on non-linux systems (?)
+ * 
+ * in device_mode:
+ * Add available space for mounted fs?
+ * Move available space (and other info, may be, such as mount opts) to show_stat?
+ * 
+ * 
+ * add small window to display current file fullpath /full name?
+ * 
+ * info_win shown only when needed? It stays 2s (only for INFO and ERR msg obviously) -> timerfd!
  */
 
 

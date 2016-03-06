@@ -8,14 +8,14 @@ pkgdesc="A FileManager written in c and ncurses library."
 arch=('i686' 'x86_64')
 url="https://github.com/FedeDP/${_gitname}"
 license=('GPL')
-depends=('ncurses' 'libconfig' 'libarchive' 'glibc' 'libcups' 'libx11' 'systemd' 'openssl')
+depends=('ncurses' 'libconfig' 'libarchive' 'glibc' 'libcups' 'libx11' 'systemd')
 optdepends=('xdg-utils: xdg-open support'
             'udisks2: mountable drives and ISO mount support'
             'packagekit: package installation support'
             'upower: AC (dis)connection events support')
-# libcups, libconfig, libx11, and openssl are optional build dep.
+# libcups, libconfig and libx11 are optional build dep.
 # If compiled without them, the program will run just fine;
-# but that would disable xdg-open, config file read, printing, and shasum support.
+# but that would disable xdg-open, config file read and printing support.
 # systemd too is an optdep. But in arch libudev is packaged together with it,
 # and libudev is a mandatory dep.
 makedepends=('git')

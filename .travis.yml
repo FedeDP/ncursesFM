@@ -21,7 +21,6 @@ arch:
         - ncurses
         - libcups
         - libx11
-        - openssl
     script:
         - "echo $CC"
         - make

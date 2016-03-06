@@ -1,3 +1,17 @@
+03 / 5 / 2016
+* lots of small bugfixes all around the code.
+* better show_stat: list_everything won't anymore reserve space for stats on the right.
+* Show_stat safer: checking stat return value.
+* Show_stat will now work even in special_mode
+* lazy search won't search between hidden files.
+* if user searched_string is an hidden file (ie, starts with '.'), user won't be asked if he wants a lazy search obviously.
+* show_hidden is now a per-tab property
+* Print_thread was useless. Removed and do print through libcups in main thread.
+* Droppen openssl support (second time...). Again, i don't think that belongs to a fm.
+* middle mouse button will now open a new tab.
+* in bookmarks_mode, opening a file will now move current tab to its folder, with file highlighted, as i do in search mode. More consistent.
+*
+
 02 / 25 / 2016
 * added "CONFDIR" variable to be passed to makefile, to change default configuration file's folder. Default place is still /etc/default/ncursesFM.conf.
 This way, you can test libconfig support without installing ncursesFM: "make CONFDIR=./" will do the trick.

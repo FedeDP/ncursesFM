@@ -133,6 +133,7 @@ struct tab {
     char old_file[NAME_MAX + 1];
     struct scrstr mywin;
     enum working_mode mode;
+    int show_hidden;
 };
 
 /*

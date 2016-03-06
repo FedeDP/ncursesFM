@@ -132,19 +132,25 @@ void show_bookmarks(void) {
     }
 }
 
-void manage_enter_bookmarks(void) {
+void manage_enter_bookmarks(struct stat current_file_stat) {
     char c;
-    char old_pos[NAME_MAX + 1];
+    char str[PATH_MAX + 1];
     
-    strcpy(old_pos, ps[active].old_file);
-    memset(ps[active].old_file, 0, strlen(ps[active].old_file));
-    if (change_dir(str_ptr[active][ps[active].curr_pos], active) == -1) {
+    if (access(str_ptr[active][ps[active].curr_pos], F_OK ) != -1 ) {
+        strcpy(str, str_ptr[active][ps[active].curr_pos]);
+        if (!S_ISDIR(current_file_stat.st_mode)) {
+            strcpy(ps[active].old_file, strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1);
+            int len = strlen(str_ptr[active][ps[active].curr_pos]) - strlen(ps[active].old_file);
+            str[len] = '\0';
+        } else {
+            memset(ps[active].old_file, 0, strlen(ps[active].old_file));
+        }
+        ps[active].mode = normal;
+        change_dir(str, active);
+    } else {
         ask_user(inexistent_bookmark, &c, 1, 'y');
         if (!quit && c != 'n') {
             remove_bookmark();
         }
-        strcpy(ps[active].old_file, old_pos);
-    } else {
-        ps[active].mode = normal;
     }
 }

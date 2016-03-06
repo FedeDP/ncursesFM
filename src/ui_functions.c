@@ -34,7 +34,7 @@ struct info_msg {
 };
 
 static WINDOW *helper_win, *info_win;
-static int dim, sorting_index;
+static int dim, sorting_index, hidden;
 static int (*const sorting_func[])(const struct dirent **d1, const struct dirent **d2) = {
     alphasort, sizesort, last_mod_sort, typesort
 };
@@ -109,7 +109,8 @@ void screen_end(void) {
  */
 static void generate_list(int win) {
     struct dirent **files;
-
+    
+    hidden = ps[win].show_hidden;
     ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func[sorting_index]);
     free(ps[win].nl);
     if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
@@ -181,7 +182,7 @@ void reset_win(int win)
     wclear(ps[win].mywin.fm);
     ps[win].mywin.delta = 0;
     ps[win].curr_pos = 0;
-    if (ps[win].mode <= fast_browse_ && ps[win].mywin.stat_active) {
+    if (ps[win].mywin.stat_active) {
         memset(ps[win].mywin.tot_size, 0, strlen(ps[win].mywin.tot_size));
         ps[win].mywin.stat_active = STATS_ON;
     }
@@ -196,13 +197,9 @@ void reset_win(int win)
  */
 static void list_everything(int win, int old_dim, int end) {
     char *str;
-    int width = ps[win].mywin.width - 5;
 
     if (end == 0) {
         end = dim - 2;
-    }
-    if (ps[win].mode <= fast_browse_) {
-        width -= STAT_LENGTH;
     }
     wattron(ps[win].mywin.fm, A_BOLD);
     for (int i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
@@ -213,11 +210,11 @@ static void list_everything(int win, int old_dim, int end) {
             str = strrchr(*(str_ptr[win] + i), '/') + 1;
         }
         colored_folders(win, *(str_ptr[win] + i));
-        mvwprintw(ps[win].mywin.fm, 1 + i - ps[win].mywin.delta, 4, "%.*s", width, str);
+        mvwprintw(ps[win].mywin.fm, 1 + i - ps[win].mywin.delta, 4, "%.*s", ps[win].mywin.width - 5, str);
         wattroff(ps[win].mywin.fm, COLOR_PAIR);
     }
     print_arrow(win, 1 + ps[win].curr_pos - ps[win].mywin.delta);
-    if (ps[win].mode <= fast_browse_ && ps[win].mywin.stat_active == STATS_ON) {
+    if (ps[win].mywin.stat_active == STATS_ON) {
         show_stat(old_dim, end, win);
     }
     print_border_and_title(win);
@@ -258,7 +255,7 @@ static void print_border_and_title(int win) {
  */
 static int is_hidden(const struct dirent *current_file) {
     if (current_file->d_name[0] == '.') {
-        if ((strlen(current_file->d_name) == 1) || ((!config.show_hidden) && current_file->d_name[1] != '.')) {
+        if ((strlen(current_file->d_name) == 1) || ((!hidden) && current_file->d_name[1] != '.')) {
             return (FALSE);
         }
     }
@@ -293,7 +290,7 @@ void resize_tab(int win) {
     } else {
         ps[win].mywin.delta = 0;
     }
-    if (ps[win].mode <= fast_browse_ && ps[win].mywin.stat_active == STATS_IDLE) {
+    if (ps[win].mywin.stat_active == STATS_IDLE) {
         ps[win].mywin.stat_active = STATS_ON;
     }
     list_everything(win, ps[win].mywin.delta, 0);
@@ -315,6 +312,7 @@ static void initialize_tab_cwd(int win) {
         getcwd(ps[win].my_cwd, PATH_MAX);
     }
     ps[win].old_file[0] = 0;
+    ps[win].show_hidden = config.show_hidden;
     if (change_dir(ps[win].my_cwd, win) == -1) {
         quit = GENERIC_ERR_QUIT;
         ERROR("could not scan current dir. Leaving.");
@@ -341,7 +339,7 @@ void scroll_down(int win) {
         ps[win].curr_pos++;
         if (ps[win].curr_pos - (dim - 2) == ps[win].mywin.delta) {
             scroll_helper_func(dim - 2, 1, win);
-            if (ps[win].mode <= fast_browse_ && ps[win].mywin.stat_active == STATS_IDLE) {
+            if (ps[win].mywin.stat_active == STATS_IDLE) {
                 ps[win].mywin.stat_active = STATS_ON;
             }
             list_everything(win, ps[win].curr_pos, 1);
@@ -358,7 +356,7 @@ void scroll_up(int win) {
         ps[win].curr_pos--;
         if (ps[win].curr_pos < ps[win].mywin.delta) {
             scroll_helper_func(1, -1, win);
-            if (ps[win].mode <= fast_browse_ && ps[win].mywin.stat_active == STATS_IDLE) {
+            if (ps[win].mywin.stat_active == STATS_IDLE) {
                 ps[win].mywin.stat_active = STATS_ON;
             }
             list_everything(win, ps[win].mywin.delta, 1);
@@ -444,7 +442,7 @@ static void remove_helper_win(void) {
     for (int i = 0; i < cont; i++) {
         mvwhline(ps[i].mywin.fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
         wresize(ps[i].mywin.fm, dim, ps[i].mywin.width);
-        if (ps[i].mode <= fast_browse_ && ps[i].mywin.stat_active == STATS_IDLE) {
+        if (ps[i].mywin.stat_active == STATS_IDLE) {
             ps[i].mywin.stat_active = STATS_ON;
         }
         list_everything(i, dim - 2 - HELPER_HEIGHT + ps[i].mywin.delta, HELPER_HEIGHT);
@@ -480,20 +478,26 @@ static void show_stat(int init, int end, int win) {
     char str[30];
     float total_size = 0;
     struct stat file_stat;
-    int perm_col = ps[win].mywin.width - PERM_LENGTH;
-    int size_col = ps[win].mywin.width - STAT_LENGTH;
-
-    check %= check - 1; // "check" should be 0 or 1 (strlen(tot_size) will never be 1, so i can safely divide for check - 1)
+    const int perm_col = ps[win].mywin.width - PERM_LENGTH;
+    const int size_col = ps[win].mywin.width - STAT_LENGTH;
+    
+    if (ps[win].mode <= fast_browse_) {
+        check %= check - 1; // "check" should be 0 or 1 (strlen(tot_size) will never be 1, so i can safely divide for check - 1)
+    } else {
+        check = 0;  // if we're in special mode, we don't need printing total size.
+    }
     for (int i = check * init; i < ps[win].number_of_files; i++) {
-        stat(ps[win].nl[i], &file_stat);
+        if (stat(str_ptr[win][i], &file_stat) == -1) {
+            continue;
+        }
         if (!check) {
             total_size += file_stat.st_size;
         }
         if ((i >= init) && (i < init + end)) {
             change_unit(file_stat.st_size, str);
-            char x[30];
-            sprintf(x, "%s\t", str);
-            mvwprintw(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, size_col, "%s", str);
+            wmove(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, size_col);
+            wclrtoeol(ps[win].mywin.fm);
+            mvwprintw(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, size_col, str);
             wmove(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, perm_col);
             for (int j = 0; j < 9; j++) {
                 wprintw(ps[win].mywin.fm, (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
@@ -532,11 +536,16 @@ void change_unit(float size, char *str) {
  * Then release the mutex.
  */
 void trigger_stats(void) {
+    /* FIXME: here we will print statvfs for current fs if it is mounted */
+    if (ps[active].mode == device_) {
+        return;
+    }
     ps[active].mywin.stat_active = !ps[active].mywin.stat_active;
     if (ps[active].mywin.stat_active) {
         show_stat(ps[active].mywin.delta, dim - 2, active);
     } else {
         erase_stat();
+        list_everything(active, 0, 0);
     }
     print_border_and_title(active);
 }
@@ -759,16 +768,18 @@ static void inotify_refresh(int win) {
     len = read(ps[win].inot.fd, buffer, BUF_LEN);
     while (i < len) {
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
-        /* ignore events for hidden files if config.show_hidden is false */
-        if ((event->len) && ((event->name[0] != '.') || (config.show_hidden))) {
-            if ((event->mask & IN_CREATE) || (event->mask & IN_DELETE) || event->mask & IN_MOVE) {
-                save_old_pos(win);
-                tab_refresh(win);
-            } else if (event->mask & IN_MODIFY || event->mask & IN_ATTRIB) {
-                if (ps[win].mode <= fast_browse_ && ps[win].mywin.stat_active) {
-                    memset(ps[win].mywin.tot_size, 0, strlen(ps[win].mywin.tot_size));
-                    show_stat(ps[win].mywin.delta, dim - 2, win);
-                    print_border_and_title(win);
+        if (ps[win].mode <= fast_browse_) {
+            /* ignore events for hidden files if ps[win].show_hidden is false */
+            if ((event->len) && ((event->name[0] != '.') || (ps[win].show_hidden))) {
+                if ((event->mask & IN_CREATE) || (event->mask & IN_DELETE) || event->mask & IN_MOVE) {
+                    save_old_pos(win);
+                    tab_refresh(win);
+                } else if (event->mask & IN_MODIFY || event->mask & IN_ATTRIB) {
+                    if (ps[win].mywin.stat_active) {
+                        memset(ps[win].mywin.tot_size, 0, strlen(ps[win].mywin.tot_size));
+                        show_stat(ps[win].mywin.delta, dim - 2, win);
+                        print_border_and_title(win);
+                    }
                 }
             }
         }

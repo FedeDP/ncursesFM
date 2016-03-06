@@ -48,11 +48,9 @@ void change_tab(void) {
 }
 
 void switch_hidden(void) {
-    config.show_hidden = !config.show_hidden;
-    for (int i = 0; i < cont; i++) {
-        save_old_pos(i);
-        tab_refresh(i);
-    }
+    ps[active].show_hidden = !ps[active].show_hidden;
+    save_old_pos(active);
+    tab_refresh(active);
 }
 
 /*

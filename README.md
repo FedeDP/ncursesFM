@@ -29,7 +29,6 @@ Otherwise, it will use $editor (config file defined) var. It fallbacks to enviro
 You can add whatever type of file you wish as bookmark from within ncursesFM. You can remove bookmarks too.
 * Search support: it will search your string in current directory tree. It can search your string inside archives too.
 * Basic print support through libcups.
-* shasum support (both printing file shasum/checking a given one), if built with openssl support.
 * Extract/compress files/folders through libarchive.
 * Long file operations are performed in a different thread. You'll get a notification when the job is done.
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
@@ -85,14 +84,12 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * libconfig -> config file parsing.
 * libx11    -> check whether ncursesFM is started in a X environment or not, and xdg-open support.
 * sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
-* openssl   -> for shasum function support.
 
 **Build options (to be passed to make)**
 * CC={gcc/clang} to choose the compiler. By default, env CC will be used.
 * DISABLE_LIBX11=1 to disable libx11 support.
 * DISABLE_LIBCONFIG=1 to disable libconfig support.
 * DISABLE_LIBSYSTEMD=1 to disable libsystemd (sd-bus) support.
-* DISABLE_LIBOPENSSL=1 ti disable openssl support.
 * DISABLE_LIBCUPS=1 to disable libcups support.
 
 ## Runtime dependencies
@@ -117,7 +114,7 @@ On Ubuntu install required packages:
 
 Optional:
 
-    # apt-get install libcups2-dev libconfig-dev libx11-dev libsystemd-dev libssl-dev
+    # apt-get install libcups2-dev libconfig-dev libx11-dev libsystemd-dev
 
 Clone the repo and move inside new dir, then:
 

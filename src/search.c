@@ -21,12 +21,19 @@ void search(void) {
         if (c == 'y') {
             sv.search_archive = 1;
         }
-        ask_user(lazy_search, &c, 1, 'n');
-        if (quit) {
-            return;
-        }
-        if (c == 'y') {
-            sv.search_lazy = 1;
+        /* 
+         * Don't ask user if he wants a lazy search
+         * if he's searching a hidden file as
+         * lazy search won't search hidden files.
+         */
+        if (sv.searched_string[0] != '.') {
+            ask_user(lazy_search, &c, 1, 'n');
+            if (quit) {
+                return;
+            }
+            if (c == 'y') {
+                sv.search_lazy = 1;
+            }
         }
         sv.searching = SEARCHING;
         print_info("", SEARCH_LINE);
@@ -36,7 +43,7 @@ void search(void) {
 
 static int recursive_search(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     char *fixed_str;
-    int len, r = 0, ret = 0;
+    int len, r = 0, ret = FTW_CONTINUE;
     /*
      * if searching "pippo" from "/home/pippo",
      * avoid saving "/home/pippo" as a result.
@@ -45,6 +52,13 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         return ret;
     }
     fixed_str = strrchr(path, '/') + 1;
+    /*
+     * if lazy: avoid checking hidden files and
+     * inside hidden folders
+     */
+    if (sv.search_lazy && fixed_str[0] == '.') {
+        return FTW_SKIP_SUBTREE;
+    }
     if ((sv.search_archive) && (is_ext(fixed_str, arch_ext, NUM(arch_ext)))) {
         return search_inside_archive(path);
     }
@@ -58,10 +72,10 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         strcpy(sv.found_searched[sv.found_cont], path);
         sv.found_cont++;
         if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
-            ret = 1;
+            ret = FTW_STOP;
         }
     }
-    return quit ? 1 : ret;
+    return quit ? FTW_STOP : ret;
 }
 
 /*
@@ -71,7 +85,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
  */
 static int search_inside_archive(const char *path) {
     char *ptr;
-    int len = 0, ret = 0, r = 0, string_length;
+    int len = 0, ret = FTW_CONTINUE, r = 0, string_length;
     struct archive_entry *entry;
     struct archive *a = archive_read_new();
 
@@ -79,7 +93,7 @@ static int search_inside_archive(const char *path) {
     archive_read_support_format_all(a);
     string_length = strlen(sv.searched_string);
     if ((a) && (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK)) {
-        while ((!quit) && (!ret) && (archive_read_next_header(a, &entry) == ARCHIVE_OK)) {
+        while ((!quit) && (ret == FTW_CONTINUE) && (archive_read_next_header(a, &entry) == ARCHIVE_OK)) {
             if (!sv.search_lazy) {
                 r = !strncmp(archive_entry_pathname(entry) + len, sv.searched_string, string_length);
             } else if (strcasestr(archive_entry_pathname(entry) + len, sv.searched_string)) {
@@ -89,7 +103,7 @@ static int search_inside_archive(const char *path) {
                 sprintf(sv.found_searched[sv.found_cont], "%s/%s", path, archive_entry_pathname(entry));
                 sv.found_cont++;
                 if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
-                    ret = 1;
+                    ret = FTW_STOP;
                 }
             }
             ptr = strrchr(archive_entry_pathname(entry), '/');
@@ -99,12 +113,12 @@ static int search_inside_archive(const char *path) {
         }
     }
     archive_read_free(a);
-    return quit ? 1 : ret;
+    return quit ? FTW_STOP : ret;
 }
 
 static void *search_thread(void *x) {
     INFO("starting recursive search...");
-    nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS);
+    nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS | FTW_ACTIONRETVAL);
     INFO("ended recursive search");
     if (!quit) {
         if ((sv.found_cont == MAX_NUMBER_OF_FOUND) || (sv.found_cont == 0)) {

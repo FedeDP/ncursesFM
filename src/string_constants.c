@@ -41,7 +41,7 @@ const char searching_mess[2][80] = {"Searching...", "Search finished. Press f an
 
 #ifdef LIBCUPS_PRESENT
 const char *print_question = "Do you really want to print this file? Y/n:> ";
-const char *print_ok = "Print job done.";
+const char *print_ok = "Print job added.";
 const char *print_fail = "No printers available.";
 #endif
 
@@ -71,11 +71,7 @@ const char *helper_string[] = {
                                 "',' to enable fast browse mode: it lets you jump between files by just typing their name. PG_UP/DOWN to jump straight to first/last file.",
                                 "'h' to trigger the showing of hidden files; 's' to see stat about files in current folder.",
                                 "'.' to change files/dirs sorting function: alphabetically (default), by size, by last modified or by type.",
-#ifdef OPENSSL_PRESENT
-                                "Space to select files. Twice to remove the file from selected files. 'u' to check shasum of current file.",
-#else
                                 "Space to select files. Twice to remove the file from selected files.",
-#endif
 #ifdef LIBCUPS_PRESENT
                                 "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files. 'p' to print a file.",
 #else

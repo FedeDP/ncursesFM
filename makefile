@@ -24,11 +24,8 @@ endif
 ifneq ("$(DISABLE_LIBSYSTEMD)","1")
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
 endif
-ifneq ("$(DISABLE_OPENSSL)","1")
-LIBOPENSSL=$(shell pkg-config --silence-errors --libs openssl)
-endif
 
-LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD) $(LIBOPENSSL)
+LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD)
 
 ifneq ("$(LIBX11)","")
 CFLAGS+=-DLIBX11_PRESENT
@@ -46,11 +43,6 @@ endif
 ifneq ("$(LIBCONFIG)","")
 CFLAGS+=-DLIBCONFIG_PRESENT -DCONFDIR=\"$(CONFDIR)\"
 $(info libconfig support enabled.)
-endif
-
-ifneq ("$(LIBOPENSSL)","")
-CFLAGS+=-DOPENSSL_PRESENT
-$(info openssl support enabled.)
 endif
 
 ifneq ("$(LIBSYSTEMD)","")
