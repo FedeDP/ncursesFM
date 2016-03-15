@@ -416,6 +416,9 @@ static void main_loop(void) {
         case '.': // . to change sorting function
             change_sort();
             break;
+        case 'i': // i to view current file fullname (in case it is too long)
+            trigger_fullname_win();
+            break;
         case 'n': case 'd': case 'o':   // fast operations do not require another thread.
             if (check_access()) {
                 ptr = strchr(short_table, c);

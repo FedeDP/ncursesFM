@@ -11,19 +11,21 @@ static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
 static void initialize_tab_cwd(int win);
 static void scroll_helper_func(int x, int direction, int win);
-static void colored_folders(int win, const char *name);
+static void colored_folders(WINDOW *win, const char *name);
 static void helper_print(void);
-static void create_helper_win(void);
-static void remove_helper_win(void);
+static void trigger_show_additional_win(int height, WINDOW **win, void (*f)(void));
+static void create_additional_win(int height, WINDOW **win, void (*f)(void));
+static void remove_additional_win(int height, WINDOW **win);
 static void show_stat(int init, int end, int win);
 static void erase_stat(void);
 static void info_print(const char *str, int i);
 static void info_refresh(int fd);
 static void inotify_refresh(int win);
-static void resize_helper_win(void);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
 static void update_sysinfo(void);
+static void fullname_print(void);
+static void update_fullname_win(void);
 
 /*
  * struct written to the pipe2.
@@ -33,8 +35,8 @@ struct info_msg {
     uint8_t line;
 };
 
-static WINDOW *helper_win, *info_win;
-static int dim, sorting_index, hidden;
+static WINDOW *helper_win, *info_win, *fullname_win;
+static int dim, sorting_index, hidden, fullname_win_height;
 static int (*const sorting_func[])(const struct dirent **d1, const struct dirent **d2) = {
     alphasort, sizesort, last_mod_sort, typesort
 };
@@ -59,8 +61,7 @@ void screen_init(void) {
     notimeout(stdscr, TRUE);
     dim = LINES - INFO_HEIGHT;
     if (config.starting_helper) {
-        create_helper_win();
-        config.starting_helper = 0;
+        trigger_show_helper_message();
     }
     info_win_init();
     cont = 1;
@@ -97,6 +98,9 @@ void screen_end(void) {
         info_win = NULL;
         if (helper_win) {
             delwin(helper_win);
+        }
+        if (fullname_win) {
+            delwin(fullname_win);
         }
         delwin(stdscr);
         endwin();
@@ -209,7 +213,7 @@ static void list_everything(int win, int old_dim, int end) {
             check_selected(*(str_ptr[win] + i), win, i);
             str = strrchr(*(str_ptr[win] + i), '/') + 1;
         }
-        colored_folders(win, *(str_ptr[win] + i));
+        colored_folders(ps[win].mywin.fm, *(str_ptr[win] + i));
         mvwprintw(ps[win].mywin.fm, 1 + i - ps[win].mywin.delta, 4, "%.*s", ps[win].mywin.width - 5, str);
         wattroff(ps[win].mywin.fm, COLOR_PAIR);
     }
@@ -232,6 +236,9 @@ static void print_arrow(int win, int y) {
     mvwprintw(ps[win].mywin.fm, y, 1, "->");
     wattroff(ps[win].mywin.fm, COLOR_PAIR);
     wattroff(ps[win].mywin.fm, A_BOLD);
+    if (fullname_win && win == active) {
+        update_fullname_win();
+    }
 }
 
 /*
@@ -380,31 +387,31 @@ static void scroll_helper_func(int x, int direction, int win) {
  * In search mode, it highlights paths inside archives in yellow.
  * In device mode, everything is printed in yellow.
  */
-static void colored_folders(int win, const char *name) {
+static void colored_folders(WINDOW *win, const char *name) {
     struct stat file_stat;
 
     if (lstat(name, &file_stat) == 0) {
         if (S_ISDIR(file_stat.st_mode)) {
-            wattron(ps[win].mywin.fm, COLOR_PAIR(1));
+            wattron(win, COLOR_PAIR(1));
         } else if (S_ISLNK(file_stat.st_mode)) {
-            wattron(ps[win].mywin.fm, COLOR_PAIR(3));
+            wattron(win, COLOR_PAIR(3));
         } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
-            wattron(ps[win].mywin.fm, COLOR_PAIR(2));
+            wattron(win, COLOR_PAIR(2));
         }
     } else {
-        wattron(ps[win].mywin.fm, COLOR_PAIR(4));
+        wattron(win, COLOR_PAIR(4));
     }
 }
 
-void trigger_show_helper_message(void) {
-    if (!helper_win) {
-        if (LINES >= HELPER_HEIGHT + INFO_HEIGHT + 3) {
-            create_helper_win();
+static void trigger_show_additional_win(int height, WINDOW **win, void (*f)(void)) {
+    if (!(*win)) {
+        if (dim - height >= 3) {
+            create_additional_win(height, win, f);
         } else {
             print_info("Window too small. Enlarge it.", ERR_LINE);
         }
     } else {
-        remove_helper_win();
+        remove_additional_win(height, win);
     }
 }
 
@@ -414,38 +421,61 @@ void trigger_show_helper_message(void) {
  * change it to dim - 3 + ps[i].delta.
  * Then create helper_win and print its strings.
  */
-static void create_helper_win(void) {
-    dim -= HELPER_HEIGHT;
+static void create_additional_win(int height, WINDOW **win, void (*f)(void)) {
+    dim -= height;
     for (int i = 0; i < cont; i++) {
         wresize(ps[i].mywin.fm, dim, ps[i].mywin.width);
-        print_border_and_title(i);
         if (ps[i].curr_pos > dim - 3 + ps[i].mywin.delta) {
+            int delta = ps[i].curr_pos - (dim - 3 + ps[i].mywin.delta);
             ps[i].curr_pos = dim - 3 + ps[i].mywin.delta;
-            print_arrow(i, dim - 3 + 1);
+            while (delta > 0) {
+                scroll_down(i);
+                delta--;
+            }
+        } else {
+            print_border_and_title(i);
         }
-        wrefresh(ps[i].mywin.fm);
     }
-    helper_win = newwin(HELPER_HEIGHT, COLS, dim, 0);
-    wclear(helper_win);
-    helper_print();
+    *win = newwin(height, COLS, dim, 0);
+    wclear(*win);
+    f();
+    wrefresh(*win);
 }
 
 /*
  * Remove helper_win, removes old bottom border of every fm win then resizes it.
  * Finally prints last HELPER_HEIGHT lines for each fm win.
  */
-static void remove_helper_win(void) {
-    wclear(helper_win);
-    delwin(helper_win);
-    helper_win = NULL;
-    dim += HELPER_HEIGHT;
+static void remove_additional_win(int height, WINDOW **win) {
+    wclear(*win);
+    delwin(*win);
+    *win = NULL;
+    dim += height;
     for (int i = 0; i < cont; i++) {
-        mvwhline(ps[i].mywin.fm, dim - 1 - HELPER_HEIGHT, 0, ' ', COLS);
+        mvwhline(ps[i].mywin.fm, dim - 1 - height, 0, ' ', COLS);
         wresize(ps[i].mywin.fm, dim, ps[i].mywin.width);
         if (ps[i].mywin.stat_active == STATS_IDLE) {
             ps[i].mywin.stat_active = STATS_ON;
         }
-        list_everything(i, dim - 2 - HELPER_HEIGHT + ps[i].mywin.delta, HELPER_HEIGHT);
+        list_everything(i, dim - 2 - height + ps[i].mywin.delta, height);
+    }
+}
+
+void trigger_show_helper_message(void) {
+    int fullname_win_needed = 0;
+    /*
+     * If there's already fullname_win, remove it,
+     * then recreate it after helper_win has been created.
+     * This is to avoid an issue where helper_win would go below
+     * fullname_win, but fullname_win at next refresh would go above it.
+     */
+    if (fullname_win && (dim - HELPER_HEIGHT >= 3)) {
+        remove_additional_win(fullname_win_height, &fullname_win);
+        fullname_win_needed = 1;
+    }
+    trigger_show_additional_win(HELPER_HEIGHT, &helper_win, helper_print);
+    if (fullname_win_needed) {
+        trigger_show_additional_win(fullname_win_height, &fullname_win, fullname_print);
     }
 }
 
@@ -460,7 +490,6 @@ static void helper_print(void) {
     wattron(helper_win, A_BOLD);
     mvwprintw(helper_win, 0, len, title);
     wattroff(helper_win, A_BOLD);
-    wrefresh(helper_win);
 }
 
 /*
@@ -844,29 +873,31 @@ void leave_special_mode(const char *str) {
  * If helper_win != NULL, resizes it too, and moves it in the new position.
  * Fixes new current_position of every fm,
  * Then recreates info win.
- * finally prints again any "sticky" message (eg: "searching"/"pasting...")
  */
 void resize_win(void) {
+    int helper_win_needed = 0, fullname_win_needed = 0;
+    
     wclear(info_win);
     delwin(info_win);
+    info_win_init();
     dim = LINES - INFO_HEIGHT;
+    if (fullname_win) {
+        dim -= fullname_win_height;
+        remove_additional_win(fullname_win_height, &fullname_win);
+        fullname_win_needed = 1;
+    }
     if (helper_win) {
-        resize_helper_win();
+        dim -= HELPER_HEIGHT;
+        remove_additional_win(HELPER_HEIGHT, &helper_win);
+        helper_win_needed = 1;
+    }
+    if (helper_win_needed) {
+        trigger_show_additional_win(HELPER_HEIGHT, &helper_win, helper_print);
+    }
+    if (fullname_win_needed) {
+        trigger_fullname_win();
     }
     resize_fm_win();
-    info_win_init();
-}
-
-/*
- * Just clear helper_win and resize it.
- * Then move it to the new position and print helper strings.
- */
-static void resize_helper_win(void) {
-    wclear(helper_win);
-    dim -= HELPER_HEIGHT;
-    wresize(helper_win, HELPER_HEIGHT, COLS);
-    mvwin(helper_win, dim, 0);
-    helper_print();
 }
 
 /*
@@ -1019,4 +1050,22 @@ void update_batt(int online, int perc[], int num_of_batt, char name[][10]) {
         break;
     }
     wrefresh(info_win);
+}
+
+void trigger_fullname_win(void) {
+    int len = strlen(str_ptr[active][ps[active].curr_pos]);
+    fullname_win_height = len / COLS + 1;
+    trigger_show_additional_win(fullname_win_height, &fullname_win, fullname_print);
+}
+
+static void fullname_print(void) {
+    wattron(fullname_win, A_BOLD);
+    colored_folders(fullname_win, str_ptr[active][ps[active].curr_pos]);
+    mvwprintw(fullname_win, 0, 0, str_ptr[active][ps[active].curr_pos]);
+    wattroff(fullname_win, COLOR_PAIR);
+}
+
+static void update_fullname_win(void) {
+    remove_additional_win(fullname_win_height, &fullname_win);
+    trigger_fullname_win();
 }

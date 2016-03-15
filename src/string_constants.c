@@ -69,7 +69,7 @@ const char *helper_string[] = {
                                 "Enter to surf between folders or to open files. It will eventually extract your archives.",
 #endif
                                 "',' to enable fast browse mode: it lets you jump between files by just typing their name. PG_UP/DOWN to jump straight to first/last file.",
-                                "'h' to trigger the showing of hidden files; 's' to see stat about files in current folder.",
+                                "'h' to trigger the showing of hidden files; 's' to see stat about files in current folder. i to check current file fullname.",
                                 "'.' to change files/dirs sorting function: alphabetically (default), by size, by last modified or by type.",
                                 "Space to select files. Twice to remove the file from selected files.",
 #ifdef LIBCUPS_PRESENT

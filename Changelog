@@ -1,3 +1,9 @@
+03 / 10 / 2016
+* added "i" to view current file full path name (even in special mode). So, if screen is too small or filename is very large, you can still check its name.
+* fixed a bug related to helper_win initialization, that bypassed the check for win dimension.
+* current file fullname window will now follow "ls" color scheme too.
+* fixed a bug in resize
+
 03 / 5 / 2016
 * lots of small bugfixes all around the code.
 * better show_stat: list_everything won't anymore reserve space for stats on the right.
@@ -10,7 +16,6 @@
 * Droppen openssl support (second time...). Again, i don't think that belongs to a fm.
 * middle mouse button will now open a new tab.
 * in bookmarks_mode, opening a file will now move current tab to its folder, with file highlighted, as i do in search mode. More consistent.
-*
 
 02 / 25 / 2016
 * added "CONFDIR" variable to be passed to makefile, to change default configuration file's folder. Default place is still /etc/default/ncursesFM.conf.

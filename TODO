@@ -8,10 +8,7 @@
  * Add available space for mounted fs?
  * Move available space (and other info, may be, such as mount opts) to show_stat?
  * 
- * 
- * add small window to display current file fullpath /full name?
- * 
- * info_win shown only when needed? It stays 2s (only for INFO and ERR msg obviously) -> timerfd!
+ * switch to copy_file_range() function (instead of read() and write()) in paste if linux >= 4.5
  */
 
 

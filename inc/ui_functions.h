@@ -57,3 +57,4 @@ void update_arrows(void);
 void switch_fast_browse_mode(void);
 void update_time(void);
 void update_batt(int online, int perc[], int num_of_batt, char name[][10]);
+void trigger_fullname_win(void);
