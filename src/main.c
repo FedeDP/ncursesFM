@@ -235,6 +235,10 @@ static void read_config_file(void) {
     const char *str_editor, *str_starting_dir;
 
     sprintf(config_file_name, "%s/ncursesFM.conf", CONFDIR);
+    if (access(config_file_name, F_OK ) == -1) {
+        fprintf(stderr, "Config file not found.\n");
+        return;
+    }
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name) == CONFIG_TRUE) {
         if ((!strlen(config.editor)) && (config_lookup_string(&cfg, "editor", &str_editor) == CONFIG_TRUE)) {
