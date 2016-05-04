@@ -8,6 +8,7 @@
 #include "search.h"
 #include "archiver.h"
 #include "worker_thread.h"
+#include <linux/version.h>
 
 #ifdef LIBCUPS_PRESENT
 #include "print.h"
@@ -18,10 +19,6 @@
 
 #ifdef LIBX11_PRESENT
 #include <X11/Xlib.h>
-#endif
-
-#ifdef OPENSSL_PRESENT
-#include "shasum.h"
 #endif
 
 #define FAST_BROWSE_THRESHOLD 500000

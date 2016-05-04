@@ -9,6 +9,10 @@ static int new_dir(const char *name);
 static int rename_file_folders(const char *name);
 static void cpr(file_list *tmp);
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
+static loff_t copy_file_range(int fd_in, loff_t *off_in, int fd_out,
+                              loff_t *off_out, size_t len, unsigned int flags);
+#endif
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void rmrf(const char *path);
 
@@ -312,8 +316,7 @@ static void cpr(file_list *tmp) {
 }
 
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    int buff[BUFF_SIZE];
-    int len, fd_to, fd_from;
+    int len, fd_to, fd_from, ret = 0;
     char pasted_file[PATH_MAX + 1];
 
     sprintf(pasted_file, "%s%s", thread_h->full_path, path + distance_from_root);
@@ -323,17 +326,45 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
         fd_to = open(pasted_file, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, sb->st_mode);
         fd_from = open(path, O_RDONLY);
         if ((fd_to != -1) && (fd_from != -1)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)  // if linux >= 4.5 let's use copy_file_range
+            struct stat stat;
+            
+            fstat(fd_from, &stat);
+            len = stat.st_size;
+            do {
+                ret = copy_file_range(fd_from, NULL, fd_to, NULL, len, 0);
+                if (ret == -1) {
+                    ret = -1;
+                    break;
+                }
+                len -= ret;
+            } while (len > 0);
+#else
+            int buff[BUFF_SIZE];
             len = read(fd_from, buff, sizeof(buff));
             while (len > 0) {
-                write(fd_to, buff, len);
+                if (write(fd_to, buff, len) != len) {
+                    ret = -1;
+                    break;
+                }
                 len = read(fd_from, buff, sizeof(buff));
             }
-            close(fd_to);
-            close(fd_from);
+#endif
         }
+        close(fd_to);
+        close(fd_from);
     }
-    return 0;
+    return (ret == -1) ? ret : 0;
 }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
+static loff_t copy_file_range(int fd_in, loff_t *off_in, int fd_out,
+                                          loff_t *off_out, size_t len, unsigned int flags)
+{
+    return syscall(__NR_copy_file_range, fd_in, off_in, fd_out,
+                   off_out, len, flags);
+}
+#endif
 
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     return remove(path);

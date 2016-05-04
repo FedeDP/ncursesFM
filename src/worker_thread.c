@@ -116,10 +116,12 @@ static void *execute_thread(void *x) {
     if (thread_h) {
         if (thread_h->f() == -1) {
             thread_m.str = thread_fail_str[thread_h->type];
+            ERROR(thread_fail_str[thread_h->type]);
             thread_m.line = ERR_LINE;
             print_info("", INFO_LINE);  // remove previous INFO_LINE message
         } else {
             thread_m.str = thread_str[thread_h->type];
+            INFO(thread_str[thread_h->type]);
             thread_m.line = INFO_LINE;
         }
         free_running_h();

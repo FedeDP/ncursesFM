@@ -710,64 +710,64 @@ void ask_user(const char *str, char *input, int d, char c) {
 int main_poll(WINDOW *win) {
     int ret = ERR - 1;
     uint64_t t;
-    /*
-     * resize event returns -EPERM error with ppoll (-1)
-     * see here: http://keyvanfatehi.com/2011/08/03/asynchronous-c-programs-an-event-loop-and-ncurses/.
-     * plus, this is needed when a signal is caught (sigint/sigterm)
-     */
-    int r = ppoll(main_p, nfds, NULL, &main_mask);
-    if (r == -1) {
-        if (!win) {
-            ret = wgetch(ps[active].mywin.fm);
-        } else {
-            ret = wgetch(win);
-        }
-    } else {
-        /* check if we received more than 1 event at the same time */
-        for (int i = 0; i < nfds && r > 0; i++) {
-            if(main_p[i].revents & POLLIN) {
-                switch (i) {
-                case GETCH_IX:
-                /* we received an user input */
-                    if (!win) {
-                        ret = wgetch(ps[active].mywin.fm);
-                    } else {
-                        ret = wgetch(win);
-                    }
-                    break;
-                case TIMER_IX:
-                /* we received a timer expiration signal on timerfd */
-                    read(main_p[i].fd, &t, 8);
-                    timer_func();
-                    break;
-                case INOTIFY_IX1:
-                case INOTIFY_IX2:
-                /* we received an event from inotify */
-                    inotify_refresh(i - INOTIFY_IX1);
-                    break;
-                case INFO_IX:
-                /* we received an event from pipe to print a info msg */
-                    info_refresh(main_p[i].fd);
-                    break;
-#ifdef SYSTEMD_PRESENT
-                case DEVMON_IX:
-                /* we received a bus event */
-                    devices_bus_process();
-                    break;
-#endif
-                }
-                r--;
-            }
-        }
-    }
+    
     /*
      * if ret == ERR - 1, it means we did not receive a getch event.
-     * it would be useless to return to main_cycle, because there would be
-     * a switch case, a stat call, and other checks completely useless in this case.
-     * Return directly main_poll to resume waiting on fds.
+     * so it is useless to return.
      */
-    if (ret == ERR - 1) {
-        return main_poll(win);
+    while (ret == ERR - 1) {
+        /*
+        * resize event returns -EPERM error with ppoll (-1)
+        * see here: http://keyvanfatehi.com/2011/08/03/asynchronous-c-programs-an-event-loop-and-ncurses/.
+        * plus, this is needed when a signal is caught (sigint/sigterm)
+        */
+        int r = ppoll(main_p, nfds, NULL, &main_mask);
+        if (r == -1) {
+            if (!win) {
+                ret = wgetch(ps[active].mywin.fm);
+            } else {
+                ret = wgetch(win);
+            }
+        } else {
+            /* check if we received more than 1 event at the same time */
+            while (r > 0) {
+                for (int i = 0; i < nfds; i++) {
+                    if(main_p[i].revents & POLLIN) {
+                        switch (i) {
+                        case GETCH_IX:
+                        /* we received an user input */
+                            if (!win) {
+                                ret = wgetch(ps[active].mywin.fm);
+                            } else {
+                                ret = wgetch(win);
+                            }
+                            break;
+                        case TIMER_IX:
+                        /* we received a timer expiration signal on timerfd */
+                            read(main_p[i].fd, &t, 8);
+                            timer_func();
+                            break;
+                        case INOTIFY_IX1:
+                        case INOTIFY_IX2:
+                        /* we received an event from inotify */
+                            inotify_refresh(i - INOTIFY_IX1);
+                            break;
+                        case INFO_IX:
+                        /* we received an event from pipe to print a info msg */
+                            info_refresh(main_p[i].fd);
+                            break;
+#ifdef SYSTEMD_PRESENT
+                        case DEVMON_IX:
+                        /* we received a bus event */
+                            devices_bus_process();
+                            break;
+#endif
+                        }
+                        r--;
+                    }
+                }
+            }
+        }
     }
     return ret;
 }
