@@ -287,9 +287,10 @@ static void config_checks(void) {
     if ((config.loglevel < LOG_ERR) || (config.loglevel > NO_LOG)) {
         config.loglevel = LOG_ERR;
     }
-    if (strlen(config.border_chars) != sizeof(config.border_chars)) {
+    if (strlen(config.border_chars) < sizeof(config.border_chars)) {
         /*
          * if user configured less chars than needed,
+         * or if config.border_chars is blank (untouched by user),
          * fill its string with default chars
          */
         const char *borders = "||--++++";
