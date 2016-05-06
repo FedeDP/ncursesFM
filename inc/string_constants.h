@@ -1,7 +1,7 @@
 #ifdef SYSTEMD_PRESENT
-#define HELPER_HEIGHT 14
+#define HELPER_HEIGHT 15
 #else
-#define HELPER_HEIGHT 12
+#define HELPER_HEIGHT 13
 #endif
 
 #define LONG_FILE_OPERATIONS 5

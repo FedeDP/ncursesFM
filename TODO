@@ -1,8 +1,6 @@
 /* TODO:
  *
  * update doc
- *
- * let ncursesFM build on non-linux systems (?)
  * 
  * in device_mode:
  * Add available space for mounted fs?

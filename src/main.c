@@ -435,17 +435,18 @@ static void main_loop(void) {
             break;
         case KEY_MOUSE:
             if(getmouse(&event) == OK) {
-                /* left click will send an enter event */
                 if (event.bstate & BUTTON1_RELEASED) {
+                    /* left click will send an enter event */
                     manage_enter(current_file_stat);
                 } else if (event.bstate & BUTTON2_RELEASED) {
+                    /* middle click will send a "new tab" event */
                     add_new_tab();
-                /* right click will send a space event */
                 } else if (event.bstate & BUTTON3_RELEASED) {
+                    /* right click will send a space event */
                     manage_space(str_ptr[active][ps[active].curr_pos]);
                 }
-#if NCURSES_MOUSE_VERSION > 1
                 /* scroll up and down events associated with mouse wheel */
+#if NCURSES_MOUSE_VERSION > 1
                 else if (event.bstate & BUTTON4_PRESSED) {
                     scroll_up(active);
                 } else if (event.bstate & BUTTON5_PRESSED) {

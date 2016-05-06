@@ -480,7 +480,7 @@ void trigger_show_helper_message(void) {
 }
 
 static void helper_print(void) {
-    const char *title = "Press 'l' to trigger helper";
+    const char *title = "Press 'L' to trigger helper";
     int len = (COLS - strlen(title)) / 2;
 
     wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');

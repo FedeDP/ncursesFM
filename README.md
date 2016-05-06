@@ -12,7 +12,10 @@ It can be built with a very small set of dependencies, as i tried to make as man
 
 ## Features:
 
-**Press 'l' while in program to view a detailed helper message**
+**Remember that every shortcut in ncursesFM is case insensitive!**
+
+*Press 'L' while in program to view a detailed helper message*
+
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
@@ -95,7 +98,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 ## Runtime dependencies
 
 **required:**
-* ncurses, libarchive, glibc plus every optional build dep if compiled with its support.
+* ncurses, libarchive, glibc, libudev plus every optional build dep if compiled with its support.
 
 **optional:**
 * if compiled with libx11 support: xdg-utils.
