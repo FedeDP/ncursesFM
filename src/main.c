@@ -232,7 +232,7 @@ static void parse_cmd(int argc, const char *argv[]) {
 static void read_config_file(void) {
     config_t cfg;
     char config_file_name[PATH_MAX + 1];
-    const char *str_editor, *str_starting_dir;
+    const char *str_editor, *str_starting_dir, *str_borders;
 
     sprintf(config_file_name, "%s/ncursesFM.conf", CONFDIR);
     if (access(config_file_name, F_OK ) == -1) {
@@ -257,6 +257,9 @@ static void read_config_file(void) {
         config_lookup_int(&cfg, "loglevel", &config.loglevel);
         config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
         config_lookup_int(&cfg, "bat_low_level", &config.bat_low_level);
+        if (config_lookup_string(&cfg, "border_chars", &str_borders) == CONFIG_TRUE) {
+            strncpy(config.border_chars, str_borders, sizeof(config.border_chars));
+        }
     } else {
         fprintf(stderr, "Config file: %s at line %d.\n",
                 config_error_text(&cfg),
@@ -283,6 +286,15 @@ static void config_checks(void) {
     }
     if ((config.loglevel < LOG_ERR) || (config.loglevel > NO_LOG)) {
         config.loglevel = LOG_ERR;
+    }
+    if (strlen(config.border_chars) != sizeof(config.border_chars)) {
+        /*
+         * if user configured less chars than needed,
+         * fill its string with default chars
+         */
+        const char *borders = "||--++++";
+        int len = strlen(config.border_chars);
+        strcpy(config.border_chars + len, borders + len);
     }
 }
 

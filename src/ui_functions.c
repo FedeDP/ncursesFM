@@ -246,7 +246,10 @@ static void print_arrow(int win, int y) {
  * to the right border's corner.
  */
 static void print_border_and_title(int win) {
-    wborder(ps[win].mywin.fm, '|', '|', '-', '-', '+', '+', '+', '+');
+    wborder(ps[win].mywin.fm, config.border_chars[0], config.border_chars[1],
+            config.border_chars[2], config.border_chars[3], config.border_chars[4],
+            config.border_chars[5], config.border_chars[6], config.border_chars[7]);
+
     mvwprintw(ps[win].mywin.fm, 0, 0, "%.*s", ps[win].mywin.width - 1, ps[win].title);
     if (ps[win].mode > fast_browse_) {
         mvwprintw(ps[win].mywin.fm, 0, ps[win].mywin.width - strlen(special_mode_title), special_mode_title);
@@ -483,7 +486,10 @@ static void helper_print(void) {
     const char *title = "Press 'L' to trigger helper";
     int len = (COLS - strlen(title)) / 2;
 
-    wborder(helper_win, '|', '|', '-', '-', '+', '+', '+', '+');
+    wborder(helper_win, config.border_chars[0], config.border_chars[1],
+            config.border_chars[2], config.border_chars[3], config.border_chars[4],
+            config.border_chars[5], config.border_chars[6], config.border_chars[7]);
+
     for (int i = 0; i < HELPER_HEIGHT - 2; i++) {
         mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, helper_string[i]);
     }
