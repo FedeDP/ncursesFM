@@ -233,7 +233,7 @@ static void print_arrow(int win, int y) {
             wattron(ps[win].mywin.fm, COLOR_PAIR(ACTIVE_COL));
         }
     }
-    mvwprintw(ps[win].mywin.fm, y, 1, "->");
+    mvwprintw(ps[win].mywin.fm, y, 1, config.cursor_chars);
     wattroff(ps[win].mywin.fm, COLOR_PAIR);
     wattroff(ps[win].mywin.fm, A_BOLD);
     if (fullname_win && win == active) {

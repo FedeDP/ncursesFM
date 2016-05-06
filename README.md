@@ -57,7 +57,8 @@ If built with libconfig support, it reads following variables from /etc/default/
 * loglevel -> to change program loglevel. Defaults to 0.
 * persistent_log -> to enable log persistency across program restarts. Defaults to 0.
 * bat_low_level -> to set threshold to signal user about low battery. Defaults to 15%.
-* border_chars -> to change borders' chars printed.
+* border_chars -> to change printed borders' chars.
+* cursor_chars -> to change printed cursor's chars.
 
 NcursesFM ships an autocompletion script for cmdline options. It supports following options:
 * "--editor" /path/to/editor

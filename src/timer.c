@@ -40,27 +40,31 @@ void timer_func(void) {
     update_time();
 
     struct udev_device *dev;
-    int perc[num_of_batt];
+    int perc[num_of_batt], online;
     char name[num_of_batt][10];
 
     dev = udev_device_new_from_syspath(udev, ac_path);
-    int online = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_ONLINE"), NULL, 10);
-    udev_device_unref(dev);
-    if (!online) {
-        for (int i = 0; i < num_of_batt; i++) {
-            dev = udev_device_new_from_syspath(udev, batt[i]);
-            if (udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY")) {
-                perc[i] = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY"), NULL, 10);
-            } else {
-                perc[i] = -1;
+    if (dev) {
+        online = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_ONLINE"), NULL, 10);
+        udev_device_unref(dev);
+        if (!online) {
+            for (int i = 0; i < num_of_batt; i++) {
+                dev = udev_device_new_from_syspath(udev, batt[i]);
+                if (udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY")) {
+                    perc[i] = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY"), NULL, 10);
+                } else {
+                    perc[i] = -1;
+                }
+                if (udev_device_get_property_value(dev, "POWER_SUPPLY_NAME")) {
+                    strcpy(name[i], udev_device_get_property_value(dev, "POWER_SUPPLY_NAME"));
+                } else {
+                    strcpy(name[i], "BAT");
+                }
+                udev_device_unref(dev);
             }
-            if (udev_device_get_property_value(dev, "POWER_SUPPLY_NAME")) {
-                strcpy(name[i], udev_device_get_property_value(dev, "POWER_SUPPLY_NAME"));
-            } else {
-                strcpy(name[i], "BAT");
-            }
-            udev_device_unref(dev);
         }
+    } else {
+        online = -1;
     }
     update_batt(online, perc, num_of_batt, name);
 }

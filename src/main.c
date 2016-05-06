@@ -232,7 +232,8 @@ static void parse_cmd(int argc, const char *argv[]) {
 static void read_config_file(void) {
     config_t cfg;
     char config_file_name[PATH_MAX + 1];
-    const char *str_editor, *str_starting_dir, *str_borders;
+    const char *str_editor, *str_starting_dir, 
+                *str_borders, *str_cursor;
 
     sprintf(config_file_name, "%s/ncursesFM.conf", CONFDIR);
     if (access(config_file_name, F_OK ) == -1) {
@@ -259,6 +260,9 @@ static void read_config_file(void) {
         config_lookup_int(&cfg, "bat_low_level", &config.bat_low_level);
         if (config_lookup_string(&cfg, "border_chars", &str_borders) == CONFIG_TRUE) {
             strncpy(config.border_chars, str_borders, sizeof(config.border_chars));
+        }
+        if (config_lookup_string(&cfg, "cursor_chars", &str_cursor) == CONFIG_TRUE) {
+            strncpy(config.cursor_chars, str_cursor, sizeof(config.cursor_chars));
         }
     } else {
         fprintf(stderr, "Config file: %s at line %d.\n",
@@ -295,7 +299,10 @@ static void config_checks(void) {
          */
         const char *borders = "||--++++";
         int len = strlen(config.border_chars);
-        strcpy(config.border_chars + len, borders + len);
+        strncpy(config.border_chars + len, borders + len, sizeof(config.border_chars) - len);
+    }
+    if (!strlen(config.cursor_chars)) {
+        strcpy(config.cursor_chars, "->");
     }
 }
 
