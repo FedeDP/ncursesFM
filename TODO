@@ -7,6 +7,8 @@
  * Move available space (and other info, may be, such as mount opts) to show_stat?
  * 
  * proper unicode support...http://www.cprogramming.com/tutorial/unicode.html?
+ * 
+ * vi keybinding/beybinding profiles
  */
 
 

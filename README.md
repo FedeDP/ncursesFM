@@ -36,6 +36,8 @@ You can add whatever type of file you wish as bookmark from within ncursesFM. Yo
 * Long file operations are performed in a different thread. You'll get a notification when the job is done.
 * You can queue as many file operations as you wish, they'll be taken into care one by one.
 
+*To clarify: to paste/move a file you'll have to select it with space, then move to another dir or change tab, and press v/x.*
+
 **Optional (compile time) features that require sd-bus API (systemd)**
 * Powermanagement inhibition while processing a job (eg: while pasting a file) to avoid data loss.
 * Internal udisks2 monitor, to poll for new devices. It can automount new connected devices too.
