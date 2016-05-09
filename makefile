@@ -13,6 +13,14 @@ COMPLNAME = ncursesfm
 SRCDIR = src/
 COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
 
+# sanity checks for completion dir
+ifeq ("$(COMPLDIR)","")
+COMPLDIR = $(shell pkg-config --variable=compatdir bash-completion)
+ifeq ("$(COMPLDIR)","")
+COMPLDIR = /etc/bash_completion.d
+endif
+endif
+
 ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 
 ifneq ("$(DISABLE_LIBX11)","1")
