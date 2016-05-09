@@ -110,7 +110,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 
 ## Known bugs
 * installing packages segfaults if package is for the wrong arch, and packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.
-* as libarchive has not support for pwd-protected archives, ncursesFM cannot extract them.
+* as libarchive has no support for pwd-protected archives, ncursesFM cannot extract them.
 
 ## Install instructions:
 
