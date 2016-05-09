@@ -8,7 +8,11 @@
  * 
  * proper unicode support...http://www.cprogramming.com/tutorial/unicode.html?
  * 
- * vi keybinding/beybinding profiles
+ * vi keybindings/beybinding profiles
+ * 
+ * rework helper screen -> active-tab-mode-based content?
+ * 
+ * preview_mode instead of previewing global var. THis way, i'll be easily able to change preview tab (eg: pressing "j" while on second tab, will start preview on first tab)
  */
 
 

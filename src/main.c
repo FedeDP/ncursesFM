@@ -349,7 +349,7 @@ static void main_loop(void) {
 #endif
 
     while (!quit) {
-        c = main_poll(NULL);
+        c = main_poll(ps[active].mywin.fm);
         if ((ps[active].mode == fast_browse_) && isgraph(c) && (c != ',')) {
             fast_browse(c);
             continue;
@@ -368,7 +368,7 @@ static void main_loop(void) {
             break;
         case KEY_RIGHT:
         case KEY_LEFT:
-            if (cont == MAX_TABS) {
+            if (cont == MAX_TABS && !previewer) {
                 change_tab();
             }
             break;
@@ -387,13 +387,16 @@ static void main_loop(void) {
             manage_enter(current_file_stat);
             break;
         case 't': // t to open second tab
-            add_new_tab();
+            if (cont < MAX_TABS) {
+                add_new_tab();
+                change_tab();
+            }
             break;
         case 'w': // w to close second tab
             if (active) {
                 cont--;
-                delete_tab(active);
-                resize_tab(0);
+                delete_tab(1);
+                resize_tab(0, 0);
                 change_tab();
             }
             break;
@@ -453,6 +456,18 @@ static void main_loop(void) {
         case 'g': // g to show bookmarks
             show_bookmarks();
             break;
+        case 'j':
+            if (cont == 1 && !previewer) {
+                previewer = 1;
+                add_new_tab();
+                preview_img(str_ptr[active][ps[active].curr_pos]);
+            } else if (previewer) {
+                previewer = 0;
+                cont--;
+                delete_tab(1);
+                resize_tab(0, 0);
+            }
+            break;
         case KEY_MOUSE:
             if(getmouse(&event) == OK) {
                 if (event.bstate & BUTTON1_RELEASED) {
@@ -460,7 +475,10 @@ static void main_loop(void) {
                     manage_enter(current_file_stat);
                 } else if (event.bstate & BUTTON2_RELEASED) {
                     /* middle click will send a "new tab" event */
-                    add_new_tab();
+                    if (cont < MAX_TABS) {
+                        add_new_tab();
+                        change_tab();
+                    }
                 } else if (event.bstate & BUTTON3_RELEASED) {
                     /* right click will send a space event */
                     manage_space(str_ptr[active][ps[active].curr_pos]);
@@ -489,12 +507,9 @@ static void main_loop(void) {
 }
 
 static void add_new_tab(void) {
-    if (cont < MAX_TABS) {
-        cont++;
-        resize_tab(0);
-        new_tab(cont - 1);
-        change_tab();
-    }
+    cont++;
+    resize_tab(0, 0);
+    new_tab(cont - 1);
 }
 
 #ifdef SYSTEMD_PRESENT

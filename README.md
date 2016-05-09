@@ -110,6 +110,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 
 ## Known bugs
 * installing packages segfaults if package is for the wrong arch, and packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.
+* as libarchive has not support for pwd-protected archives, ncursesFM cannot extract them.
 
 ## Install instructions:
 
@@ -132,5 +133,5 @@ To remove, just move inside the folder and run:
 
     # make uninstall
 
-make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets. Be aware that it will disable bash autocompletion script (you can still source it manually anyway) and config file support (until you do as described below) though.  
+make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets. Be aware that it will disable bash autocompletion script (you can still source it manually) and config file support (unless you do as described below) though.  
 Moreover, you can specify a $CONFDIR variable that tells ncursesFM where to look for its config file; so something like "make CONFDIR=./" will let you test config file support too without even installing it.

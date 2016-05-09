@@ -473,7 +473,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
                 change_mounted_status(present, devname);
                 for (int i = 0; i < cont; i++) {
                     if (ps[i].mode == device_) {
-                        update_special_mode(number_of_devices, i, NULL);
+                        update_special_mode(present, i, NULL);
                     }
                 }
             }

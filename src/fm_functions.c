@@ -48,7 +48,7 @@ int change_dir(const char *str, int win) {
 void change_tab(void) {
     active = !active;
     chdir(ps[active].my_cwd);
-    update_arrows();
+    update_colors();
 }
 
 void switch_hidden(void) {
@@ -120,6 +120,8 @@ void manage_file(const char *str, float size) {
 /*
  * If we're on a X screen, open the file with xdg-open and redirect its output to /dev/null
  * not to make my ncurses screen dirty.
+ * FIXME: hopefully xdg-open will return exit code of called script sooner or later, then 
+ * i'll remove libx11 check/dep and i'll use http://pubs.opengroup.org/onlinepubs/9699919799/functions/wait.html
  */
 #ifdef LIBX11_PRESENT
 static void xdg_open(const char *str, float size) {
@@ -134,7 +136,7 @@ static void xdg_open(const char *str, float size) {
             dup2(fd, 1);
             dup2(fd, 2);
             close(fd);
-            execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, NULL);
+            execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, (char *) 0);
         }
     } else {
         open_file(str, size);
@@ -161,7 +163,7 @@ static void open_file(const char *str, float size) {
         endwin();
         pid = vfork();
         if (pid == 0) {
-            execl(config.editor, config.editor, str, NULL);
+            execl(config.editor, config.editor, str, (char *) 0);
         } else {
             waitpid(pid, NULL, 0);
         }

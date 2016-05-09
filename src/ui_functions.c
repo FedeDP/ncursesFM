@@ -7,6 +7,7 @@ static int last_mod_sort(const struct dirent **d1, const struct dirent **d2);
 static int typesort(const struct dirent **d1, const struct dirent **d2);
 static void list_everything(int win, int old_dim, int end);
 static void print_arrow(int win, int y);
+static void check_active(int win);
 static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
 static void initialize_tab_cwd(int win);
@@ -15,7 +16,7 @@ static void colored_folders(WINDOW *win, const char *name);
 static void helper_print(void);
 static void trigger_show_additional_win(int height, WINDOW **win, void (*f)(void));
 static void create_additional_win(int height, WINDOW **win, void (*f)(void));
-static void remove_additional_win(int height, WINDOW **win);
+static void remove_additional_win(int height, WINDOW **win, int resizing);
 static void show_stat(int init, int end, int win);
 static void erase_stat(void);
 static void info_print(const char *str, int i);
@@ -40,6 +41,7 @@ static int dim, sorting_index, hidden, fullname_win_height;
 static int (*const sorting_func[])(const struct dirent **d1, const struct dirent **d2) = {
     alphasort, sizesort, last_mod_sort, typesort
 };
+static const char *img_ext[] = {".jpg", ".png", ".JPG", ".bmp"};
 
 /*
  * Initializes screen, colors etc etc.
@@ -201,7 +203,7 @@ void reset_win(int win)
  */
 static void list_everything(int win, int old_dim, int end) {
     char *str;
-
+    
     if (end == 0) {
         end = dim - 2;
     }
@@ -225,14 +227,7 @@ static void list_everything(int win, int old_dim, int end) {
 }
 
 static void print_arrow(int win, int y) {
-    if (active == win) {
-        wattron(ps[win].mywin.fm, A_BOLD);
-        if (ps[win].mode == fast_browse_) {
-            wattron(ps[win].mywin.fm, COLOR_PAIR(FAST_BROWSE_COL));
-        } else {
-            wattron(ps[win].mywin.fm, COLOR_PAIR(ACTIVE_COL));
-        }
-    }
+    check_active(win);
     mvwprintw(ps[win].mywin.fm, y, 1, config.cursor_chars);
     wattroff(ps[win].mywin.fm, COLOR_PAIR);
     wattroff(ps[win].mywin.fm, A_BOLD);
@@ -241,11 +236,23 @@ static void print_arrow(int win, int y) {
     }
 }
 
+static void check_active(int win) {
+    if (active == win) {
+        wattron(ps[win].mywin.fm, A_BOLD);
+        if (ps[win].mode == fast_browse_) {
+            wattron(ps[win].mywin.fm, COLOR_PAIR(FAST_BROWSE_COL));
+        } else {
+            wattron(ps[win].mywin.fm, COLOR_PAIR(ACTIVE_COL));
+        }
+    }
+}
+
 /*
  * Helper function that prints borders and title of 'win'.
  * to the right border's corner.
  */
 static void print_border_and_title(int win) {
+    check_active(win);
     wborder(ps[win].mywin.fm, config.border_chars[0], config.border_chars[1],
             config.border_chars[2], config.border_chars[3], config.border_chars[4],
             config.border_chars[5], config.border_chars[6], config.border_chars[7]);
@@ -256,6 +263,8 @@ static void print_border_and_title(int win) {
     } else {
         mvwprintw(ps[win].mywin.fm, 0, ps[win].mywin.width - strlen(ps[win].mywin.tot_size), ps[win].mywin.tot_size);
     }
+    wattroff(ps[win].mywin.fm, COLOR_PAIR);
+    wattroff(ps[win].mywin.fm, A_BOLD);
     wrefresh(ps[win].mywin.fm);
 }
 
@@ -284,24 +293,28 @@ void new_tab(int win) {
     idlok(ps[win].mywin.fm, TRUE);
     notimeout(ps[win].mywin.fm, TRUE);
     nodelay(ps[win].mywin.fm, TRUE);
-    initialize_tab_cwd(win);
+    if (!previewer || win == 0) {
+        initialize_tab_cwd(win);
+    }
 }
 
 /*
  * Resizes "win" tab and moves it to its new position.
  */
-void resize_tab(int win) {
+void resize_tab(int win, int resizing) {
     wclear(ps[win].mywin.fm);
     ps[win].mywin.width = COLS / cont + win * (COLS % cont);
     wresize(ps[win].mywin.fm, dim, ps[win].mywin.width);
     mvwin(ps[win].mywin.fm, 0, (COLS * win) / cont);
-    if (ps[win].curr_pos > dim - 3) {
-        ps[win].mywin.delta = ps[win].curr_pos - (dim - 3);
-    } else {
-        ps[win].mywin.delta = 0;
-    }
-    if (ps[win].mywin.stat_active == STATS_IDLE) {
-        ps[win].mywin.stat_active = STATS_ON;
+    if (resizing) {
+        if (ps[win].curr_pos > dim - 3) {
+            ps[win].mywin.delta = ps[win].curr_pos - (dim - 3);
+        } else {
+            ps[win].mywin.delta = 0;
+        }
+        if (ps[win].mywin.stat_active == STATS_IDLE) {
+            ps[win].mywin.stat_active = STATS_ON;
+        }
     }
     list_everything(win, ps[win].mywin.delta, 0);
 }
@@ -349,6 +362,7 @@ void scroll_down(int win) {
         ps[win].curr_pos++;
         if (ps[win].curr_pos - (dim - 2) == ps[win].mywin.delta) {
             scroll_helper_func(dim - 2, 1, win);
+            /* as we scrolled, if stat were active, we need to force them ON */
             if (ps[win].mywin.stat_active == STATS_IDLE) {
                 ps[win].mywin.stat_active = STATS_ON;
             }
@@ -358,6 +372,7 @@ void scroll_down(int win) {
             print_arrow(win, ps[win].curr_pos - ps[win].mywin.delta + 1);
             wrefresh(ps[win].mywin.fm);
         }
+        preview_img(str_ptr[active][ps[active].curr_pos]);
     }
 }
 
@@ -366,6 +381,7 @@ void scroll_up(int win) {
         ps[win].curr_pos--;
         if (ps[win].curr_pos < ps[win].mywin.delta) {
             scroll_helper_func(1, -1, win);
+            /* as we scrolled, if stat were active, we need to force them ON */
             if (ps[win].mywin.stat_active == STATS_IDLE) {
                 ps[win].mywin.stat_active = STATS_ON;
             }
@@ -375,6 +391,7 @@ void scroll_up(int win) {
             print_arrow(win, ps[win].curr_pos - ps[win].mywin.delta + 1);
             wrefresh(ps[win].mywin.fm);
         }
+        preview_img(str_ptr[active][ps[active].curr_pos]);
     }
 }
 
@@ -414,8 +431,9 @@ static void trigger_show_additional_win(int height, WINDOW **win, void (*f)(void
             print_info("Window too small. Enlarge it.", ERR_LINE);
         }
     } else {
-        remove_additional_win(height, win);
+        remove_additional_win(height, win, 0);
     }
+    preview_img(str_ptr[active][ps[active].curr_pos]);
 }
 
 /*
@@ -449,7 +467,7 @@ static void create_additional_win(int height, WINDOW **win, void (*f)(void)) {
  * Remove helper_win, removes old bottom border of every fm win then resizes it.
  * Finally prints last HELPER_HEIGHT lines for each fm win.
  */
-static void remove_additional_win(int height, WINDOW **win) {
+static void remove_additional_win(int height, WINDOW **win, int resizing) {
     wclear(*win);
     delwin(*win);
     *win = NULL;
@@ -457,10 +475,12 @@ static void remove_additional_win(int height, WINDOW **win) {
     for (int i = 0; i < cont; i++) {
         mvwhline(ps[i].mywin.fm, dim - 1 - height, 0, ' ', COLS);
         wresize(ps[i].mywin.fm, dim, ps[i].mywin.width);
-        if (ps[i].mywin.stat_active == STATS_IDLE) {
-            ps[i].mywin.stat_active = STATS_ON;
+        if (!resizing) {
+            if (ps[i].mywin.stat_active == STATS_IDLE) {
+                ps[i].mywin.stat_active = STATS_ON;
+            }
+            list_everything(i, dim - 2 - height + ps[i].mywin.delta, height);
         }
-        list_everything(i, dim - 2 - height + ps[i].mywin.delta, height);
     }
 }
 
@@ -473,7 +493,7 @@ void trigger_show_helper_message(void) {
      * fullname_win, but fullname_win at next refresh would go above it.
      */
     if (fullname_win && (dim - HELPER_HEIGHT >= 3)) {
-        remove_additional_win(fullname_win_height, &fullname_win);
+        remove_additional_win(fullname_win_height, &fullname_win, 0);
         fullname_win_needed = 1;
     }
     trigger_show_additional_win(HELPER_HEIGHT, &helper_win, helper_print);
@@ -680,7 +700,7 @@ void ask_user(const char *str, char *input, int d, char c) {
             print_info(resize_str, ASK_LINE);
         } else if (s == 10) { // enter to exit
             break;
-        } else if (s != ERR) {
+        } else {
             len = strlen(str) + strlen(info_win_str[ASK_LINE]) + i;
             if ((s == 127) && (i)) {    // backspace!
                 input[--i] = '\0';
@@ -713,64 +733,53 @@ void ask_user(const char *str, char *input, int d, char c) {
  * If ppoll return -1 it means: window has been resized or we received a signal (sigint/sigterm).
  * Either case, just return wgetch.
  */
-int main_poll(WINDOW *win) {
-    int ret = ERR - 1;
+int main_poll(WINDOW *win) {;
     uint64_t t;
     
+    int ret = wgetch(win);
     /*
      * if ret == ERR - 1, it means we did not receive a getch event.
      * so it is useless to return.
      */
-    while (ret == ERR - 1) {
+    while ((ret == ERR) && (!quit)) {
         /*
         * resize event returns -EPERM error with ppoll (-1)
-        * see here: http://keyvanfatehi.com/2011/08/03/asynchronous-c-programs-an-event-loop-and-ncurses/.
+        * see here: http://keyvanfatehi.com/2011/08/02/Asynchronous-c-programs-an-event-loop-and-ncurses/.
         * plus, this is needed when a signal is caught (sigint/sigterm)
         */
         int r = ppoll(main_p, nfds, NULL, &main_mask);
         if (r == -1) {
-            if (!win) {
-                ret = wgetch(ps[active].mywin.fm);
-            } else {
-                ret = wgetch(win);
-            }
+            ret = wgetch(win);
         } else {
-            /* check if we received more than 1 event at the same time */
-            while (r > 0) {
-                for (int i = 0; i < nfds; i++) {
-                    if(main_p[i].revents & POLLIN) {
-                        switch (i) {
-                        case GETCH_IX:
-                        /* we received an user input */
-                            if (!win) {
-                                ret = wgetch(ps[active].mywin.fm);
-                            } else {
-                                ret = wgetch(win);
-                            }
-                            break;
-                        case TIMER_IX:
-                        /* we received a timer expiration signal on timerfd */
-                            read(main_p[i].fd, &t, 8);
-                            timer_func();
-                            break;
-                        case INOTIFY_IX1:
-                        case INOTIFY_IX2:
-                        /* we received an event from inotify */
-                            inotify_refresh(i - INOTIFY_IX1);
-                            break;
-                        case INFO_IX:
-                        /* we received an event from pipe to print a info msg */
-                            info_refresh(main_p[i].fd);
-                            break;
+            for (int i = 0; i < nfds && r > 0; i++) {
+                if (main_p[i].revents & POLLIN) {
+                    switch (i) {
+                    case GETCH_IX:
+                    /* we received an user input */
+                        ret = wgetch(win);
+                        break;
+                    case TIMER_IX:
+                    /* we received a timer expiration signal on timerfd */
+                        read(main_p[i].fd, &t, 8);
+                        timer_func();
+                        break;
+                    case INOTIFY_IX1:
+                    case INOTIFY_IX2:
+                    /* we received an event from inotify */
+                        inotify_refresh(i - INOTIFY_IX1);
+                        break;
+                    case INFO_IX:
+                    /* we received an event from pipe to print an info msg */
+                        info_refresh(main_p[i].fd);
+                        break;
 #ifdef SYSTEMD_PRESENT
-                        case DEVMON_IX:
-                        /* we received a bus event */
-                            devices_bus_process();
-                            break;
+                    case DEVMON_IX:
+                    /* we received a bus event */
+                        devices_bus_process();
+                        break;
 #endif
-                        }
-                        r--;
                     }
+                    r--;
                 }
             }
         }
@@ -827,6 +836,9 @@ static void inotify_refresh(int win) {
  * (searching, bookmarks or device mode)
  */
 void tab_refresh(int win) {
+    if (previewer && win != 0) {
+        return;
+    }
     if (ps[win].mode <= fast_browse_) {
         generate_list(win);
         if (strlen(ps[win].old_file)) {
@@ -846,13 +858,15 @@ void update_special_mode(int num,  int win, char (*str)[PATH_MAX + 1]) {
         ps[win].number_of_files = num;
         str_ptr[win] = str;
         if (check < 0) {
+            /* update all */
             reset_win(win);
         } else {
+            /* only update latest */
             list_everything(win, num - 1, 1);
         }
     } else {
         /* Only used in device_monitor: change mounted status event */
-        list_everything(win, 0, 0);
+        list_everything(win, num, 1);
     }
 }
 
@@ -889,12 +903,12 @@ void resize_win(void) {
     dim = LINES - INFO_HEIGHT;
     if (fullname_win) {
         dim -= fullname_win_height;
-        remove_additional_win(fullname_win_height, &fullname_win);
+        remove_additional_win(fullname_win_height, &fullname_win, 1);
         fullname_win_needed = 1;
     }
     if (helper_win) {
         dim -= HELPER_HEIGHT;
-        remove_additional_win(HELPER_HEIGHT, &helper_win);
+        remove_additional_win(HELPER_HEIGHT, &helper_win, 1);
         helper_win_needed = 1;
     }
     if (helper_win_needed) {
@@ -904,6 +918,7 @@ void resize_win(void) {
         trigger_fullname_win();
     }
     resize_fm_win();
+    preview_img(str_ptr[active][ps[active].curr_pos]);
 }
 
 /*
@@ -913,14 +928,14 @@ void resize_win(void) {
  */
 static void resize_fm_win(void) {
     for (int i = 0; i < cont; i++) {
-      resize_tab(i);
+      resize_tab(i, 1);
     }
 }
 
 void change_sort(void) {
     sorting_index = (sorting_index + 1) % NUM(sorting_func);
     print_info(sorting_str[sorting_index], INFO_LINE);
-    for (int i = 0; i < cont; i++) {
+    for (int i = 0; i < cont - previewer; i++) {
         save_old_pos(i);
         tab_refresh(i);
     }
@@ -967,11 +982,11 @@ void erase_selected_highlight(void) {
     }
 }
 
-void update_arrows(void) {
+void update_colors(void) {
     print_arrow(!active, 1 + ps[!active].curr_pos - ps[!active].mywin.delta);
     print_arrow(active, 1 + ps[active].curr_pos - ps[active].mywin.delta);
-    wrefresh(ps[!active].mywin.fm);
-    wrefresh(ps[active].mywin.fm);
+    print_border_and_title(!active);
+    print_border_and_title(active);
 }
 
 void switch_fast_browse_mode(void) {
@@ -983,7 +998,7 @@ void switch_fast_browse_mode(void) {
         print_info("Fast browse mode disabled for active tab.", INFO_LINE);
     }
     print_arrow(active, 1 + ps[active].curr_pos - ps[active].mywin.delta);
-    wrefresh(ps[active].mywin.fm);
+    print_border_and_title(active);
 }
 
 void update_time(void) {
@@ -1072,6 +1087,30 @@ static void fullname_print(void) {
 }
 
 static void update_fullname_win(void) {
-    remove_additional_win(fullname_win_height, &fullname_win);
+    remove_additional_win(fullname_win_height, &fullname_win, 0);
     trigger_fullname_win();
+}
+
+void preview_img(const char *path) {
+    const char *cmd = "/home/federico/test.sh";
+    
+    if (previewer && is_ext(path, img_ext, NUM(img_ext))) {
+        char full_cmd[PATH_MAX + 1];
+        sprintf(full_cmd, "%s %d %d %d %d %d %d \"%s\"", cmd, COLS / 2 + 1, 1, COLS / 2 - 4, dim - 2, COLS, LINES, path);
+        sprintf(ps[1].title, "Image: %s", path);
+        print_border_and_title(1);
+        int pid = vfork();
+        if (pid == 0) {
+            // redirect output to /dev/null
+            int fd = open("/dev/null",O_WRONLY);
+            dup2(fd, 1);
+            dup2(fd, 2);
+            close(fd);
+            if (execl("/usr/bin/sh", "/bin/sh", "-c", full_cmd, (char *) 0) == -1) {
+                print_info("Error showing image.", ERR_LINE);
+            }
+        } else {
+            waitpid(pid, NULL, 0);
+        }
+    }
 }

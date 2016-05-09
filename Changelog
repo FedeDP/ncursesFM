@@ -1,3 +1,9 @@
+05 / 07 / 2016
+* users can now customize borders and cursor's chars
+* fixed a segfault for pc (not laptops) without power_supply info in udev
+* added more colorful active win highlight
+* fixed some bugs, most important small bug while continuosly resizing window
+
 03 / 10 / 2016
 * added "i" to view current file full path name (even in special mode). So, if screen is too small or filename is very large, you can still check its name.
 * fixed a bug related to helper_win initialization, that bypassed the check for win dimension.

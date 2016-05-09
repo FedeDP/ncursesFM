@@ -184,7 +184,7 @@ struct search_vars sv;
  * active win, quit status, number of worker thread jobs,
  * tabs counter and device_init status.
  */
-int active, quit, num_of_jobs, cont, device_init;
+int active, quit, num_of_jobs, cont, device_init, previewer;
 
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;
