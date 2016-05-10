@@ -3,6 +3,9 @@
 * fixed a segfault for pc (not laptops) without power_supply info in udev
 * added more colorful active win highlight
 * fixed some bugs, most important small bug while continuosly resizing window
+* change_sort is now a per-tab function (you can have 2 tabs with different sorting)
+* fixed another bug in show_stat
+* now ncursesFM will maintain terminal background colors (and even transparency)
 
 03 / 10 / 2016
 * added "i" to view current file full path name (even in special mode). So, if screen is too small or filename is very large, you can still check its name.

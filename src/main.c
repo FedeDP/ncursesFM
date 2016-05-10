@@ -31,6 +31,9 @@ static void set_signals(void);
 static void set_pollfd(void);
 static void sig_handler(int signum);
 static void sigsegv_handler(int signum);
+#ifdef LIBX11_PRESENT
+static void check_X();
+#endif
 static void helper_function(int argc, const char *argv[]);
 static void parse_cmd(int argc, const char *argv[]);
 #ifdef LIBCONFIG_PRESENT
@@ -70,6 +73,7 @@ int main(int argc, const char *argv[])
     config_checks();
     get_bookmarks();
     set_pollfd();
+    check_X();
     if (!quit) {
         screen_init();
         if (!quit) {
@@ -155,6 +159,17 @@ static void sigsegv_handler(int signum) {
     signal(signum, SIG_DFL);
     kill(getpid(), signum);
 }
+
+#ifdef LIBX11_PRESENT
+static void check_X() {
+    Display* display = XOpenDisplay(NULL);
+    
+    if (display) {
+        XCloseDisplay(display);
+        has_X = 1;
+    }
+}
+#endif
 
 static void helper_function(int argc, const char *argv[]) {
     /* default value for starting_helper, bat_low_level and device_init */
@@ -335,11 +350,14 @@ static void main_loop(void) {
      * q to leave current mode,
      * m only in device_mode to {un}mount device,
      * e only in bookmarks_mode to remove device from bookmarks
+     * s to show stat
      */
     const char *special_mode_allowed_chars = "ltqmes";
 
-    char *ptr;
+    char *ptr, old_file[PATH_MAX + 1];
     struct stat current_file_stat;
+    
+    int previewer_available = !access("/usr/lib/w3m/w3mimgdisplay", X_OK);
     
     MEVENT event;
 #if NCURSES_MOUSE_VERSION > 1
@@ -349,6 +367,10 @@ static void main_loop(void) {
 #endif
 
     while (!quit) {
+        if (ps[1].mode == _preview && strcmp(old_file, str_ptr[active][ps[active].curr_pos])) {
+            preview_img(str_ptr[active][ps[active].curr_pos]);
+            strcpy(old_file, str_ptr[active][ps[active].curr_pos]);
+        }
         c = main_poll(ps[active].mywin.fm);
         if ((ps[active].mode == fast_browse_) && isgraph(c) && (c != ',')) {
             fast_browse(c);
@@ -368,7 +390,7 @@ static void main_loop(void) {
             break;
         case KEY_RIGHT:
         case KEY_LEFT:
-            if (cont == MAX_TABS && !previewer) {
+            if (cont == MAX_TABS && ps[1].mode != _preview) {
                 change_tab();
             }
             break;
@@ -457,15 +479,18 @@ static void main_loop(void) {
             show_bookmarks();
             break;
         case 'j':
-            if (cont == 1 && !previewer) {
-                previewer = 1;
+            if (cont == 1 && previewer_available && has_X) {
+                ps[1].mode = _preview;
                 add_new_tab();
-                preview_img(str_ptr[active][ps[active].curr_pos]);
-            } else if (previewer) {
-                previewer = 0;
+            } else if (ps[1].mode == _preview) {
                 cont--;
                 delete_tab(1);
                 resize_tab(0, 0);
+                memset(old_file, 0, strlen(old_file));
+            } else if (!previewer_available) {
+                print_info("You need w3mimgdisplay from w3m to preview images.", INFO_LINE);
+            } else if (!has_X) {
+                print_info("You need to be in a X session for image preview to work.", INFO_LINE);
             }
             break;
         case KEY_MOUSE:

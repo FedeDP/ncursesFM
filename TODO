@@ -6,13 +6,17 @@
  * Add available space for mounted fs?
  * Move available space (and other info, may be, such as mount opts) to show_stat?
  * 
- * proper unicode support...http://www.cprogramming.com/tutorial/unicode.html?
+ * proper unicode support...http://www.cprogramming.com/tutorial/unicode.html
  * 
  * vi keybindings/beybinding profiles
  * 
  * rework helper screen -> active-tab-mode-based content?
  * 
- * preview_mode instead of previewer global var. This way, i'll be easily able to change preview tab (eg: pressing "j" while on second tab, will start preview on first tab)
+ * fix urxvt...
+ * fix scrolling down...
+ * fix se c'è qualche barra nel terminale (menu o scorrimento) sputtana le dimiensioni in pixel...
+ *
+ * FIX refresh after nano call -> solo la prima volta??
  */
 
 

@@ -37,7 +37,7 @@ struct info_msg {
 };
 
 static WINDOW *helper_win, *info_win, *fullname_win;
-static int dim, sorting_index, hidden, fullname_win_height;
+static int dim, hidden, fullname_win_height;
 static int (*const sorting_func[])(const struct dirent **d1, const struct dirent **d2) = {
     alphasort, sizesort, last_mod_sort, typesort
 };
@@ -47,14 +47,15 @@ static const char *img_ext[] = {".jpg", ".png", ".JPG", ".bmp"};
  * Initializes screen, colors etc etc.
  */
 void screen_init(void) {
-    setlocale(LC_ALL, "");
+    setlocale(LC_CTYPE, "");
     initscr();
     start_color();
-    init_pair(1, COLOR_BLUE, COLOR_BLACK);
-    init_pair(2, COLOR_GREEN, COLOR_BLACK);
-    init_pair(3, COLOR_CYAN, COLOR_BLACK);
-    init_pair(4, COLOR_YELLOW, COLOR_BLACK);
-    init_pair(5, COLOR_RED, COLOR_BLACK);
+    use_default_colors();
+    init_pair(1, COLOR_BLUE, -1);
+    init_pair(2, COLOR_GREEN, -1);
+    init_pair(3, COLOR_CYAN, -1);
+    init_pair(4, COLOR_YELLOW, -1);
+    init_pair(5, COLOR_RED, -1);
     noecho();
     curs_set(0);
     mouseinterval(0);
@@ -117,7 +118,7 @@ static void generate_list(int win) {
     struct dirent **files;
     
     hidden = ps[win].show_hidden;
-    ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func[sorting_index]);
+    ps[win].number_of_files = scandir(ps[win].my_cwd, &files, is_hidden, sorting_func[ps[win].sorting_index]);
     free(ps[win].nl);
     if (!(ps[win].nl = calloc(ps[win].number_of_files, PATH_MAX))) {
         quit = MEM_ERR_QUIT;
@@ -192,7 +193,7 @@ void reset_win(int win)
         memset(ps[win].mywin.tot_size, 0, strlen(ps[win].mywin.tot_size));
         ps[win].mywin.stat_active = STATS_ON;
     }
-    list_everything(win, 0, 0);
+    list_everything(win, 0, dim - 2);
 }
 
 /*
@@ -204,9 +205,10 @@ void reset_win(int win)
 static void list_everything(int win, int old_dim, int end) {
     char *str;
     
-    if (end == 0) {
-        end = dim - 2;
+    if (ps[win].mode == _preview) {
+        return;
     }
+    
     wattron(ps[win].mywin.fm, A_BOLD);
     for (int i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
         if (ps[win].mode > fast_browse_) {
@@ -293,7 +295,7 @@ void new_tab(int win) {
     idlok(ps[win].mywin.fm, TRUE);
     notimeout(ps[win].mywin.fm, TRUE);
     nodelay(ps[win].mywin.fm, TRUE);
-    if (!previewer || win == 0) {
+    if (ps[win].mode != _preview) {
         initialize_tab_cwd(win);
     }
 }
@@ -316,7 +318,7 @@ void resize_tab(int win, int resizing) {
             ps[win].mywin.stat_active = STATS_ON;
         }
     }
-    list_everything(win, ps[win].mywin.delta, 0);
+    list_everything(win, ps[win].mywin.delta, dim - 2);
 }
 
 /*
@@ -352,6 +354,7 @@ void delete_tab(int win) {
     memset(ps[win].my_cwd, 0, sizeof(ps[win].my_cwd));
     memset(ps[win].mywin.tot_size, 0, strlen(ps[win].mywin.tot_size));
     ps[win].mywin.stat_active = STATS_OFF;
+    ps[win].mode = normal;
     free(ps[win].nl);
     inotify_rm_watch(ps[win].inot.fd, ps[win].inot.wd);
     ps[win].nl = NULL;
@@ -372,7 +375,6 @@ void scroll_down(int win) {
             print_arrow(win, ps[win].curr_pos - ps[win].mywin.delta + 1);
             wrefresh(ps[win].mywin.fm);
         }
-        preview_img(str_ptr[active][ps[active].curr_pos]);
     }
 }
 
@@ -391,7 +393,6 @@ void scroll_up(int win) {
             print_arrow(win, ps[win].curr_pos - ps[win].mywin.delta + 1);
             wrefresh(ps[win].mywin.fm);
         }
-        preview_img(str_ptr[active][ps[active].curr_pos]);
     }
 }
 
@@ -586,13 +587,12 @@ void change_unit(float size, char *str) {
 }
 
 /*
- * Called when "s" is pressed, updates stat_active, then locks ui_mutex
- * and shows stats or erase stats.
- * Then release the mutex.
+ * Called when "s" is pressed, updates stat_active,
+ * then shows stats or erase stats.
  */
 void trigger_stats(void) {
     /* FIXME: here we will print statvfs for current fs if it is mounted */
-    if (ps[active].mode == device_) {
+    if (ps[active].mode >= device_) {
         return;
     }
     ps[active].mywin.stat_active = !ps[active].mywin.stat_active;
@@ -600,7 +600,7 @@ void trigger_stats(void) {
         show_stat(ps[active].mywin.delta, dim - 2, active);
     } else {
         erase_stat();
-        list_everything(active, 0, 0);
+        list_everything(active, ps[active].mywin.delta, dim - 2);
     }
     print_border_and_title(active);
 }
@@ -836,9 +836,6 @@ static void inotify_refresh(int win) {
  * (searching, bookmarks or device mode)
  */
 void tab_refresh(int win) {
-    if (previewer && win != 0) {
-        return;
-    }
     if (ps[win].mode <= fast_browse_) {
         generate_list(win);
         if (strlen(ps[win].old_file)) {
@@ -933,12 +930,10 @@ static void resize_fm_win(void) {
 }
 
 void change_sort(void) {
-    sorting_index = (sorting_index + 1) % NUM(sorting_func);
-    print_info(sorting_str[sorting_index], INFO_LINE);
-    for (int i = 0; i < cont - previewer; i++) {
-        save_old_pos(i);
-        tab_refresh(i);
-    }
+    ps[active].sorting_index = (ps[active].sorting_index + 1) % NUM(sorting_func);
+    print_info(sorting_str[ps[active].sorting_index], INFO_LINE);
+    save_old_pos(active);
+    tab_refresh(active);
 }
 
 /*
@@ -1092,12 +1087,24 @@ static void update_fullname_win(void) {
 }
 
 void preview_img(const char *path) {
-    const char *cmd = "/home/federico/test.sh";
+    const char *cmd = "/home/federico/Progetti/ncursesFM/test.sh";
     
-    if (previewer && is_ext(path, img_ext, NUM(img_ext))) {
+    if (ps[1].mode == _preview) {
         char full_cmd[PATH_MAX + 1];
-        sprintf(full_cmd, "%s %d %d %d %d %d %d \"%s\"", cmd, COLS / 2 + 1, 1, COLS / 2 - 4, dim - 2, COLS, LINES, path);
-        sprintf(ps[1].title, "Image: %s", path);
+        if (is_ext(path, img_ext, NUM(img_ext))) {
+            if (access(cmd, X_OK) == -1) {
+                char err[100];
+                sprintf(err, "Script %s not found.", cmd);
+                return print_info(err, ERR_LINE);
+            }
+            // 1 to print image
+            sprintf(full_cmd, "%s 1 %d %d %d %d %d %d \"%s\"", cmd, COLS / 2 + 2, 2, COLS / 2 - 4, dim - 4, COLS, LINES, path);
+            sprintf(ps[1].title, "Image: %s", path);
+        } else {
+            // 6 to only clear screen
+            sprintf(full_cmd, "%s 6 %d %d %d %d %d %d \"%s\"", cmd, COLS / 2 + 2, 2, COLS / 2 - 4, dim - 4, COLS, LINES, path);
+            memset(ps[1].title, 0, strlen(ps[1].title));
+        }
         print_border_and_title(1);
         int pid = vfork();
         if (pid == 0) {

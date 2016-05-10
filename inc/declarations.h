@@ -120,7 +120,7 @@ struct scrstr {
     char tot_size[30];
 };
 
-enum working_mode {normal, fast_browse_, bookmarks_, search_, device_};
+enum working_mode {normal, fast_browse_, bookmarks_, search_, device_, _preview};
 
 /*
  * Struct used to store tab's information
@@ -136,6 +136,7 @@ struct tab {
     struct scrstr mywin;
     enum working_mode mode;
     int show_hidden;
+    int sorting_index;
 };
 
 /*
@@ -184,7 +185,7 @@ struct search_vars sv;
  * active win, quit status, number of worker thread jobs,
  * tabs counter and device_init status.
  */
-int active, quit, num_of_jobs, cont, device_init, previewer;
+int active, quit, num_of_jobs, cont, device_init, has_X;
 
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;

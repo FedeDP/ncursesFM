@@ -82,8 +82,9 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * pkg-config -> to manage libraries link in makefile
-* glibc      -> to set locale, for inotify, and for mntent functions.
-* libudev    -> needed for devices/iso mount, and batteries polling.
+* bash-completion -> to get where to store bash autocompletion script
+* glibc      -> to set locale, for inotify, and for mntent functions
+* libudev    -> needed for devices/iso mount, and batteries polling
 * git        -> to clone repo
 
 ## Optional compile time dependencies
@@ -107,6 +108,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 **optional:**
 * if compiled with libx11 support: xdg-utils.
 * if compiled with sd-bus support: a message bus (dbus/kdbus) plus logind (for inhibition support), udisks2 (for mount support), packagekit (for packages installation support) and upower (to get AC (dis)connection events).
+* w3m to display image in terminal window because ncursesFM internally uses w3mimgdisplay.
 
 ## Known bugs
 * installing packages segfaults if package is for the wrong arch, and packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.

@@ -1,8 +1,6 @@
 #include "../inc/fm_functions.h"
 
-#ifdef LIBX11_PRESENT
 static void xdg_open(const char *str, float size);
-#endif
 static void open_file(const char *str, float size);
 static int new_file(const char *name);
 static int new_dir(const char *name);
@@ -108,28 +106,21 @@ void manage_file(const char *str, float size) {
         }
         return;
     }
-#ifdef LIBX11_PRESENT
-    if (access("/usr/bin/xdg-open", X_OK) == 0) {
-        xdg_open(str, size);
-        return;
-    }
-#endif
+//     if (access("/usr/bin/xdg-open", X_OK) == 0) {
+//         xdg_open(str, size);
+//         return;
+//     }
     open_file(str, size);
 }
 
 /*
  * If we're on a X screen, open the file with xdg-open and redirect its output to /dev/null
  * not to make my ncurses screen dirty.
- * FIXME: hopefully xdg-open will return exit code of called script sooner or later, then 
- * i'll remove libx11 check/dep and i'll use http://pubs.opengroup.org/onlinepubs/9699919799/functions/wait.html
  */
-#ifdef LIBX11_PRESENT
 static void xdg_open(const char *str, float size) {
     pid_t pid;
-    Display* display = XOpenDisplay(NULL);
-
-    if (display) {
-        XCloseDisplay(display);
+   
+    if (has_X) {
         pid = vfork();
         if (pid == 0) {
             int fd = open("/dev/null",O_WRONLY);
@@ -142,7 +133,6 @@ static void xdg_open(const char *str, float size) {
         open_file(str, size);
     }
 }
-#endif
 
 /*
  * If file size is > than 5 Mb, asks user if he really wants to open the file 
@@ -166,8 +156,8 @@ static void open_file(const char *str, float size) {
             execl(config.editor, config.editor, str, (char *) 0);
         } else {
             waitpid(pid, NULL, 0);
+            refresh();
         }
-        refresh();
     } else {
         print_info(editor_missing, ERR_LINE);
     }
