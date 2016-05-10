@@ -738,7 +738,7 @@ int main_poll(WINDOW *win) {;
     
     int ret = wgetch(win);
     /*
-     * if ret == ERR - 1, it means we did not receive a getch event.
+     * if ret == ERR, it means we did not receive a getch event.
      * so it is useless to return.
      */
     while ((ret == ERR) && (!quit)) {

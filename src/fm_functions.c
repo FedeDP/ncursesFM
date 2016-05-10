@@ -106,11 +106,11 @@ void manage_file(const char *str, float size) {
         }
         return;
     }
-//     if (access("/usr/bin/xdg-open", X_OK) == 0) {
-//         xdg_open(str, size);
-//         return;
-//     }
-    open_file(str, size);
+    if (access("/usr/bin/xdg-open", X_OK) == 0) {
+        xdg_open(str, size);
+    } else {
+        open_file(str, size);
+    }
 }
 
 /*
@@ -118,10 +118,8 @@ void manage_file(const char *str, float size) {
  * not to make my ncurses screen dirty.
  */
 static void xdg_open(const char *str, float size) {
-    pid_t pid;
-   
     if (has_X) {
-        pid = vfork();
+        pid_t pid = vfork();
         if (pid == 0) {
             int fd = open("/dev/null",O_WRONLY);
             dup2(fd, 1);
@@ -140,7 +138,6 @@ static void xdg_open(const char *str, float size) {
  * opens the file with it.
  */
 static void open_file(const char *str, float size) {
-    pid_t pid;
     char c;
 
     if (size > BIG_FILE_THRESHOLD) { // 5 Mb
@@ -151,12 +148,17 @@ static void open_file(const char *str, float size) {
     }
     if (strlen(config.editor)) {
         endwin();
-        pid = vfork();
+        pid_t pid = vfork();
         if (pid == 0) {
             execl(config.editor, config.editor, str, (char *) 0);
         } else {
             waitpid(pid, NULL, 0);
-            refresh();
+            // trigger a fake resize to restore previous win state
+            // understand why this is needed now (it wasn't needed some time ago as
+            // a refresh() was, and should be, enough)
+//             refresh();
+            ungetch(KEY_RESIZE);
+
         }
     } else {
         print_info(editor_missing, ERR_LINE);

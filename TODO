@@ -1,22 +1,21 @@
 /* TODO:
  *
  * update doc
- * 
- * in device_mode:
- * Add available space for mounted fs?
- * Move available space (and other info, may be, such as mount opts) to show_stat?
- * 
- * proper unicode support...http://www.cprogramming.com/tutorial/unicode.html
- * 
- * vi keybindings/beybinding profiles
- * 
- * rework helper screen -> active-tab-mode-based content?
- * 
- * fix urxvt...
- * fix scrolling down...
- * fix se c'è qualche barra nel terminale (menu o scorrimento) sputtana le dimiensioni in pixel...
  *
- * FIX refresh after nano call -> solo la prima volta??
+ * DEVICE MODE:
+ *   Add available space for mounted fs?
+ *   Move available space (and other info, may be, such as mount opts) to show_stat?
+ *
+ * HELPER SCREEN:
+ *   rework helper screen -> active-tab-mode-based content?
+ *
+ * IMAGE PREVIEW:
+ *   fix first line while scrolling down...
+ *   fix if terminal has some bars (menubar or scrollbar) its pixel dimensions will be fucked up...
+ *
+ * VARIOUS:
+ *   proper unicode support...http://www.cprogramming.com/tutorial/unicode.html
+ *   vi keybindings/keybinding profiles
  */
 
 
