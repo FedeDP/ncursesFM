@@ -1,4 +1,4 @@
-LIBS =-lpthread $(shell pkg-config --libs libarchive ncurses libudev)
+LIBS =-lpthread $(shell pkg-config --libs libarchive ncursesw libudev)
 CFLAGS =-D_GNU_SOURCE
 RM = rm
 INSTALL = install -p
