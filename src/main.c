@@ -73,7 +73,9 @@ int main(int argc, const char *argv[])
     config_checks();
     get_bookmarks();
     set_pollfd();
+#ifdef LIBX11_PRESENT
     check_X();
+#endif
     if (!quit) {
         screen_init();
         if (!quit) {
