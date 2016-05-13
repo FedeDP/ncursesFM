@@ -79,7 +79,7 @@ static void info_win_init(void) {
     keypad(info_win, TRUE);
     nodelay(info_win, TRUE);
     notimeout(info_win, TRUE);
-    for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because SYSINFO line has its own func (timer_func) */
+    for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because SYSINFO line has its own init func (timer_func) */
         print_info("", i);
     }
     timer_func();
@@ -260,7 +260,7 @@ static void print_border_and_title(int win) {
             config.border_chars[5], config.border_chars[6], config.border_chars[7]);
 
     mvwprintw(ps[win].mywin.fm, 0, 0, "%.*s", ps[win].mywin.width - 1, ps[win].title);
-    if (ps[win].mode > fast_browse_) {
+    if (ps[win].mode > fast_browse_ && ps[win].mode < _preview) {
         mvwprintw(ps[win].mywin.fm, 0, ps[win].mywin.width - strlen(special_mode_title), special_mode_title);
     } else {
         mvwprintw(ps[win].mywin.fm, 0, ps[win].mywin.width - strlen(ps[win].mywin.tot_size), ps[win].mywin.tot_size);
@@ -1087,24 +1087,24 @@ static void update_fullname_win(void) {
 }
 
 void preview_img(const char *path) {
-    const char *cmd = "/home/federico/Progetti/ncursesFM/test.sh";
+    int cmd;
+    char full_cmd[PATH_MAX + 1];
     
     if (ps[1].mode == _preview) {
-        char full_cmd[PATH_MAX + 1];
         if (is_ext(path, img_ext, NUM(img_ext))) {
-            if (access(cmd, X_OK) == -1) {
-                char err[100];
-                sprintf(err, "Script %s not found.", cmd);
-                return print_info(err, ERR_LINE);
-            }
             // 1 to print image
-            sprintf(full_cmd, "%s 1 %d %d %d %d %d %d \"%s\"", cmd, COLS / 2 + 2, 2, COLS / 2 - 4, dim - 4, COLS, LINES, path);
+            cmd = 1;
             sprintf(ps[1].title, "Image: %s", path);
         } else {
             // 6 to only clear screen
-            sprintf(full_cmd, "%s 6 %d %d %d %d %d %d \"%s\"", cmd, COLS / 2 + 2, 2, COLS / 2 - 4, dim - 4, COLS, LINES, path);
+            cmd = 6;
             memset(ps[1].title, 0, strlen(ps[1].title));
         }
+        // fix for xterm
+        if (ps[0].mywin.delta) {
+            endwin();
+        }
+        sprintf(full_cmd, "%s %d %d %d %d %d %d %d \"%s\"", preview_bin, cmd, COLS / 2 + 2, 2, COLS / 2 - 5, dim - 4, COLS, LINES, path);
         print_border_and_title(1);
         int pid = vfork();
         if (pid == 0) {
@@ -1113,9 +1113,7 @@ void preview_img(const char *path) {
             dup2(fd, 1);
             dup2(fd, 2);
             close(fd);
-            if (execl("/usr/bin/sh", "/bin/sh", "-c", full_cmd, (char *) 0) == -1) {
-                print_info("Error showing image.", ERR_LINE);
-            }
+            execl("/usr/bin/sh", "/bin/sh", "-c", full_cmd, (char *) 0);
         } else {
             waitpid(pid, NULL, 0);
         }

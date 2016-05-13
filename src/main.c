@@ -37,7 +37,8 @@ static void check_X();
 static void helper_function(int argc, const char *argv[]);
 static void parse_cmd(int argc, const char *argv[]);
 #ifdef LIBCONFIG_PRESENT
-static void read_config_file(void);
+static void check_config_files();
+static void read_config_file(const char *dir);
 #endif
 static void config_checks(void);
 static void main_loop(void);
@@ -60,22 +61,20 @@ static int check_access(void);
 static int (*const long_func[LONG_FILE_OPERATIONS - 1])(void) = {
     move_file, paste_file, remove_file, create_archive
 };
+int previewer_available, previewer_script_available;
 
 int main(int argc, const char *argv[])
 {
     set_signals();
     helper_function(argc, argv);
 #ifdef LIBCONFIG_PRESENT
-    read_config_file();
+    check_config_files();
 #endif
     parse_cmd(argc, argv);
     open_log();
     config_checks();
     get_bookmarks();
     set_pollfd();
-#ifdef LIBX11_PRESENT
-    check_X();
-#endif
     if (!quit) {
         screen_init();
         if (!quit) {
@@ -174,13 +173,6 @@ static void check_X() {
 #endif
 
 static void helper_function(int argc, const char *argv[]) {
-    /* default value for starting_helper, bat_low_level and device_init */
-    config.starting_helper = 1;
-    config.bat_low_level = 15;
-#ifdef SYSTEMD_PRESENT
-    device_init = DEVMON_STARTING;
-#endif
-
     if ((argc > 1) && (!strcmp(argv[1], "--help"))) {
         printf("\n NcursesFM Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
@@ -202,6 +194,20 @@ static void helper_function(int argc, const char *argv[]) {
         printf(" Press 'l' while in program to view a more detailed helper message.\n\n");
         exit(EXIT_SUCCESS);
     }
+    
+    /* some default values */
+    realpath(BINDIR, preview_bin);
+    sprintf(preview_bin + strlen(preview_bin), "/ncursesfm_previewer");
+    previewer_script_available = !access(preview_bin, X_OK);
+    previewer_available = !access("/usr/lib/w3m/w3mimgdisplay", X_OK);
+    config.starting_helper = 1;
+    config.bat_low_level = 15;
+#ifdef SYSTEMD_PRESENT
+    device_init = DEVMON_STARTING;
+#endif
+#ifdef LIBX11_PRESENT
+    check_X();
+#endif
 }
 
 static void parse_cmd(int argc, const char *argv[]) {
@@ -246,24 +252,35 @@ static void parse_cmd(int argc, const char *argv[]) {
 }
 
 #ifdef LIBCONFIG_PRESENT
-static void read_config_file(void) {
+static void check_config_files() {
+    char home_config_path[PATH_MAX + 1];
+    
+    sprintf(home_config_path, "%s/.config", getpwuid(getuid())->pw_dir);
+    read_config_file(home_config_path);
+}
+
+static void read_config_file(const char *dir) {
     config_t cfg;
     char config_file_name[PATH_MAX + 1];
     const char *str_editor, *str_starting_dir, 
                 *str_borders, *str_cursor;
 
-    sprintf(config_file_name, "%s/ncursesFM.conf", CONFDIR);
+    sprintf(config_file_name, "%s/ncursesFM.conf", dir);
     if (access(config_file_name, F_OK ) == -1) {
-        fprintf(stderr, "Config file not found.\n");
-        return;
+        if (!strcmp(dir, CONFDIR)) {
+            fprintf(stderr, "Config file not found.\n");
+            return;
+        } else {
+            return read_config_file(CONFDIR);
+        }
     }
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name) == CONFIG_TRUE) {
-        if ((!strlen(config.editor)) && (config_lookup_string(&cfg, "editor", &str_editor) == CONFIG_TRUE)) {
+        if (config_lookup_string(&cfg, "editor", &str_editor) == CONFIG_TRUE) {
             strcpy(config.editor, str_editor);
         }
         config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
-        if ((!strlen(config.starting_dir)) && (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) == CONFIG_TRUE)) {
+        if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) == CONFIG_TRUE) {
             strcpy(config.starting_dir, str_starting_dir);
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
@@ -358,8 +375,6 @@ static void main_loop(void) {
 
     char *ptr, old_file[PATH_MAX + 1];
     struct stat current_file_stat;
-    
-    int previewer_available = !access("/usr/lib/w3m/w3mimgdisplay", X_OK);
     
     MEVENT event;
 #if NCURSES_MOUSE_VERSION > 1
@@ -481,7 +496,7 @@ static void main_loop(void) {
             show_bookmarks();
             break;
         case 'j':
-            if (cont == 1 && previewer_available && has_X) {
+            if (cont == 1 && previewer_available && has_X && previewer_script_available) {
                 ps[1].mode = _preview;
                 add_new_tab();
             } else if (ps[1].mode == _preview) {
@@ -491,6 +506,8 @@ static void main_loop(void) {
                 memset(old_file, 0, strlen(old_file));
             } else if (!previewer_available) {
                 print_info("You need w3mimgdisplay from w3m to preview images.", INFO_LINE);
+            } else if (!previewer_script_available) {
+                print_info( "Previewing script not found.", ERR_LINE);
             } else if (!has_X) {
                 print_info("You need to be in a X session for image preview to work.", INFO_LINE);
             }

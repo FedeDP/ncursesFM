@@ -10,6 +10,7 @@ CONFDIR = /etc/default
 BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
 COMPLNAME = ncursesfm
+PREVIEWERNAME = ncursesfm_previewer
 SRCDIR = src/
 COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
 
@@ -49,7 +50,7 @@ endif
 endif
 
 ifneq ("$(LIBCONFIG)","")
-CFLAGS+=-DLIBCONFIG_PRESENT -DCONFDIR=\"$(CONFDIR)\"
+CFLAGS+=-DLIBCONFIG_PRESENT -DCONFDIR=\"$(CONFDIR)\" -DBINDIR=\"$(BINDIR)\"
 $(info libconfig support enabled.)
 endif
 
@@ -89,6 +90,9 @@ install:
 # 	install bash autocompletion script
 	$(INSTALL_DIR) "$(DESTDIR)$(COMPLDIR)"
 	$(INSTALL_DATA) $(COMPLNAME) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
+# 	install image previewing script
+	$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
+	$(INSTALL_PROGRAM) $(PREVIEWERNAME) "$(DESTDIR)$(BINDIR)"
 
 uninstall:
 # 	remove executable file
@@ -97,3 +101,5 @@ uninstall:
 	$(RM) "$(DESTDIR)$(CONFDIR)/$(CONFNAME)"
 # 	remove bash autocompletion script
 	$(RM) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
+# 	remove image previewing script
+	$(RM) "$(DESTDIR)$(BINDIR)/$(PREVIEWERNAME)"

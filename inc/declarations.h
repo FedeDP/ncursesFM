@@ -197,3 +197,8 @@ pthread_t worker_th, search_th;
  * is active for current tab
  */
 char (*str_ptr[MAX_TABS])[PATH_MAX + 1];
+
+/*
+ * previewer script path 
+ */
+char preview_bin[PATH_MAX + 1];

@@ -19,6 +19,8 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
+* image previewing support through w3mimgdisplay
+* per-user configs support. Copy default config file in your user $HOME/.config/ and change it here.
 * Basic mouse support: left click to manage current file and right click to select it. Only supported on ncurses >= 6: mouse wheel to scroll up and down.
 * Simple sysinfo monitor that will refresh every 30s: clock, battery and some system info.
 If you've got Upower installed, AC (dis)connection will refresh battery status instantly, instead of waiting up to 30s until next refresh.
@@ -48,7 +50,7 @@ Device monitor will list only mountable devices, eg: dvd reader will not be list
 
 ---
 
-If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf...remember to set them!
+If built with libconfig support, it reads following variables from $HOME/.config/ncursesFM.conf or /etc/default/ncursesFM.conf...remember to set them!
 * editor -> editor used to open files, in non X environment (or when xdg-open is not available)
 * show_hidden -> whether to show hidden files by default or not. Defaults to 0.
 * starting_directory -> default starting directory.
@@ -120,7 +122,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 
 On Ubuntu install required packages:
 
-    # apt-get install libncursesw5-dev libarchive-dev pkg-config git build-essential libudev-dev
+    # apt-get install libncursesw5-dev libarchive-dev pkg-config git build-essential libudev-dev bash-completion
 
 Optional:
 
@@ -136,4 +138,5 @@ To remove, just move inside the folder and run:
     # make uninstall
 
 make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets. Be aware that it will disable bash autocompletion script (you can still source it manually) and config file support (unless you do as described below) though.  
-Moreover, you can specify a $CONFDIR variable that tells ncursesFM where to look for its config file; so something like "make CONFDIR=./" will let you test config file support too without even installing it.
+Moreover, you can specify a $CONFDIR variable that tells ncursesFM where to look for its config file; so something like "make CONFDIR=./" will let you test config file support too without even installing it.  
+Same goes for BINDIR and image previewing script. If you want to give image previewer a try without installing it to /usr/bin, you can just run "make BINDIR=./" inside ncursesFM cloned repo.
