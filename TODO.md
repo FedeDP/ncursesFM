@@ -14,7 +14,7 @@
 - [x] fix first line while scrolling down (xterm only)
 - [ ] understand why konsole is perfect only when scrolling...
 
-**TEXT/PDF PREVIEW:  
+**TEXT/PDF PREVIEW**:  
 
 - [ ] understand how that can be implemented
 
