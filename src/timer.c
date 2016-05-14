@@ -38,7 +38,7 @@ int start_timer(void) {
  * Then calls update_batt (ui_functions)
  */
 void timer_func(void) {
-    for (int i = 0; i < sizeof(config.sysinfo_layout); i++) {
+    for (int i = 0; i < strlen(config.sysinfo_layout); i++) {
         switch (tolower(config.sysinfo_layout[i])) {
         case 'c':
             update_time(i);
@@ -48,6 +48,8 @@ void timer_func(void) {
             break;
         case 'b':
             update_battery(i);
+            break;
+        default:
             break;
         }
     }
