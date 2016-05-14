@@ -74,4 +74,3 @@ const char *package_warn;
 const char *device_mode_str;
 #endif
 const char *bookmarks_mode_str;
-const char *special_mode_title;

@@ -28,7 +28,7 @@
 
 - [ ] proper unicode support...http://www.cprogramming.com/tutorial/unicode.html **VERY HIGH PRIORITY**
 - [ ] vi keybindings/keybinding profiles
-- [ ] switch back to libmagic mimetype support? (it is buggy...as of now it freeze on folders. Plus, i cannot use it for packages detection, neither for search_inside_archive because it is so slooooooooow)
+- [ ] switch back to libmagic mimetype support? (it is buggy...as of now it freezes on folders. Plus, i cannot use it for distro packages detection, neither for search_inside_archive because it is so slooooooooow)
 - [x] per-user config
 - [ ] add some wiki to lighten readme
 - [ ] cleanup code (lots of features added recently)

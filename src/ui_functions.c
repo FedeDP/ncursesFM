@@ -261,11 +261,7 @@ static void print_border_and_title(int win) {
             config.border_chars[5], config.border_chars[6], config.border_chars[7]);
 
     mvwprintw(ps[win].mywin.fm, 0, 0, "%.*s", ps[win].mywin.width - 1, ps[win].title);
-    if (ps[win].mode > fast_browse_ && ps[win].mode < _preview) {
-        mvwprintw(ps[win].mywin.fm, 0, ps[win].mywin.width - strlen(special_mode_title), special_mode_title);
-    } else {
-        mvwprintw(ps[win].mywin.fm, 0, ps[win].mywin.width - strlen(ps[win].mywin.tot_size), ps[win].mywin.tot_size);
-    }
+    mvwprintw(ps[win].mywin.fm, 0, ps[win].mywin.width - strlen(ps[win].mywin.tot_size), ps[win].mywin.tot_size);
     wattroff(ps[win].mywin.fm, COLOR_PAIR);
     wattroff(ps[win].mywin.fm, A_BOLD);
     wrefresh(ps[win].mywin.fm);

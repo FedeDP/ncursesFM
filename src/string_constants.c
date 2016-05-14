@@ -69,7 +69,6 @@ const char *device_mode_str =  "Choose your desired device to (un)mount it";
 #endif
 
 const char *bookmarks_mode_str = "Bookmarks:";
-const char *special_mode_title = "q to return to normal mode";
 
 #ifdef SYSTEMD_PRESENT
 const int HELPER_HEIGHT[] = {16, 16, 8, 8, 8};
