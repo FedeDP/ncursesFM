@@ -8,6 +8,9 @@
 * now ncursesFM will maintain terminal background colors (and even transparency)
 * fixed a bug when opening default $EDITOR (probably introduced in ncurses 6, or newer), that prevented window to restore its old state until a win state change was triggered
 * per-user settings
+* added image preview through w3mimgdisplay
+* added per-tab-mode's helper win (it will now switch its content based on active tab's mode)
+* sysinfo line layout configurable through ncursesFM.conf
 
 03 / 10 / 2016
 * added "i" to view current file full path name (even in special mode). So, if screen is too small or filename is very large, you can still check its name.

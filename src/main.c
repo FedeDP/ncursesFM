@@ -208,6 +208,15 @@ static void helper_function(int argc, const char *argv[]) {
 #ifdef LIBX11_PRESENT
     check_X();
 #endif
+    strcpy(config.border_chars, "||--++++");
+    strcpy(config.cursor_chars, "->");
+    /* 
+     * default sysinfo layout: 
+     * Clock
+     * Process monitor
+     * Battery monitor
+     */
+    strcpy(config.sysinfo_layout, "CPB");
 }
 
 static void parse_cmd(int argc, const char *argv[]) {
@@ -263,7 +272,7 @@ static void read_config_file(const char *dir) {
     config_t cfg;
     char config_file_name[PATH_MAX + 1];
     const char *str_editor, *str_starting_dir, 
-                *str_borders, *str_cursor;
+                *str_borders, *str_cursor, *sysinfo;
 
     sprintf(config_file_name, "%s/ncursesFM.conf", dir);
     if (access(config_file_name, F_OK ) == -1) {
@@ -298,6 +307,9 @@ static void read_config_file(const char *dir) {
         if (config_lookup_string(&cfg, "cursor_chars", &str_cursor) == CONFIG_TRUE) {
             strncpy(config.cursor_chars, str_cursor, sizeof(config.cursor_chars));
         }
+        if (config_lookup_string(&cfg, "sysinfo_layout", &sysinfo) == CONFIG_TRUE) {
+            strncpy(config.sysinfo_layout, sysinfo, sizeof(config.sysinfo_layout));
+        }
     } else {
         fprintf(stderr, "Config file: %s at line %d.\n",
                 config_error_text(&cfg),
@@ -324,19 +336,6 @@ static void config_checks(void) {
     }
     if ((config.loglevel < LOG_ERR) || (config.loglevel > NO_LOG)) {
         config.loglevel = LOG_ERR;
-    }
-    if (strlen(config.border_chars) < sizeof(config.border_chars)) {
-        /*
-         * if user configured less chars than needed,
-         * or if config.border_chars is blank (untouched by user),
-         * fill its string with default chars
-         */
-        const char *borders = "||--++++";
-        int len = strlen(config.border_chars);
-        strncpy(config.border_chars + len, borders + len, sizeof(config.border_chars) - len);
-    }
-    if (!strlen(config.cursor_chars)) {
-        strcpy(config.cursor_chars, "->");
     }
 }
 
@@ -370,8 +369,9 @@ static void main_loop(void) {
      * m only in device_mode to {un}mount device,
      * e only in bookmarks_mode to remove device from bookmarks
      * s to show stat
+     * i to trigger fullname win
      */
-    const char *special_mode_allowed_chars = "ltqmes";
+    const char *special_mode_allowed_chars = "ltqmesi";
 
     char *ptr, old_file[PATH_MAX + 1];
     struct stat current_file_stat;

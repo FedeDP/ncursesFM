@@ -145,8 +145,7 @@ void manage_enter_bookmarks(struct stat current_file_stat) {
         } else {
             memset(ps[active].old_file, 0, strlen(ps[active].old_file));
         }
-        ps[active].mode = normal;
-        change_dir(str, active);
+        leave_special_mode(str);
     } else {
         ask_user(inexistent_bookmark, &c, 1, 'y');
         if (!quit && c != 'n') {

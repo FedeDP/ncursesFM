@@ -63,6 +63,7 @@ If built with libconfig support, it reads following variables from $HOME/.config
 * bat_low_level -> to set threshold to signal user about low battery. Defaults to 15%.
 * border_chars -> to change printed borders' chars.
 * cursor_chars -> to change printed cursor's chars.
+* sysinfo_layout -> customize layout of sysinfo line (last line).
 
 NcursesFM ships an autocompletion script for cmdline options. It supports following options:
 * "--editor" /path/to/editor

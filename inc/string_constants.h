@@ -1,11 +1,9 @@
-#ifdef SYSTEMD_PRESENT
-#define HELPER_HEIGHT 15
-#else
-#define HELPER_HEIGHT 13
-#endif
-
 #define LONG_FILE_OPERATIONS 5
 #define SHORT_FILE_OPERATIONS 3
+
+#define MODES 5
+
+const int HELPER_HEIGHT[MODES];
 
 const char *editor_missing;
 
@@ -67,7 +65,7 @@ const char *selected_mess;
 const char *thread_running;
 const char *quit_with_running_thread;
 
-const char *helper_string[HELPER_HEIGHT - 2];
+const char helper_string[MODES][16][150];
 
 #ifdef SYSTEMD_PRESENT
 const char *pkg_quest;

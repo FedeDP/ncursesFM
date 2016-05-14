@@ -22,9 +22,10 @@ static void erase_stat(void);
 static void info_print(const char *str, int i);
 static void info_refresh(int fd);
 static void inotify_refresh(int win);
+static void print_additional_wins(int helper_height, int resizing);
 static void resize_fm_win(void);
 static void check_selected(const char *str, int win, int line);
-static void update_sysinfo(void);
+static int check_sysinfo_where(int where, int len);
 static void fullname_print(void);
 static void update_fullname_win(void);
 
@@ -493,11 +494,11 @@ void trigger_show_helper_message(void) {
      * This is to avoid an issue where helper_win would go below
      * fullname_win, but fullname_win at next refresh would go above it.
      */
-    if (fullname_win && (dim - HELPER_HEIGHT >= 3)) {
+    if (fullname_win && (dim - HELPER_HEIGHT[ps[active].mode] >= 3)) {
         remove_additional_win(fullname_win_height, &fullname_win, 0);
         fullname_win_needed = 1;
     }
-    trigger_show_additional_win(HELPER_HEIGHT, &helper_win, helper_print);
+    trigger_show_additional_win(HELPER_HEIGHT[ps[active].mode], &helper_win, helper_print);
     if (fullname_win_needed) {
         trigger_show_additional_win(fullname_win_height, &fullname_win, fullname_print);
     }
@@ -511,8 +512,8 @@ static void helper_print(void) {
             config.border_chars[2], config.border_chars[3], config.border_chars[4],
             config.border_chars[5], config.border_chars[6], config.border_chars[7]);
 
-    for (int i = 0; i < HELPER_HEIGHT - 2; i++) {
-        mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, helper_string[i]);
+    for (int i = 0; i < HELPER_HEIGHT[ps[active].mode] - 2; i++) {
+        mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, helper_string[ps[active].mode][i]);
     }
     wattron(helper_win, A_BOLD);
     mvwprintw(helper_win, 0, len, title);
@@ -761,7 +762,7 @@ int main_poll(WINDOW *win) {;
                     case TIMER_IX:
                     /* we received a timer expiration signal on timerfd */
                         read(main_p[i].fd, &t, 8);
-                        timer_func();
+                        timer_event();
                         break;
                     case INOTIFY_IX1:
                     case INOTIFY_IX2:
@@ -785,6 +786,13 @@ int main_poll(WINDOW *win) {;
         }
     }
     return ret;
+}
+
+void timer_event(void) {
+    wmove(info_win, SYSTEM_INFO_LINE, 1);
+    wclrtoeol(info_win);
+    timer_func();
+    wrefresh(info_win);
 }
 
 /*
@@ -870,18 +878,26 @@ void update_special_mode(int num,  int win, char (*str)[PATH_MAX + 1]) {
 /*
  * Used when switching to special_mode.
  */
-void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title, int mode) {
+void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title, int mode) {    
     ps[active].mode = mode;
     ps[active].number_of_files = num;
     str_ptr[active] = str;
     strcpy(ps[active].title, title);
     save_old_pos(active);
+    // if we're entering special mode, we were in normal mode
+    print_additional_wins(HELPER_HEIGHT[normal], 0);
     reset_win(active);
 }
 
+/*
+ * used when leaving special mode.
+ */
 void leave_special_mode(const char *str) {
+    int old_mode = ps[active].mode;
+    
     ps[active].mode = normal;
     change_dir(str, active);
+    print_additional_wins(HELPER_HEIGHT[old_mode], 0);
 }
 
 /*
@@ -892,30 +908,36 @@ void leave_special_mode(const char *str) {
  * Then recreates info win.
  */
 void resize_win(void) {
-    int helper_win_needed = 0, fullname_win_needed = 0;
-    
     wclear(info_win);
     delwin(info_win);
     info_win_init();
+    print_additional_wins(HELPER_HEIGHT[ps[active].mode], 1);
+    resize_fm_win();
+    preview_img(str_ptr[active][ps[active].curr_pos]);
+}
+
+static void print_additional_wins(int helper_height, int resizing) {
+    int helper_win_needed = 0, fullname_win_needed = 0;
+    
     dim = LINES - INFO_HEIGHT;
+    if (helper_win) {
+        dim -= helper_height;
+    }
     if (fullname_win) {
         dim -= fullname_win_height;
-        remove_additional_win(fullname_win_height, &fullname_win, 1);
+        remove_additional_win(fullname_win_height, &fullname_win, resizing);
         fullname_win_needed = 1;
     }
     if (helper_win) {
-        dim -= HELPER_HEIGHT;
-        remove_additional_win(HELPER_HEIGHT, &helper_win, 1);
+        remove_additional_win(helper_height, &helper_win, resizing);
         helper_win_needed = 1;
     }
     if (helper_win_needed) {
-        trigger_show_additional_win(HELPER_HEIGHT, &helper_win, helper_print);
+        trigger_show_additional_win(HELPER_HEIGHT[ps[active].mode], &helper_win, helper_print);
     }
     if (fullname_win_needed) {
         trigger_fullname_win();
     }
-    resize_fm_win();
-    preview_img(str_ptr[active][ps[active].curr_pos]);
 }
 
 /*
@@ -980,6 +1002,7 @@ void erase_selected_highlight(void) {
 void update_colors(void) {
     print_arrow(!active, 1 + ps[!active].curr_pos - ps[!active].mywin.delta);
     print_arrow(active, 1 + ps[active].curr_pos - ps[active].mywin.delta);
+    print_additional_wins(HELPER_HEIGHT[ps[!active].mode], 0); // switch helper_win context while changing tab
     print_border_and_title(!active);
     print_border_and_title(active);
 }
@@ -996,20 +1019,17 @@ void switch_fast_browse_mode(void) {
     print_border_and_title(active);
 }
 
-void update_time(void) {
+void update_time(int where) {
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-    char date[30], time[10];
+    char date[70];
 
-    wmove(info_win, SYSTEM_INFO_LINE, 1);
-    wclrtoeol(info_win);
-    update_sysinfo();
-    sprintf(date, "%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-    sprintf(time, "%02d:%02d", tm.tm_hour, tm.tm_min);
-    mvwprintw(info_win, SYSTEM_INFO_LINE, 1, "Date: %s, %s", date, time);
+    sprintf(date, "Date: %d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+    sprintf(date + strlen(date), ", %02d:%02d", tm.tm_hour, tm.tm_min);
+    mvwprintw(info_win, SYSTEM_INFO_LINE, check_sysinfo_where(where, strlen(date)), "%.*s", COLS, date);
 }
 
-static void update_sysinfo(void) {
+void update_sysinfo(int where) {
     const long minute = 60;
     const long hour = minute * 60;
     const long day = hour * 24;
@@ -1029,43 +1049,60 @@ static void update_sysinfo(void) {
     len = strlen(sys_str);
     sprintf(sys_str + len, "procs: %d, ram usage: %.1fMb/%.1fMb", si.procs, used_ram, si.totalram / megabyte);
     len = strlen(sys_str);
-    mvwprintw(info_win, SYSTEM_INFO_LINE, (COLS - len) / 2, "%.*s", COLS, sys_str);
+    mvwprintw(info_win, SYSTEM_INFO_LINE, check_sysinfo_where(where, strlen(sys_str)), "%.*s", COLS, sys_str);
 }
 
-void update_batt(int online, int perc[], int num_of_batt, char name[][10]) {
+void update_batt(int online, int perc[], int num_of_batt, char name[][10], int where) {
     const char *ac_online = "On AC", *fail = "No power supply info available.";
-    char batt_str[20];
+    char batt_str[num_of_batt][20];
     int len = 0;
     
     switch (online) {
     case -1:
         /* built without libudev support. No info available. */
-        mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(fail), fail);
+        mvwprintw(info_win, SYSTEM_INFO_LINE, check_sysinfo_where(where, strlen(fail)), "%.*s", COLS, fail);
         break;
     case 1:
         /* ac connected */
-        mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - strlen(ac_online), ac_online);
+        mvwprintw(info_win, SYSTEM_INFO_LINE, check_sysinfo_where(where, strlen(ac_online)), "%.*s", COLS, ac_online);
         break;
     case 0:
         /* on battery */
+        // to workaround an issue if sysinfo layout set
+        // battery mon on center, and we have more than one battery.
+        // we must check total batteries strings length before, to print it centered.
         for (int i = 0; i < num_of_batt; i++) {
-            sprintf(batt_str, "%s: ", name[i]);
+            sprintf(batt_str[i], "%s: ", name[i]);
             if (perc[i] != -1) {
-                sprintf(batt_str + strlen(batt_str), "%d%%%%", perc[i]);
+                sprintf(batt_str[i] + strlen(batt_str[i]), "%d%%%%", perc[i]);
+                len += strlen(batt_str[i]) - 2;     /* -2 to delete spaces derived from %%%% */
             } else {
-                sprintf(batt_str + strlen(batt_str), "no info.");
+                sprintf(batt_str[i] + strlen(batt_str[i]), "no info.");
+                len += strlen(batt_str[i]);
             }
-            len += strlen(batt_str) - 1;    /* -1 to delete a space derived from %%%% */
+            len++;  /* if there's another bat, at least divide the two batteries by 1 space */
+        }
+        int x = check_sysinfo_where(where, len);
+        for (int i = 0; i < num_of_batt; i++) {
             if (perc[i] != -1 && perc[i] <= config.bat_low_level) {
                 wattron(info_win, COLOR_PAIR(5));
             }
-            mvwprintw(info_win, SYSTEM_INFO_LINE, COLS - len, batt_str);
+            mvwprintw(info_win, SYSTEM_INFO_LINE, x, batt_str[i]);
             wattroff(info_win, COLOR_PAIR);
-            len++;  /* if there's another bat, at least divide the two batteries by 1 space */
         }
         break;
     }
-    wrefresh(info_win);
+}
+
+static int check_sysinfo_where(int where, int len) {
+    switch (where) {
+    case 0:
+        return 1;
+    case 1:
+        return (COLS - len) / 2;
+    case 2:
+        return COLS - len;
+    }
 }
 
 void trigger_fullname_win(void) {

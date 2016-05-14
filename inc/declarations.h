@@ -88,8 +88,9 @@ struct conf {
     int loglevel;
     int persistent_log;
     int bat_low_level;
-    char border_chars[8];
-    char cursor_chars[2];
+    char border_chars[9];
+    char cursor_chars[3];
+    char sysinfo_layout[4];
 };
 
 /*
