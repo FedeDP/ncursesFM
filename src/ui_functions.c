@@ -1022,7 +1022,10 @@ void update_time(int where) {
 
     sprintf(date, "Date: %d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
     sprintf(date + strlen(date), ", %02d:%02d", tm.tm_hour, tm.tm_min);
-    mvwprintw(info_win, SYSTEM_INFO_LINE, check_sysinfo_where(where, strlen(date)), "%.*s", COLS, date);
+    int x = check_sysinfo_where(where, strlen(date));
+    if (x != -1) {
+        mvwprintw(info_win, SYSTEM_INFO_LINE, x, "%.*s", COLS, date);
+    }
 }
 
 void update_sysinfo(int where) {
@@ -1045,22 +1048,32 @@ void update_sysinfo(int where) {
     len = strlen(sys_str);
     sprintf(sys_str + len, "procs: %d, ram usage: %.1fMb/%.1fMb", si.procs, used_ram, si.totalram / megabyte);
     len = strlen(sys_str);
-    mvwprintw(info_win, SYSTEM_INFO_LINE, check_sysinfo_where(where, strlen(sys_str)), "%.*s", COLS, sys_str);
+    int x = check_sysinfo_where(where, len);
+    if (x != -1) {
+        mvwprintw(info_win, SYSTEM_INFO_LINE, x, "%.*s", COLS, sys_str);
+    }
 }
 
 void update_batt(int online, int perc[], int num_of_batt, char name[][10], int where) {
     const char *ac_online = "On AC", *fail = "No power supply info available.";
     char batt_str[num_of_batt][20];
     int len = 0;
+    int x;
     
     switch (online) {
     case -1:
         /* built without libudev support. No info available. */
-        mvwprintw(info_win, SYSTEM_INFO_LINE, check_sysinfo_where(where, strlen(fail)), "%.*s", COLS, fail);
+        x = check_sysinfo_where(where, strlen(fail));
+        if (x != -1) {
+            mvwprintw(info_win, SYSTEM_INFO_LINE, x, "%.*s", COLS, fail);
+        }
         break;
     case 1:
         /* ac connected */
-        mvwprintw(info_win, SYSTEM_INFO_LINE, check_sysinfo_where(where, strlen(ac_online)), "%.*s", COLS, ac_online);
+        x = check_sysinfo_where(where, strlen(ac_online));
+        if (x != -1) {
+            mvwprintw(info_win, SYSTEM_INFO_LINE, x, "%.*s", COLS, ac_online);
+        }
         break;
     case 0:
         /* on battery */
@@ -1078,13 +1091,15 @@ void update_batt(int online, int perc[], int num_of_batt, char name[][10], int w
             }
             len++;  /* if there's another bat, at least divide the two batteries by 1 space */
         }
-        int x = check_sysinfo_where(where, len);
-        for (int i = 0; i < num_of_batt; i++) {
-            if (perc[i] != -1 && perc[i] <= config.bat_low_level) {
-                wattron(info_win, COLOR_PAIR(5));
+        x = check_sysinfo_where(where, len);
+        if (x != -1) {
+            for (int i = 0; i < num_of_batt; i++) {
+                if (perc[i] != -1 && perc[i] <= config.bat_low_level) {
+                    wattron(info_win, COLOR_PAIR(5));
+                }
+                mvwprintw(info_win, SYSTEM_INFO_LINE, x, batt_str[i]);
+                wattroff(info_win, COLOR_PAIR);
             }
-            mvwprintw(info_win, SYSTEM_INFO_LINE, x, batt_str[i]);
-            wattroff(info_win, COLOR_PAIR);
         }
         break;
     }
@@ -1099,6 +1114,7 @@ static int check_sysinfo_where(int where, int len) {
     case 2:
         return COLS - len;
     }
+    return -1;
 }
 
 void trigger_fullname_win(void) {

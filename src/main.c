@@ -373,7 +373,7 @@ static void main_loop(void) {
      */
     const char *special_mode_allowed_chars = "ltqmesi";
 
-    char *ptr, old_file[PATH_MAX + 1];
+    char *ptr, old_file[PATH_MAX + 1] = "";
     struct stat current_file_stat;
     
     MEVENT event;
