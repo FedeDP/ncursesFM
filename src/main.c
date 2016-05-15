@@ -32,7 +32,7 @@ static void set_pollfd(void);
 static void sig_handler(int signum);
 static void sigsegv_handler(int signum);
 #ifdef LIBX11_PRESENT
-static void check_X();
+static void check_X(void);
 #endif
 static void helper_function(int argc, const char *argv[]);
 static void parse_cmd(int argc, const char *argv[]);
@@ -162,9 +162,9 @@ static void sigsegv_handler(int signum) {
 }
 
 #ifdef LIBX11_PRESENT
-static void check_X() {
+static void check_X(void) {
     Display* display = XOpenDisplay(NULL);
-    
+
     if (display) {
         XCloseDisplay(display);
         has_X = 1;
@@ -205,9 +205,6 @@ static void helper_function(int argc, const char *argv[]) {
 #ifdef SYSTEMD_PRESENT
     device_init = DEVMON_STARTING;
 #endif
-#ifdef LIBX11_PRESENT
-    check_X();
-#endif
     strcpy(config.border_chars, "||--++++");
     strcpy(config.cursor_chars, "->");
     /* 
@@ -217,6 +214,9 @@ static void helper_function(int argc, const char *argv[]) {
      * Battery monitor
      */
     strcpy(config.sysinfo_layout, "CPB");
+#ifdef LIBX11_PRESENT
+    check_X();
+#endif
 }
 
 static void parse_cmd(int argc, const char *argv[]) {

@@ -47,13 +47,14 @@ if [[ $COMMAND -eq 6 ]]; then
     exit 0
 fi
 
-# print new image
+# read new image size
 read width height <<< `echo "5;$FILENAME" | $W3MIMGDISPLAY`
 if [ -z "$width" -o -z "$height" ]; then
     echo 'Error: Failed to obtain image size.'
     exit 1
 fi
 
+# scale it then print it
 if [ "$width" -gt "$max_width" ]; then
     height=$((height * max_width / width))
     width=$max_width
