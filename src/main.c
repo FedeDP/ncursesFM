@@ -495,7 +495,7 @@ static void main_loop(void) {
         case 'g': // g to show bookmarks
             show_bookmarks();
             break;
-        case 'j':
+        case 'j': // j to trigger image previewer
             if (cont == 1 && previewer_available && has_X && previewer_script_available) {
                 ps[1].mode = _preview;
                 add_new_tab();

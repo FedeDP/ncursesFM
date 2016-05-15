@@ -27,11 +27,18 @@ ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 ifneq ("$(DISABLE_LIBX11)","1")
 LIBX11=$(shell pkg-config --silence-errors --libs x11)
 endif
+
 ifneq ("$(DISABLE_LIBCONFIG)","1")
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
 endif
+
 ifneq ("$(DISABLE_LIBSYSTEMD)","1")
+SYSTEMD_VERSION=$(shell pkg-config --modversion --silence-errors systemd)
+ifeq ($(shell test $(SYSTEMD_VERSION) -ge 221; echo $$?), 0)
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
+else
+$(info systemd support disabled, minimum required version 221.)
+endif
 endif
 
 LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD)
