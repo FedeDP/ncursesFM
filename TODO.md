@@ -34,6 +34,7 @@
 **VARIOUS**:  
 
 - [ ] make strings tranlatable
+- [ ] switch to KEY_ESC to leave ncursesFM/current mode/leave input mode in ask_user
 - [ ] vi keybindings/keybinding profiles
 - [ ] switch back to libmagic mimetype support? (it is buggy...as of now it freezes on folders. Plus, i cannot use it for distro packages detection, neither for search_inside_archive because it is so slooooooooow)
 - [x] per-user config

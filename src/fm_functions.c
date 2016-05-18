@@ -82,13 +82,14 @@ int is_ext(const char *filename, const char *ext[], int size) {
  * else open the file with config.editor.
  */
 void manage_file(const char *str, float size) {
+    char c;
+    
 #ifdef SYSTEMD_PRESENT
     if (is_ext(str, iso_ext, NUM(iso_ext))) {
         isomount(str);
         return;
     }
     if (is_ext(str, pkg_ext, NUM(pkg_ext))) {
-        char c = 'n';
         print_info(package_warn, INFO_LINE);
         ask_user(pkg_quest, &c, 1);
         print_info("", INFO_LINE);
@@ -99,9 +100,8 @@ void manage_file(const char *str, float size) {
     }
 #endif
     if (is_ext(str, arch_ext, NUM(arch_ext))) {
-        char c = 'y';
         ask_user(extr_question, &c, 1);
-        if (!quit && c == 'y') {
+        if (!quit && c != 'n') {
             init_thread(EXTRACTOR_TH, try_extractor);
         }
         return;
@@ -138,11 +138,11 @@ static void xdg_open(const char *str, float size) {
  * opens the file with it.
  */
 static void open_file(const char *str, float size) {
-    char c = 'y';
+    char c;
 
     if (size > BIG_FILE_THRESHOLD) { // 5 Mb
         ask_user(big_file, &c, 1);
-        if (quit || c == 'n') {
+        if (quit || c != 'y') {
             return;
         }
     }

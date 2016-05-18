@@ -695,27 +695,38 @@ void ask_user(const char *str, char *input, int d) {
     wint_t s;
     size_t len, wlen = 0;
     wchar_t wstring[d];
+    char resize_str[d + strlen(str)];
+    int leave = 0;
     
     wmemset(wstring, 0, d);
+    memset(input, 0, d);
     
     print_info(str, ASK_LINE);
     do {
         s = main_poll(info_win);
-        if (s == KEY_RESIZE) {
+        len = strlen(str) + strlen(info_win_str[ASK_LINE]) + wlen;
+        switch (s) {
+        case KEY_RESIZE:
             resize_win();
-            char resize_str[d + strlen(str)];
             strcpy(resize_str, str);
             wcstombs(resize_str + strlen(resize_str), wstring, d);
             print_info(resize_str, ASK_LINE);
-        } else if (s == 10) { // enter to exit
             break;
-        } else {
-            len = strlen(str) + strlen(info_win_str[ASK_LINE]) + wcslen(wstring);
-            if ((s == 127) && (wlen)) {    // backspace!
+        case 10: // enter to return
+            leave = 1;
+            break;
+        case 127: // backspace to delete last char
+            if (wlen) {
                 wlen--;
                 wstring[wlen] = L'\0';
                 mvwdelch(info_win, ASK_LINE, len);
-            } else if (iswprint(s)) {
+            }
+            break;
+        case KEY_LEFT: case KEY_RIGHT:
+        case KEY_UP: case KEY_DOWN:
+            break;
+        default:
+            if (iswprint(s)) {
                 if (d == 1) {
                     s = towlower(s);
                 }
@@ -723,9 +734,10 @@ void ask_user(const char *str, char *input, int d) {
                 wlen++;
                 mvwprintw(info_win, ASK_LINE, len + 1, "%lc", s);
             }
+            break;
         }
         wrefresh(info_win);
-    } while ((wlen < d) && (!quit));
+    } while ((wlen < d) && (!quit) && (!leave));
     if (wlen > 0) {
         wcstombs(input, wstring, d);
     }

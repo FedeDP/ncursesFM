@@ -9,7 +9,7 @@ void search(void) {
     if (quit || strlen(sv.searched_string) < 5) {
         print_info(searched_string_minimum, ERR_LINE);
     } else {
-        char c = 'n';
+        char c;
         
         sv.found_cont = 0;
         sv.search_archive = 0;
@@ -27,7 +27,6 @@ void search(void) {
          * lazy search won't search hidden files.
          */
         if (sv.searched_string[0] != '.') {
-            c = 'n';
             ask_user(lazy_search, &c, 1);
             if (quit) {
                 return;

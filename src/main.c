@@ -639,7 +639,7 @@ static void switch_search(void) {
 }
 
 static int check_init(int index) {
-    char x = 'n';
+    char x;
 
     if (!selected) {
         print_info(no_selected_files, ERR_LINE);

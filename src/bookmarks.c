@@ -62,7 +62,7 @@ static void get_xdg_dirs(void) {
 
 void add_file_to_bookmarks(const char *str) {
     FILE *f;
-    char c = 'y';
+    char c;
 
     ask_user(bookmarks_add_quest, &c, 1);
     if (quit || c == 'n') {
@@ -85,7 +85,7 @@ void add_file_to_bookmarks(const char *str) {
 }
 
 void remove_bookmark_from_file(void) {
-    char c = 'y';
+    char c;
 
     if (ps[active].curr_pos < xdg_bookmarks) {
         print_info(bookmarks_xdg_err, ERR_LINE);
@@ -133,7 +133,7 @@ void show_bookmarks(void) {
 }
 
 void manage_enter_bookmarks(struct stat current_file_stat) {
-    char c = 'y';
+    char c;
     char str[PATH_MAX + 1];
     
     if (access(str_ptr[active][ps[active].curr_pos], F_OK ) != -1 ) {
