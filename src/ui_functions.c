@@ -205,6 +205,7 @@ void reset_win(int win)
  */
 static void list_everything(int win, int old_dim, int end) {
     char *str;
+    wchar_t name[NAME_MAX + 1];
     
     if (ps[win].mode == _preview) {
         return;
@@ -219,7 +220,8 @@ static void list_everything(int win, int old_dim, int end) {
             str = strrchr(*(str_ptr[win] + i), '/') + 1;
         }
         colored_folders(ps[win].mywin.fm, *(str_ptr[win] + i));
-        mvwprintw(ps[win].mywin.fm, 1 + i - ps[win].mywin.delta, 4, "%.*s", ps[win].mywin.width - 5, str);
+        mbstowcs(name, str, NAME_MAX);
+        mvwprintw(ps[win].mywin.fm, 1 + i - ps[win].mywin.delta, 4, "%.*ls", ps[win].mywin.width - 5, name);
         wattroff(ps[win].mywin.fm, COLOR_PAIR);
     }
     print_arrow(win, 1 + ps[win].curr_pos - ps[win].mywin.delta);
@@ -683,41 +685,48 @@ void print_and_warn(const char *err, int line) {
  * I needed to replace wgetnstr function with my own wgetch cycle
  * because otherwise that would prevent KEY_RESIZE event to be managed.
  * Plus this way i can reprint the question (str) and the current answer (input) after the resize.
+ * 'd' should always be an upper bound very large, so we will never lose chars while converting
+ * wchar to char in  wcstombs(input, wstring, d)
  */
-void ask_user(const char *str, char *input, int d, char c) {
-    int s, len, i = 0;
+void ask_user(const char *str, char *input, int d) {
+    wint_t s;
+    size_t len, wlen = 0;
+    wchar_t wstring[d];
+    
+    wmemset(wstring, 0, d);
     
     print_info(str, ASK_LINE);
     do {
         s = main_poll(info_win);
         if (s == KEY_RESIZE) {
             resize_win();
-            char resize_str[200];
-            sprintf(resize_str, "%s%s", str, input);
+            char resize_str[d + strlen(str)];
+            strcpy(resize_str, str);
+            wcstombs(resize_str + strlen(resize_str), wstring, d);
             print_info(resize_str, ASK_LINE);
         } else if (s == 10) { // enter to exit
             break;
         } else {
-            len = strlen(str) + strlen(info_win_str[ASK_LINE]) + i;
-            if ((s == 127) && (i)) {    // backspace!
-                input[--i] = '\0';
+            len = strlen(str) + strlen(info_win_str[ASK_LINE]) + wcslen(wstring);
+            if ((s == 127) && (wlen)) {    // backspace!
+                wlen--;
+                wstring[wlen] = L'\0';
                 mvwdelch(info_win, ASK_LINE, len);
-            } else if (isprint(s)) {
+            } else if (iswprint(s)) {
                 if (d == 1) {
-                    *input = tolower(s);
-                } else {
-                    sprintf(input + i, "%c", s);
+                    s = towlower(s);
                 }
-                i++;
-                mvwaddch(info_win, ASK_LINE, len + 1, s);
+                wstring[wlen] = s;
+                wlen++;
+                mvwprintw(info_win, ASK_LINE, len + 1, "%lc", s);
             }
         }
         wrefresh(info_win);
-    } while ((i < d) && (!quit));
-    if (i == 0) {
-        input[0] = c;
+    } while ((wlen < d) && (!quit));
+    if (wlen > 0) {
+        wcstombs(input, wstring, d);
     }
-    print_info("", ASK_LINE);
+    print_info("", ASK_LINE); // clear ASK_LINE
 }
 
 /*
@@ -730,10 +739,10 @@ void ask_user(const char *str, char *input, int d, char c) {
  * If ppoll return -1 it means: window has been resized or we received a signal (sigint/sigterm).
  * Either case, just return wgetch.
  */
-int main_poll(WINDOW *win) {;
+wint_t main_poll(WINDOW *win) {;
     uint64_t t;
-    
-    int ret = wgetch(win);
+    wint_t c;
+    int ret = wget_wch(win, &c);
     /*
      * if ret == ERR, it means we did not receive a getch event.
      * so it is useless to return.
@@ -746,14 +755,14 @@ int main_poll(WINDOW *win) {;
         */
         int r = ppoll(main_p, nfds, NULL, &main_mask);
         if (r == -1) {
-            ret = wgetch(win);
+            ret = wget_wch(win, &c);
         } else {
             for (int i = 0; i < nfds && r > 0; i++) {
                 if (main_p[i].revents & POLLIN) {
                     switch (i) {
                     case GETCH_IX:
                     /* we received an user input */
-                        ret = wgetch(win);
+                        ret = wget_wch(win, &c);
                         break;
                     case TIMER_IX:
                     /* we received a timer expiration signal on timerfd */
@@ -781,7 +790,7 @@ int main_poll(WINDOW *win) {;
             }
         }
     }
-    return ret;
+    return c;
 }
 
 void timer_event(void) {

@@ -11,6 +11,8 @@
 * added image preview through w3mimgdisplay
 * added per-tab-mode's helper win (it will now switch its content based on active tab's mode)
 * sysinfo line layout configurable through ncursesFM.conf
+* lots of makefile improvements
+* proper unicode support
 
 03 / 10 / 2016
 * added "i" to view current file full path name (even in special mode). So, if screen is too small or filename is very large, you can still check its name.

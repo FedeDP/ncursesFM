@@ -94,7 +94,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * libcups   -> print support.
 * libconfig -> config file parsing.
 * libx11    -> check whether ncursesFM is started in a X environment or not, and xdg-open support.
-* sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
+* sd-bus (systemd >= 221)    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
 
 **Build options (to be passed to make)**
 * CC={gcc/clang} to choose the compiler. By default, env CC will be used.

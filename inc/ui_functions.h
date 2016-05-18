@@ -11,6 +11,8 @@
 #include <archive.h>
 #include <archive_entry.h>
 #include <sys/sysinfo.h>
+#include <wchar.h>
+#include <wctype.h>
 
 #define INFO_HEIGHT 4
 #define SEL_COL 3
@@ -41,7 +43,7 @@ void scroll_up(int win);
 void trigger_show_helper_message(void);
 void trigger_stats(void);
 void change_unit(float size, char *str);
-int main_poll(WINDOW *win);
+wint_t main_poll(WINDOW *win);
 void timer_event(void);
 void tab_refresh(int win);
 void update_special_mode(int num, int win, char (*str)[PATH_MAX + 1]);
@@ -49,7 +51,7 @@ void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title, int
 void leave_special_mode(const char *str);
 void print_info(const char *str, int i);
 void print_and_warn(const char *err, int line);
-void ask_user(const char *str, char *input, int d, char c);
+void ask_user(const char *str, char *input, int d);
 void resize_win(void);
 void change_sort(void);
 void highlight_selected(int line, const char c);

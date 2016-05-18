@@ -5,16 +5,16 @@ static int search_inside_archive(const char *path);
 static void *search_thread(void *x);
 
 void search(void) {
-    char c;
-
-    ask_user(search_insert_name, sv.searched_string, 20, 0);
+    ask_user(search_insert_name, sv.searched_string, 20);
     if (quit || strlen(sv.searched_string) < 5) {
         print_info(searched_string_minimum, ERR_LINE);
     } else {
+        char c = 'n';
+        
         sv.found_cont = 0;
         sv.search_archive = 0;
         sv.search_lazy = 0;
-        ask_user(search_archives, &c, 1, 'n');
+        ask_user(search_archives, &c, 1);
         if (quit) {
             return;
         }
@@ -27,7 +27,8 @@ void search(void) {
          * lazy search won't search hidden files.
          */
         if (sv.searched_string[0] != '.') {
-            ask_user(lazy_search, &c, 1, 'n');
+            c = 'n';
+            ask_user(lazy_search, &c, 1);
             if (quit) {
                 return;
             }

@@ -639,7 +639,7 @@ static void switch_search(void) {
 }
 
 static int check_init(int index) {
-    char x;
+    char x = 'n';
 
     if (!selected) {
         print_info(no_selected_files, ERR_LINE);
@@ -648,7 +648,7 @@ static int check_init(int index) {
     if (index != RM_TH) {
         return check_access();
     }
-    ask_user(sure, &x, 1, 'n');
+    ask_user(sure, &x, 1);
     if (quit || x != 'y') {
         return 0;
     }

@@ -86,7 +86,7 @@ static void init_thread_helper(void) {
         current_th->selected_files = selected;
         selected = NULL;
         if (current_th->type == ARCHIVER_TH && !quit) {
-            ask_user(archiving_mesg, name, NAME_MAX, 0);
+            ask_user(archiving_mesg, name, NAME_MAX);
             if (quit) {
                 return;
             }
