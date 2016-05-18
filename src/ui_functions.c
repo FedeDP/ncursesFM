@@ -49,6 +49,9 @@ static const char *img_ext[] = {".jpg", ".png", ".JPG", ".bmp"};
  */
 void screen_init(void) {
     setlocale(LC_CTYPE, "");
+    if (strcmp(nl_langinfo(CODESET), "UTF-8")) {
+        fprintf(stderr, "Please use an utf8 locale.\n");
+    }
     initscr();
     start_color();
     use_default_colors();
