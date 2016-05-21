@@ -65,7 +65,7 @@ void add_file_to_bookmarks(const char *str) {
     char c;
 
     ask_user(bookmarks_add_quest, &c, 1);
-    if (quit || c == 'n') {
+    if (quit || c == 'n' || c == 27) {
         return;
     }
     if ((f = fopen(fullpath, "a+"))) {
@@ -91,7 +91,7 @@ void remove_bookmark_from_file(void) {
         print_info(bookmarks_xdg_err, ERR_LINE);
     } else {
         ask_user(bookmarks_rm_quest, &c, 1);
-        if (quit || c == 'n') {
+        if (quit || c == 'n' || c == 27) {
             return;
         }
         remove_bookmark();
@@ -148,7 +148,7 @@ void manage_enter_bookmarks(struct stat current_file_stat) {
         leave_special_mode(str);
     } else {
         ask_user(inexistent_bookmark, &c, 1);
-        if (!quit && c != 'n') {
+        if (!quit && c != 'n' && c != 27) {
             remove_bookmark();
         }
     }

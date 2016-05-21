@@ -101,7 +101,7 @@ void manage_file(const char *str, float size) {
 #endif
     if (is_ext(str, arch_ext, NUM(arch_ext))) {
         ask_user(extr_question, &c, 1);
-        if (!quit && c != 'n') {
+        if (!quit && c != 'n' && c != 27) {
             init_thread(EXTRACTOR_TH, try_extractor);
         }
         return;
@@ -174,7 +174,7 @@ void fast_file_operations(const int index) {
     char new_name[NAME_MAX + 1];
 
     ask_user(ask_name, new_name, NAME_MAX);
-    if (quit || !strlen(new_name)) {
+    if (quit || !strlen(new_name) || new_name[0] == 27) {
         return;
     }
     int r = short_func[index](new_name);

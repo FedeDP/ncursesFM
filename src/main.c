@@ -365,13 +365,12 @@ static void main_loop(void) {
     /*
      * l switch helper_win,
      * t new tab,
-     * q to leave current mode,
      * m only in device_mode to {un}mount device,
      * e only in bookmarks_mode to remove device from bookmarks
      * s to show stat
      * i to trigger fullname win
      */
-    const char *special_mode_allowed_chars = "ltqmesi";
+    const char *special_mode_allowed_chars = "ltmesi";
 
     char *ptr, old_file[PATH_MAX + 1] = "";
     struct stat current_file_stat;
@@ -473,7 +472,7 @@ static void main_loop(void) {
         case ',': // , to enable/disable fast browse mode
             switch_fast_browse_mode();
             break;
-        case 'q': /* q to exit/leave special mode */
+        case 27: /* ESC to exit/leave special mode */
             manage_quit();
             break;
         case KEY_RESIZE:

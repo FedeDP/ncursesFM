@@ -20,6 +20,7 @@ static void remove_additional_win(int height, WINDOW **win, int resizing);
 static void show_stat(int init, int end, int win);
 static void erase_stat(void);
 static void info_print(const char *str, int i);
+static void fix_input_cursor_pos(void);
 static void info_refresh(int fd);
 static void inotify_refresh(int win);
 static void print_additional_wins(int helper_height, int resizing);
@@ -38,7 +39,8 @@ struct info_msg {
 };
 
 static WINDOW *helper_win, *info_win, *fullname_win;
-static int dim, hidden, fullname_win_height;
+static int dim, hidden, fullname_win_height, input_mode, input_cursor_pos;
+size_t input_len;
 static int (*const sorting_func[])(const struct dirent **d1, const struct dirent **d2) = {
     alphasort, sizesort, last_mod_sort, typesort
 };
@@ -63,6 +65,7 @@ void screen_init(void) {
     noecho();
     curs_set(0);
     mouseinterval(0);
+    ESCDELAY = 25;
     raw();
     nodelay(stdscr, TRUE);
     notimeout(stdscr, TRUE);
@@ -542,7 +545,7 @@ static void show_stat(int init, int end, int win) {
     if (ps[win].mode <= fast_browse_) {
         check %= check - 1; // "check" should be 0 or 1 (strlen(tot_size) will never be 1, so i can safely divide for check - 1)
     } else {
-        check = 0;  // if we're in special mode, we don't need printing total size.
+        check = 1;  // if we're in special mode, we don't need printing total size.
     }
     for (int i = check * init; i < ps[win].number_of_files; i++) {
         if (stat(str_ptr[win][i], &file_stat) == -1) {
@@ -659,6 +662,7 @@ void print_info(const char *str, int line) {
             goto error;
         }
         if (!(info->msg = malloc(sizeof(char) * (COLS - len)))) {
+            free(info);
             goto error;
         }
         strncpy(info->msg, str, COLS - len);
@@ -692,56 +696,99 @@ void print_and_warn(const char *err, int line) {
  * wchar to char in  wcstombs(input, wstring, d)
  */
 void ask_user(const char *str, char *input, int d) {
-    wint_t s;
-    size_t len, wlen = 0;
-    wchar_t wstring[d];
-    char resize_str[d + strlen(str)];
-    int leave = 0;
+    int leave = 0, index = 0;
+    wchar_t wstring[d + 1]; // space for terminating null char in case d == 1
+    char resize_str[d + 1 + strlen(str)];
     
-    wmemset(wstring, 0, d);
+    wmemset(wstring, 0, d + 1);
     memset(input, 0, d);
+    input_cursor_pos = 0;
     
+    input_len = strlen(str) + strlen(info_win_str[ASK_LINE]);
+        
     print_info(str, ASK_LINE);
+    curs_set(2);
+    input_mode = 1;
     do {
-        s = main_poll(info_win);
-        len = strlen(str) + strlen(info_win_str[ASK_LINE]) + wlen;
+        wint_t s = main_poll(info_win);
         switch (s) {
         case KEY_RESIZE:
             resize_win();
             strcpy(resize_str, str);
             wcstombs(resize_str + strlen(resize_str), wstring, d);
-            print_info(resize_str, ASK_LINE);
+            print_info(resize_str, ASK_LINE); // why info_print doesnt work here? + switch to info_print for some other things
             break;
         case 10: // enter to return
             leave = 1;
             break;
-        case 127: // backspace to delete last char
-            if (wlen) {
-                wlen--;
-                wstring[wlen] = L'\0';
-                mvwdelch(info_win, ASK_LINE, len);
+        case 127: case KEY_BACKSPACE: // backspace
+            if (index > 0) {
+                index--;
+                input_cursor_pos -= wcwidth(wstring[index]);
+                wmemmove(&wstring[index], &wstring[index + 1], wcslen(wstring) - index);
+                wmove(info_win, ASK_LINE, input_len + input_cursor_pos + 1);
+                wclrtoeol(info_win);
+                mvwaddwstr(info_win, ASK_LINE, input_len + input_cursor_pos + 1, wstring + index);
             }
             break;
-        case KEY_LEFT: case KEY_RIGHT:
-        case KEY_UP: case KEY_DOWN:
+        case KEY_LEFT:
+            if (index > 0) {
+                index--;
+                input_cursor_pos -= wcwidth(wstring[index]);
+            }
+            break;
+        case KEY_RIGHT:
+            if (index < wcslen(wstring)) {
+                input_cursor_pos += wcwidth(wstring[index]);
+                index++;
+            }
+            break;
+        case KEY_DC: // del 
+            if (index < wcslen(wstring)) {
+                wmemmove(&wstring[index], &wstring[index + 1],  wcslen(wstring) - index);
+                wclrtoeol(info_win);
+                mvwaddwstr(info_win, ASK_LINE, input_len + index + 1, wstring + index);
+            }
+            break;
+        // why are they wprintable??
+        case KEY_UP: case KEY_DOWN: case KEY_MOUSE:
+            break;
+        case 27:   // ESC to leave input mode
+            // return a string with ESC as only char
+            wmemset(wstring, 0,  wcslen(wstring));
+            input[0] = 27;
+            leave = 1;
             break;
         default:
             if (iswprint(s)) {
                 if (d == 1) {
                     s = towlower(s);
+                    wstring[0] = s;
+                    // no need to print single char as it will immediately be returned and ASK_LINE cleared
+                } else {
+                    wmemmove(&wstring[index + 1], &wstring[index],  wcslen(wstring) - index);
+                    wstring[index] = s;
+                    waddwstr(info_win, wstring + index);
+                    input_cursor_pos += wcwidth(wstring[index]);
+                    index++;
                 }
-                wstring[wlen] = s;
-                wlen++;
-                mvwprintw(info_win, ASK_LINE, len + 1, "%lc", s);
             }
             break;
         }
-        wrefresh(info_win);
-    } while ((wlen < d) && (!quit) && (!leave));
-    if (wlen > 0) {
+    } while ((wcslen(wstring) < d) && (!quit) && (!leave));
+    if (wcslen(wstring) > 0 && !quit) {
         wcstombs(input, wstring, d);
     }
+    curs_set(0);
+    input_mode = 0;
     print_info("", ASK_LINE); // clear ASK_LINE
+}
+
+static void fix_input_cursor_pos(void) {
+    if (input_mode) {
+        wmove(info_win, ASK_LINE, input_len + input_cursor_pos + 1);
+        wrefresh(info_win);
+    }
 }
 
 /*
@@ -763,6 +810,7 @@ wint_t main_poll(WINDOW *win) {;
      * so it is useless to return.
      */
     while ((ret == ERR) && (!quit)) {
+        fix_input_cursor_pos(); // if we're currently asking a question, move cursor to its correct position on ASK_LINE
         /*
         * resize event returns -EPERM error with ppoll (-1)
         * see here: http://keyvanfatehi.com/2011/08/02/Asynchronous-c-programs-an-event-loop-and-ncurses/.

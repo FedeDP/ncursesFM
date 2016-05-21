@@ -86,23 +86,23 @@ const char helper_string[][16][150] =
 #else
         {"Enter -> surf between folders or to open files. It will eventually extract your archives."},
 #endif
-        {"',' -> enable fast browse mode: it lets you jump between files by just typing their name."},
-        {"PG_UP/DOWN -> jump straight to first/last file. 'i' -> check current file fullname."},
-        {"'h' -> trigger the showing of hidden files; 's' -> see stat about files in current folder."},
-        {"'.' -> change files/dirs sorting function: alphabetically (default), by size, by last modified or by type."},
+        {", -> enable fast browse mode: it lets you jump between files by just typing their name."},
+        {"PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."},
+        {"h -> trigger the showing of hidden files; s -> see stat about files in current folder."},
+        {". -> change files/dirs sorting function: alphabetically (default), by size, by last modified or by type."},
         {"Space -> select files. Once more to remove the file from selected files."},
 #ifdef LIBCUPS_PRESENT
-        {"'v'/'x' -> paste/cut, 'b' -> compress and 'r' -> remove selected files. 'p' -> print a file."},
+        {"v/x -> paste/cut, b -> compress and r -> remove selected files. p -> print a file."},
 #else
-        {"'v'/'x' -> paste/cut, 'b' -> compress and 'r' -> remove selected files."},
+        {"v/x -> paste/cut, b -> compress and r -> remove selected files."},
 #endif
-        {"'g' -> switch to bookmarks window. 'j' -> trigger image previewer, 'e' -> add current file to bookmarks"},
-        {"'o' -> rename current file/dir; 'n'/'d' -> create new file/dir. 'f' -> search for a file."},
-        {"'t' -> create second tab. 'w' -> close second tab. Arrow keys -> switch between tabs."},
+        {"g -> switch to bookmarks window. j -> trigger image previewer, e -> add current file to bookmarks"},
+        {"o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."},
+        {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
 #ifdef SYSTEMD_PRESENT
-        {"'m' -> switch to devices tab."},
+        {"m -> switch to devices tab."},
 #endif
-        {"'q' -> quit."}
+        {"ESC -> quit."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
 #ifdef SYSTEMD_PRESENT
@@ -111,43 +111,43 @@ const char helper_string[][16][150] =
 #else
         {"Enter -> surf between folders or to open files. It will eventually extract your archives."},
 #endif
-        {"',' -> enable fast browse mode: it lets you jump between files by just typing their name."},
-        {"PG_UP/DOWN -> jump straight to first/last file. 'i' -> check current file fullname."},
-        {"'h' -> trigger the showing of hidden files; 's' -> see stat about files in current folder."},
-        {"'.' -> change files/dirs sorting function: alphabetically (default), by size, by last modified or by type."},
+        {", -> enable fast browse mode: it lets you jump between files by just typing their name."},
+        {"PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."},
+        {"h -> trigger the showing of hidden files; s -> see stat about files in current folder."},
+        {". -> change files/dirs sorting function: alphabetically (default), by size, by last modified or by type."},
         {"Space -> select files. Once more to remove the file from selected files."},
 #ifdef LIBCUPS_PRESENT
-        {"'v'/'x' -> paste/cut, 'b' -> compress and 'r' -> remove selected files. 'p' -> print a file."},
+        {"v/x -> paste/cut, b -> compress and r -> remove selected files. p -> print a file."},
 #else
-        {"'v'/'x' -> paste/cut, 'b' -> compress and 'r' -> remove selected files."},
+        {"v/x -> paste/cut, b -> compress and r -> remove selected files."},
 #endif
-        {"'g' -> switch to bookmarks window. 'j' -> trigger image previewer, 'e' -> add current file to bookmarks"},
-        {"'o' -> rename current file/dir; 'n'/'d' -> create new file/dir. 'f' -> search for a file."},
-        {"'t' -> create second tab. 'w' -> close second tab. Arrow keys -> switch between tabs."},
+        {"g -> switch to bookmarks window. j -> trigger image previewer, e -> add current file to bookmarks"},
+        {"o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."},
+        {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
 #ifdef SYSTEMD_PRESENT
-        {"'m' -> switch to devices tab."},
+        {"m -> switch to devices tab."},
 #endif
-        {"'q' -> quit."}
+        {"ESC -> quit."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"'s' -> see stat about files in current folder. 'i' -> check current file fullname."},
-        {"'t' -> create second tab. 'w' -> close tab. Arrow keys -> switch between tabs."},
+        {"s -> see stat about files in current folder. i -> check current file fullname."},
+        {"t -> create second tab. w -> close tab. Arrow keys -> switch between tabs."},
         {"e -> remove selected file from bookmarks."},
         {"enter on a bookmarks will move to the folder/file selected."},
-        {"q -> leave bookmarks mode."}
+        {"ESC -> leave bookmarks mode."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"'s' -> see stat about files in current folder. 'i' -> check current file fullname."},
-        {"'t' -> create second tab. 'w' -> close tab. Arrow keys -> switch between tabs."},
+        {"s -> see stat about files in current folder. i -> check current file fullname."},
+        {"t -> create second tab. w -> close tab. Arrow keys -> switch between tabs."},
         {"enter on a file to move to its folder and highight it."},
         {"enter on a folder to move inside it."},
-        {"q -> leave search mode."}
+        {"ESC -> leave search mode."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"'s' -> see stat about files in current folder. 'i' -> check current file fullname."},
-        {"'t' -> create second tab. 'w' -> close tab. Arrow keys -> switch between tabs."},
-        {"'m' -> (un)mount current device"},
+        {"s -> see stat about files in current folder. i -> check current file fullname."},
+        {"t -> create second tab. w -> close tab. Arrow keys -> switch between tabs."},
+        {"m -> (un)mount current device"},
         {"enter -> move to current device mountpoint, mounting it if necessary."},
-        {"q -> leave device mode."}
+        {"ESC -> leave device mode."}
     }
 };

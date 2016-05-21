@@ -21,6 +21,9 @@
 - [x] fix creating file/folders after ask_user
 - [x] fix 2 valgrind errors...
 - [ ] make ask_user printed question a wchar* (initial work for internationalization: in other languages, that string can be a multibyte string too)
+- [x] implement http://man7.org/linux/man-pages/man3/wcwidth.3.html (in some lang, some chars may fill more than one column...)
+- [x] fix issue with other threads moving away input cursor
+- [x] add support for key_left/right/del buttons to ask_user
 
 **IMAGE PREVIEW**:  
 
@@ -34,7 +37,7 @@
 **VARIOUS**:  
 
 - [ ] make strings tranlatable
-- [ ] switch to KEY_ESC to leave ncursesFM/current mode/leave input mode in ask_user
+- [x] switch to KEY_ESC to leave ncursesFM/current mode/leave input mode in ask_user
 - [ ] vi keybindings/keybinding profiles
 - [ ] switch back to libmagic mimetype support? (it is buggy...as of now it freezes on folders. Plus, i cannot use it for distro packages detection, neither for search_inside_archive because it is so slooooooooow)
 - [x] per-user config
