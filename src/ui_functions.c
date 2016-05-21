@@ -716,7 +716,7 @@ void ask_user(const char *str, char *input, int d) {
             resize_win();
             strcpy(resize_str, str);
             wcstombs(resize_str + strlen(resize_str), wstring, d);
-            print_info(resize_str, ASK_LINE); // why info_print doesnt work here? + switch to info_print for some other things
+            print_info(resize_str, ASK_LINE);
             break;
         case 10: // enter to return
             leave = 1;
