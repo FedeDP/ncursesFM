@@ -21,6 +21,7 @@
 - [x] fix creating file/folders after ask_user
 - [x] fix 2 valgrind errors...
 - [ ] make ask_user printed question a wchar* (initial work for internationalization: in other languages, that string can be a multibyte string too)
+- [x] implements insert mode too (KEY_IC) when pressing insert
 - [x] implement http://man7.org/linux/man-pages/man3/wcwidth.3.html (in some lang, some chars may fill more than one column...)
 - [x] fix issue with other threads moving away input cursor
 - [x] add support for key_left/right/del buttons to ask_user

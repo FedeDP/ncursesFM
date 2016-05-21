@@ -696,7 +696,7 @@ void print_and_warn(const char *err, int line) {
  * wchar to char in  wcstombs(input, wstring, d)
  */
 void ask_user(const char *str, char *input, int d) {
-    int leave = 0, index = 0;
+    int leave = 0, index = 0, insert_mode = 0;
     wchar_t wstring[d + 1]; // space for terminating null char in case d == 1
     char resize_str[d + 1 + strlen(str)];
     
@@ -759,6 +759,14 @@ void ask_user(const char *str, char *input, int d) {
             input[0] = 27;
             leave = 1;
             break;
+        case KEY_IC:
+            insert_mode = !insert_mode;
+            if (insert_mode) {
+                print_info("Enabled insert mode.", INFO_LINE);
+            } else {
+                print_info("Disabled insert mode.", INFO_LINE);
+            }
+            break;
         default:
             if (iswprint(s)) {
                 if (d == 1) {
@@ -766,9 +774,15 @@ void ask_user(const char *str, char *input, int d) {
                     wstring[0] = s;
                     // no need to print single char as it will immediately be returned and ASK_LINE cleared
                 } else {
-                    wmemmove(&wstring[index + 1], &wstring[index],  wcslen(wstring) - index);
-                    wstring[index] = s;
-                    waddwstr(info_win, wstring + index);
+                    if (insert_mode && index < wcslen(wstring)) {
+                        wstring[index] = s;
+                        wclrtoeol(info_win);
+                        mvwaddwstr(info_win, ASK_LINE, input_len + index + 1, wstring + index);
+                    } else {
+                        wmemmove(&wstring[index + 1], &wstring[index],  wcslen(wstring) - index);
+                        wstring[index] = s;
+                        waddwstr(info_win, wstring + index);
+                    }
                     input_cursor_pos += wcwidth(wstring[index]);
                     index++;
                 }
