@@ -72,9 +72,13 @@ endif
 NCURSESFM_VERSION = $(shell git describe --abbrev=0 --always --tags)
 CFLAGS+=-DVERSION=\"$(NCURSESFM_VERSION)\"
 
-all: ncursesFM version clean
+all: version ncursesFM clean
 
-debug: ncursesFM-debug version
+debug: version ncursesFM-debug
+
+version:
+	$(GIT) rev-parse HEAD | awk ' BEGIN {print "#include \"../inc/version.h\""} {print "const char *build_git_sha = \"" $$0"\";"} END {}' > src/version.c
+	date | awk 'BEGIN {} {print "const char *build_git_time = \""$$0"\";"} END {} ' >> src/version.c
 
 objects:
 	cd $(SRCDIR); $(CC) -c *.c $(CFLAGS) -std=c99
@@ -87,10 +91,6 @@ ncursesFM: objects
 
 ncursesFM-debug: objects-debug
 	cd $(SRCDIR); $(CC) -o ../ncursesFM *.o $(LIBS)
-
-version:
-	$(GIT) rev-parse HEAD | awk ' BEGIN {print "#include \"../inc/version.h\""} {print "const char *build_git_sha = \"" $$0"\";"} END {}' > src/version.c
-	date | awk 'BEGIN {} {print "const char *build_git_time = \""$$0"\";"} END {} ' >> src/version.c
 
 clean:
 	cd $(SRCDIR); $(RM) *.o
