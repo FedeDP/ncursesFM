@@ -700,10 +700,10 @@ void print_and_warn(const char *err, int line) {
  * wchar to char in  wcstombs(input, wstring, d)
  */
 void ask_user(const char *str, char *input, int d) {
-    int leave = 0, index = 0, insert_mode = 0;
+    int leave = 0, index = 0, overtype_mode = 0;
     wchar_t wstring[d + 1]; // space for terminating null char in case d == 1
     char resize_str[d + 1 + strlen(str)];
-    const char insert_string[2][30] = {"Disabled insert mode.", "Enabled insert mode."};
+    const char insert_string[2][30] = {"Disabled overtype mode.", "Enabled overtype mode."};
     
     wmemset(wstring, 0, d + 1);
     memset(input, 0, d);
@@ -712,8 +712,9 @@ void ask_user(const char *str, char *input, int d) {
     input_len = strlen(str) + strlen(info_win_str[ASK_LINE]);
         
     print_info(str, ASK_LINE);
-    curs_set(2);
+    curs_set(1);
     input_mode = 1;
+    char a[5];
     do {
         wint_t s = main_poll(info_win);
         switch (s) {
@@ -766,8 +767,9 @@ void ask_user(const char *str, char *input, int d) {
             leave = 1;
             break;
         case KEY_IC:
-            insert_mode = !insert_mode;
-            print_info(insert_string[insert_mode], INFO_LINE);
+            overtype_mode = !overtype_mode;
+            print_info(insert_string[overtype_mode], INFO_LINE);
+            curs_set(1 + overtype_mode);
             break;
         case KEY_HOME:
             index = 0;
@@ -784,7 +786,7 @@ void ask_user(const char *str, char *input, int d) {
                     wstring[0] = s;
                     // no need to print single char as it will immediately be returned and ASK_LINE cleared
                 } else {
-                    if (insert_mode && index < wcslen(wstring)) {
+                    if (overtype_mode && index < wcslen(wstring)) {
                         wstring[index] = s;
                         wclrtoeol(info_win);
                         mvwaddwstr(info_win, ASK_LINE, input_len + index + 1, wstring + index);
