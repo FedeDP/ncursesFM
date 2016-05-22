@@ -89,7 +89,9 @@ static void info_win_init(void) {
     for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because SYSINFO line has its own init func (timer_func) */
         print_info("", i);
     }
-    timer_func();
+    if (strlen(config.sysinfo_layout)) { // do not call timer_func if sysinfo_layout is empty
+        timer_func();
+    }
 }
 /*
  * Clear any existing window, and close info_pipe
@@ -509,8 +511,8 @@ void trigger_show_helper_message(void) {
 }
 
 static void helper_print(void) {
+    char ncursesFM[40] = "NcursesFM version: ";
     const char *title = "Press 'L' to trigger helper";
-    int len = (COLS - strlen(title)) / 2;
 
     wborder(helper_win, config.border_chars[0], config.border_chars[1],
             config.border_chars[2], config.border_chars[3], config.border_chars[4],
@@ -519,8 +521,10 @@ static void helper_print(void) {
     for (int i = 0; i < HELPER_HEIGHT[ps[active].mode] - 2; i++) {
         mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, helper_string[ps[active].mode][i]);
     }
+    sprintf(ncursesFM + strlen(ncursesFM), "%s", VERSION);
     wattron(helper_win, A_BOLD);
-    mvwprintw(helper_win, 0, len, title);
+    mvwprintw(helper_win, 0, COLS - strlen(ncursesFM), "%.*s", COLS, ncursesFM);
+    mvwprintw(helper_win, 0, 0, "%.*s", COLS, title);
     wattroff(helper_win, A_BOLD);
 }
 
@@ -699,6 +703,7 @@ void ask_user(const char *str, char *input, int d) {
     int leave = 0, index = 0, insert_mode = 0;
     wchar_t wstring[d + 1]; // space for terminating null char in case d == 1
     char resize_str[d + 1 + strlen(str)];
+    const char insert_string[2][30] = {"Disabled insert mode.", "Enabled insert mode."};
     
     wmemset(wstring, 0, d + 1);
     memset(input, 0, d);
@@ -752,6 +757,7 @@ void ask_user(const char *str, char *input, int d) {
             break;
         // why are they wprintable??
         case KEY_UP: case KEY_DOWN: case KEY_MOUSE:
+        case KEY_PPAGE:  case KEY_NPAGE:
             break;
         case 27:   // ESC to leave input mode
             // return a string with ESC as only char
@@ -761,11 +767,15 @@ void ask_user(const char *str, char *input, int d) {
             break;
         case KEY_IC:
             insert_mode = !insert_mode;
-            if (insert_mode) {
-                print_info("Enabled insert mode.", INFO_LINE);
-            } else {
-                print_info("Disabled insert mode.", INFO_LINE);
-            }
+            print_info(insert_string[insert_mode], INFO_LINE);
+            break;
+        case KEY_HOME:
+            index = 0;
+            input_cursor_pos = 0;
+            break;
+        case KEY_END:
+            index = wcslen(wstring);
+            input_cursor_pos = wcswidth(wstring, d);
             break;
         default:
             if (iswprint(s)) {

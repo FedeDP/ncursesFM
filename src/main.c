@@ -110,10 +110,13 @@ static void set_pollfd(void) {
         .fd = STDIN_FILENO,
         .events = POLLIN,
     };
-    main_p[TIMER_IX] = (struct pollfd) {
-        .fd = start_timer(),
-        .events = POLLIN,
-    };
+    // do not start timer if no sysinfo info is enabled
+    if (strlen(config.sysinfo_layout)) {
+        main_p[TIMER_IX] = (struct pollfd) {
+            .fd = start_timer(),
+            .events = POLLIN,
+        };
+    }
     ps[0].inot.fd = inotify_init();
     ps[1].inot.fd = inotify_init();
     main_p[INOTIFY_IX1] = (struct pollfd) {
@@ -173,8 +176,14 @@ static void check_X(void) {
 #endif
 
 static void helper_function(int argc, const char *argv[]) {
+    char ncursesfm[150];
+    sprintf(ncursesfm, "NcursesFM, version: %s, commit: %s, build time: %s.", VERSION, build_git_sha, build_git_time);
     if ((argc > 1) && (!strcmp(argv[1], "--help"))) {
-        printf("\n NcursesFM Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
+        printf("\n NcursesFM\n");
+        printf(" Version: %s\n", VERSION);
+        printf(" Build time: %s\n", build_git_time);
+        printf(" Commit: %s\n", build_git_sha);
+        printf("\n Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
         printf(" This is free software, and you are welcome to redistribute it under certain conditions;\n");
         printf(" It is GPL licensed. Have a look at COPYING file.\n\n");
@@ -191,7 +200,7 @@ static void helper_function(int argc, const char *argv[]) {
         printf("\t* --low_level {$level} to set low battery signal's threshold. Defaults to 15%%.\n\n");
         printf(" Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
         printf(" Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
-        printf(" Press 'l' while in program to view a more detailed helper message.\n\n");
+        printf(" Press 'L' while in program to view a more detailed helper message.\n\n");
         exit(EXIT_SUCCESS);
     }
     

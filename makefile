@@ -5,6 +5,7 @@ INSTALL = install -p
 INSTALL_PROGRAM = $(INSTALL) -m755
 INSTALL_DATA = $(INSTALL) -m644
 INSTALL_DIR = $(INSTALL) -d
+GIT = git
 BINDIR = /usr/bin
 CONFDIR = /etc/default
 BINNAME = ncursesFM
@@ -68,9 +69,12 @@ endif
 
 endif
 
-all: ncursesFM clean
+NCURSESFM_VERSION = $(shell git describe --abbrev=0 --always --tags)
+CFLAGS+=-DVERSION=\"$(NCURSESFM_VERSION)\"
 
-debug: ncursesFM-debug clean
+all: ncursesFM version clean
+
+debug: ncursesFM-debug version
 
 objects:
 	cd $(SRCDIR); $(CC) -c *.c $(CFLAGS) -std=c99
@@ -83,6 +87,10 @@ ncursesFM: objects
 
 ncursesFM-debug: objects-debug
 	cd $(SRCDIR); $(CC) -o ../ncursesFM *.o $(LIBS)
+
+version:
+	$(GIT) rev-parse HEAD | awk ' BEGIN {print "#include \"../inc/version.h\""} {print "const char * build_git_sha = \"" $$0"\";"} END {}' > src/version.c
+	date | awk 'BEGIN {} {print "const char * build_git_time = \""$$0"\";"} END {} ' >> src/version.c
 
 clean:
 	cd $(SRCDIR); $(RM) *.o

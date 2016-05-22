@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <sys/inotify.h>
 #include <ncurses.h>
+#include "version.h"
 
 #define MAX_TABS 2
 #define MAX_NUMBER_OF_FOUND 100
