@@ -15,6 +15,8 @@
 * proper unicode support
 * fixed bug in show stat
 * added support for moving cursor in input mode + using del to delete next char
+* added support for home/end buttons in input mode.
+* added build time/build commit and ncursesFM version to --help cmdline switch output, and ncursesFM version to helper title.
 
 03 / 10 / 2016
 * added "i" to view current file full path name (even in special mode). So, if screen is too small or filename is very large, you can still check its name.
