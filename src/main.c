@@ -195,8 +195,8 @@ static void helper_function(int argc, const char *argv[]) {
         printf("\t* --automount {0,1} to switch {off,on} automounting of external drives/usb sticks. Defaults to 0.\n");
         printf("\t* --loglevel {0,1,2,3} to change loglevel. Defaults to 0.\n");
         printf("\t\t* 0 to log only errors.\n\t\t* 1 to log warn messages and errors.\n");
-        printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable log.\n");
-        printf("\t* --persistent_log {0,1} to switch {off,on} persistent log across program restarts. Defaults to 0.\n");
+        printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable logs.\n");
+        printf("\t* --persistent_log {0,1} to switch {off,on} persistent logs across program restarts. Defaults to 0.\n");
         printf("\t* --low_level {$level} to set low battery signal's threshold. Defaults to 15%%.\n\n");
         printf(" Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
         printf(" Just use arrow keys to move up and down, and enter to change directory or open a file.\n");

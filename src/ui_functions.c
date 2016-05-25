@@ -714,7 +714,6 @@ void ask_user(const char *str, char *input, int d) {
     print_info(str, ASK_LINE);
     curs_set(1);
     input_mode = 1;
-    char a[5];
     do {
         wint_t s = main_poll(info_win);
         switch (s) {

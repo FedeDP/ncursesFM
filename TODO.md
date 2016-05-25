@@ -26,6 +26,11 @@
 - [x] fix issue with other threads moving away input cursor
 - [x] add support for key_left/right/del buttons to ask_user
 
+**PWD-PROTECTED ARCHIVE**:  
+
+- [ ] add support for pwd protected archives -> https://groups.google.com/forum/#!topic/libarchive-discuss/8KO_Hrt4OE4
+As soon as arch updates libarchive to 3.2.
+
 **IMAGE PREVIEW**:  
 
 - [x] fix first line while scrolling down (xterm only)
@@ -37,7 +42,7 @@
 
 **VARIOUS**:  
 
-- [ ] make strings tranlatable
+- [ ] make strings translatable
 - [x] switch to KEY_ESC to leave ncursesFM/current mode/leave input mode in ask_user
 - [ ] vi keybindings/keybinding profiles
 - [ ] switch back to libmagic mimetype support? (it is buggy...as of now it freezes on folders. Plus, i cannot use it for distro packages detection, neither for search_inside_archive because it is so slooooooooow)

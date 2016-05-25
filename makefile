@@ -1,5 +1,3 @@
-LIBS =-lpthread $(shell pkg-config --libs libarchive ncursesw libudev)
-CFLAGS =-D_GNU_SOURCE
 RM = rm
 INSTALL = install -p
 INSTALL_PROGRAM = $(INSTALL) -m755
@@ -14,6 +12,8 @@ COMPLNAME = ncursesfm
 PREVIEWERNAME = ncursesfm_previewer
 SRCDIR = src/
 COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
+LIBS =-lpthread $(shell pkg-config --libs libarchive ncursesw libudev)
+CFLAGS =-D_GNU_SOURCE $(shell pkg-config --cflags libarchive ncursesw libudev) -DCONFDIR=\"$(CONFDIR)\" -DBINDIR=\"$(BINDIR)\"
 
 # sanity checks for completion dir
 ifeq ("$(COMPLDIR)","")
@@ -45,7 +45,7 @@ endif
 LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD)
 
 ifneq ("$(LIBX11)","")
-CFLAGS+=-DLIBX11_PRESENT
+CFLAGS+=-DLIBX11_PRESENT $(shell pkg-config --silence-errors --cflags libx11)
 $(info libX11 support enabled.)
 endif
 
@@ -58,12 +58,12 @@ endif
 endif
 
 ifneq ("$(LIBCONFIG)","")
-CFLAGS+=-DLIBCONFIG_PRESENT -DCONFDIR=\"$(CONFDIR)\" -DBINDIR=\"$(BINDIR)\"
+CFLAGS+=-DLIBCONFIG_PRESENT $(shell pkg-config --silence-errors --cflags libconfig)
 $(info libconfig support enabled.)
 endif
 
 ifneq ("$(LIBSYSTEMD)","")
-CFLAGS+=-DSYSTEMD_PRESENT
+CFLAGS+=-DSYSTEMD_PRESENT $(shell pkg-config --silence-errors --cflags libsystemd)
 $(info libsystemd support enabled.)
 endif
 
