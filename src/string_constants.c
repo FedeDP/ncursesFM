@@ -53,7 +53,7 @@ const char *extr_question = "Do you really want to extract this archive? Y/n:> "
 
 const char *thread_job_mesg[] = {"Moving...", "Pasting...", "Removing...", "Archiving...", "Extracting..."};
 const char *thread_str[] = {"Every file has been moved.", "Every files has been copied.", "File/dir removed.", "The archive is ready.", "Succesfully extracted."};
-const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not remove every file.", "Could not archive.", "Could not extract."};
+const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not remove every file.", "Could not archive.", "Could not extract every file."};
 const char *short_msg[] = {"File created.", "Dir created.", "File renamed."};
 
 const char *selected_mess = "There are selected files.";
@@ -82,9 +82,9 @@ const char helper_string[][16][150] =
         {"Remember: every shortcut in ncursesFM is case insensitive."},
 #ifdef SYSTEMD_PRESENT
         {"Enter -> surf between folders or to open files."},
-        {"It will eventually extract your archives, (un)mount your ISO files or install your distro downloaded packages."},
+        {"It will eventually (un)mount your ISO files or install your distro downloaded packages."},
 #else
-        {"Enter -> surf between folders or to open files. It will eventually extract your archives."},
+        {"Enter -> surf between folders or to open files."},
 #endif
         {", -> enable fast browse mode: it lets you jump between files by just typing their name."},
         {"PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."},
@@ -92,9 +92,9 @@ const char helper_string[][16][150] =
         {". -> change files/dirs sorting function: alphabetically (default), by size, by last modified or by type."},
         {"Space -> select files. Once more to remove the file from selected files."},
 #ifdef LIBCUPS_PRESENT
-        {"v/x -> paste/cut, b -> compress and r -> remove selected files. p -> print a file."},
+        {"v/x -> paste/cut, b -> compress, r -> remove, z -> extract, p -> print a file."},
 #else
-        {"v/x -> paste/cut, b -> compress and r -> remove selected files."},
+        {"v/x -> paste/cut, b -> compress, r -> remove, z -> extract."},
 #endif
         {"g -> switch to bookmarks window. j -> trigger image previewer, e -> add current file to bookmarks"},
         {"o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."},

@@ -21,6 +21,7 @@
 - [x] fix creating file/folders after ask_user
 - [x] fix 2 valgrind errors...
 - [ ] make ask_user printed question a wchar* (initial work for internationalization: in other languages, that string can be a multibyte string too)
+- [ ] unicode support in fast_browse_mode too
 - [x] implements insert mode too (KEY_IC) when pressing insert
 - [x] implement http://man7.org/linux/man-pages/man3/wcwidth.3.html (in some lang, some chars may fill more than one column...)
 - [x] fix issue with other threads moving away input cursor
@@ -43,8 +44,10 @@ As soon as arch updates libarchive to 3.2.
 **VARIOUS**:  
 
 - [ ] make strings translatable
+- [ ] fix move_cursor_to_file in special mode. fast_browse_mode no more a "mode"
+- [x] extractor_th too with selected files
 - [x] make user conf file override global conf file (now if user conf file is found, global conf is not even read)
-- [ ] use another button to extract archives, and enter to xdg-open them
+- [x] use another button to extract archives, and enter to xdg-open them
 - [x] switch to KEY_ESC to leave ncursesFM/current mode/leave input mode in ask_user
 - [ ] vi keybindings/keybinding profiles
 - [ ] switch back to libmagic mimetype support? (it is buggy...as of now it freezes on folders. Plus, i cannot use it for distro packages detection, neither for search_inside_archive because it is so slooooooooow)

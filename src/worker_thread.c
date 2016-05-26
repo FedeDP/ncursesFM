@@ -78,32 +78,28 @@ static int init_thread_helper(void) {
     char name[NAME_MAX + 1];
     int num = 1, len;
 
-    if (current_th->type == EXTRACTOR_TH) {
-        strcpy(current_th->filename, ps[active].nl[ps[active].curr_pos]);
-    } else {
-        if (current_th->type == ARCHIVER_TH && !quit) {
-            ask_user(archiving_mesg, name, NAME_MAX);
-            if (quit || name[0] == 27) {
-                free(current_th);
-                current_th = NULL;
-                return -1;
-            }
-            if (!strlen(name)) {
-                strcpy(name, strrchr(selected->name, '/') + 1);
-            }
-            /* avoid overwriting a compressed file in path if it has the same name of the archive being created there */
-            len = strlen(name);
-            strcat(name, ".tgz");
-            while (access(name, F_OK) == 0) {
-                sprintf(name + len, "%d.tgz", num);
-                num++;
-            }
-            sprintf(current_th->filename, "%s/%s", current_th->full_path, name);
+    if (current_th->type == ARCHIVER_TH && !quit) {
+        ask_user(archiving_mesg, name, NAME_MAX);
+        if (quit || name[0] == 27) {
+            free(current_th);
+            current_th = NULL;
+            return -1;
         }
-        current_th->selected_files = selected;
-        selected = NULL;
-        erase_selected_highlight();
+        if (!strlen(name)) {
+            strcpy(name, strrchr(selected->name, '/') + 1);
+        }
+        /* avoid overwriting a compressed file in path if it has the same name of the archive being created there */
+        len = strlen(name);
+        strcat(name, ".tgz");
+        while (access(name, F_OK) == 0) {
+            sprintf(name + len, "%d.tgz", num);
+            num++;
+        }
+        sprintf(current_th->filename, "%s/%s", current_th->full_path, name);
     }
+    current_th->selected_files = selected;
+    selected = NULL;
+    erase_selected_highlight();
     return 0;
 }
 

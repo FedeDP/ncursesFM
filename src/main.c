@@ -56,10 +56,9 @@ static int check_access(void);
 
 /*
  * pointers to long_file_operations functions, used in main loop;
- * -1 because extract operation is called inside "enter press" event, not in main loop
  */
-static int (*const long_func[LONG_FILE_OPERATIONS - 1])(void) = {
-    move_file, paste_file, remove_file, create_archive
+static int (*const long_func[LONG_FILE_OPERATIONS])(void) = {
+    move_file, paste_file, remove_file, create_archive, extract_file
 };
 int previewer_available, previewer_script_available;
 
@@ -359,9 +358,10 @@ static void main_loop(void) {
      * x to move,
      * v to paste,
      * r to remove,
-     * b to compress
+     * b to compress,
+     * z to extract
      */
-    const char *long_table = "xvrb";
+    const char *long_table = "xvrbz";
 
     /*
      * n, d to create new file/dir
@@ -418,12 +418,16 @@ static void main_loop(void) {
             }
             break;
         case KEY_PPAGE:
-            ptr = strrchr(ps[active].nl[0], '/') + 1;
-            move_cursor_to_file(0, ptr, active);
+            if (ps[active].curr_pos > 0) {
+                ptr = strrchr(ps[active].nl[0], '/') + 1;
+                move_cursor_to_file(0, ptr, active);
+            }
             break;
         case KEY_NPAGE:
-            ptr = strrchr(ps[active].nl[ps[active].number_of_files - 1], '/') + 1;
-            move_cursor_to_file(ps[active].number_of_files - 1, ptr, active);
+            if (ps[active].curr_pos < ps[active].number_of_files - 1) {
+                ptr = strrchr(ps[active].nl[ps[active].number_of_files - 1], '/') + 1;
+                move_cursor_to_file(ps[active].number_of_files - 1, ptr, active);
+            }
             break;
         case 'h': // h to show hidden files
             switch_hidden();
@@ -546,7 +550,7 @@ static void main_loop(void) {
         default:
             ptr = strchr(long_table, c);
             if (ptr) {
-                index = LONG_FILE_OPERATIONS - 1 - strlen(ptr);
+                index = LONG_FILE_OPERATIONS - strlen(ptr);
                 if (check_init(index)) {
                     init_thread(index, long_func[index]);
                 }
@@ -647,9 +651,15 @@ static void switch_search(void) {
 static int check_init(int index) {
     char x;
 
-    if (!selected) {
+    if (!selected && index != EXTRACTOR_TH) {
         print_info(no_selected_files, ERR_LINE);
         return 0;
+    }
+    if (index == EXTRACTOR_TH) {
+        ask_user(extr_question, &x, 1);
+        if (quit || x == 'n' || x == 27) {
+            return 0;
+        }
     }
     if (index != RM_TH) {
         return check_access();

@@ -99,13 +99,6 @@ void manage_file(const char *str, float size) {
         return;
     }
 #endif
-    if (is_ext(str, arch_ext, NUM(arch_ext))) {
-        ask_user(extr_question, &c, 1);
-        if (!quit && c != 'n' && c != 27) {
-            init_thread(EXTRACTOR_TH, try_extractor);
-        }
-        return;
-    }
     if (access("/usr/bin/xdg-open", X_OK) == 0) {
         xdg_open(str, size);
     } else {
