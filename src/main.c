@@ -651,7 +651,7 @@ static void switch_search(void) {
 static int check_init(int index) {
     char x;
 
-    if (!selected && index != EXTRACTOR_TH) {
+    if (!selected) {
         print_info(no_selected_files, ERR_LINE);
         return 0;
     }
