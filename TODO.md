@@ -43,6 +43,8 @@ As soon as arch updates libarchive to 3.2.
 **VARIOUS**:  
 
 - [ ] make strings translatable
+- [x] make user conf file override global conf file (now if user conf file is found, global conf is not even read)
+- [ ] use another button to extract archives, and enter to xdg-open them
 - [x] switch to KEY_ESC to leave ncursesFM/current mode/leave input mode in ask_user
 - [ ] vi keybindings/keybinding profiles
 - [ ] switch back to libmagic mimetype support? (it is buggy...as of now it freezes on folders. Plus, i cannot use it for distro packages detection, neither for search_inside_archive because it is so slooooooooow)

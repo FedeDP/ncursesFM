@@ -271,6 +271,8 @@ static void parse_cmd(int argc, const char *argv[]) {
 
 #ifdef LIBCONFIG_PRESENT
 static void check_config_files() {
+    read_config_file(CONFDIR);
+    
     char home_config_path[PATH_MAX + 1];
     
     sprintf(home_config_path, "%s/.config", getpwuid(getuid())->pw_dir);
@@ -285,12 +287,8 @@ static void read_config_file(const char *dir) {
 
     sprintf(config_file_name, "%s/ncursesFM.conf", dir);
     if (access(config_file_name, F_OK ) == -1) {
-        if (!strcmp(dir, CONFDIR)) {
-            fprintf(stderr, "Config file not found.\n");
-            return;
-        } else {
-            return read_config_file(CONFDIR);
-        }
+        fprintf(stderr, "Config file %s not found.\n", config_file_name);
+        return;
     }
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name) == CONFIG_TRUE) {
