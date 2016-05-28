@@ -35,6 +35,6 @@ int remove_file(void);
 void manage_space_press(const char *str);
 int paste_file(void);
 int move_file(void);
-void fast_browse(int c);
+void fast_browse(wint_t c);
 int move_cursor_to_file(int i, const char *filename, int win);
 void save_old_pos(int win);

@@ -31,10 +31,14 @@ static void set_signals(void);
 static void set_pollfd(void);
 static void sig_handler(int signum);
 static void sigsegv_handler(int signum);
+#ifdef LIBX11_PRESENT
+static void check_X(void);
+#endif
 static void helper_function(int argc, const char *argv[]);
 static void parse_cmd(int argc, const char *argv[]);
 #ifdef LIBCONFIG_PRESENT
-static void read_config_file(void);
+static void check_config_files();
+static void read_config_file(const char *dir);
 #endif
 static void config_checks(void);
 static void main_loop(void);
@@ -52,18 +56,18 @@ static int check_access(void);
 
 /*
  * pointers to long_file_operations functions, used in main loop;
- * -1 because extract operation is called inside "enter press" event, not in main loop
  */
-static int (*const long_func[LONG_FILE_OPERATIONS - 1])(void) = {
-    move_file, paste_file, remove_file, create_archive
+static int (*const long_func[LONG_FILE_OPERATIONS])(void) = {
+    move_file, paste_file, remove_file, create_archive, extract_file
 };
+int previewer_available, previewer_script_available;
 
 int main(int argc, const char *argv[])
 {
     set_signals();
     helper_function(argc, argv);
 #ifdef LIBCONFIG_PRESENT
-    read_config_file();
+    check_config_files();
 #endif
     parse_cmd(argc, argv);
     open_log();
@@ -105,10 +109,13 @@ static void set_pollfd(void) {
         .fd = STDIN_FILENO,
         .events = POLLIN,
     };
-    main_p[TIMER_IX] = (struct pollfd) {
-        .fd = start_timer(),
-        .events = POLLIN,
-    };
+    // do not start timer if no sysinfo info is enabled
+    if (strlen(config.sysinfo_layout)) {
+        main_p[TIMER_IX] = (struct pollfd) {
+            .fd = start_timer(),
+            .events = POLLIN,
+        };
+    }
     ps[0].inot.fd = inotify_init();
     ps[1].inot.fd = inotify_init();
     main_p[INOTIFY_IX1] = (struct pollfd) {
@@ -156,16 +163,26 @@ static void sigsegv_handler(int signum) {
     kill(getpid(), signum);
 }
 
-static void helper_function(int argc, const char *argv[]) {
-    /* default value for starting_helper, bat_low_level and device_init */
-    config.starting_helper = 1;
-    config.bat_low_level = 15;
-#ifdef SYSTEMD_PRESENT
-    device_init = DEVMON_STARTING;
+#ifdef LIBX11_PRESENT
+static void check_X(void) {
+    Display* display = XOpenDisplay(NULL);
+
+    if (display) {
+        XCloseDisplay(display);
+        has_X = 1;
+    }
+}
 #endif
 
+static void helper_function(int argc, const char *argv[]) {
+    char ncursesfm[150];
+    sprintf(ncursesfm, "NcursesFM, version: %s, commit: %s, build time: %s.", VERSION, build_git_sha, build_git_time);
     if ((argc > 1) && (!strcmp(argv[1], "--help"))) {
-        printf("\n NcursesFM Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
+        printf("\n NcursesFM\n");
+        printf(" Version: %s\n", VERSION);
+        printf(" Build time: %s\n", build_git_time);
+        printf(" Commit: %s\n", build_git_sha);
+        printf("\n Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
         printf(" This is free software, and you are welcome to redistribute it under certain conditions;\n");
         printf(" It is GPL licensed. Have a look at COPYING file.\n\n");
@@ -177,14 +194,37 @@ static void helper_function(int argc, const char *argv[]) {
         printf("\t* --automount {0,1} to switch {off,on} automounting of external drives/usb sticks. Defaults to 0.\n");
         printf("\t* --loglevel {0,1,2,3} to change loglevel. Defaults to 0.\n");
         printf("\t\t* 0 to log only errors.\n\t\t* 1 to log warn messages and errors.\n");
-        printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable log.\n");
-        printf("\t* --persistent_log {0,1} to switch {off,on} persistent log across program restarts. Defaults to 0.\n");
+        printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable logs.\n");
+        printf("\t* --persistent_log {0,1} to switch {off,on} persistent logs across program restarts. Defaults to 0.\n");
         printf("\t* --low_level {$level} to set low battery signal's threshold. Defaults to 15%%.\n\n");
         printf(" Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
         printf(" Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
-        printf(" Press 'l' while in program to view a more detailed helper message.\n\n");
+        printf(" Press 'L' while in program to view a more detailed helper message.\n\n");
         exit(EXIT_SUCCESS);
     }
+    
+    /* some default values */
+    realpath(BINDIR, preview_bin);
+    sprintf(preview_bin + strlen(preview_bin), "/ncursesfm_previewer");
+    previewer_script_available = !access(preview_bin, X_OK);
+    previewer_available = !access("/usr/lib/w3m/w3mimgdisplay", X_OK);
+    config.starting_helper = 1;
+    config.bat_low_level = 15;
+#ifdef SYSTEMD_PRESENT
+    device_init = DEVMON_STARTING;
+#endif
+    strcpy(config.border_chars, "||--++++");
+    strcpy(config.cursor_chars, "->");
+    /* 
+     * default sysinfo layout: 
+     * Clock
+     * Process monitor
+     * Battery monitor
+     */
+    strcpy(config.sysinfo_layout, "CPB");
+#ifdef LIBX11_PRESENT
+    check_X();
+#endif
 }
 
 static void parse_cmd(int argc, const char *argv[]) {
@@ -229,24 +269,33 @@ static void parse_cmd(int argc, const char *argv[]) {
 }
 
 #ifdef LIBCONFIG_PRESENT
-static void read_config_file(void) {
+static void check_config_files() {
+    read_config_file(CONFDIR);
+    
+    char home_config_path[PATH_MAX + 1];
+    
+    sprintf(home_config_path, "%s/.config", getpwuid(getuid())->pw_dir);
+    read_config_file(home_config_path);
+}
+
+static void read_config_file(const char *dir) {
     config_t cfg;
     char config_file_name[PATH_MAX + 1];
     const char *str_editor, *str_starting_dir, 
-                *str_borders, *str_cursor;
+                *str_borders, *str_cursor, *sysinfo;
 
-    sprintf(config_file_name, "%s/ncursesFM.conf", CONFDIR);
+    sprintf(config_file_name, "%s/ncursesFM.conf", dir);
     if (access(config_file_name, F_OK ) == -1) {
-        fprintf(stderr, "Config file not found.\n");
+        fprintf(stderr, "Config file %s not found.\n", config_file_name);
         return;
     }
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name) == CONFIG_TRUE) {
-        if ((!strlen(config.editor)) && (config_lookup_string(&cfg, "editor", &str_editor) == CONFIG_TRUE)) {
+        if (config_lookup_string(&cfg, "editor", &str_editor) == CONFIG_TRUE) {
             strcpy(config.editor, str_editor);
         }
         config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
-        if ((!strlen(config.starting_dir)) && (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) == CONFIG_TRUE)) {
+        if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) == CONFIG_TRUE) {
             strcpy(config.starting_dir, str_starting_dir);
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
@@ -263,6 +312,9 @@ static void read_config_file(void) {
         }
         if (config_lookup_string(&cfg, "cursor_chars", &str_cursor) == CONFIG_TRUE) {
             strncpy(config.cursor_chars, str_cursor, sizeof(config.cursor_chars));
+        }
+        if (config_lookup_string(&cfg, "sysinfo_layout", &sysinfo) == CONFIG_TRUE) {
+            strncpy(config.sysinfo_layout, sysinfo, sizeof(config.sysinfo_layout));
         }
     } else {
         fprintf(stderr, "Config file: %s at line %d.\n",
@@ -291,19 +343,6 @@ static void config_checks(void) {
     if ((config.loglevel < LOG_ERR) || (config.loglevel > NO_LOG)) {
         config.loglevel = LOG_ERR;
     }
-    if (strlen(config.border_chars) < sizeof(config.border_chars)) {
-        /*
-         * if user configured less chars than needed,
-         * or if config.border_chars is blank (untouched by user),
-         * fill its string with default chars
-         */
-        const char *borders = "||--++++";
-        int len = strlen(config.border_chars);
-        strncpy(config.border_chars + len, borders + len, sizeof(config.border_chars) - len);
-    }
-    if (!strlen(config.cursor_chars)) {
-        strcpy(config.cursor_chars, "->");
-    }
 }
 
 /*
@@ -313,15 +352,16 @@ static void config_checks(void) {
  * else stat current file and enter switch case.
  */
 static void main_loop(void) {
-    int c, index;
-
+    int index;
+    
     /*
      * x to move,
      * v to paste,
      * r to remove,
-     * b to compress
+     * b to compress,
+     * z to extract
      */
-    const char *long_table = "xvrb";
+    const char *long_table = "xvrbz";
 
     /*
      * n, d to create new file/dir
@@ -332,13 +372,26 @@ static void main_loop(void) {
     /*
      * l switch helper_win,
      * t new tab,
-     * q to leave current mode,
      * m only in device_mode to {un}mount device,
      * e only in bookmarks_mode to remove device from bookmarks
+     * s to show stat
+     * i to trigger fullname win
      */
-    const char *special_mode_allowed_chars = "ltqmes";
-
-    char *ptr;
+    const char *special_mode_allowed_chars = "ltmesi";
+    
+    /*
+     * Not graphical wchars:
+     * arrow KEYS, needed to move cursor.
+     * KEY_RESIZE to catch resize signals.
+     * PG_UP/DOWN to move straight to first/last file.
+     * 32 -> space to select files
+     */
+    wchar_t not_graph_wchars[9];
+    swprintf(not_graph_wchars, 9, L"%lc%lc%lc%lc%lc%lc%lc%lc%lc",   KEY_UP, KEY_DOWN, KEY_RIGHT,
+                                                                    KEY_LEFT, KEY_RESIZE, KEY_PPAGE,
+                                                                    KEY_NPAGE, KEY_MOUSE, 32);
+    
+    char *ptr, old_file[PATH_MAX + 1] = "";
     struct stat current_file_stat;
     
     MEVENT event;
@@ -349,8 +402,12 @@ static void main_loop(void) {
 #endif
 
     while (!quit) {
-        c = main_poll(NULL);
-        if ((ps[active].mode == fast_browse_) && isgraph(c) && (c != ',')) {
+        if (ps[1].mode == _preview && strcmp(old_file, str_ptr[active][ps[active].curr_pos])) {
+            preview_img(str_ptr[active][ps[active].curr_pos]);
+            strcpy(old_file, str_ptr[active][ps[active].curr_pos]);
+        }
+        wint_t c = main_poll(ps[active].mywin.fm);
+        if ((ps[active].mode == fast_browse_) && iswgraph(c) && !wcschr(not_graph_wchars, c)) {
             fast_browse(c);
             continue;
         }
@@ -361,24 +418,22 @@ static void main_loop(void) {
         stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
         switch (c) {
         case KEY_UP:
-            scroll_up(active);
+            scroll_up(active, 1);
             break;
         case KEY_DOWN:
-            scroll_down(active);
+            scroll_down(active, 1);
             break;
         case KEY_RIGHT:
         case KEY_LEFT:
-            if (cont == MAX_TABS) {
+            if (cont == MAX_TABS && ps[1].mode != _preview) {
                 change_tab();
             }
             break;
         case KEY_PPAGE:
-            ptr = strrchr(ps[active].nl[0], '/') + 1;
-            move_cursor_to_file(0, ptr, active);
+            scroll_up(active, ps[active].curr_pos);
             break;
         case KEY_NPAGE:
-            ptr = strrchr(ps[active].nl[ps[active].number_of_files - 1], '/') + 1;
-            move_cursor_to_file(ps[active].number_of_files - 1, ptr, active);
+            scroll_down(active, ps[active].number_of_files - ps[active].curr_pos);
             break;
         case 'h': // h to show hidden files
             switch_hidden();
@@ -387,13 +442,16 @@ static void main_loop(void) {
             manage_enter(current_file_stat);
             break;
         case 't': // t to open second tab
-            add_new_tab();
+            if (cont < MAX_TABS) {
+                add_new_tab();
+                change_tab();
+            }
             break;
         case 'w': // w to close second tab
             if (active) {
                 cont--;
-                delete_tab(active);
-                resize_tab(0);
+                delete_tab(1);
+                resize_tab(0, 0);
                 change_tab();
             }
             break;
@@ -407,7 +465,7 @@ static void main_loop(void) {
             trigger_stats();
             break;
         case 'e': // add dir to bookmarks
-            if (ps[active].mode <= fast_browse_) {
+            if (ps[active].mode == normal) {
                 add_file_to_bookmarks(str_ptr[active][ps[active].curr_pos]);
             } else if (ps[active].mode == bookmarks_) {
                 remove_bookmark_from_file();
@@ -428,10 +486,10 @@ static void main_loop(void) {
             check_device_mode();
             break;
 #endif
-        case ',': // , to enable/disable fast browse mode
-            switch_fast_browse_mode();
+        case ',': // , to enable fast browse mode
+            show_special_tab(ps[active].number_of_files, NULL, ps[active].title, fast_browse_);
             break;
-        case 'q': /* q to exit/leave special mode */
+        case 27: /* ESC to exit/leave special mode */
             manage_quit();
             break;
         case KEY_RESIZE:
@@ -453,6 +511,23 @@ static void main_loop(void) {
         case 'g': // g to show bookmarks
             show_bookmarks();
             break;
+        case 'j': // j to trigger image previewer
+            if (cont == 1 && previewer_available && has_X && previewer_script_available) {
+                ps[1].mode = _preview;
+                add_new_tab();
+            } else if (ps[1].mode == _preview) {
+                cont--;
+                delete_tab(1);
+                resize_tab(0, 0);
+                memset(old_file, 0, strlen(old_file));
+            } else if (!previewer_available) {
+                print_info("You need w3mimgdisplay from w3m to preview images.", INFO_LINE);
+            } else if (!previewer_script_available) {
+                print_info( "Previewing script not found.", ERR_LINE);
+            } else if (!has_X) {
+                print_info("You need to be in a X session for image preview to work.", INFO_LINE);
+            }
+            break;
         case KEY_MOUSE:
             if(getmouse(&event) == OK) {
                 if (event.bstate & BUTTON1_RELEASED) {
@@ -460,7 +535,10 @@ static void main_loop(void) {
                     manage_enter(current_file_stat);
                 } else if (event.bstate & BUTTON2_RELEASED) {
                     /* middle click will send a "new tab" event */
-                    add_new_tab();
+                    if (cont < MAX_TABS) {
+                        add_new_tab();
+                        change_tab();
+                    }
                 } else if (event.bstate & BUTTON3_RELEASED) {
                     /* right click will send a space event */
                     manage_space(str_ptr[active][ps[active].curr_pos]);
@@ -468,9 +546,9 @@ static void main_loop(void) {
                 /* scroll up and down events associated with mouse wheel */
 #if NCURSES_MOUSE_VERSION > 1
                 else if (event.bstate & BUTTON4_PRESSED) {
-                    scroll_up(active);
+                    scroll_up(active, 1);
                 } else if (event.bstate & BUTTON5_PRESSED) {
-                    scroll_down(active);
+                    scroll_down(active, 1);
                 }
 #endif
             }
@@ -478,7 +556,7 @@ static void main_loop(void) {
         default:
             ptr = strchr(long_table, c);
             if (ptr) {
-                index = LONG_FILE_OPERATIONS - 1 - strlen(ptr);
+                index = LONG_FILE_OPERATIONS - strlen(ptr);
                 if (check_init(index)) {
                     init_thread(index, long_func[index]);
                 }
@@ -489,19 +567,16 @@ static void main_loop(void) {
 }
 
 static void add_new_tab(void) {
-    if (cont < MAX_TABS) {
-        cont++;
-        resize_tab(0);
-        new_tab(cont - 1);
-        change_tab();
-    }
+    cont++;
+    resize_tab(0, 0);
+    new_tab(cont - 1);
 }
 
 #ifdef SYSTEMD_PRESENT
 static void check_device_mode(void) {
     if (device_init == DEVMON_STARTING) {
         print_info("Still polling for initial devices.", INFO_LINE);
-    } else if (device_init == DEVMON_READY && ps[active].mode <= fast_browse_) {
+    } else if (device_init == DEVMON_READY && ps[active].mode == normal) {
         show_devices_tab();
     } else if (device_init == DEVMON_OFF) {
         print_info("Monitor is not active. An error occurred, check log file.", INFO_LINE);
@@ -558,12 +633,13 @@ static void manage_space(const char *str) {
 }
 
 static void manage_quit(void) {
-    if (ps[active].mode > fast_browse_) {
-        if (ps[active].mode == search_) {
-            leave_search_mode(ps[active].my_cwd);
-        } else {
-            leave_special_mode(ps[active].my_cwd);
-        }
+    if (ps[active].mode == search_) {
+        leave_search_mode(ps[active].my_cwd);
+    } else if (ps[active].mode > fast_browse_) {
+        leave_special_mode(ps[active].my_cwd);
+    } else if (ps[active].mode == fast_browse_) {
+        leave_special_mode(NULL);
+        print_info("", INFO_LINE); // clear fast browse string from info line
     } else {
         quit = NORM_QUIT;
     }
@@ -586,10 +662,16 @@ static int check_init(int index) {
         print_info(no_selected_files, ERR_LINE);
         return 0;
     }
+    if (index == EXTRACTOR_TH) {
+        ask_user(extr_question, &x, 1);
+        if (quit || x == 'n' || x == 27) {
+            return 0;
+        }
+    }
     if (index != RM_TH) {
         return check_access();
     }
-    ask_user(sure, &x, 1, 'n');
+    ask_user(sure, &x, 1);
     if (quit || x != 'y') {
         return 0;
     }

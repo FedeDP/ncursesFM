@@ -1,8 +1,6 @@
 #include "../inc/fm_functions.h"
 
-#ifdef LIBX11_PRESENT
 static void xdg_open(const char *str, float size);
-#endif
 static void open_file(const char *str, float size);
 static int new_file(const char *name);
 static int new_dir(const char *name);
@@ -21,7 +19,7 @@ static const char *iso_ext[] = {".iso", ".nrg", ".bin", ".mdf", ".img"};
 static const char *pkg_ext[] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
 static struct timeval timer;
-static char fast_browse_str[NAME_MAX + 1];
+static wchar_t fast_browse_str[NAME_MAX + 1];
 static int distance_from_root;
 static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
     new_file, new_dir, rename_file_folders
@@ -48,7 +46,7 @@ int change_dir(const char *str, int win) {
 void change_tab(void) {
     active = !active;
     chdir(ps[active].my_cwd);
-    update_arrows();
+    update_colors();
 }
 
 void switch_hidden(void) {
@@ -93,7 +91,7 @@ void manage_file(const char *str, float size) {
     }
     if (is_ext(str, pkg_ext, NUM(pkg_ext))) {
         print_info(package_warn, INFO_LINE);
-        ask_user(pkg_quest, &c, 1, 'n');
+        ask_user(pkg_quest, &c, 1);
         print_info("", INFO_LINE);
         if (!quit && c == 'y') {
             pthread_create(&install_th, NULL, install_package, (void *)str);
@@ -101,46 +99,31 @@ void manage_file(const char *str, float size) {
         return;
     }
 #endif
-    if (is_ext(str, arch_ext, NUM(arch_ext))) {
-        ask_user(extr_question, &c, 1, 'y');
-        if (!quit && c == 'y') {
-            init_thread(EXTRACTOR_TH, try_extractor);
-        }
-        return;
-    }
-#ifdef LIBX11_PRESENT
     if (access("/usr/bin/xdg-open", X_OK) == 0) {
         xdg_open(str, size);
-        return;
+    } else {
+        open_file(str, size);
     }
-#endif
-    open_file(str, size);
 }
 
 /*
  * If we're on a X screen, open the file with xdg-open and redirect its output to /dev/null
  * not to make my ncurses screen dirty.
  */
-#ifdef LIBX11_PRESENT
 static void xdg_open(const char *str, float size) {
-    pid_t pid;
-    Display* display = XOpenDisplay(NULL);
-
-    if (display) {
-        XCloseDisplay(display);
-        pid = vfork();
+    if (has_X) {
+        pid_t pid = vfork();
         if (pid == 0) {
             int fd = open("/dev/null",O_WRONLY);
             dup2(fd, 1);
             dup2(fd, 2);
             close(fd);
-            execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, NULL);
+            execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, (char *) 0);
         }
     } else {
         open_file(str, size);
     }
 }
-#endif
 
 /*
  * If file size is > than 5 Mb, asks user if he really wants to open the file 
@@ -148,24 +131,28 @@ static void xdg_open(const char *str, float size) {
  * opens the file with it.
  */
 static void open_file(const char *str, float size) {
-    pid_t pid;
     char c;
 
     if (size > BIG_FILE_THRESHOLD) { // 5 Mb
-        ask_user(big_file, &c, 1, 'y');
-        if (quit || c == 'n') {
+        ask_user(big_file, &c, 1);
+        if (quit || c != 'y') {
             return;
         }
     }
     if (strlen(config.editor)) {
         endwin();
-        pid = vfork();
+        pid_t pid = vfork();
         if (pid == 0) {
-            execl(config.editor, config.editor, str, NULL);
+            execl(config.editor, config.editor, str, (char *) 0);
         } else {
             waitpid(pid, NULL, 0);
+            // trigger a fake resize to restore previous win state
+            // understand why this is needed now (it wasn't needed some time ago as
+            // a refresh() was, and should be, enough)
+//             refresh();
+            ungetch(KEY_RESIZE);
+
         }
-        refresh();
     } else {
         print_info(editor_missing, ERR_LINE);
     }
@@ -179,8 +166,8 @@ static void open_file(const char *str, float size) {
 void fast_file_operations(const int index) {
     char new_name[NAME_MAX + 1];
 
-    ask_user(ask_name, new_name, NAME_MAX, 0);
-    if (quit || !strlen(new_name)) {
+    ask_user(ask_name, new_name, NAME_MAX);
+    if (quit || !strlen(new_name) || new_name[0] == 27) {
         return;
     }
     int r = short_func[index](new_name);
@@ -386,28 +373,30 @@ static void rmrf(const char *path) {
  * at least strlen(fast_browse_str chars). Then moves the cursor to the right name.
  * If nothing was found, deletes fast_browse_str.
  */
-void fast_browse(int c) {
+void fast_browse(wint_t c) {
     int i = 0;
+    char mbstr[NAME_MAX + 1];
     uint64_t diff = (MILLION * timer.tv_sec) + timer.tv_usec;
 
     gettimeofday(&timer, NULL);
     diff = MILLION * (timer.tv_sec) + timer.tv_usec - diff;
-    if ((diff < FAST_BROWSE_THRESHOLD) && (strlen(fast_browse_str))) { // 0,5s
+    if ((diff < FAST_BROWSE_THRESHOLD) && (wcslen(fast_browse_str))) { // 0,5s
         i = ps[active].curr_pos;
     } else {
-        memset(fast_browse_str, 0, strlen(fast_browse_str));
+        wmemset(fast_browse_str, 0, NAME_MAX + 1);
     }
-    sprintf(fast_browse_str + strlen(fast_browse_str), "%c", c);
-    print_info(fast_browse_str, INFO_LINE);
-    if (!move_cursor_to_file(i, fast_browse_str, active)) {
-        memset(fast_browse_str, 0, strlen(fast_browse_str));
+    fast_browse_str[wcslen(fast_browse_str)] = c;
+    wcstombs(mbstr, fast_browse_str, NAME_MAX + 1);
+    print_info(mbstr, INFO_LINE);
+    if (!move_cursor_to_file(i, mbstr, active)) {
+        wmemset(fast_browse_str, 0, NAME_MAX + 1);
     }
 }
 
 int move_cursor_to_file(int i, const char *filename, int win) {
     char *str;
-    void (*f)(int);
-    int len = strlen(filename);
+    void (*f)(int, int);
+    int len = strlen(filename), delta;
     
     for (; i < ps[win].number_of_files; i++) {
         str = strrchr(ps[win].nl[i], '/') + 1;
@@ -415,12 +404,12 @@ int move_cursor_to_file(int i, const char *filename, int win) {
             if (i != ps[win].curr_pos) {
                 if (i < ps[win].curr_pos) {
                     f = scroll_up;
+                    delta = ps[win].curr_pos - i;
                 } else {
                     f = scroll_down;
+                    delta = i - ps[win].curr_pos;
                 }
-                while (ps[win].curr_pos != i) {
-                    f(win);
-                }
+                f(win, delta);
             }
             return 1;
         }

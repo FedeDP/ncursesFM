@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <sys/inotify.h>
 #include <ncurses.h>
+#include "version.h"
 
 #define MAX_TABS 2
 #define MAX_NUMBER_OF_FOUND 100
@@ -88,8 +89,9 @@ struct conf {
     int loglevel;
     int persistent_log;
     int bat_low_level;
-    char border_chars[8];
-    char cursor_chars[2];
+    char border_chars[9];
+    char cursor_chars[3];
+    char sysinfo_layout[4];
 };
 
 /*
@@ -120,7 +122,7 @@ struct scrstr {
     char tot_size[30];
 };
 
-enum working_mode {normal, fast_browse_, bookmarks_, search_, device_};
+enum working_mode {normal, fast_browse_, bookmarks_, search_, device_, _preview};
 
 /*
  * Struct used to store tab's information
@@ -136,6 +138,7 @@ struct tab {
     struct scrstr mywin;
     enum working_mode mode;
     int show_hidden;
+    int sorting_index;
 };
 
 /*
@@ -184,7 +187,7 @@ struct search_vars sv;
  * active win, quit status, number of worker thread jobs,
  * tabs counter and device_init status.
  */
-int active, quit, num_of_jobs, cont, device_init;
+int active, quit, num_of_jobs, cont, device_init, has_X;
 
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;
@@ -196,3 +199,8 @@ pthread_t worker_th, search_th;
  * is active for current tab
  */
 char (*str_ptr[MAX_TABS])[PATH_MAX + 1];
+
+/*
+ * previewer script path 
+ */
+char preview_bin[PATH_MAX + 1];

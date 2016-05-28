@@ -1,2 +1,4 @@
 *.o
 ncursesFM
+ncursesFM.kdev4
+src/version.c

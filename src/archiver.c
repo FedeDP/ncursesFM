@@ -2,6 +2,7 @@
 
 static void archiver_func(void);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
+static int try_extractor(file_list *tmp);
 static void extractor_thread(struct archive *a, const char *current_dir);
 
 static struct archive *archive;
@@ -68,15 +69,28 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     return 0;
 }
 
-int try_extractor(void) {
+int extract_file(void) {
+    int ret = 0;
+    
+    for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
+        if (is_ext(tmp->name, arch_ext, NUM(arch_ext))) {
+            ret += try_extractor(tmp);
+        } else {
+            ret--;
+        }
+    }
+    return !ret ? 0 : -1;
+}
+
+static int try_extractor(file_list *tmp) {
     struct archive *a;
     char *current_dir, path[PATH_MAX + 1];
 
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
-    if ((a) && (archive_read_open_filename(a, thread_h->filename, BUFF_SIZE) == ARCHIVE_OK)) {
-        strcpy(path, thread_h->filename);
+    if ((a) && (archive_read_open_filename(a, tmp->name, BUFF_SIZE) == ARCHIVE_OK)) {
+        strcpy(path, tmp->name);
         current_dir = dirname(path);
         extractor_thread(a, current_dir);
         return 0;

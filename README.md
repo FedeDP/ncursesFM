@@ -19,6 +19,8 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
+* image previewing support through w3mimgdisplay
+* per-user configs support. Copy default config file in your user $HOME/.config/ and change it here.
 * Basic mouse support: left click to manage current file and right click to select it. Only supported on ncurses >= 6: mouse wheel to scroll up and down.
 * Simple sysinfo monitor that will refresh every 30s: clock, battery and some system info.
 If you've got Upower installed, AC (dis)connection will refresh battery status instantly, instead of waiting up to 30s until next refresh.
@@ -48,7 +50,7 @@ Device monitor will list only mountable devices, eg: dvd reader will not be list
 
 ---
 
-If built with libconfig support, it reads following variables from /etc/default/ncursesFM.conf...remember to set them!
+If built with libconfig support, it reads following variables from $HOME/.config/ncursesFM.conf or /etc/default/ncursesFM.conf...remember to set them!
 * editor -> editor used to open files, in non X environment (or when xdg-open is not available)
 * show_hidden -> whether to show hidden files by default or not. Defaults to 0.
 * starting_directory -> default starting directory.
@@ -61,6 +63,7 @@ If built with libconfig support, it reads following variables from /etc/default/
 * bat_low_level -> to set threshold to signal user about low battery. Defaults to 15%.
 * border_chars -> to change printed borders' chars.
 * cursor_chars -> to change printed cursor's chars.
+* sysinfo_layout -> customize layout of sysinfo line (last line).
 
 NcursesFM ships an autocompletion script for cmdline options. It supports following options:
 * "--editor" /path/to/editor
@@ -82,15 +85,16 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 * ncurses    -> UI
 * libarchive -> archiving/extracting support
 * pkg-config -> to manage libraries link in makefile
-* glibc      -> to set locale, for inotify, and for mntent functions.
-* libudev    -> needed for devices/iso mount, and batteries polling.
+* bash-completion -> to get where to store bash autocompletion script
+* glibc      -> to set locale, for inotify, and for mntent functions
+* libudev    -> needed for devices/iso mount, and batteries polling
 * git        -> to clone repo
 
 ## Optional compile time dependencies
 * libcups   -> print support.
 * libconfig -> config file parsing.
 * libx11    -> check whether ncursesFM is started in a X environment or not, and xdg-open support.
-* sd-bus    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
+* sd-bus (systemd >= 221)    -> needed for powermanagement inhibition functions, devices/iso mount and packages installation.
 
 **Build options (to be passed to make)**
 * CC={gcc/clang} to choose the compiler. By default, env CC will be used.
@@ -107,6 +111,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 **optional:**
 * if compiled with libx11 support: xdg-utils.
 * if compiled with sd-bus support: a message bus (dbus/kdbus) plus logind (for inhibition support), udisks2 (for mount support), packagekit (for packages installation support) and upower (to get AC (dis)connection events).
+* w3m to display image in terminal window because ncursesFM internally uses w3mimgdisplay.
 
 ## Known bugs
 * installing packages segfaults if package is for the wrong arch, and packagekit daemon segfaults too: https://github.com/hughsie/PackageKit/issues/87.
@@ -117,7 +122,7 @@ Log file is located at "$HOME/.ncursesfm.log". It is overwritten each time ncurs
 
 On Ubuntu install required packages:
 
-    # apt-get install libncursesw5-dev libarchive-dev pkg-config git build-essential libudev-dev
+    # apt-get install libncursesw5-dev libarchive-dev pkg-config git build-essential libudev-dev bash-completion
 
 Optional:
 
@@ -132,5 +137,6 @@ To remove, just move inside the folder and run:
 
     # make uninstall
 
-make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets. Be aware that it will disable bash autocompletion script (you can still source it manually anyway) and config file support (until you do as described below) though.  
-Moreover, you can specify a $CONFDIR variable that tells ncursesFM where to look for its config file; so something like "make CONFDIR=./" will let you test config file support too without even installing it.
+make {install/uninstall} require root privileges unless you specify a $DESTDIR variable to install/uninstall targets. Be aware that it will disable bash autocompletion script (you can still source it manually) and config file support (unless you do as described below) though.  
+Moreover, you can specify a $CONFDIR variable that tells ncursesFM where to look for its config file; so something like "make CONFDIR=./" will let you test config file support too without even installing it.  
+Same goes for BINDIR and image previewing script. If you want to give image previewer a try without installing it to /usr/bin, you can just run "make BINDIR=./" inside ncursesFM cloned repo.

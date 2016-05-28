@@ -1,5 +1,6 @@
 #include "../inc/timer.h"
 
+static void update_battery(int where);
 static void poll_batteries(void);
 
 static int timerfd;
@@ -37,8 +38,24 @@ int start_timer(void) {
  * Then calls update_batt (ui_functions)
  */
 void timer_func(void) {
-    update_time();
+    for (int i = 0; i < strlen(config.sysinfo_layout); i++) {
+        switch (tolower(config.sysinfo_layout[i])) {
+        case 'c':
+            update_time(i);
+            break;
+        case 'p':
+            update_sysinfo(i);
+            break;
+        case 'b':
+            update_battery(i);
+            break;
+        default:
+            break;
+        }
+    }
+}
 
+static void update_battery(int where) {
     struct udev_device *dev;
     int perc[num_of_batt], online;
     char name[num_of_batt][10];
@@ -66,7 +83,7 @@ void timer_func(void) {
     } else {
         online = -1;
     }
-    update_batt(online, perc, num_of_batt, name);
+    update_batt(online, perc, num_of_batt, name, where);
 }
 
 void free_timer(void) {

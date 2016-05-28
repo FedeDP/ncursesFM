@@ -27,7 +27,7 @@ const char *file_sel[] = {"File selected.", "File deleted from selected list.", 
 
 const char *sure = "Are you serious? y/N:> ";
 
-const char *big_file = "This file is quite big. Do you really want to open it? Y/n:> ";
+const char *big_file = "This file is quite big. Do you really want to open it? y/N:> ";
 
 const char *already_searching = "There's already a search in progress. Wait for it.";
 const char *search_mem_fail = "Stopping search as no more memory can be allocated.";
@@ -53,38 +53,13 @@ const char *extr_question = "Do you really want to extract this archive? Y/n:> "
 
 const char *thread_job_mesg[] = {"Moving...", "Pasting...", "Removing...", "Archiving...", "Extracting..."};
 const char *thread_str[] = {"Every file has been moved.", "Every files has been copied.", "File/dir removed.", "The archive is ready.", "Succesfully extracted."};
-const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not remove every file.", "Could not archive.", "Could not extract."};
+const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not remove every file.", "Could not archive.", "Could not extract every file."};
 const char *short_msg[] = {"File created.", "Dir created.", "File renamed."};
 
 const char *selected_mess = "There are selected files.";
 
 const char *thread_running = "There's already a thread working. This thread will be queued.";
 const char *quit_with_running_thread = "Queued jobs still running. Waiting...";
-
-const char *helper_string[] = { 
-                                "Remember: every shortcut in ncursesFM is case insensitive.",
-#ifdef SYSTEMD_PRESENT
-                                "Enter to surf between folders or to open files.",
-                                "It will eventually extract your archives, (un)mount your ISO files or install your distro downloaded packages.",
-#else
-                                "Enter to surf between folders or to open files. It will eventually extract your archives.",
-#endif
-                                "',' to enable fast browse mode: it lets you jump between files by just typing their name. PG_UP/DOWN to jump straight to first/last file.",
-                                "'h' to trigger the showing of hidden files; 's' to see stat about files in current folder. 'i' to check current file fullname.",
-                                "'.' to change files/dirs sorting function: alphabetically (default), by size, by last modified or by type.",
-                                "Space to select files. Twice to remove the file from selected files.",
-#ifdef LIBCUPS_PRESENT
-                                "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files. 'p' to print a file.",
-#else
-                                "'v'/'x' to paste/cut, 'b' to compress and 'r' to remove selected files.",
-#endif
-                                "'g' to switch to bookmarks window. 'e' to add current file to bookmarks/remove it if in bookmarks_mode.",
-                                "'o' to rename current file/dir; 'n'/'d' to create new file/dir. 'f' to search (case sensitive) for a file.",
-                                "'t' to create new tab (at most one more). 'w' to close tab. Arrow left or right to switch between tabs.",
-#ifdef SYSTEMD_PRESENT
-                                "'m' to switch to devices tab. 'm' on a device to (un)mount it, enter to move to its mountpoint, mounting it if necessary.",
-#endif
-                                "You can't close first tab. Use 'q' to quit/leave current mode."};
 
 #ifdef SYSTEMD_PRESENT
 const char *pkg_quest = "Do you really want to install this package? y/N:> ";
@@ -94,4 +69,70 @@ const char *device_mode_str =  "Choose your desired device to (un)mount it";
 #endif
 
 const char *bookmarks_mode_str = "Bookmarks:";
-const char *special_mode_title = "q to return to normal mode";
+
+#ifdef SYSTEMD_PRESENT
+const int HELPER_HEIGHT[] = {16, 7, 8, 8, 8};
+#else
+const int HELPER_HEIGHT[] = {14, 6, 8, 8, 8};
+#endif
+
+const char helper_string[][16][150] =
+{
+    {
+        {"Remember: every shortcut in ncursesFM is case insensitive."},
+#ifdef SYSTEMD_PRESENT
+        {"Enter -> surf between folders or to open files."},
+        {"It will eventually (un)mount your ISO files or install your distro downloaded packages."},
+#else
+        {"Enter -> surf between folders or to open files."},
+#endif
+        {", -> enable fast browse mode: it lets you jump between files by just typing their name."},
+        {"PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."},
+        {"h -> trigger the showing of hidden files; s -> see stat about files in current folder."},
+        {". -> change files/dirs sorting function: alphabetically (default), by size, by last modified or by type."},
+        {"Space -> select files. Once more to remove the file from selected files."},
+#ifdef LIBCUPS_PRESENT
+        {"v/x -> paste/cut, b -> compress, r -> remove, z -> extract, p -> print a file."},
+#else
+        {"v/x -> paste/cut, b -> compress, r -> remove, z -> extract."},
+#endif
+        {"g -> switch to bookmarks window. j -> trigger image previewer, e -> add current file to bookmarks"},
+        {"o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."},
+        {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
+#ifdef SYSTEMD_PRESENT
+        {"m -> switch to devices tab."},
+#endif
+        {"ESC -> quit."}
+    }, {
+        {"Remember: every shortcut in ncursesFM is case insensitive."},
+#ifdef SYSTEMD_PRESENT
+        {"Enter -> surf between folders or to open files."},
+        {"It will eventually (un)mount your ISO files or install your distro downloaded packages."},
+#else
+        {"Enter -> surf between folders or to open files."},
+#endif
+        {"Just start typing your desired filename, to move right to its position."},
+        {"ESC -> leave fast browse mode."}
+    }, {
+        {"Remember: every shortcut in ncursesFM is case insensitive."},
+        {"s -> see stat about files in current folder. i -> check current file fullname."},
+        {"t -> create second tab. w -> close tab. Arrow keys -> switch between tabs."},
+        {"e -> remove selected file from bookmarks."},
+        {"enter on a bookmarks will move to the folder/file selected."},
+        {"ESC -> leave bookmarks mode."}
+    }, {
+        {"Remember: every shortcut in ncursesFM is case insensitive."},
+        {"s -> see stat about files in current folder. i -> check current file fullname."},
+        {"t -> create second tab. w -> close tab. Arrow keys -> switch between tabs."},
+        {"enter on a file to move to its folder and highight it."},
+        {"enter on a folder to move inside it."},
+        {"ESC -> leave search mode."}
+    }, {
+        {"Remember: every shortcut in ncursesFM is case insensitive."},
+        {"s -> see stat about files in current folder. i -> check current file fullname."},
+        {"t -> create second tab. w -> close tab. Arrow keys -> switch between tabs."},
+        {"m -> (un)mount current device"},
+        {"enter -> move to current device mountpoint, mounting it if necessary."},
+        {"ESC -> leave device mode."}
+    }
+};

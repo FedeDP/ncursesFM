@@ -7,7 +7,7 @@ static void print_file(const char *filename);
 void print_support(const char *str) {
     char c;
 
-    ask_user(print_question, &c, 1, 'y');
+    ask_user(print_question, &c, 1);
     if (!quit && c == 'y') {
         print_file(str);
     }

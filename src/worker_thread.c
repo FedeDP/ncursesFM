@@ -2,7 +2,7 @@
 
 static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void));
 static void free_running_h(void);
-static void init_thread_helper(void);
+static int init_thread_helper(void);
 static void *execute_thread(void *x);
 
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
@@ -49,12 +49,10 @@ static void free_running_h(void) {
 }
 
 void init_thread(int type, int (* const f)(void)) {
-    thread_h = add_job(thread_h, type, f);
-    if (quit) {
+    if (!(thread_h = add_job(thread_h, type, f))) {
         return;
     }
-    init_thread_helper();
-    if (quit) {
+    if (init_thread_helper()) {
         return;
     }
     if (num_of_jobs > 1) {
@@ -76,34 +74,33 @@ void init_thread(int type, int (* const f)(void)) {
 /*
  * Fixes some needed current_th variables.
  */
-static void init_thread_helper(void) {
+static int init_thread_helper(void) {
     char name[NAME_MAX + 1];
     int num = 1, len;
 
-    if (current_th->type == EXTRACTOR_TH) {
-        strcpy(current_th->filename, ps[active].nl[ps[active].curr_pos]);
-    } else {
-        current_th->selected_files = selected;
-        selected = NULL;
-        if (current_th->type == ARCHIVER_TH && !quit) {
-            ask_user(archiving_mesg, name, NAME_MAX, 0);
-            if (quit) {
-                return;
-            }
-            if (!strlen(name)) {
-                strcpy(name, strrchr(current_th->selected_files->name, '/') + 1);
-            }
-            /* avoid overwriting a compressed file in path if it has the same name of the archive being created there */
-            len = strlen(name);
-            strcat(name, ".tgz");
-            while (access(name, F_OK) == 0) {
-                sprintf(name + len, "%d.tgz", num);
-                num++;
-            }
-            sprintf(current_th->filename, "%s/%s", current_th->full_path, name);
+    if (current_th->type == ARCHIVER_TH && !quit) {
+        ask_user(archiving_mesg, name, NAME_MAX);
+        if (quit || name[0] == 27) {
+            free(current_th);
+            current_th = NULL;
+            return -1;
         }
-        erase_selected_highlight();
+        if (!strlen(name)) {
+            strcpy(name, strrchr(selected->name, '/') + 1);
+        }
+        /* avoid overwriting a compressed file in path if it has the same name of the archive being created there */
+        len = strlen(name);
+        strcat(name, ".tgz");
+        while (access(name, F_OK) == 0) {
+            sprintf(name + len, "%d.tgz", num);
+            num++;
+        }
+        sprintf(current_th->filename, "%s/%s", current_th->full_path, name);
     }
+    current_th->selected_files = selected;
+    selected = NULL;
+    erase_selected_highlight();
+    return 0;
 }
 
 /*

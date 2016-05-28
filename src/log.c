@@ -29,10 +29,28 @@ static void log_current_options(void) {
     
     t = time(NULL);
     tm = *localtime(&t);
-    fprintf(log_file, "\n%d-%d-%d %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1,
+    fprintf(log_file, "%d-%d-%d %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1,
             tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    fprintf(log_file, "NcursesFM starting options:\n\n");
-    fprintf(log_file, "* EDITOR: %s\n", config.editor);
+    fprintf(log_file, "NcursesFM %s\n", VERSION);
+    fprintf(log_file, "Commit: %s\n", build_git_sha);
+    fprintf(log_file, "Build time: %s\n", build_git_time);
+    fprintf(log_file, "\nBuild options:\n");
+    fprintf(log_file, "* CONFDIR: %s\n", CONFDIR);
+    fprintf(log_file, "* BINDIR: %s\n", BINDIR);
+#ifdef LIBX11_PRESENT
+    fprintf(log_file, "* LIBX11_PRESENT: 1\n");
+#endif
+#ifdef LIBCUPS_PRESENT
+    fprintf(log_file, "* LIBCUPS_PRESENT: 1\n");
+#endif
+#ifdef LIBCONFIG_PRESENT
+    fprintf(log_file, "* LIBCONFIG_PRESENT: 1\n");
+#endif
+#ifdef SYSTEMD_PRESENT
+    fprintf(log_file, "* SYSTEMD_PRESENT: 1\n");
+#endif
+    fprintf(log_file, "\nStarting options:\n");
+    fprintf(log_file, "* Editor: %s\n", config.editor);
     fprintf(log_file, "* Starting directory: %s\n", config.starting_dir);
     fprintf(log_file, "* Second tab starting dir: %d\n", config.second_tab_starting_dir);
 #ifdef SYSTEMD_PRESENT

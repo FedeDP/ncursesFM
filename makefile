@@ -1,17 +1,19 @@
-LIBS =-lpthread $(shell pkg-config --libs libarchive ncursesw libudev)
-CFLAGS =-D_GNU_SOURCE
 RM = rm
 INSTALL = install -p
 INSTALL_PROGRAM = $(INSTALL) -m755
 INSTALL_DATA = $(INSTALL) -m644
 INSTALL_DIR = $(INSTALL) -d
+GIT = git
 BINDIR = /usr/bin
 CONFDIR = /etc/default
 BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
 COMPLNAME = ncursesfm
+PREVIEWERNAME = ncursesfm_previewer
 SRCDIR = src/
 COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
+LIBS =-lpthread $(shell pkg-config --libs libarchive ncursesw libudev)
+CFLAGS =-D_GNU_SOURCE $(shell pkg-config --cflags libarchive ncursesw libudev) -DCONFDIR=\"$(CONFDIR)\" -DBINDIR=\"$(BINDIR)\"
 
 # sanity checks for completion dir
 ifeq ("$(COMPLDIR)","")
@@ -26,17 +28,24 @@ ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 ifneq ("$(DISABLE_LIBX11)","1")
 LIBX11=$(shell pkg-config --silence-errors --libs x11)
 endif
+
 ifneq ("$(DISABLE_LIBCONFIG)","1")
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
 endif
+
 ifneq ("$(DISABLE_LIBSYSTEMD)","1")
+SYSTEMD_VERSION=$(shell pkg-config --modversion --silence-errors systemd)
+ifeq ($(shell test $(SYSTEMD_VERSION) -ge 221; echo $$?), 0)
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
+else
+$(info systemd support disabled, minimum required version 221.)
+endif
 endif
 
 LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD)
 
 ifneq ("$(LIBX11)","")
-CFLAGS+=-DLIBX11_PRESENT
+CFLAGS+=-DLIBX11_PRESENT $(shell pkg-config --silence-errors --cflags libx11)
 $(info libX11 support enabled.)
 endif
 
@@ -49,20 +58,27 @@ endif
 endif
 
 ifneq ("$(LIBCONFIG)","")
-CFLAGS+=-DLIBCONFIG_PRESENT -DCONFDIR=\"$(CONFDIR)\"
+CFLAGS+=-DLIBCONFIG_PRESENT $(shell pkg-config --silence-errors --cflags libconfig)
 $(info libconfig support enabled.)
 endif
 
 ifneq ("$(LIBSYSTEMD)","")
-CFLAGS+=-DSYSTEMD_PRESENT
+CFLAGS+=-DSYSTEMD_PRESENT $(shell pkg-config --silence-errors --cflags libsystemd)
 $(info libsystemd support enabled.)
 endif
 
 endif
 
-all: ncursesFM clean
+NCURSESFM_VERSION = $(shell git describe --abbrev=0 --always --tags)
+CFLAGS+=-DVERSION=\"$(NCURSESFM_VERSION)\"
 
-debug: ncursesFM-debug clean
+all: version ncursesFM clean
+
+debug: version ncursesFM-debug
+
+version:
+	$(GIT) rev-parse HEAD | awk ' BEGIN {print "#include \"../inc/version.h\""} {print "const char *build_git_sha = \"" $$0"\";"} END {}' > src/version.c
+	date | awk 'BEGIN {} {print "const char *build_git_time = \""$$0"\";"} END {} ' >> src/version.c
 
 objects:
 	cd $(SRCDIR); $(CC) -c *.c $(CFLAGS) -std=c99
@@ -89,6 +105,9 @@ install:
 # 	install bash autocompletion script
 	$(INSTALL_DIR) "$(DESTDIR)$(COMPLDIR)"
 	$(INSTALL_DATA) $(COMPLNAME) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
+# 	install image previewing script
+	$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
+	$(INSTALL_PROGRAM) $(PREVIEWERNAME) "$(DESTDIR)$(BINDIR)"
 
 uninstall:
 # 	remove executable file
@@ -97,3 +116,5 @@ uninstall:
 	$(RM) "$(DESTDIR)$(CONFDIR)/$(CONFNAME)"
 # 	remove bash autocompletion script
 	$(RM) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
+# 	remove image previewing script
+	$(RM) "$(DESTDIR)$(BINDIR)/$(PREVIEWERNAME)"

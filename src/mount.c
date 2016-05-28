@@ -473,7 +473,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
                 change_mounted_status(present, devname);
                 for (int i = 0; i < cont; i++) {
                     if (ps[i].mode == device_) {
-                        update_special_mode(number_of_devices, i, NULL);
+                        update_special_mode(present, i, NULL);
                     }
                 }
             }
@@ -487,7 +487,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
 /*
  * Monitor UPower too, for AC (dis)connected events.
  * It won't monitor battery level changes (THIS IS NOT A BATTERY MONITOR!).
- * After receiving a signal, just calls timer_func() to update time/battery.
+ * After receiving a signal, just calls timer_event() to update time/battery.
  */
 static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
     const char *obj = "/org/freedesktop/UPower";
@@ -495,7 +495,7 @@ static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error
     const char *path = sd_bus_message_get_path(m);
     if (!strcmp(path, obj)) {
         INFO("PropertiesChanged UPower signal received!");
-        timer_func();
+        timer_event();
     }
     return 0;
 }
