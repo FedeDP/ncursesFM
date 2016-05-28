@@ -265,16 +265,17 @@ static void check_active(int win) {
  * to the right border's corner.
  */
 static void print_border_and_title(int win) {
-    check_active(win);
-    wborder(ps[win].mywin.fm, config.border_chars[0], config.border_chars[1],
+    if (ps[win].mywin.fm) {
+        check_active(win);
+        wborder(ps[win].mywin.fm, config.border_chars[0], config.border_chars[1],
             config.border_chars[2], config.border_chars[3], config.border_chars[4],
             config.border_chars[5], config.border_chars[6], config.border_chars[7]);
-
-    mvwprintw(ps[win].mywin.fm, 0, 0, "%.*s", ps[win].mywin.width - 1, ps[win].title);
-    mvwprintw(ps[win].mywin.fm, 0, ps[win].mywin.width - strlen(ps[win].mywin.tot_size), ps[win].mywin.tot_size);
-    wattroff(ps[win].mywin.fm, COLOR_PAIR);
-    wattroff(ps[win].mywin.fm, A_BOLD);
-    wrefresh(ps[win].mywin.fm);
+        mvwprintw(ps[win].mywin.fm, 0, 0, "%.*s", ps[win].mywin.width - 1, ps[win].title);
+        mvwprintw(ps[win].mywin.fm, 0, ps[win].mywin.width - strlen(ps[win].mywin.tot_size), ps[win].mywin.tot_size);
+        wattroff(ps[win].mywin.fm, COLOR_PAIR);
+        wattroff(ps[win].mywin.fm, A_BOLD);
+        wrefresh(ps[win].mywin.fm);
+    }
 }
 
 /*
@@ -367,39 +368,57 @@ void delete_tab(int win) {
     ps[win].nl = NULL;
 }
 
-void scroll_down(int win) {
-    if (ps[win].curr_pos < ps[win].number_of_files - 1) {
-        ps[win].curr_pos++;
-        if (ps[win].curr_pos - (dim - 2) == ps[win].mywin.delta) {
-            scroll_helper_func(dim - 2, 1, win);
-            /* as we scrolled, if stat were active, we need to force them ON */
-            if (ps[win].mywin.stat_active == STATS_IDLE) {
-                ps[win].mywin.stat_active = STATS_ON;
+void scroll_down(int win, int lines) {
+    int delta = ps[active].mywin.delta;
+    int old_pos = ps[active].curr_pos;
+    
+    while (lines > 0) {
+        if (ps[win].curr_pos < ps[win].number_of_files - 1) {
+            ps[win].curr_pos++;
+            if (ps[win].curr_pos - (dim - 2) == ps[win].mywin.delta) {
+                scroll_helper_func(dim - 2, 1, win);
+                /* as we scrolled, if stat were active, we need to force them ON */
+                if (ps[win].mywin.stat_active == STATS_IDLE) {
+                    ps[win].mywin.stat_active = STATS_ON;
+                }
             }
-            list_everything(win, ps[win].curr_pos, 1);
-        } else {
-            mvwprintw(ps[win].mywin.fm, ps[win].curr_pos - ps[win].mywin.delta, 1, "  ");
-            print_arrow(win, ps[win].curr_pos - ps[win].mywin.delta + 1);
-            wrefresh(ps[win].mywin.fm);
         }
+        lines--;
+    }
+    if (ps[active].mywin.delta > delta) {
+        delta = ps[active].mywin.delta - delta;
+        list_everything(win, ps[win].curr_pos - delta + 1, delta);
+    } else {
+        mvwprintw(ps[win].mywin.fm, old_pos - ps[win].mywin.delta + 1, 1, "  ");
+        print_arrow(win, ps[win].curr_pos - ps[win].mywin.delta + 1);
+        wrefresh(ps[win].mywin.fm);
     }
 }
 
-void scroll_up(int win) {
-    if (ps[win].curr_pos > 0) {
-        ps[win].curr_pos--;
-        if (ps[win].curr_pos < ps[win].mywin.delta) {
-            scroll_helper_func(1, -1, win);
-            /* as we scrolled, if stat were active, we need to force them ON */
-            if (ps[win].mywin.stat_active == STATS_IDLE) {
-                ps[win].mywin.stat_active = STATS_ON;
+void scroll_up(int win, int lines) {
+    int delta = ps[active].mywin.delta;
+    int old_pos = ps[active].curr_pos;
+    
+    while (lines > 0) {
+        if (ps[win].curr_pos > 0) {
+            ps[win].curr_pos--;
+            if (ps[win].curr_pos < ps[win].mywin.delta) {
+                scroll_helper_func(1, -1, win);
+                /* as we scrolled, if stat were active, we need to force them ON */
+                if (ps[win].mywin.stat_active == STATS_IDLE) {
+                    ps[win].mywin.stat_active = STATS_ON;
+                }
             }
-            list_everything(win, ps[win].mywin.delta, 1);
-        } else {
-            mvwprintw(ps[win].mywin.fm, ps[win].curr_pos - ps[win].mywin.delta + 2, 1, "  ");
-            print_arrow(win, ps[win].curr_pos - ps[win].mywin.delta + 1);
-            wrefresh(ps[win].mywin.fm);
         }
+        lines--;
+    }
+    if (delta > ps[active].mywin.delta) {
+        delta = delta - ps[active].mywin.delta;
+        list_everything(win, ps[win].mywin.delta, delta);
+    } else {
+        mvwprintw(ps[win].mywin.fm, old_pos - ps[win].mywin.delta + 1, 1, "  ");
+        print_arrow(win, ps[win].curr_pos - ps[win].mywin.delta + 1);
+        wrefresh(ps[win].mywin.fm);
     }
 }
 
@@ -457,10 +476,7 @@ static void create_additional_win(int height, WINDOW **win, void (*f)(void)) {
         if (ps[i].curr_pos > dim - 3 + ps[i].mywin.delta) {
             int delta = ps[i].curr_pos - (dim - 3 + ps[i].mywin.delta);
             ps[i].curr_pos = dim - 3 + ps[i].mywin.delta;
-            while (delta > 0) {
-                scroll_down(i);
-                delta--;
-            }
+            scroll_down(i, delta);
         } else {
             print_border_and_title(i);
         }
@@ -937,7 +953,7 @@ static void inotify_refresh(int win) {
  * (searching, bookmarks or device mode)
  */
 void tab_refresh(int win) {
-    if (ps[win].mode <= fast_browse_) {
+     if (ps[win].mode <= fast_browse_) {
         generate_list(win);
         if (strlen(ps[win].old_file)) {
             move_cursor_to_file(0, ps[win].old_file, win);
@@ -971,15 +987,20 @@ void update_special_mode(int num,  int win, char (*str)[PATH_MAX + 1]) {
 /*
  * Used when switching to special_mode.
  */
-void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title, int mode) {    
+void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title, int mode) {
     ps[active].mode = mode;
     ps[active].number_of_files = num;
-    str_ptr[active] = str;
-    strcpy(ps[active].title, title);
-    save_old_pos(active);
-    // if we're entering special mode, we were in normal mode
-    print_additional_wins(HELPER_HEIGHT[normal], 0);
-    reset_win(active);
+    if (str != NULL) {
+        str_ptr[active] = str;
+        strcpy(ps[active].title, title);
+        save_old_pos(active);
+        print_additional_wins(HELPER_HEIGHT[normal], 0);
+        reset_win(active);
+    } else {
+        // we're entering fast browse mode. We don't need to clear anything.
+        // if we're entering special mode, we were in normal mode
+        print_additional_wins(HELPER_HEIGHT[normal], 0);
+    }
 }
 
 /*
@@ -989,7 +1010,9 @@ void leave_special_mode(const char *str) {
     int old_mode = ps[active].mode;
     
     ps[active].mode = normal;
-    change_dir(str, active);
+    if (str) {
+        change_dir(str, active);
+    }
     print_additional_wins(HELPER_HEIGHT[old_mode], 0);
 }
 
@@ -1097,18 +1120,6 @@ void update_colors(void) {
     print_arrow(active, 1 + ps[active].curr_pos - ps[active].mywin.delta);
     print_additional_wins(HELPER_HEIGHT[ps[!active].mode], 0); // switch helper_win context while changing tab
     print_border_and_title(!active);
-    print_border_and_title(active);
-}
-
-void switch_fast_browse_mode(void) {
-    if (ps[active].mode != fast_browse_) {
-        ps[active].mode = fast_browse_;
-        print_info("Fast browse mode enabled for active tab.", INFO_LINE);
-    } else {
-        ps[active].mode = normal;
-        print_info("Fast browse mode disabled for active tab.", INFO_LINE);
-    }
-    print_arrow(active, 1 + ps[active].curr_pos - ps[active].mywin.delta);
     print_border_and_title(active);
 }
 

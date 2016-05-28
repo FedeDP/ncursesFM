@@ -352,8 +352,8 @@ static void config_checks(void) {
  * else stat current file and enter switch case.
  */
 static void main_loop(void) {
-    int c, index;
-
+    int index;
+    
     /*
      * x to move,
      * v to paste,
@@ -378,7 +378,19 @@ static void main_loop(void) {
      * i to trigger fullname win
      */
     const char *special_mode_allowed_chars = "ltmesi";
-
+    
+    /*
+     * Not graphical wchars:
+     * arrow KEYS, needed to move cursor.
+     * KEY_RESIZE to catch resize signals.
+     * PG_UP/DOWN to move straight to first/last file.
+     * 32 -> space to select files
+     */
+    wchar_t not_graph_wchars[9];
+    swprintf(not_graph_wchars, 9, L"%lc%lc%lc%lc%lc%lc%lc%lc%lc",   KEY_UP, KEY_DOWN, KEY_RIGHT,
+                                                                    KEY_LEFT, KEY_RESIZE, KEY_PPAGE,
+                                                                    KEY_NPAGE, KEY_MOUSE, 32);
+    
     char *ptr, old_file[PATH_MAX + 1] = "";
     struct stat current_file_stat;
     
@@ -394,8 +406,8 @@ static void main_loop(void) {
             preview_img(str_ptr[active][ps[active].curr_pos]);
             strcpy(old_file, str_ptr[active][ps[active].curr_pos]);
         }
-        c = main_poll(ps[active].mywin.fm);
-        if ((ps[active].mode == fast_browse_) && isgraph(c) && (c != ',')) {
+        wint_t c = main_poll(ps[active].mywin.fm);
+        if ((ps[active].mode == fast_browse_) && iswgraph(c) && !wcschr(not_graph_wchars, c)) {
             fast_browse(c);
             continue;
         }
@@ -406,10 +418,10 @@ static void main_loop(void) {
         stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
         switch (c) {
         case KEY_UP:
-            scroll_up(active);
+            scroll_up(active, 1);
             break;
         case KEY_DOWN:
-            scroll_down(active);
+            scroll_down(active, 1);
             break;
         case KEY_RIGHT:
         case KEY_LEFT:
@@ -418,16 +430,10 @@ static void main_loop(void) {
             }
             break;
         case KEY_PPAGE:
-            if (ps[active].curr_pos > 0) {
-                ptr = strrchr(ps[active].nl[0], '/') + 1;
-                move_cursor_to_file(0, ptr, active);
-            }
+            scroll_up(active, ps[active].curr_pos);
             break;
         case KEY_NPAGE:
-            if (ps[active].curr_pos < ps[active].number_of_files - 1) {
-                ptr = strrchr(ps[active].nl[ps[active].number_of_files - 1], '/') + 1;
-                move_cursor_to_file(ps[active].number_of_files - 1, ptr, active);
-            }
+            scroll_down(active, ps[active].number_of_files - ps[active].curr_pos);
             break;
         case 'h': // h to show hidden files
             switch_hidden();
@@ -459,7 +465,7 @@ static void main_loop(void) {
             trigger_stats();
             break;
         case 'e': // add dir to bookmarks
-            if (ps[active].mode <= fast_browse_) {
+            if (ps[active].mode == normal) {
                 add_file_to_bookmarks(str_ptr[active][ps[active].curr_pos]);
             } else if (ps[active].mode == bookmarks_) {
                 remove_bookmark_from_file();
@@ -480,8 +486,8 @@ static void main_loop(void) {
             check_device_mode();
             break;
 #endif
-        case ',': // , to enable/disable fast browse mode
-            switch_fast_browse_mode();
+        case ',': // , to enable fast browse mode
+            show_special_tab(ps[active].number_of_files, NULL, ps[active].title, fast_browse_);
             break;
         case 27: /* ESC to exit/leave special mode */
             manage_quit();
@@ -540,9 +546,9 @@ static void main_loop(void) {
                 /* scroll up and down events associated with mouse wheel */
 #if NCURSES_MOUSE_VERSION > 1
                 else if (event.bstate & BUTTON4_PRESSED) {
-                    scroll_up(active);
+                    scroll_up(active, 1);
                 } else if (event.bstate & BUTTON5_PRESSED) {
-                    scroll_down(active);
+                    scroll_down(active, 1);
                 }
 #endif
             }
@@ -570,7 +576,7 @@ static void add_new_tab(void) {
 static void check_device_mode(void) {
     if (device_init == DEVMON_STARTING) {
         print_info("Still polling for initial devices.", INFO_LINE);
-    } else if (device_init == DEVMON_READY && ps[active].mode <= fast_browse_) {
+    } else if (device_init == DEVMON_READY && ps[active].mode == normal) {
         show_devices_tab();
     } else if (device_init == DEVMON_OFF) {
         print_info("Monitor is not active. An error occurred, check log file.", INFO_LINE);
@@ -627,12 +633,13 @@ static void manage_space(const char *str) {
 }
 
 static void manage_quit(void) {
-    if (ps[active].mode > fast_browse_) {
-        if (ps[active].mode == search_) {
-            leave_search_mode(ps[active].my_cwd);
-        } else {
-            leave_special_mode(ps[active].my_cwd);
-        }
+    if (ps[active].mode == search_) {
+        leave_search_mode(ps[active].my_cwd);
+    } else if (ps[active].mode > fast_browse_) {
+        leave_special_mode(ps[active].my_cwd);
+    } else if (ps[active].mode == fast_browse_) {
+        leave_special_mode(NULL);
+        print_info("", INFO_LINE); // clear fast browse string from info line
     } else {
         quit = NORM_QUIT;
     }

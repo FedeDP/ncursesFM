@@ -19,7 +19,7 @@ static const char *iso_ext[] = {".iso", ".nrg", ".bin", ".mdf", ".img"};
 static const char *pkg_ext[] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
 static struct timeval timer;
-static char fast_browse_str[NAME_MAX + 1];
+static wchar_t fast_browse_str[NAME_MAX + 1];
 static int distance_from_root;
 static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
     new_file, new_dir, rename_file_folders
@@ -373,28 +373,30 @@ static void rmrf(const char *path) {
  * at least strlen(fast_browse_str chars). Then moves the cursor to the right name.
  * If nothing was found, deletes fast_browse_str.
  */
-void fast_browse(int c) {
+void fast_browse(wint_t c) {
     int i = 0;
+    char mbstr[NAME_MAX + 1];
     uint64_t diff = (MILLION * timer.tv_sec) + timer.tv_usec;
 
     gettimeofday(&timer, NULL);
     diff = MILLION * (timer.tv_sec) + timer.tv_usec - diff;
-    if ((diff < FAST_BROWSE_THRESHOLD) && (strlen(fast_browse_str))) { // 0,5s
+    if ((diff < FAST_BROWSE_THRESHOLD) && (wcslen(fast_browse_str))) { // 0,5s
         i = ps[active].curr_pos;
     } else {
-        memset(fast_browse_str, 0, strlen(fast_browse_str));
+        wmemset(fast_browse_str, 0, NAME_MAX + 1);
     }
-    sprintf(fast_browse_str + strlen(fast_browse_str), "%c", c);
-    print_info(fast_browse_str, INFO_LINE);
-    if (!move_cursor_to_file(i, fast_browse_str, active)) {
-        memset(fast_browse_str, 0, strlen(fast_browse_str));
+    fast_browse_str[wcslen(fast_browse_str)] = c;
+    wcstombs(mbstr, fast_browse_str, NAME_MAX + 1);
+    print_info(mbstr, INFO_LINE);
+    if (!move_cursor_to_file(i, mbstr, active)) {
+        wmemset(fast_browse_str, 0, NAME_MAX + 1);
     }
 }
 
 int move_cursor_to_file(int i, const char *filename, int win) {
     char *str;
-    void (*f)(int);
-    int len = strlen(filename);
+    void (*f)(int, int);
+    int len = strlen(filename), delta;
     
     for (; i < ps[win].number_of_files; i++) {
         str = strrchr(ps[win].nl[i], '/') + 1;
@@ -402,12 +404,12 @@ int move_cursor_to_file(int i, const char *filename, int win) {
             if (i != ps[win].curr_pos) {
                 if (i < ps[win].curr_pos) {
                     f = scroll_up;
+                    delta = ps[win].curr_pos - i;
                 } else {
                     f = scroll_down;
+                    delta = i - ps[win].curr_pos;
                 }
-                while (ps[win].curr_pos != i) {
-                    f(win);
-                }
+                f(win, delta);
             }
             return 1;
         }

@@ -71,9 +71,9 @@ const char *device_mode_str =  "Choose your desired device to (un)mount it";
 const char *bookmarks_mode_str = "Bookmarks:";
 
 #ifdef SYSTEMD_PRESENT
-const int HELPER_HEIGHT[] = {16, 16, 8, 8, 8};
+const int HELPER_HEIGHT[] = {16, 7, 8, 8, 8};
 #else
-const int HELPER_HEIGHT[] = {14, 14, 8, 8, 8};
+const int HELPER_HEIGHT[] = {14, 6, 8, 8, 8};
 #endif
 
 const char helper_string[][16][150] =
@@ -107,27 +107,12 @@ const char helper_string[][16][150] =
         {"Remember: every shortcut in ncursesFM is case insensitive."},
 #ifdef SYSTEMD_PRESENT
         {"Enter -> surf between folders or to open files."},
-        {"It will eventually extract your archives, (un)mount your ISO files or install your distro downloaded packages."},
+        {"It will eventually (un)mount your ISO files or install your distro downloaded packages."},
 #else
-        {"Enter -> surf between folders or to open files. It will eventually extract your archives."},
+        {"Enter -> surf between folders or to open files."},
 #endif
-        {", -> enable fast browse mode: it lets you jump between files by just typing their name."},
-        {"PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."},
-        {"h -> trigger the showing of hidden files; s -> see stat about files in current folder."},
-        {". -> change files/dirs sorting function: alphabetically (default), by size, by last modified or by type."},
-        {"Space -> select files. Once more to remove the file from selected files."},
-#ifdef LIBCUPS_PRESENT
-        {"v/x -> paste/cut, b -> compress and r -> remove selected files. p -> print a file."},
-#else
-        {"v/x -> paste/cut, b -> compress and r -> remove selected files."},
-#endif
-        {"g -> switch to bookmarks window. j -> trigger image previewer, e -> add current file to bookmarks"},
-        {"o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."},
-        {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
-#ifdef SYSTEMD_PRESENT
-        {"m -> switch to devices tab."},
-#endif
-        {"ESC -> quit."}
+        {"Just start typing your desired filename, to move right to its position."},
+        {"ESC -> leave fast browse mode."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
         {"s -> see stat about files in current folder. i -> check current file fullname."},

@@ -1,4 +1,4 @@
-05 / 25 / 2016
+05 / 27 / 2016
 * users can now customize borders and cursor's chars
 * fixed a segfault for pc (not laptops) without power_supply info in udev
 * added more colorful active win highlight
@@ -19,6 +19,10 @@
 * added build time/build commit and ncursesFM version to --help cmdline switch output, and ncursesFM version to helper title.
 * switched to ESC to leave ncursesFM/leave current_mode
 * user can now leave input mode with ESC
+* added unicode support to fast_browse string too 
+* fixed a bug in move_cursor_to_file with really small optimizations around the code
+* switched to ESC to leave fast_browse_mode too, to unify it with other modes. Moreover, comma char ',' is now an accepted char for fast_browse string
+* fast_browse_mode is now really a special mode
 
 03 / 10 / 2016
 * added "i" to view current file full path name (even in special mode). So, if screen is too small or filename is very large, you can still check its name.
