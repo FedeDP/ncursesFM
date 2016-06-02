@@ -91,9 +91,9 @@ void manage_file(const char *str, float size) {
     }
     if (is_ext(str, pkg_ext, NUM(pkg_ext))) {
         print_info(package_warn, INFO_LINE);
-        ask_user(pkg_quest, &c, 1);
+        ask_user(_(pkg_quest), &c, 1);
         print_info("", INFO_LINE);
-        if (!quit && c == 'y') {
+        if (!quit && c == _(yes)[0]) {
             pthread_create(&install_th, NULL, install_package, (void *)str);
         }
         return;
@@ -134,8 +134,8 @@ static void open_file(const char *str, float size) {
     char c;
 
     if (size > BIG_FILE_THRESHOLD) { // 5 Mb
-        ask_user(big_file, &c, 1);
-        if (quit || c != 'y') {
+        ask_user(_(big_file), &c, 1);
+        if (quit || c != _(yes)[0]) {
             return;
         }
     }
@@ -166,7 +166,7 @@ static void open_file(const char *str, float size) {
 void fast_file_operations(const int index) {
     char new_name[NAME_MAX + 1];
 
-    ask_user(ask_name, new_name, NAME_MAX);
+    ask_user(_(ask_name), new_name, NAME_MAX);
     if (quit || !strlen(new_name) || new_name[0] == 27) {
         return;
     }

@@ -80,7 +80,7 @@ static int mount_fs(const char *str, int mount) {
     ret = 1;
     if (!mount) {
         sd_bus_message_read(mess, "s", &path);
-        sprintf(mount_str, "%s mounted in: %s.", str, path);
+        sprintf(mount_str, _(dev_mounted), str, path);
         INFO("Mounted.");
         /* if it's a loop dev, set autoclear after mounting it */
         if (!strncmp(str, "/dev/loop", strlen("/dev/loop"))) {
@@ -102,7 +102,7 @@ static int mount_fs(const char *str, int mount) {
          * to be sure we carry the right path
          */
         getcwd(ps[active].my_cwd, PATH_MAX);
-        sprintf(mount_str, "%s unmounted.", str);
+        sprintf(mount_str, _(dev_unmounted), str);
         INFO("Unmounted.");
     }
 
@@ -383,7 +383,7 @@ static int check_udisks(void) {
 static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
     int r;
     const char *path;
-    const char *obj = "/org/freedesktop/UDisks2/block_devices/";
+    const char obj[] = "/org/freedesktop/UDisks2/block_devices/";
     char devname[PATH_MAX + 1];
     char name[NAME_MAX + 1];
     struct udev_device *dev;
@@ -422,7 +422,7 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
 static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
     int r;
     const char *path;
-    const char *obj = "/org/freedesktop/UDisks2/block_devices/";
+    const char obj[] = "/org/freedesktop/UDisks2/block_devices/";
     char devname[PATH_MAX + 1];
     char name[NAME_MAX + 1];
 
@@ -457,7 +457,7 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
 static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
     int r;
     const char *path;
-    const char *obj = "org.freedesktop.UDisks2.Filesystem";
+    const char obj[] = "org.freedesktop.UDisks2.Filesystem";
     char devname[PATH_MAX + 1];
 
     r = sd_bus_message_read(m, "s", &path);
@@ -490,7 +490,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
  * After receiving a signal, just calls timer_event() to update time/battery.
  */
 static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
-    const char *obj = "/org/freedesktop/UPower";
+    const char obj[] = "/org/freedesktop/UPower";
 
     const char *path = sd_bus_message_get_path(m);
     if (!strcmp(path, obj)) {
@@ -513,7 +513,7 @@ void show_devices_tab(void) {
     if (number_of_devices) {
         show_special_tab(number_of_devices, my_devices, device_mode_str, device_);
     } else {
-        print_info("No devices found.", INFO_LINE);
+        print_info(no_devices, INFO_LINE);
     }
 }
 
@@ -553,8 +553,8 @@ static int get_mount_point(const char *dev_path, char *path) {
     int ret = 0;
 
     if (!(mtab = setmntent("/proc/mounts", "r"))) {
-        WARN("could not find /proc/mounts");
-        print_info("could not find /proc/mounts.", ERR_LINE);
+        WARN(no_proc_mounts);
+        print_info(no_proc_mounts, ERR_LINE);
         return -1;
     }
     while ((part = getmntent(mtab))) {
@@ -648,9 +648,9 @@ static void change_mounted_status(int pos, const char *name) {
     sprintf(my_devices[pos] + len - 1, "%d", !mount);
     if (!strlen(mount_str)) {
         if (mount == 1) {
-            sprintf(mount_str, "External tool has unmounted %s.", name);
+            sprintf(mount_str, _(ext_dev_unmounted), name);
         } else {
-            sprintf(mount_str, "External tool has mounted %s.", name);
+            sprintf(mount_str, _(ext_dev_mounted), name);
         }
     }
     print_info(mount_str, INFO_LINE);
@@ -707,8 +707,8 @@ static int add_device(struct udev_device *dev, const char *name) {
                         name, s, mount);
             }
             number_of_devices++;
-            INFO("added device.");
-            print_info("New device connected.", INFO_LINE);
+            INFO(device_added);
+            print_info(device_added, INFO_LINE);
             int is_loop_dev = !strncmp(name, "/dev/loop", strlen("/dev/loop"));
             if (device_init != DEVMON_STARTING && (!mount && (config.automount || is_loop_dev))) {
                 mount_fs(name, mount);
@@ -726,8 +726,8 @@ static int remove_device(const char *name) {
         my_devices = safe_realloc(PATH_MAX * (number_of_devices - 1));
         if (!quit) {
             number_of_devices--;
-            print_info("Device removed.", INFO_LINE);
-            INFO("removed device.");
+            print_info(device_removed, INFO_LINE);
+            INFO(device_removed);
         }
     }
     return i;

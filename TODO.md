@@ -20,7 +20,7 @@
 - [x] fix string printing after resize
 - [x] fix creating file/folders after ask_user
 - [x] fix 2 valgrind errors...
-- [ ] make ask_user printed question a wchar* (initial work for internationalization: in other languages, that string can be a multibyte string too)
+- [x] question too can have unicode chars
 - [x] unicode support in fast_browse_mode too
 - [x] implements insert mode too (KEY_IC) when pressing insert
 - [x] implement http://man7.org/linux/man-pages/man3/wcwidth.3.html (in some lang, some chars may fill more than one column...)
@@ -41,11 +41,20 @@ As soon as arch updates libarchive to 3.2.
 
 - [ ] understand how that can be implemented
 
+**I18N**:  
+
+- [x] fix "y/n" translation for default answer if enter is pressed.
+- [x] fix info_print _(str) 
+- [x] fix ncursesFM.pot (update with all new strings)
+- [x] add more strings!
+
 **VARIOUS**:  
 
-- [ ] make strings translatable
+- [ ] fix crash when scrolling image previews too fast
+- [x] in make local pass current folder instead of "./"
 - [x] fix move_cursor_to_file: it can be called from within other mod too (pg_up / pg_down) -> scroll down/up to take a "lines" arguments to scroll down/up?
 It would simplify move_cursor_to_file too!
+- [x] move to const char[] instead of const char*
 - [x] extractor_th too with selected files
 - [x] make user conf file override global conf file (now if user conf file is found, global conf is not even read)
 - [x] use another button to extract archives, and enter to xdg-open them
@@ -54,5 +63,4 @@ It would simplify move_cursor_to_file too!
 - [ ] switch back to libmagic mimetype support? (it is buggy...as of now it freezes on folders. Plus, i cannot use it for distro packages detection, neither for search_inside_archive because it is so slooooooooow)
 - [x] per-user config
 - [ ] add some wiki to lighten readme
-- [ ] cleanup code (lots of features added recently)
 - [ ] update doc

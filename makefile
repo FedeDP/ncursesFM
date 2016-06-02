@@ -1,4 +1,4 @@
-RM = rm
+RM = rm -f
 INSTALL = install -p
 INSTALL_PROGRAM = $(INSTALL) -m755
 INSTALL_DATA = $(INSTALL) -m644
@@ -6,14 +6,17 @@ INSTALL_DIR = $(INSTALL) -d
 GIT = git
 BINDIR = /usr/bin
 CONFDIR = /etc/default
+LOCALEDIR = /usr/share/locale
 BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
 COMPLNAME = ncursesfm
 PREVIEWERNAME = ncursesfm_previewer
 SRCDIR = src/
 COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
+MSGLANGS=$(notdir $(wildcard msg/*po))
+MSGOBJS=$(MSGLANGS:.po=/LC_MESSAGES/ncursesFM.mo)
 LIBS =-lpthread $(shell pkg-config --libs libarchive ncursesw libudev)
-CFLAGS =-D_GNU_SOURCE $(shell pkg-config --cflags libarchive ncursesw libudev) -DCONFDIR=\"$(CONFDIR)\" -DBINDIR=\"$(BINDIR)\"
+CFLAGS =-D_GNU_SOURCE $(shell pkg-config --cflags libarchive ncursesw libudev) -DCONFDIR=\"$(CONFDIR)\" -DBINDIR=\"$(BINDIR)\" -DLOCALEDIR=\"$(LOCALEDIR)\"
 
 # sanity checks for completion dir
 ifeq ("$(COMPLDIR)","")
@@ -72,9 +75,14 @@ endif
 NCURSESFM_VERSION = $(shell git describe --abbrev=0 --always --tags)
 CFLAGS+=-DVERSION=\"$(NCURSESFM_VERSION)\"
 
-all: version ncursesFM clean
+all: version ncursesFM clean gettext
 
-debug: version ncursesFM-debug
+debug: version ncursesFM-debug gettext
+
+local: LOCALEDIR=$(shell pwd)
+local: BINDIR=$(shell pwd)
+local: CONFDIR=$(shell pwd)
+local: all
 
 version:
 	$(GIT) rev-parse HEAD | awk ' BEGIN {print "#include \"../inc/version.h\""} {print "const char *build_git_sha = \"" $$0"\";"} END {}' > src/version.c
@@ -95,6 +103,13 @@ ncursesFM-debug: objects-debug
 clean:
 	cd $(SRCDIR); $(RM) *.o
 
+gettext: $(MSGOBJS)
+
+%/LC_MESSAGES/ncursesFM.mo: msg/%.po
+	mkdir -p $(dir $@)
+	$(info building locales.)
+	msgfmt -c -o $@ msg/$*.po
+
 install:
 # 	install executable file
 	$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
@@ -108,6 +123,10 @@ install:
 # 	install image previewing script
 	$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
 	$(INSTALL_PROGRAM) $(PREVIEWERNAME) "$(DESTDIR)$(BINDIR)"
+#	install locales
+	$(INSTALL_DIR) "$(DESTDIR)$(LOCALEDIR)"
+	$(INSTALL_DATA) $(MSGOBJS) "$(DESTDIR)$(LOCALEDIR)"
+	
 
 uninstall:
 # 	remove executable file
@@ -118,3 +137,5 @@ uninstall:
 	$(RM) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
 # 	remove image previewing script
 	$(RM) "$(DESTDIR)$(BINDIR)/$(PREVIEWERNAME)"
+# 	remove locales
+	$(RM) "$(DESTDIR)$(LOCALEDIR)/$(MSGOBJS)"

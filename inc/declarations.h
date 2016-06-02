@@ -6,7 +6,11 @@
 #include <signal.h>
 #include <sys/inotify.h>
 #include <ncurses.h>
+#include <libintl.h>
 #include "version.h"
+
+// used for internationalization
+#define _(str) gettext(str)
 
 #define MAX_TABS 2
 #define MAX_NUMBER_OF_FOUND 100

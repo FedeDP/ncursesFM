@@ -6,7 +6,7 @@ static pthread_mutex_t log_mutex;
 static void log_current_options(void);
 
 void open_log(void) {
-    const char *log_name = "ncursesfm.log";
+    const char log_name[] = "ncursesfm.log";
     char log_path[PATH_MAX + 1];
     
     if (config.loglevel != NO_LOG) {
@@ -37,6 +37,7 @@ static void log_current_options(void) {
     fprintf(log_file, "\nBuild options:\n");
     fprintf(log_file, "* CONFDIR: %s\n", CONFDIR);
     fprintf(log_file, "* BINDIR: %s\n", BINDIR);
+    fprintf(log_file, "* LOCALEDIR: %s\n", LOCALEDIR);
 #ifdef LIBX11_PRESENT
     fprintf(log_file, "* LIBX11_PRESENT: 1\n");
 #endif

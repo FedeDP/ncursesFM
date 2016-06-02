@@ -50,16 +50,12 @@ static const char *img_ext[] = {".jpg", ".png", ".JPG", ".bmp"};
  * Initializes screen, colors etc etc.
  */
 void screen_init(void) {
-    setlocale(LC_CTYPE, "");
-    if (strcmp(nl_langinfo(CODESET), "UTF-8")) {
-        fprintf(stderr, "Please use an utf8 locale.\n");
-    }
     initscr();
     start_color();
     use_default_colors();
     init_pair(1, COLOR_BLUE, -1);
-    init_pair(2, COLOR_GREEN, -1);
-    init_pair(3, COLOR_CYAN, -1);
+    init_pair(2, COLOR_CYAN, -1);
+    init_pair(3, COLOR_GREEN, -1);
     init_pair(4, COLOR_YELLOW, -1);
     init_pair(5, COLOR_RED, -1);
     noecho();
@@ -89,9 +85,7 @@ static void info_win_init(void) {
     for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because SYSINFO line has its own init func (timer_func) */
         print_info("", i);
     }
-    if (strlen(config.sysinfo_layout)) { // do not call timer_func if sysinfo_layout is empty
-        timer_func();
-    }
+    timer_func();
 }
 /*
  * Clear any existing window, and close info_pipe
@@ -251,11 +245,10 @@ static void print_arrow(int win, int y) {
 
 static void check_active(int win) {
     if (active == win) {
-        wattron(ps[win].mywin.fm, A_BOLD);
         if (ps[win].mode == fast_browse_) {
-            wattron(ps[win].mywin.fm, COLOR_PAIR(FAST_BROWSE_COL));
+            wattron(ps[win].mywin.fm, A_BOLD | COLOR_PAIR(FAST_BROWSE_COL));
         } else {
-            wattron(ps[win].mywin.fm, COLOR_PAIR(ACTIVE_COL));
+            wattron(ps[win].mywin.fm, A_BOLD | COLOR_PAIR(ACTIVE_COL));
         }
     }
 }
@@ -270,7 +263,9 @@ static void print_border_and_title(int win) {
         wborder(ps[win].mywin.fm, config.border_chars[0], config.border_chars[1],
             config.border_chars[2], config.border_chars[3], config.border_chars[4],
             config.border_chars[5], config.border_chars[6], config.border_chars[7]);
-        mvwprintw(ps[win].mywin.fm, 0, 0, "%.*s", ps[win].mywin.width - 1, ps[win].title);
+        if (strlen(ps[win].title)) {
+            mvwprintw(ps[win].mywin.fm, 0, 0, "%.*s", ps[win].mywin.width - 1, _(ps[win].title));
+        }
         mvwprintw(ps[win].mywin.fm, 0, ps[win].mywin.width - strlen(ps[win].mywin.tot_size), ps[win].mywin.tot_size);
         wattroff(ps[win].mywin.fm, COLOR_PAIR);
         wattroff(ps[win].mywin.fm, A_BOLD);
@@ -441,9 +436,9 @@ static void colored_folders(WINDOW *win, const char *name) {
         if (S_ISDIR(file_stat.st_mode)) {
             wattron(win, COLOR_PAIR(1));
         } else if (S_ISLNK(file_stat.st_mode)) {
-            wattron(win, COLOR_PAIR(3));
-        } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
             wattron(win, COLOR_PAIR(2));
+        } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
+            wattron(win, COLOR_PAIR(3));
         }
     } else {
         wattron(win, COLOR_PAIR(4));
@@ -527,20 +522,19 @@ void trigger_show_helper_message(void) {
 }
 
 static void helper_print(void) {
-    char ncursesFM[40] = "NcursesFM version: ";
-    const char *title = "Press 'L' to trigger helper";
+    char ncursesFM[40] = "NcursesFM ";
 
     wborder(helper_win, config.border_chars[0], config.border_chars[1],
             config.border_chars[2], config.border_chars[3], config.border_chars[4],
             config.border_chars[5], config.border_chars[6], config.border_chars[7]);
 
     for (int i = 0; i < HELPER_HEIGHT[ps[active].mode] - 2; i++) {
-        mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, helper_string[ps[active].mode][i]);
+        mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, _(helper_string[ps[active].mode][i]));
     }
     sprintf(ncursesFM + strlen(ncursesFM), "%s", VERSION);
     wattron(helper_win, A_BOLD);
     mvwprintw(helper_win, 0, COLS - strlen(ncursesFM), "%.*s", COLS, ncursesFM);
-    mvwprintw(helper_win, 0, 0, "%.*s", COLS, title);
+    mvwprintw(helper_win, 0, 0, "%.*s", COLS, _(helper_title));
     wattroff(helper_win, A_BOLD);
 }
 
@@ -652,17 +646,22 @@ static void info_print(const char *str, int i) {
 
     wmove(info_win, i, 1);
     wclrtoeol(info_win);
-    mvwprintw(info_win, i, 1, "%s%s", info_win_str[i], str);
+    mvwprintw(info_win, i, 1, info_win_str[i]);
+    if (strlen(str)) {
+        wattron(info_win, A_BOLD | COLOR_PAIR(i + 3));
+        wprintw(info_win, "%.*s", COLS - strlen(info_win_str[i]) - 1, _(str));
+        wattroff(info_win, A_BOLD | COLOR_PAIR(i + 3));
+    }
     if (i == INFO_LINE) {
         if (selected) {
-            strcpy(st, selected_mess);
+            strcpy(st, _(selected_mess));
         }
         if (thread_h) {
-            sprintf(st + strlen(st), "[%d/%d] %s", thread_h->num, num_of_jobs, thread_job_mesg[thread_h->type]);
+            sprintf(st + strlen(st), "[%d/%d] %s", thread_h->num, num_of_jobs, _(thread_job_mesg[thread_h->type]));
         }
         mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
     } else if ((i == ERR_LINE) && (sv.searching)) {
-        mvwprintw(info_win, ERR_LINE, COLS - strlen(searching_mess[sv.searching - 1]), searching_mess[sv.searching - 1]);
+        mvwprintw(info_win, ERR_LINE, COLS - strlen(_(searching_mess[sv.searching - 1])), _(searching_mess[sv.searching - 1]));
     }
     wrefresh(info_win);
 }
@@ -718,6 +717,7 @@ void print_and_warn(const char *err, int line) {
 void ask_user(const char *str, char *input, int d) {
     int leave = 0, index = 0, overtype_mode = 0;
     wchar_t wstring[d + 1]; // space for terminating null char in case d == 1
+    wchar_t wquest[100];
     char resize_str[d + 1 + strlen(str)];
     const char insert_string[2][30] = {"Disabled overtype mode.", "Enabled overtype mode."};
     
@@ -725,8 +725,10 @@ void ask_user(const char *str, char *input, int d) {
     memset(input, 0, d);
     input_cursor_pos = 0;
     
-    input_len = strlen(str) + strlen(info_win_str[ASK_LINE]);
-        
+    // needed as question can have unicode chars
+    mbstowcs(wquest, str, 100);
+    input_len = wcswidth(wquest, 100) + strlen(info_win_str[ASK_LINE]);
+    
     print_info(str, ASK_LINE);
     curs_set(1);
     input_mode = 1;
@@ -735,6 +737,9 @@ void ask_user(const char *str, char *input, int d) {
         switch (s) {
         case KEY_RESIZE:
             resize_win();
+            // here we don't need to use wquest because
+            // we're only appending bytes to a multibytes string, to
+            // let ncurses print resize_str.
             strcpy(resize_str, str);
             wcstombs(resize_str + strlen(resize_str), wstring, d);
             print_info(resize_str, ASK_LINE);
@@ -822,11 +827,13 @@ void ask_user(const char *str, char *input, int d) {
     }
     curs_set(0);
     input_mode = 0;
+    mvwchgat(info_win, 0, 1, -1, A_NORMAL, 0, NULL);
     print_info("", ASK_LINE); // clear ASK_LINE
 }
 
 static void fix_input_cursor_pos(void) {
     if (input_mode) {
+        mvwchgat(info_win, 0, 1, -1, A_BOLD, 3, NULL);
         wmove(info_win, ASK_LINE, input_len + input_cursor_pos + 1);
         wrefresh(info_win);
     }
@@ -1128,7 +1135,7 @@ void update_time(int where) {
     struct tm tm = *localtime(&t);
     char date[70];
 
-    sprintf(date, "Date: %d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+    sprintf(date, "%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
     sprintf(date + strlen(date), ", %02d:%02d", tm.tm_hour, tm.tm_min);
     int x = check_sysinfo_where(where, strlen(date));
     if (x != -1) {
@@ -1163,7 +1170,6 @@ void update_sysinfo(int where) {
 }
 
 void update_batt(int online, int perc[], int num_of_batt, char name[][10], int where) {
-    const char *ac_online = "On AC", *fail = "No power supply info available.";
     char batt_str[num_of_batt][20];
     int len = 0;
     int x;
@@ -1171,16 +1177,16 @@ void update_batt(int online, int perc[], int num_of_batt, char name[][10], int w
     switch (online) {
     case -1:
         /* built without libudev support. No info available. */
-        x = check_sysinfo_where(where, strlen(fail));
+        x = check_sysinfo_where(where, strlen(_(power_fail)));
         if (x != -1) {
-            mvwprintw(info_win, SYSTEM_INFO_LINE, x, "%.*s", COLS, fail);
+            mvwprintw(info_win, SYSTEM_INFO_LINE, x, "%.*s", COLS, _(power_fail));
         }
         break;
     case 1:
         /* ac connected */
-        x = check_sysinfo_where(where, strlen(ac_online));
+        x = check_sysinfo_where(where, strlen(_(ac_online)));
         if (x != -1) {
-            mvwprintw(info_win, SYSTEM_INFO_LINE, x, "%.*s", COLS, ac_online);
+            mvwprintw(info_win, SYSTEM_INFO_LINE, x, "%.*s", COLS, _(ac_online));
         }
         break;
     case 0:
@@ -1193,20 +1199,19 @@ void update_batt(int online, int perc[], int num_of_batt, char name[][10], int w
             if (perc[i] != -1) {
                 sprintf(batt_str[i] + strlen(batt_str[i]), "%d%%%%", perc[i]);
                 len += strlen(batt_str[i]) - 2;     /* -2 to delete spaces derived from %%%% */
-            } else {
-                sprintf(batt_str[i] + strlen(batt_str[i]), "no info.");
-                len += strlen(batt_str[i]);
             }
             len++;  /* if there's another bat, at least divide the two batteries by 1 space */
         }
         x = check_sysinfo_where(where, len);
         if (x != -1) {
             for (int i = 0; i < num_of_batt; i++) {
-                if (perc[i] != -1 && perc[i] <= config.bat_low_level) {
-                    wattron(info_win, COLOR_PAIR(5));
+                if (perc[i] != -1) {
+                    if (perc[i] <= config.bat_low_level) {
+                        wattron(info_win, COLOR_PAIR(5));
+                    }
+                    mvwprintw(info_win, SYSTEM_INFO_LINE, x, batt_str[i]);
+                    wattroff(info_win, COLOR_PAIR);
                 }
-                mvwprintw(info_win, SYSTEM_INFO_LINE, x, batt_str[i]);
-                wattroff(info_win, COLOR_PAIR);
             }
         }
         break;

@@ -24,7 +24,7 @@
 #define STATS_ON 1
 #define STATS_IDLE 2
 
-#define ACTIVE_COL 2
+#define ACTIVE_COL 3
 #define FAST_BROWSE_COL 5
 
 /*

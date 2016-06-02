@@ -79,7 +79,7 @@ static int init_thread_helper(void) {
     int num = 1, len;
 
     if (current_th->type == ARCHIVER_TH && !quit) {
-        ask_user(archiving_mesg, name, NAME_MAX);
+        ask_user(_(archiving_mesg), name, NAME_MAX);
         if (quit || name[0] == 27) {
             free(current_th);
             current_th = NULL;

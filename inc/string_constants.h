@@ -3,74 +3,91 @@
 
 #define MODES 5
 
-const int HELPER_HEIGHT[MODES];
+extern const char yes[];
+extern const char no[];
 
-const char *editor_missing;
+extern const int HELPER_HEIGHT[MODES];
 
-const char *generic_error;
+extern const char editor_missing[];
 
-const char *info_win_str[3];
+extern const char generic_error[];
 
-const char *arch_ext[6];
+extern const char *info_win_str[3];
 
-const char *sorting_str[4];
+extern const char *arch_ext[6];
 
-const char *too_many_bookmarks;
-const char *bookmarks_add_quest;
-const char *bookmarks_rm_quest;
-const char *bookmarks_xdg_err;
-const char *bookmarks_file_err;
-const char *bookmark_added;
-const char *bookmarks_rm;
-const char *no_bookmarks;
-const char *inexistent_bookmark;
+extern const char *sorting_str[4];
 
-const char *file_selected;
-const char *no_selected_files;
-const char *file_sel[3];
+extern const char too_many_bookmarks[];
+extern const char bookmarks_add_quest[];
+extern const char bookmarks_rm_quest[];
+extern const char bookmarks_xdg_err[];
+extern const char bookmarks_file_err[];
+extern const char bookmark_added[];
+extern const char bookmarks_rm[];
+extern const char no_bookmarks[];
+extern const char inexistent_bookmark[];
 
-const char *sure;
+extern const char file_selected[];
+extern const char no_selected_files[];
+extern const char *file_sel[3];
 
-const char *big_file;
+extern const char sure[];
 
-const char *already_searching;
-const char *search_mem_fail;
-const char *search_insert_name;
-const char *search_archives;
-const char *lazy_search;
-const char *searched_string_minimum;
-const char *too_many_found;
-const char *no_found;
-const char *already_search_mode;
-const char searching_mess[2][80];
+extern const char big_file[];
+
+extern const char already_searching[];
+extern const char search_insert_name[];
+extern const char search_archives[];
+extern const char lazy_search[];
+extern const char searched_string_minimum[];
+extern const char too_many_found[];
+extern const char no_found[];
+extern const char already_search_mode[];
+extern const char *searching_mess[2];
 
 #ifdef LIBCUPS_PRESENT
-const char *print_question;
-const char *print_ok;
-const char *print_fail;
+extern const char print_question[];
+extern const char print_ok[];
+extern const char print_fail[];
 #endif
 
-const char *archiving_mesg;
+extern const char archiving_mesg[];
 
-const char *ask_name;
+extern const char ask_name[];
 
-const char *extr_question;
+extern const char extr_question[];
 
-const char *thread_job_mesg[LONG_FILE_OPERATIONS];
-const char *thread_str[LONG_FILE_OPERATIONS];
-const char *thread_fail_str[LONG_FILE_OPERATIONS];
-const char *short_msg[SHORT_FILE_OPERATIONS];
-const char *selected_mess;
+extern const char *thread_job_mesg[LONG_FILE_OPERATIONS];
+extern const char *thread_str[LONG_FILE_OPERATIONS];
+extern const char *thread_fail_str[LONG_FILE_OPERATIONS];
+extern const char *short_msg[SHORT_FILE_OPERATIONS];
+extern const char selected_mess[];
 
-const char *thread_running;
-const char *quit_with_running_thread;
-
-const char helper_string[MODES][16][150];
+extern const char thread_running[];
+extern const char quit_with_running_thread[];
 
 #ifdef SYSTEMD_PRESENT
-const char *pkg_quest;
-const char *install_th_wait;
-const char *package_warn;
-const char *device_mode_str;
+extern const char pkg_quest[];
+extern const char install_th_wait[];
+extern const char install_success[];
+extern const char install_failed[];
+extern const char package_warn[];
+extern const char device_mode_str[];
+extern const char no_devices[];
+extern const char dev_mounted[];
+extern const char dev_unmounted[];
+extern const char ext_dev_mounted[];
+extern const char ext_dev_unmounted[];
+extern const char device_added[];
+extern const char device_removed[];
+extern const char no_proc_mounts[];
 #endif
-const char *bookmarks_mode_str;
+extern const char bookmarks_mode_str[];
+extern const char search_mode_str[];
+
+extern const char ac_online[];
+extern const char power_fail[];
+
+extern const char helper_title[];
+extern const char helper_string[MODES][16][150];

@@ -5,7 +5,7 @@ static int search_inside_archive(const char *path);
 static void *search_thread(void *x);
 
 void search(void) {
-    ask_user(search_insert_name, sv.searched_string, 20);
+    ask_user(_(search_insert_name), sv.searched_string, 20);
     if (quit || strlen(sv.searched_string) < 5 || sv.searched_string[0] == 27) {
         if (strlen(sv.searched_string) > 0) {
             print_info(searched_string_minimum, ERR_LINE);
@@ -16,11 +16,11 @@ void search(void) {
         sv.found_cont = 0;
         sv.search_archive = 0;
         sv.search_lazy = 0;
-        ask_user(search_archives, &c, 1);
+        ask_user(_(search_archives), &c, 1);
         if (quit || c == 27) {
             return;
         }
-        if (c == 'y') {
+        if (c == _(yes)[0]) {
             sv.search_archive = 1;
         }
         /* 
@@ -29,11 +29,11 @@ void search(void) {
          * lazy search won't search hidden files.
          */
         if (sv.searched_string[0] != '.') {
-            ask_user(lazy_search, &c, 1);
+            ask_user(_(lazy_search), &c, 1);
             if (quit || c == 27) {
                 return;
             }
-            if (c == 'y') {
+            if (c == _(yes)[0]) {
                 sv.search_lazy = 1;
             }
         }
@@ -141,8 +141,8 @@ static void *search_thread(void *x) {
 
 void list_found(void) {
     char str[100];
-
-    sprintf(str, "%d files found searching %s:", sv.found_cont, sv.searched_string);
+    
+    sprintf(str, _(search_mode_str), sv.found_cont, sv.searched_string);
     show_special_tab(sv.found_cont, sv.found_searched, str, search_);
     print_info("", SEARCH_LINE);
 }

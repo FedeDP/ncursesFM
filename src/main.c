@@ -27,6 +27,7 @@
 #include <libconfig.h>
 #endif
 
+static void locale_init(void);
 static void set_signals(void);
 static void set_pollfd(void);
 static void sig_handler(int signum);
@@ -64,6 +65,7 @@ int previewer_available, previewer_script_available;
 
 int main(int argc, const char *argv[])
 {
+    locale_init();
     set_signals();
     helper_function(argc, argv);
 #ifdef LIBCONFIG_PRESENT
@@ -81,6 +83,15 @@ int main(int argc, const char *argv[])
         }
     }
     program_quit();
+}
+
+static void locale_init(void) {
+    setlocale(LC_ALL, "");
+    if (strcmp(nl_langinfo(CODESET), "UTF-8")) {
+        fprintf(stderr, "Please use an utf8 locale.\n");
+    }
+    bindtextdomain("ncursesFM", LOCALEDIR);
+    textdomain("ncursesFM");
 }
 
 static void set_signals(void) {
@@ -204,8 +215,7 @@ static void helper_function(int argc, const char *argv[]) {
     }
     
     /* some default values */
-    realpath(BINDIR, preview_bin);
-    sprintf(preview_bin + strlen(preview_bin), "/ncursesfm_previewer");
+    sprintf(preview_bin, "%s/ncursesfm_previewer", BINDIR);
     previewer_script_available = !access(preview_bin, X_OK);
     previewer_available = !access("/usr/lib/w3m/w3mimgdisplay", X_OK);
     config.starting_helper = 1;
@@ -263,7 +273,7 @@ static void parse_cmd(int argc, const char *argv[]) {
         j += 2;
     }
     if (j != argc) {
-        printf("Options not recognized. Use '--help' to view helper message.\n");
+        fprintf(stderr, "Options not recognized. Use '--help' to view helper message.\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -336,6 +346,7 @@ static void config_checks(void) {
         WARN("no editor defined. Trying to get one from env.");
         if ((str = getenv("EDITOR"))) {
             strcpy(config.editor, str);
+            ERROR(str);
         } else {
             WARN("no editor env var found.");
         }
@@ -361,13 +372,13 @@ static void main_loop(void) {
      * b to compress,
      * z to extract
      */
-    const char *long_table = "xvrbz";
+    const char long_table[] = "xvrbz";
 
     /*
      * n, d to create new file/dir
      * o to rename.
      */
-    const char *short_table = "ndo";
+    const char short_table[] = "ndo";
 
     /*
      * l switch helper_win,
@@ -377,7 +388,7 @@ static void main_loop(void) {
      * s to show stat
      * i to trigger fullname win
      */
-    const char *special_mode_allowed_chars = "ltmesi";
+    const char special_mode_allowed_chars[] = "ltmesi";
     
     /*
      * Not graphical wchars:
@@ -386,12 +397,11 @@ static void main_loop(void) {
      * PG_UP/DOWN to move straight to first/last file.
      * 32 -> space to select files
      */
-    wchar_t not_graph_wchars[9];
-    swprintf(not_graph_wchars, 9, L"%lc%lc%lc%lc%lc%lc%lc%lc%lc",   KEY_UP, KEY_DOWN, KEY_RIGHT,
+    wchar_t not_graph_wchars[10];
+    swprintf(not_graph_wchars, 10, L"%lc%lc%lc%lc%lc%lc%lc%lc%lc",   KEY_UP, KEY_DOWN, KEY_RIGHT,
                                                                     KEY_LEFT, KEY_RESIZE, KEY_PPAGE,
                                                                     KEY_NPAGE, KEY_MOUSE, 32);
-    
-    char *ptr, old_file[PATH_MAX + 1] = "";
+    char *ptr, old_file[PATH_MAX + 1] = {0};
     struct stat current_file_stat;
     
     MEVENT event;
@@ -663,16 +673,16 @@ static int check_init(int index) {
         return 0;
     }
     if (index == EXTRACTOR_TH) {
-        ask_user(extr_question, &x, 1);
-        if (quit || x == 'n' || x == 27) {
+        ask_user(_(extr_question), &x, 1);
+        if (quit || x == _(no)[0] || x == 27) {
             return 0;
         }
     }
     if (index != RM_TH) {
         return check_access();
     }
-    ask_user(sure, &x, 1);
-    if (quit || x != 'y') {
+    ask_user(_(sure), &x, 1);
+    if (quit || x != _(yes)[0]) {
         return 0;
     }
     return 1;
