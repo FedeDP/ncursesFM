@@ -51,6 +51,8 @@ As soon as arch updates libarchive to 3.2.
 **VARIOUS**:  
 
 - [ ] fix crash when scrolling image previews too fast
+- [ ] move to KEY_TAB to change files/folders sorting?
+- [ ] fix install target for i18n mo files
 - [x] in make local pass current folder instead of "./"
 - [x] fix move_cursor_to_file: it can be called from within other mod too (pg_up / pg_down) -> scroll down/up to take a "lines" arguments to scroll down/up?
 It would simplify move_cursor_to_file too!
@@ -62,5 +64,5 @@ It would simplify move_cursor_to_file too!
 - [ ] vi keybindings/keybinding profiles
 - [ ] switch back to libmagic mimetype support? (it is buggy...as of now it freezes on folders. Plus, i cannot use it for distro packages detection, neither for search_inside_archive because it is so slooooooooow)
 - [x] per-user config
-- [ ] add some wiki to lighten readme
+- [x] add some wiki to lighten readme
 - [ ] update doc
