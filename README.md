@@ -18,6 +18,7 @@ It can be built with a very small set of dependencies, as i tried to make as man
 
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
+* i18n support: for now en, it.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
 * image previewing support through w3mimgdisplay
 * per-user configs support. Copy default config file in your user $HOME/.config/ and change it here.
