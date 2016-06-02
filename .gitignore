@@ -2,3 +2,8 @@
 ncursesFM
 ncursesFM.kdev4
 src/version.c
+*/
+!inc/
+!src/
+!msg/
+!Arch/
