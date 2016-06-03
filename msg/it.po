@@ -38,11 +38,14 @@ msgstr "Eventualmente (s)monterà i tuoi file ISO o installerà i pacchetti scar
 msgid ", -> enable fast browse mode: it lets you jump between files by just typing their name."
 msgstr ", -> abilita la fast browse mode: ti permette di muoverti tra i file scrivendo il loro nome."
 
-msgid "PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."
-msgstr "PG_UP/DOWN -> vai direttamente al primo/ultimo file. i -> controlla il nome completo del file corrente."
+msgid "PG_UP/DOWN -> jump straight to first/last file. i -> check files fullname."
+msgstr "PG_UP/DOWN -> vai direttamente al primo/ultimo file. i -> controlla il nome completo dei file."
 
-msgid "h -> trigger the showing of hidden files; s -> see stat about files in current folder."
-msgstr "h -> mostra/nascondi file nascosti; s -> controlla stat dei file nella cartella corrente."
+msgid "PG_UP/DOWN -> jump straight to first/last file."
+msgstr "PG_UP/DOWN -> vai direttamente al primo/ultimo file."
+
+msgid "h -> trigger the showing of hidden files; s -> see files stats."
+msgstr "h -> mostra/nascondi file nascosti; s -> controlla stat dei file."
 
 msgid ". -> change sorting function: alphabetically (default), by size, by last modified or by type."
 msgstr ". -> cambia la funzione di ordinamento: alfabeticamente (default), per grandezza, per ultimo accesso, o per tipo."
@@ -77,8 +80,8 @@ msgstr "Inizia a scrivere il nome del file desiderato, per muoverti alla sua pos
 msgid "ESC -> leave fast browse mode."
 msgstr "ESC -> lascia la modalità fast browse."
 
-msgid "s -> see stat about files in current folder."
-msgstr "s -> controlla stat dei file nella cartella corrente."
+msgid "s -> see files stats. i -> check files fullname."
+msgstr "s -> controlla stat dei file. i -> controlla il nome completo dei file."
 
 msgid "e -> remove selected file from bookmarks."
 msgstr "e -> rimuovi il file selezionato dai segnalibri."
@@ -218,7 +221,7 @@ msgstr "Inserisci il nuovo nome:> "
 msgid "Do you really want to extract this archive? Y/n:> "
 msgstr "Desideri veramente estrarre l'archivio? S/n:> "
 
-msgid "Moving..."
+msgid "Cutting..."
 msgstr "Sposto..."
 
 msgid "Pasting..."
@@ -233,16 +236,16 @@ msgstr "Archivio..."
 msgid "Extracting..."
 msgstr "Estraggo..."
 
-msgid "Every file has been moved."
+msgid "Every file has been cut."
 msgstr "Tutti i file sono stati spostati."
 
-msgid "Every files has been copied."
+msgid "Every files has been pasted."
 msgstr "Tutti i file sono stati copiati."
 
 msgid "File/dir removed."
 msgstr "File/cartella rimosso."
 
-msgid "The archive is ready."
+msgid "Archive is ready."
 msgstr "L'archivio è pronto.'"
 
 msgid "Succesfully extracted."

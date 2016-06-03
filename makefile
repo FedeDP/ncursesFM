@@ -1,3 +1,4 @@
+SHELL = /bin/bash
 RM = rm -f
 INSTALL = install -p
 INSTALL_PROGRAM = $(INSTALL) -m755
@@ -13,8 +14,9 @@ COMPLNAME = ncursesfm
 PREVIEWERNAME = ncursesfm_previewer
 SRCDIR = src/
 COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
-MSGLANGS=$(notdir $(wildcard msg/*po))
-MSGOBJS=$(MSGLANGS:.po=/LC_MESSAGES/ncursesFM.mo)
+MSGLANGS = $(notdir $(wildcard msg/*po))
+MSGOBJS = $(MSGLANGS:.po=/LC_MESSAGES/ncursesFM.mo)
+MSGFILES = $(LOCALEDIR)/$(MSGOBJS)
 LIBS =-lpthread $(shell pkg-config --libs libarchive ncursesw libudev)
 CFLAGS =-D_GNU_SOURCE $(shell pkg-config --cflags libarchive ncursesw libudev) -DCONFDIR=\"$(CONFDIR)\" -DBINDIR=\"$(BINDIR)\" -DLOCALEDIR=\"$(LOCALEDIR)\"
 
@@ -85,57 +87,69 @@ local: CONFDIR=$(shell pwd)
 local: all
 
 version:
-	$(GIT) rev-parse HEAD | awk ' BEGIN {print "#include \"../inc/version.h\""} {print "const char *build_git_sha = \"" $$0"\";"} END {}' > src/version.c
-	date | awk 'BEGIN {} {print "const char *build_git_time = \""$$0"\";"} END {} ' >> src/version.c
+	@$(GIT) rev-parse HEAD | awk ' BEGIN {print "#include \"../inc/version.h\""} {print "const char *build_git_sha = \"" $$0"\";"} END {}' > src/version.c
+	@date | awk 'BEGIN {} {print "const char *build_git_time = \""$$0"\";"} END {} ' >> src/version.c
 
 objects:
-	cd $(SRCDIR); $(CC) -c *.c $(CFLAGS) -std=c99
+	@cd $(SRCDIR); $(CC) -c *.c $(CFLAGS) -std=c99
 
 objects-debug:
-	cd $(SRCDIR); $(CC) -c *.c -Wall $(CFLAGS) -std=c99 -Werror -Wshadow -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security -g
+	@cd $(SRCDIR); $(CC) -c *.c -Wall $(CFLAGS) -std=c99 -Werror -Wshadow -Wstrict-overflow -fno-strict-aliasing -Wformat -Wformat-security -g
 
 ncursesFM: objects
-	cd $(SRCDIR); $(CC) -o ../ncursesFM *.o $(LIBS)
+	@cd $(SRCDIR); $(CC) -o ../ncursesFM *.o $(LIBS)
 
 ncursesFM-debug: objects-debug
-	cd $(SRCDIR); $(CC) -o ../ncursesFM *.o $(LIBS)
+	@cd $(SRCDIR); $(CC) -o ../ncursesFM *.o $(LIBS)
 
 clean:
-	cd $(SRCDIR); $(RM) *.o
+	@cd $(SRCDIR); $(RM) *.o
 
 gettext: $(MSGOBJS)
 
 %/LC_MESSAGES/ncursesFM.mo: msg/%.po
-	mkdir -p $(dir $@)
-	$(info building locales.)
-	msgfmt -c -o $@ msg/$*.po
+	@mkdir -p $(dir $@)
+	@$(info building locales.)
+	@msgfmt -c -o $@ msg/$*.po
 
 install:
 # 	install executable file
-	$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
-	$(INSTALL_PROGRAM) $(BINNAME) "$(DESTDIR)$(BINDIR)"
+	$(info installing bin.)
+	@$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
+	@$(INSTALL_PROGRAM) $(BINNAME) "$(DESTDIR)$(BINDIR)"
 # 	install conf file
-	$(INSTALL_DIR) "$(DESTDIR)$(CONFDIR)"
-	$(INSTALL_DATA) $(CONFNAME) "$(DESTDIR)$(CONFDIR)"
+	$(info installing conf file.)
+	@$(INSTALL_DIR) "$(DESTDIR)$(CONFDIR)"
+	@$(INSTALL_DATA) $(CONFNAME) "$(DESTDIR)$(CONFDIR)"
 # 	install bash autocompletion script
-	$(INSTALL_DIR) "$(DESTDIR)$(COMPLDIR)"
-	$(INSTALL_DATA) $(COMPLNAME) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
+	$(info installing bash autocompletion.)
+	@$(INSTALL_DIR) "$(DESTDIR)$(COMPLDIR)"
+	@$(INSTALL_DATA) $(COMPLNAME) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
 # 	install image previewing script
-	$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
-	$(INSTALL_PROGRAM) $(PREVIEWERNAME) "$(DESTDIR)$(BINDIR)"
+	$(info installing img previewer.)
+	@$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
+	@$(INSTALL_PROGRAM) $(PREVIEWERNAME) "$(DESTDIR)$(BINDIR)"
 #	install locales
-	$(INSTALL_DIR) "$(DESTDIR)$(LOCALEDIR)"
-	$(INSTALL_DATA) $(MSGOBJS) "$(DESTDIR)$(LOCALEDIR)"
-	
+	$(info installing locales.)
+	@for MSGOBJ in $(MSGOBJS) ; do \
+		MSGDIR=$(LOCALEDIR)/$$(dirname $$MSGOBJ) ;\
+		$(INSTALL_DIR) "$(DESTDIR)$$MSGDIR" ; \
+		$(INSTALL_DATA) $$MSGOBJ "$(DESTDIR)$$MSGDIR" ; \
+	done
 
 uninstall:
 # 	remove executable file
-	$(RM) "$(DESTDIR)$(BINDIR)/$(BINNAME)"
+	$(info uninstalling bin.)
+	@$(RM) "$(DESTDIR)$(BINDIR)/$(BINNAME)"
 # 	remove conf file
-	$(RM) "$(DESTDIR)$(CONFDIR)/$(CONFNAME)"
+	$(info uninstalling conf file.)
+	@$(RM) "$(DESTDIR)$(CONFDIR)/$(CONFNAME)"
 # 	remove bash autocompletion script
-	$(RM) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
+	$(info uninstalling bash autocompletion.)
+	@$(RM) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
 # 	remove image previewing script
-	$(RM) "$(DESTDIR)$(BINDIR)/$(PREVIEWERNAME)"
+	$(info uninstalling img previewer.)
+	@$(RM) "$(DESTDIR)$(BINDIR)/$(PREVIEWERNAME)"
 # 	remove locales
-	$(RM) "$(DESTDIR)$(LOCALEDIR)/$(MSGOBJS)"
+	$(info uninstalling locales.)
+	@$(RM) "$(DESTDIR)$(MSGFILES)"

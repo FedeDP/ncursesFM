@@ -18,325 +18,328 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "y"
-msgstr
+msgstr ""
 
 msgid "n"
-msgstr
+msgstr ""
 
 msgid "Press 'L' to trigger helper"
-msgstr
+msgstr ""
 
 msgid "Remember: every shortcut in ncursesFM is case insensitive."
-msgstr
+msgstr ""
 
 msgid "Enter -> surf between folders or to open files."
-msgstr
+msgstr ""
 
 msgid "It will eventually (un)mount your ISO files or install your distro downloaded packages."
-msgstr
+msgstr ""
 
 msgid ", -> enable fast browse mode: it lets you jump between files by just typing their name."
-msgstr
+msgstr ""
 
-msgid "PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."
-msgstr
+msgid "PG_UP/DOWN -> jump straight to first/last file."
+msgstr ""
 
-msgid "h -> trigger the showing of hidden files; s -> see stat about files in current folder."
-msgstr
+msgid "PG_UP/DOWN -> jump straight to first/last file. i -> check files fullname."
+msgstr ""
+
+msgid "h -> trigger the showing of hidden files; s -> see files stats."
+msgstr ""
 
 msgid ". -> change sorting function: alphabetically (default), by size, by last modified or by type."
-msgstr
+msgstr ""
 
 msgid "Space -> select files. Once more to remove the file from selected files."
-msgstr
+msgstr ""
 
 msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract, p -> print."
-msgstr
+msgstr ""
 
 msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract."
-msgstr
+msgstr ""
 
 msgid "g -> switch to bookmarks window. j -> trigger image previewer, e -> add current file to bookmarks"
-msgstr
+msgstr ""
 
 msgid "o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."
-msgstr
+msgstr ""
 
 msgid "t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."
-msgstr
+msgstr ""
 
 msgid "m -> switch to devices tab."
-msgstr
+msgstr ""
 
 msgid "ESC -> quit."
-msgstr
+msgstr ""
 
 msgid "Just start typing your desired filename, to move right to its position."
-msgstr
+msgstr ""
 
 msgid "ESC -> leave fast browse mode."
-msgstr
+msgstr ""
 
-msgid "s -> see stat about files in current folder."
-msgstr
+msgid "s -> see files stats. i -> check files fullname."
+msgstr ""
 
 msgid "e -> remove selected file from bookmarks."
-msgstr
+msgstr ""
 
 msgid "enter on a bookmark will move to the folder/file selected."
-msgstr
+msgstr ""
 
 msgid "ESC -> leave bookmarks mode."
-msgstr
+msgstr ""
 
 msgid "enter on a file to move right to it."
-msgstr
+msgstr ""
 
 msgid "enter on a folder to move inside it."
-msgstr
+msgstr ""
 
 msgid "ESC -> leave search mode."
-msgstr
+msgstr ""
 
 msgid "m -> (un)mount current device."
-msgstr
+msgstr ""
 
 msgid "enter -> move to current device mountpoint, mounting it if necessary."
-msgstr
+msgstr ""
 
 msgid "ESC -> leave device mode."
-msgstr
+msgstr ""
 
 msgid "You have to specify a valid editor in config file."
-msgstr
+msgstr ""
 
 msgid "A generic error occurred. Check log."
-msgstr
+msgstr ""
 
 msgid "Files will be sorted alphabetically now."
-msgstr
+msgstr ""
 
 msgid "Files will be sorted by size now."
-msgstr
+msgstr ""
       
 msgid "Files will be sorted by last access now."
-msgstr
+msgstr ""
       
 msgid "Files will be sorted by type now."
-msgstr
+msgstr ""
 
 msgid "Too many bookmarks. Max 30."
-msgstr
+msgstr ""
 
 msgid "Adding current file to bookmarks. Proceed? Y/n:> "
-msgstr
+msgstr ""
 
 msgid "Removing current file from bookmarks. Proceed? Y/n:> "
-msgstr
+msgstr ""
 
 msgid "You cannot remove xdg defined user dirs."
-msgstr
+msgstr ""
 
 msgid "Could not open bookmarks file."
-msgstr
+msgstr ""
 
 msgid "Added to bookmarks!"
-msgstr
+msgstr ""
 
 msgid "Removed fron bookmarks!"
-msgstr
+msgstr ""
 
 msgid "No bookmarks found."
-msgstr
+msgstr ""
 
 msgid "It seems current bookmark no longer exists. Remove it? Y/n:>"
-msgstr
+msgstr ""
 
 msgid "This file is already selected. Cancel its selection before."
-msgstr
+msgstr ""
 
 msgid "There are no selected files."
-msgstr
+msgstr ""
 
 msgid "File selected."
-msgstr
+msgstr ""
 
 msgid "File deleted from selected list."
-msgstr
+msgstr ""
 
 msgid "File deleted from selected list. Selected list empty."
-msgstr
+msgstr ""
 
 msgid "Are you serious? y/N:> "
-msgstr
+msgstr ""
 
 msgid "This file is quite big. Do you really want to open it? y/N:> "
-msgstr
+msgstr ""
 
 msgid "There's already a search in progress. Wait for it."
-msgstr
+msgstr ""
 
 msgid "Insert filename to be found, at least 5 chars, max 20 chars.:> "
-msgstr
+msgstr ""
 
 msgid "Do you want to search in archives too? y/N:> "
-msgstr
+msgstr ""
 
 msgid "Do you want a lazy search (less precise but faster)? y/N:>"
-msgstr
+msgstr ""
 
 msgid "At least 5 chars..."
-msgstr
+msgstr ""
 
 msgid "Too many files found; try with a larger string."
-msgstr
+msgstr ""
 
 msgid "No files found."
-msgstr
+msgstr ""
 
 msgid "Searching..."
-msgstr
+msgstr ""
 
 msgid "Search finished. Press f anytime to view the results."
-msgstr
+msgstr ""
 
 msgid "Do you really want to print this file? Y/n:> "
-msgstr
+msgstr ""
 
 msgid "Print job added."
-msgstr
+msgstr ""
 
 msgid "No printers available."
-msgstr
+msgstr ""
 
 msgid "Insert new file name (defaults to first entry name):> "
-msgstr
+msgstr ""
 
 msgid "Insert new name:> "
-msgstr
+msgstr ""
 
 msgid "Do you really want to extract this archive? Y/n:> "
-msgstr
+msgstr ""
 
-msgid "Moving..."
-msgstr
+msgid "Cutting..."
+msgstr ""
 
 msgid "Pasting..."
-msgstr
+msgstr ""
 
 msgid "Removing..."
-msgstr
+msgstr ""
 
 msgid "Archiving..."
-msgstr
+msgstr ""
 
 msgid "Extracting..."
-msgstr
+msgstr ""
 
-msgid "Every file has been moved."
-msgstr
+msgid "Every file has been cut."
+msgstr ""
 
-msgid "Every files has been copied."
-msgstr
+msgid "Every files has been pasted."
+msgstr ""
 
 msgid "File/dir removed."
-msgstr
+msgstr ""
 
-msgid "The archive is ready."
-msgstr
+msgid "Archive is ready."
+msgstr ""
 
 msgid "Succesfully extracted."
-msgstr
+msgstr ""
 
 msgid "Could not move"
-msgstr
+msgstr ""
 
 msgid "Could not paste."
-msgstr
+msgstr ""
 
 msgid "Could not remove every file."
-msgstr
+msgstr ""
 
 msgid "Could not archive."
-msgstr
+msgstr ""
 
 msgid "Could not extract every file."
-msgstr
+msgstr ""
 
 msgid "File created."
-msgstr
+msgstr ""
 
 msgid "Dir created."
-msgstr
+msgstr ""
 
 msgid "File renamed."
-msgstr
+msgstr ""
 
 msgid "There are selected files."
-msgstr
+msgstr ""
 
 msgid "There's already an active job. This job will be queued."
-msgstr
+msgstr ""
 
 msgid "Queued jobs still running. Waiting..."
-msgstr
+msgstr ""
 
 msgid "Do you really want to install this package? y/N:> "
-msgstr
+msgstr ""
 
 msgid "Waiting for package installation to finish..."
-msgstr
+msgstr ""
 
 msgid "Currently there is no check against wrong package arch: it will crash packagekit and ncursesfm."
-msgstr
+msgstr ""
 
 msgid  "Devices:"
-msgstr
+msgstr ""
 
 msgid "Bookmarks:"
-msgstr
+msgstr ""
 
 # if you've got to switch format modifiers, see here:
 # http://www.gnu.org/software/gettext/manual/gettext.html#c_002dformat-Flag
 #, c-format
 msgid "%d files found searching %s:"
-msgstr
+msgstr ""
 
 msgid "Installed."
-msgstr
+msgstr ""
 
 msgid "Could not install."
-msgstr
+msgstr ""
 
 msgid "No devices found."
-msgstr
+msgstr ""
 
 # if you've got to switch format modifiers, see here:
 # http://www.gnu.org/software/gettext/manual/gettext.html#c_002dformat-Flag
 #, c-format
 msgid "%s mounted in: %s."
-msgstr
+msgstr ""
 
 msgid "%s unmounted."
-msgstr
+msgstr ""
 
 msgid "External tool has mounted %s."
-msgstr
+msgstr ""
 
 msgid "External tool has unmounted %s."
-msgstr
+msgstr ""
 
 msgid "New device connected."
-msgstr
+msgstr ""
 
 msgid "Device removed."
-msgstr
+msgstr ""
 
 msgid "Could not find /proc/mounts."
-msgstr
+msgstr ""
 
 msgid "On AC"
-msgstr
+msgstr ""
 
 msgid "No power supply info available."
-msgstr
+msgstr ""

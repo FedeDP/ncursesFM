@@ -53,9 +53,9 @@ const char ask_name[] = "Insert new name:> ";
 
 const char extr_question[] = "Do you really want to extract this archive? Y/n:> ";
 
-const char *thread_job_mesg[] = {"Moving...", "Pasting...", "Removing...", "Archiving...", "Extracting..."};
-const char *thread_str[] = {"Every file has been moved.", "Every files has been copied.", "File/dir removed.", "The archive is ready.", "Succesfully extracted."};
-const char *thread_fail_str[] = {"Could not move", "Could not paste.", "Could not remove every file.", "Could not archive.", "Could not extract every file."};
+const char *thread_job_mesg[] = {"Cutting...", "Pasting...", "Removing...", "Archiving...", "Extracting..."};
+const char *thread_str[] = {"Every file has been cut.", "Every files has been pasted.", "File/dir removed.", "Archive is ready.", "Succesfully extracted."};
+const char *thread_fail_str[] = {"Could not cut", "Could not paste.", "Could not remove every file.", "Could not archive.", "Could not extract every file."};
 const char *short_msg[] = {"File created.", "Dir created.", "File renamed."};
 
 const char selected_mess[] = "There are selected files.";
@@ -104,8 +104,8 @@ const char helper_string[][16][150] =
         {"It will eventually (un)mount your ISO files or install your distro downloaded packages."},
 #endif
         {", -> enable fast browse mode: it lets you jump between files by just typing their name."},
-        {"PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."},
-        {"h -> trigger the showing of hidden files; s -> see stat about files in current folder."},
+        {"PG_UP/DOWN -> jump straight to first/last file. i -> check files fullname."},
+        {"h -> trigger the showing of hidden files; s -> see files stats."},
         {". -> change sorting function: alphabetically (default), by size, by last modified or by type."},
         {"Space -> select files. Once more to remove the file from selected files."},
 #ifdef LIBCUPS_PRESENT
@@ -132,23 +132,23 @@ const char helper_string[][16][150] =
         {"ESC -> leave fast browse mode."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"s -> see stat about files in current folder."},
-        {"PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."},
+        {"s -> see files stats. i -> check files fullname."},
+        {"PG_UP/DOWN -> jump straight to first/last file."},
         {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
         {"e -> remove selected file from bookmarks."},
         {"enter on a bookmark will move to the folder/file selected."},
         {"ESC -> leave bookmarks mode."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"s -> see stat about files in current folder."},
-        {"PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."},
+        {"s -> see files stats. i -> check files fullname."},
+        {"PG_UP/DOWN -> jump straight to first/last file."},
         {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
         {"enter on a file to move right to it."},
         {"enter on a folder to move inside it."},
         {"ESC -> leave search mode."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"PG_UP/DOWN -> jump straight to first/last file. i -> check current file fullname."},
+        {"PG_UP/DOWN -> jump straight to first/last file. i -> check files fullname."},
         {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
         {"m -> (un)mount current device."},
         {"enter -> move to current device mountpoint, mounting it if necessary."},

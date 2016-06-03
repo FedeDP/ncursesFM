@@ -32,6 +32,9 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Search support: it will search your string in current directory tree. It can search your string inside archives too.
 * Basic print support through libcups.
 * Extract/compress files/folders through libarchive.
+* Powermanagement inhibition while processing a job (eg: while pasting a file) to avoid data loss.
+* Internal udisks2 monitor, to poll for new devices. It can automount new connected devices too. Device monitor will list only mountable devices, eg: dvd reader will not be listed until a cd/dvd is inserted.
+* Drives/usb sticks/ISO files (un)mount through udisks2.
 
 *To clarify: to paste/move a file you'll have to select it with space, then move to another dir or change tab, and press v/x.*
 
