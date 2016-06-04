@@ -10,7 +10,8 @@ CONFDIR = /etc/default
 LOCALEDIR = /usr/share/locale
 BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
-COMPLNAME = ncursesfm
+COMPLNAME = ncursesFM
+SCRIPTDIR = Script
 PREVIEWERNAME = ncursesfm_previewer
 SRCDIR = src/
 COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
@@ -81,9 +82,9 @@ all: version ncursesFM clean gettext
 
 debug: version ncursesFM-debug gettext
 
-local: LOCALEDIR=$(shell pwd)
-local: BINDIR=$(shell pwd)
-local: CONFDIR=$(shell pwd)
+local: LOCALEDIR=$(shell pwd)/$(SCRIPTDIR)
+local: BINDIR=$(shell pwd)/$(SCRIPTDIR)
+local: CONFDIR=$(shell pwd)/$(SCRIPTDIR)
 local: all
 
 version:
@@ -109,7 +110,7 @@ gettext: $(MSGOBJS)
 
 %/LC_MESSAGES/ncursesFM.mo: msg/%.po
 	@mkdir -p $(dir $@)
-	@$(info building locales.)
+	$(info building locales.)
 	@msgfmt -c -o $@ msg/$*.po
 
 install:
@@ -120,15 +121,15 @@ install:
 # 	install conf file
 	$(info installing conf file.)
 	@$(INSTALL_DIR) "$(DESTDIR)$(CONFDIR)"
-	@$(INSTALL_DATA) $(CONFNAME) "$(DESTDIR)$(CONFDIR)"
+	@$(INSTALL_DATA) $(SCRIPTDIR)/$(CONFNAME) "$(DESTDIR)$(CONFDIR)"
 # 	install bash autocompletion script
 	$(info installing bash autocompletion.)
 	@$(INSTALL_DIR) "$(DESTDIR)$(COMPLDIR)"
-	@$(INSTALL_DATA) $(COMPLNAME) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
+	@$(INSTALL_DATA) $(SCRIPTDIR)/$(COMPLNAME) "$(DESTDIR)$(COMPLDIR)/$(COMPLNAME)"
 # 	install image previewing script
 	$(info installing img previewer.)
 	@$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
-	@$(INSTALL_PROGRAM) $(PREVIEWERNAME) "$(DESTDIR)$(BINDIR)"
+	@$(INSTALL_PROGRAM) $(SCRIPTDIR)/$(PREVIEWERNAME) "$(DESTDIR)$(BINDIR)"
 #	install locales
 	$(info installing locales.)
 	@for MSGOBJ in $(MSGOBJS) ; do \
