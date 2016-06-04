@@ -9,6 +9,7 @@
 #include "archiver.h"
 #include "worker_thread.h"
 #include <linux/version.h>
+#include <magic.h>
 
 #ifdef LIBCUPS_PRESENT
 #include "print.h"
@@ -29,7 +30,7 @@ int change_dir(const char *str, int win);
 void change_tab(void);
 void switch_hidden(void);
 int is_ext(const char *filename, const char *ext[], int size);
-void manage_file(const char *str, float size);
+void manage_file(const char *str);
 void fast_file_operations(const int index);
 int remove_file(void);
 void manage_space_press(const char *str);
@@ -38,3 +39,4 @@ int move_file(void);
 void fast_browse(wint_t c);
 int move_cursor_to_file(int i, const char *filename, int win);
 void save_old_pos(int win);
+int get_mimetype(const char *path, const char *test);

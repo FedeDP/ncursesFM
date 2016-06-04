@@ -173,9 +173,6 @@ msgstr "File rimosso dalla lista dei selezionati. Lista dei selezionati vuota."
 msgid "Are you serious? y/N:> "
 msgstr "Sei sicuro? s/N:> "
 
-msgid "This file is quite big. Do you really want to open it? y/N:> "
-msgstr "Questo file è piuttosto grande. Vuoi veramente aprirlo? s/N:> "
-
 msgid "There's already a search in progress. Wait for it."
 msgstr "C'è già una ricerca attiva. Attenti che finisca."
 

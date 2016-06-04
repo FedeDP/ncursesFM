@@ -44,7 +44,6 @@ size_t input_len;
 static int (*const sorting_func[])(const struct dirent **d1, const struct dirent **d2) = {
     alphasort, sizesort, last_mod_sort, typesort
 };
-static const char *img_ext[] = {".jpg", ".png", ".JPG", ".bmp"};
 
 /*
  * Initializes screen, colors etc etc.
@@ -1253,7 +1252,7 @@ void preview_img(const char *path) {
     char full_cmd[PATH_MAX + 1];
     
     if (ps[1].mode == _preview) {
-        if (is_ext(path, img_ext, NUM(img_ext))) {
+        if (get_mimetype(path, "image")) {
             // 1 to print image
             cmd = 1;
             sprintf(ps[1].title, "Image: %s", path);

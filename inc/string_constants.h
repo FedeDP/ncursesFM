@@ -34,8 +34,6 @@ extern const char *file_sel[3];
 
 extern const char sure[];
 
-extern const char big_file[];
-
 extern const char already_searching[];
 extern const char search_insert_name[];
 extern const char search_archives[];

@@ -62,7 +62,7 @@ It would simplify move_cursor_to_file too!
 - [x] use another button to extract archives, and enter to xdg-open them
 - [x] switch to KEY_ESC to leave ncursesFM/current mode/leave input mode in ask_user
 - [ ] vi keybindings/keybinding profiles
-- [ ] switch back to libmagic mimetype support? (it is buggy...as of now it freezes on folders. Plus, i cannot use it for distro packages detection, neither for search_inside_archive because it is so slooooooooow)
+- [x] switch back to libmagic mimetype support?
 - [x] per-user config
 - [x] add some wiki to lighten readme
 - [ ] update doc

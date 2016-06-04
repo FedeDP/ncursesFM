@@ -611,7 +611,7 @@ static void manage_enter(struct stat current_file_stat) {
     } else if (S_ISDIR(current_file_stat.st_mode)) {
         change_dir(str_ptr[active][ps[active].curr_pos], active);
     } else {
-        manage_file(str_ptr[active][ps[active].curr_pos], current_file_stat.st_size);
+        manage_file(str_ptr[active][ps[active].curr_pos]);
     }
 }
 

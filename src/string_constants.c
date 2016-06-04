@@ -30,8 +30,6 @@ const char *file_sel[] = {"File selected.", "File deleted from selected list.", 
 
 const char sure[] = "Are you serious? y/N:> ";
 
-const char big_file[] = "This file is quite big. Do you really want to open it? y/N:> ";
-
 const char already_searching[] = "There's already a search in progress. Wait for it.";
 const char search_insert_name[] = "Insert filename to be found, at least 5 chars, max 20 chars.:> ";
 const char search_archives[] = "Do you want to search in archives too? y/N:> ";

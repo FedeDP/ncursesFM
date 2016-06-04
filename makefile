@@ -18,7 +18,7 @@ COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
 MSGLANGS = $(notdir $(wildcard msg/*po))
 MSGOBJS = $(MSGLANGS:.po=/LC_MESSAGES/ncursesFM.mo)
 MSGFILES = $(LOCALEDIR)/$(MSGOBJS)
-LIBS =-lpthread $(shell pkg-config --libs libarchive ncursesw libudev)
+LIBS =-lpthread -lmagic $(shell pkg-config --libs libarchive ncursesw libudev)
 CFLAGS =-D_GNU_SOURCE $(shell pkg-config --cflags libarchive ncursesw libudev) -DCONFDIR=\"$(CONFDIR)\" -DBINDIR=\"$(BINDIR)\" -DLOCALEDIR=\"$(LOCALEDIR)\"
 
 # sanity checks for completion dir

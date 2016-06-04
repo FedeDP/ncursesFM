@@ -1,7 +1,7 @@
 #include "../inc/fm_functions.h"
 
-static void xdg_open(const char *str, float size);
-static void open_file(const char *str, float size);
+static void xdg_open(const char *str);
+static void open_file(const char *str);
 static int new_file(const char *name);
 static int new_dir(const char *name);
 static int rename_file_folders(const char *name);
@@ -15,7 +15,6 @@ static int recursive_remove(const char *path, const struct stat *sb, int typefla
 static void rmrf(const char *path);
 
 #ifdef SYSTEMD_PRESENT
-static const char *iso_ext[] = {".iso", ".nrg", ".bin", ".mdf", ".img"};
 static const char *pkg_ext[] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
 static struct timeval timer;
@@ -81,15 +80,14 @@ int is_ext(const char *filename, const char *ext[], int size) {
  * if compiled with X11 support, and xdg-open is found, open the file,
  * else open the file with config.editor.
  */
-void manage_file(const char *str, float size) {
-    char c;
-    
+void manage_file(const char *str) {
 #ifdef SYSTEMD_PRESENT
-    if (is_ext(str, iso_ext, NUM(iso_ext))) {
+    if (get_mimetype(str, "iso9660")) {
         isomount(str);
         return;
     }
     if (is_ext(str, pkg_ext, NUM(pkg_ext))) {
+        char c;
         print_info(package_warn, INFO_LINE);
         ask_user(_(pkg_quest), &c, 1);
         print_info("", INFO_LINE);
@@ -99,10 +97,10 @@ void manage_file(const char *str, float size) {
         return;
     }
 #endif
-    if (access("/usr/bin/xdg-open", X_OK) == 0) {
-        xdg_open(str, size);
+    if (!access("/usr/bin/xdg-open", X_OK) && has_X) {
+        xdg_open(str);
     } else {
-        open_file(str, size);
+        open_file(str);
     }
 }
 
@@ -110,18 +108,14 @@ void manage_file(const char *str, float size) {
  * If we're on a X screen, open the file with xdg-open and redirect its output to /dev/null
  * not to make my ncurses screen dirty.
  */
-static void xdg_open(const char *str, float size) {
-    if (has_X) {
-        pid_t pid = vfork();
-        if (pid == 0) {
-            int fd = open("/dev/null",O_WRONLY);
-            dup2(fd, 1);
-            dup2(fd, 2);
-            close(fd);
-            execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, (char *) 0);
-        }
-    } else {
-        open_file(str, size);
+static void xdg_open(const char *str) {
+    pid_t pid = vfork();
+    if (pid == 0) {
+        int fd = open("/dev/null",O_WRONLY);
+        dup2(fd, 1);
+        dup2(fd, 2);
+        close(fd);
+        execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, (char *) 0);
     }
 }
 
@@ -130,14 +124,9 @@ static void xdg_open(const char *str, float size) {
  * (maybe he pressed enter on a avi video for example), then, if config.editor is set,
  * opens the file with it.
  */
-static void open_file(const char *str, float size) {
-    char c;
-
-    if (size > BIG_FILE_THRESHOLD) { // 5 Mb
-        ask_user(_(big_file), &c, 1);
-        if (quit || c != _(yes)[0]) {
-            return;
-        }
+static void open_file(const char *str) {
+    if ((!get_mimetype(str, "text/")) && (!get_mimetype(str, "x-empty"))) {
+        return;
     }
     if (strlen(config.editor)) {
         endwin();
@@ -422,4 +411,19 @@ void save_old_pos(int win) {
     
     str = strrchr(ps[win].nl[ps[win].curr_pos], '/') + 1;
     strcpy(ps[win].old_file, str);
+}
+
+int get_mimetype(const char *path, const char *test) {
+    int ret = 0;
+    const char *mimetype;
+    magic_t magic_cookie;
+    
+    magic_cookie = magic_open(MAGIC_MIME_TYPE);
+    magic_load(magic_cookie, NULL);
+    mimetype = magic_file(magic_cookie, path);
+    if (strstr(mimetype, test)) {
+        ret = 1;
+    }
+    magic_close(magic_cookie);
+    return ret;
 }

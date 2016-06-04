@@ -173,9 +173,6 @@ msgstr ""
 msgid "Are you serious? y/N:> "
 msgstr ""
 
-msgid "This file is quite big. Do you really want to open it? y/N:> "
-msgstr ""
-
 msgid "There's already a search in progress. Wait for it."
 msgstr ""
 
