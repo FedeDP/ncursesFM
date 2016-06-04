@@ -24,7 +24,6 @@
 
 #define FAST_BROWSE_THRESHOLD 500000
 #define MILLION 1000000
-#define BIG_FILE_THRESHOLD 5000000
 
 int change_dir(const char *str, int win);
 void change_tab(void);
