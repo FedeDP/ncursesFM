@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <title>Ncursesfm by FedeDP</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Ncursesfm</h1>
+        <h2>Ncurses File Manager for linux</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/FedeDP/ncursesFM/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/FedeDP/ncursesFM/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/FedeDP/ncursesFM" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <p><a href="https://travis-ci.org/FedeDP/ncursesFM"><img src="https://travis-ci.org/FedeDP/ncursesFM.svg?branch=master" alt="Build Status"></a></p>
+
+<h1>
+<a id="ncursesfm" class="anchor" href="#ncursesfm" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NcursesFM</h1>
+
+<p>Ncurses File Manager for linux.</p>
+
+<p>It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.<br>
+Being simple doesn't imply being useless; indeed it is a full featured fm.<br>
+It can be built with a very small set of dependencies, as i tried to make as many deps as possible optional (compile time or runtime).  </p>
+
+<p><img src="https://github.com/FedeDP/ncursesFM/raw/master/ncursesFM.png" alt=""></p>
+
+<h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features:</h2>
+
+<p><strong>Remember that every shortcut in ncursesFM is case insensitive!</strong></p>
+
+<p><em>Press 'L' while in program to view a detailed helper message</em></p>
+
+<ul>
+<li>Every feature you would expect by a basic FM.</li>
+<li>Terminal window resize support.</li>
+<li>i18n support: for now en, it.</li>
+<li>2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).</li>
+<li>image previewing support through w3mimgdisplay.</li>
+<li>config support through libconfig.</li>
+<li>Basic mouse support.</li>
+<li>Simple sysinfo monitor that will refresh every 30s: clock, battery and some system info.</li>
+<li>Fast browse mode: enable it with ','. It lets you jump between files by just typing their names.</li>
+<li>4 sorting modes.</li>
+<li>Stats support (permissions and sizes).</li>
+<li>Inotify monitor to check for fs events in current opened directories.</li>
+<li>Bookmarks support.</li>
+<li>Search support: it will search your string in current directory tree. It can search your string inside archives too.</li>
+<li>Basic print support through libcups.</li>
+<li>Extract/compress files/folders through libarchive.</li>
+<li>Powermanagement inhibition while processing a job (eg: while pasting a file) to avoid data loss.</li>
+<li>Internal udisks2 monitor, to poll for new devices. It can automount new connected devices too. Device monitor will list only mountable devices, eg: dvd reader will not be listed until a cd/dvd is inserted.</li>
+<li>Drives/usb sticks/ISO files (un)mount through udisks2.</li>
+</ul>
+
+<p><em>To clarify: to paste/move a file you'll have to select it with space, then move to another dir or change tab, and press v/x.</em></p>
+
+<p>For a full list of feature, have a look at the wiki page: <a href="https://github.com/FedeDP/ncursesFM/wiki/Getting-Started">https://github.com/FedeDP/ncursesFM/wiki/Getting-Started</a>.<br>
+Wiki has lots of information. You'll find info about how to build, deps, config file...have a look: <a href="https://github.com/FedeDP/ncursesFM/wiki">https://github.com/FedeDP/ncursesFM/wiki</a>.</p>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
