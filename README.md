@@ -36,7 +36,5 @@ It can be built with a very small set of dependencies, as i tried to make as man
 * Internal udisks2 monitor, to poll for new devices. It can automount new connected devices too. Device monitor will list only mountable devices, eg: dvd reader will not be listed until a cd/dvd is inserted.
 * Drives/usb sticks/ISO files (un)mount through udisks2.
 
-*To clarify: to paste/move a file you'll have to select it with space, then move to another dir or change tab, and press v/x.*
-
 For a full list of feature, have a look at the wiki page: https://github.com/FedeDP/ncursesFM/wiki/Getting-Started.  
 Wiki has lots of information. You'll find info about how to build, deps, config file...have a look: https://github.com/FedeDP/ncursesFM/wiki.
