@@ -2,7 +2,7 @@
 
 # NcursesFM
 
-Ncurses File Manager for linux.
+*Ncurses File Manager for linux*
 
 It aims to be as user friendly and lightweight as possible, while being good looking (my own tastes) and simple.  
 Being simple doesn't imply being useless; indeed it is a full featured fm.  
