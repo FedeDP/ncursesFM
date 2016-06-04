@@ -47,8 +47,8 @@ msgstr "PG_UP/DOWN -> vai direttamente al primo/ultimo file."
 msgid "h -> trigger the showing of hidden files; s -> see files stats."
 msgstr "h -> mostra/nascondi file nascosti; s -> controlla stat dei file."
 
-msgid ". -> change sorting function: alphabetically (default), by size, by last modified or by type."
-msgstr ". -> cambia la funzione di ordinamento: alfabeticamente (default), per grandezza, per ultimo accesso, o per tipo."
+msgid "TAB -> change sorting function: alphabetically (default), by size, by last modified or by type."
+msgstr "TAB -> cambia la funzione di ordinamento: alfabeticamente (default), per grandezza, per ultimo accesso, o per tipo."
 
 msgid "Space -> select files. Once more to remove the file from selected files."
 msgstr "Spazio -> seleziona file. Un'altra volta per rimuovere il file dalla lista dei selezionati."

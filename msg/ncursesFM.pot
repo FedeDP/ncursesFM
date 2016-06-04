@@ -47,7 +47,7 @@ msgstr ""
 msgid "h -> trigger the showing of hidden files; s -> see files stats."
 msgstr ""
 
-msgid ". -> change sorting function: alphabetically (default), by size, by last modified or by type."
+msgid "TAB -> change sorting function: alphabetically (default), by size, by last modified or by type."
 msgstr ""
 
 msgid "Space -> select files. Once more to remove the file from selected files."
