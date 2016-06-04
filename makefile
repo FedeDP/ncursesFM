@@ -82,7 +82,7 @@ all: version ncursesFM clean gettext
 
 debug: version ncursesFM-debug gettext
 
-local: LOCALEDIR=$(shell pwd)/$(SCRIPTDIR)
+local: LOCALEDIR=$(shell pwd)
 local: BINDIR=$(shell pwd)/$(SCRIPTDIR)
 local: CONFDIR=$(shell pwd)/$(SCRIPTDIR)
 local: all

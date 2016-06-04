@@ -88,9 +88,9 @@ const char ac_online[] = "On AC";
 const char power_fail[] = "No power supply info available.";
 
 #ifdef SYSTEMD_PRESENT
-const int HELPER_HEIGHT[] = {16, 8, 9, 9, 8};
+const int HELPER_HEIGHT[] = {16, 9, 9, 9, 8};
 #else
-const int HELPER_HEIGHT[] = {14, 7, 9, 9, 8};
+const int HELPER_HEIGHT[] = {14, 8, 9, 9, 8};
 #endif
 
 const char helper_title[] = "Press 'L' to trigger helper";
@@ -106,7 +106,7 @@ const char helper_string[][16][150] =
         {", -> enable fast browse mode: it lets you jump between files by just typing their name."},
         {"PG_UP/DOWN -> jump straight to first/last file. i -> check files fullname."},
         {"h -> trigger the showing of hidden files; s -> see files stats."},
-        {". -> change sorting function: alphabetically (default), by size, by last modified or by type."},
+        {"TAB -> change sorting function: alphabetically (default), by size, by last modified or by type."},
         {"Space -> select files. Once more to remove the file from selected files."},
 #ifdef LIBCUPS_PRESENT
         {"v/x -> paste/cut, b -> compress, r -> remove, z -> extract, p -> print."},
@@ -129,6 +129,7 @@ const char helper_string[][16][150] =
 #endif
         {"Just start typing your desired filename, to move right to its position."},
         {"PG_UP/DOWN -> jump straight to first/last file."},
+        {"TAB -> change sorting function: alphabetically (default), by size, by last modified or by type."},
         {"ESC -> leave fast browse mode."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},

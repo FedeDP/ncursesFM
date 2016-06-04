@@ -398,7 +398,7 @@ static void main_loop(void) {
      * 32 -> space to select files
      */
     wchar_t not_graph_wchars[10];
-    swprintf(not_graph_wchars, 10, L"%lc%lc%lc%lc%lc%lc%lc%lc%lc",   KEY_UP, KEY_DOWN, KEY_RIGHT,
+    swprintf(not_graph_wchars, 10, L"%lc%lc%lc%lc%lc%lc%lc%lc%lc",  KEY_UP, KEY_DOWN, KEY_RIGHT,
                                                                     KEY_LEFT, KEY_RESIZE, KEY_PPAGE,
                                                                     KEY_NPAGE, KEY_MOUSE, 32);
     char *ptr, old_file[PATH_MAX + 1] = {0};
@@ -422,7 +422,8 @@ static void main_loop(void) {
             continue;
         }
         c = tolower(c);
-        if (ps[active].mode > fast_browse_ && isprint(c) && !strchr(special_mode_allowed_chars, c)) {
+        // key_tab (9) is not useful in mode > fast_browse
+        if (ps[active].mode > fast_browse_ && ((isprint(c) && !strchr(special_mode_allowed_chars, c)) || c == 9)) {
             continue;
         }
         stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
@@ -505,7 +506,7 @@ static void main_loop(void) {
         case KEY_RESIZE:
             resize_win();
             break;
-        case '.': // . to change sorting function
+        case 9: // TAB to change sorting function
             change_sort();
             break;
         case 'i': // i to view current file fullname (in case it is too long)
