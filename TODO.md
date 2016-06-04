@@ -53,7 +53,6 @@ As soon as arch updates libarchive to 3.2.
 - [ ] fix crash when scrolling image previews too fast
 - [ ] move to KEY_TAB to change files/folders sorting?
 - [x] fix install target for i18n mo files
-- [ ] add autocompletion script source inside make local
 - [x] in make local pass current folder instead of "./"
 - [x] fix move_cursor_to_file: it can be called from within other mod too (pg_up / pg_down) -> scroll down/up to take a "lines" arguments to scroll down/up?
 It would simplify move_cursor_to_file too!
