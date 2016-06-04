@@ -1,8 +1,11 @@
-05 / 29 / 2016
+06 / 05 / 2016
 * i18n support -> english/italian for now!
 * added a "make local" target to makefile, to test CONFDIR, BINDIR and LOCALEDIR in current dir (instead of passing to make "CONFDIR=./ BINDIR=./" etc etc)
 * switched from const char* to const char[]
 * some fixes
+* switched to key_tab to change sorting func. This way it can be used from fast browse mode too.
+* some other makefile improvements
+* created wiki pages
 
 05 / 27 / 2016
 * users can now customize borders and cursor's chars
