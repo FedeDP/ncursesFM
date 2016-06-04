@@ -88,8 +88,8 @@ local: CONFDIR=$(shell pwd)/$(SCRIPTDIR)
 local: all
 
 version:
-	@$(GIT) rev-parse HEAD | awk ' BEGIN {print "#include \"../inc/version.h\""} {print "const char *build_git_sha = \"" $$0"\";"} END {}' > src/version.c
-	@date | awk 'BEGIN {} {print "const char *build_git_time = \""$$0"\";"} END {} ' >> src/version.c
+	@$(GIT) rev-parse HEAD | awk ' BEGIN {print "#include \"../inc/version.h\""} {print "const char build_git_sha[] = \""$$0"\";"} END {}' > src/version.c
+	@date | awk 'BEGIN {} {print "const char build_git_time[] = \""$$0"\";"} END {} ' >> src/version.c
 
 objects:
 	@cd $(SRCDIR); $(CC) -c *.c $(CFLAGS) -std=c99
