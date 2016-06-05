@@ -109,8 +109,8 @@ void manage_file(const char *str) {
  * not to make my ncurses screen dirty.
  */
 static void xdg_open(const char *str) {
-    pid_t pid = vfork();
-    if (pid == 0) {
+    if (vfork() == 0) {
+        // redirect stdout and stderr to null
         int fd = open("/dev/null",O_WRONLY);
         dup2(fd, 1);
         dup2(fd, 2);
@@ -168,9 +168,7 @@ void fast_file_operations(const int index) {
 }
 
 int new_file(const char *name) {
-    int fd;
-
-    fd = open(name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    int fd = open(name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd != -1) {
         close(fd);
         return 0;
@@ -416,14 +414,25 @@ void save_old_pos(int win) {
 int get_mimetype(const char *path, const char *test) {
     int ret = 0;
     const char *mimetype;
-    magic_t magic_cookie;
+    magic_t magic;
     
-    magic_cookie = magic_open(MAGIC_MIME_TYPE);
-    magic_load(magic_cookie, NULL);
-    mimetype = magic_file(magic_cookie, path);
+    if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
+        ERROR("An error occurred while loading libmagic database.");
+        return ret;
+    }
+    if (magic_load(magic, NULL) == -1) {
+        ERROR("An error occurred while loading libmagic database.");
+        goto end;
+    }
+    if ((mimetype = magic_file(magic, path)) == NULL) {
+        ERROR("An error occurred while loading libmagic database.");
+        goto end;
+    }
     if (strstr(mimetype, test)) {
         ret = 1;
     }
-    magic_close(magic_cookie);
+    
+end:
+    magic_close(magic);
     return ret;
 }
