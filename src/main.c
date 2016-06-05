@@ -346,7 +346,6 @@ static void config_checks(void) {
         WARN("no editor defined. Trying to get one from env.");
         if ((str = getenv("EDITOR"))) {
             strcpy(config.editor, str);
-            ERROR(str);
         } else {
             WARN("no editor env var found.");
         }
