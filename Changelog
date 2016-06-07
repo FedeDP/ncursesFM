@@ -6,6 +6,8 @@
 * switched to key_tab to change sorting func. This way it can be used from fast browse mode too.
 * some other makefile improvements
 * created wiki pages
+* added back libmagic for files mimetype support
+* fixed nasty bug in change_unit function
 
 05 / 27 / 2016
 * users can now customize borders and cursor's chars

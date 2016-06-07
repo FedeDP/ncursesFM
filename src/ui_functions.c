@@ -593,11 +593,10 @@ static void show_stat(int init, int end, int win) {
  * it changes the unit from Kb to Mb to Gb if size > 1024(previous unit)
  */
 void change_unit(float size, char *str) {
-    char *unit[3] = {"KB", "MB", "GB"};
+    char *unit[] = {"B", "KB", "MB", "GB", "TB"};
     int i = 0;
 
-    size /= 1024;
-    while ((size > 1024) && (i < 3)) {
+    while ((size > 1024) && (i < NUM(unit) - 1)) {
         size /= 1024;
         i++;
     }

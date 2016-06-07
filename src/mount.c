@@ -696,7 +696,7 @@ static int add_device(struct udev_device *dev, const char *name) {
             /* calculates current device size */
             if (udev_device_get_sysattr_value(dev, "size")) {
                 size = strtol(udev_device_get_sysattr_value(dev, "size"), NULL, 10);
-                size = (size / (uint64_t) 2) * 1024;
+                size = (size / (uint64_t) 2) * (uint64_t)1024;
                 change_unit((float)size, s);
             }
             if (udev_device_get_property_value(dev, "ID_MODEL")) {
