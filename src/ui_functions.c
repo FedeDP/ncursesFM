@@ -1260,10 +1260,6 @@ void preview_img(const char *path) {
             cmd = 6;
             memset(ps[1].title, 0, strlen(ps[1].title));
         }
-        // fix for xterm
-        if (ps[0].mywin.delta) {
-            endwin();
-        }
         sprintf(full_cmd, "%s %d %d %d %d %d %d %d \"%s\"", preview_bin, cmd, COLS / 2 + 2, 2, COLS / 2 - 5, dim - 4, COLS, LINES, path);
         print_border_and_title(1);
         int pid = vfork();

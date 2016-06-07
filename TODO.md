@@ -21,7 +21,7 @@ As soon as arch updates libarchive to 3.2.
 
 **VARIOUS**:  
 
-- [ ] fix crash when scrolling image previews too fast
+- [x] fix crash when scrolling image previews too fast
 - [ ] vi keybindings/keybinding profiles
 - [ ] add a testing section to wiki (eg explaining how to properly give backtrace in case of crash)
 - [ ] update doc
