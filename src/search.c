@@ -71,7 +71,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
         r = 1;
     }
     if (r) {
-        strcpy(sv.found_searched[sv.found_cont], path);
+        strncpy(sv.found_searched[sv.found_cont], path, PATH_MAX);
         sv.found_cont++;
         if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
             ret = FTW_STOP;
@@ -102,7 +102,7 @@ static int search_inside_archive(const char *path) {
                 r = 1;
             }
             if (r) {
-                sprintf(sv.found_searched[sv.found_cont], "%s/%s", path, archive_entry_pathname(entry));
+                snprintf(sv.found_searched[sv.found_cont], PATH_MAX, "%s/%s", path, archive_entry_pathname(entry));
                 sv.found_cont++;
                 if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
                     ret = FTW_STOP;
@@ -167,7 +167,7 @@ int search_enter_press(const char *str) {
     int len;
 
     if (sv.search_archive) {
-        strcpy(arch_str, str);
+        strncpy(arch_str, str, PATH_MAX);
         while ((len = strlen(arch_str))) {
             tmp = strrchr(arch_str, '/');
             if (is_ext(tmp, arch_ext, NUM(arch_ext))) {

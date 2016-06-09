@@ -13,8 +13,8 @@ static char (bookmarks[MAX_BOOKMARKS])[PATH_MAX + 1];
 void get_bookmarks(void) {
     FILE *f;
     
-    strcpy(home_dir, getpwuid(getuid())->pw_dir);
-    sprintf(fullpath, "%s%s", home_dir, bookmarks_file);
+    strncpy(home_dir, getpwuid(getuid())->pw_dir, PATH_MAX);
+    snprintf(fullpath, PATH_MAX, "%s%s", home_dir, bookmarks_file);
     get_xdg_dirs();
     if (num_bookmarks < MAX_BOOKMARKS) {
         if ((f = fopen(fullpath, "r"))) {
@@ -40,15 +40,15 @@ static void get_xdg_dirs(void) {
     char line[1000], file_path[PATH_MAX + 1];
     const char path[] = "/.config/user-dirs.dirs";
 
-    sprintf(file_path, "%s%s", home_dir, path);
+    snprintf(file_path, PATH_MAX, "%s%s", home_dir, path);
     if ((f = fopen(file_path, "r"))) {
         while (fgets(line, sizeof(line), f) && i < MAX_BOOKMARKS) {
             if (*line == '#') {
                 continue;
             }
-            strcpy(str, strchr(line, '/') + 1);
+            strncpy(str, strchr(line, '/') + 1, PATH_MAX);
             str[strlen(str) - 2] = '\0'; // -1 for newline - 1 for closing Double quotation mark
-            sprintf(bookmarks[i], "%s/%s", home_dir, str);
+            snprintf(bookmarks[i], PATH_MAX, "%s/%s", home_dir, str);
             i++;
         }
         fclose(f);
@@ -73,7 +73,7 @@ void add_file_to_bookmarks(const char *str) {
         fclose(f);
         print_info(bookmark_added, INFO_LINE);
         if (num_bookmarks < MAX_BOOKMARKS) {
-            strcpy(bookmarks[num_bookmarks], str);
+            strncpy(bookmarks[num_bookmarks], str, PATH_MAX);
             num_bookmarks++;
             update_bookmarks_tabs();
         } else {
@@ -137,9 +137,9 @@ void manage_enter_bookmarks(struct stat current_file_stat) {
     char str[PATH_MAX + 1];
     
     if (access(str_ptr[active][ps[active].curr_pos], F_OK ) != -1 ) {
-        strcpy(str, str_ptr[active][ps[active].curr_pos]);
+        strncpy(str, str_ptr[active][ps[active].curr_pos], PATH_MAX);
         if (!S_ISDIR(current_file_stat.st_mode)) {
-            strcpy(ps[active].old_file, strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1);
+            strncpy(ps[active].old_file, strrchr(str_ptr[active][ps[active].curr_pos], '/') + 1, PATH_MAX);
             int len = strlen(str_ptr[active][ps[active].curr_pos]) - strlen(ps[active].old_file);
             str[len] = '\0';
         } else {

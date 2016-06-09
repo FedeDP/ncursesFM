@@ -73,7 +73,7 @@ static void update_battery(int where) {
                     perc[i] = -1;
                 }
                 if (udev_device_get_property_value(dev, "POWER_SUPPLY_NAME")) {
-                    strcpy(name[i], udev_device_get_property_value(dev, "POWER_SUPPLY_NAME"));
+                    strncpy(name[i], udev_device_get_property_value(dev, "POWER_SUPPLY_NAME"), 9);
                 } else {
                     strcpy(name[i], "BAT");
                 }
@@ -113,11 +113,11 @@ static void poll_batteries(void) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
         dev = udev_device_new_from_syspath(udev, path);
         if (udev_device_get_property_value(dev, "POWER_SUPPLY_ONLINE")) {
-            strcpy(ac_path, path);
+            strncpy(ac_path, path, PATH_MAX);
         } else {
             batt = realloc(batt, (PATH_MAX + 1) * (num_of_batt + 1));
             if (batt) {
-                strcpy(batt[num_of_batt], path);
+                strncpy(batt[num_of_batt], path, PATH_MAX);
                 num_of_batt++;
             }
         }

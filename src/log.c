@@ -10,7 +10,7 @@ void open_log(void) {
     char log_path[PATH_MAX + 1];
     
     if (config.loglevel != NO_LOG) {
-        sprintf(log_path, "%s/.%s", getpwuid(getuid())->pw_dir, log_name);
+        snprintf(log_path, PATH_MAX, "%s/.%s", getpwuid(getuid())->pw_dir, log_name);
         if (config.persistent_log) {
             log_file = fopen(log_path, "a+");
         } else {

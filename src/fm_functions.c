@@ -30,7 +30,7 @@ int change_dir(const char *str, int win) {
     
     if (chdir(str) != -1) {
         getcwd(ps[win].my_cwd, PATH_MAX);
-        sprintf(ps[win].title, "%s", ps[win].my_cwd);
+        snprintf(ps[win].title, PATH_MAX, "%s", ps[win].my_cwd);
         tab_refresh(win);
         inotify_rm_watch(ps[win].inot.fd, ps[win].inot.wd);
         ps[win].inot.wd = inotify_add_watch(ps[win].inot.fd, ps[win].my_cwd, event_mask);
@@ -232,7 +232,7 @@ int paste_file(void) {
     char *copied_file_dir, path[PATH_MAX + 1];
 
     for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
-        strcpy(path, tmp->name);
+        strncpy(path, tmp->name, PATH_MAX);
         copied_file_dir = dirname(path);
         if (strcmp(thread_h->full_path, copied_file_dir)) {
             cpr(tmp);
@@ -253,12 +253,12 @@ int move_file(void) {
 
     lstat(thread_h->full_path, &file_stat_pasted);
     for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
-        strcpy(path, tmp->name);
+        strncpy(path, tmp->name, PATH_MAX);
         copied_file_dir = dirname(path);
         if (strcmp(thread_h->full_path, copied_file_dir)) {
             lstat(copied_file_dir, &file_stat_copied);
             if (file_stat_copied.st_dev == file_stat_pasted.st_dev) { // if on the same fs, just rename the file
-                sprintf(pasted_file, "%s%s", thread_h->full_path, strrchr(tmp->name, '/'));
+                snprintf(pasted_file, PATH_MAX, "%s%s", thread_h->full_path, strrchr(tmp->name, '/'));
                 if (rename(tmp->name, pasted_file) == - 1) {
                     print_info(strerror(errno), ERR_LINE);
                 }
@@ -284,7 +284,7 @@ int move_file(void) {
 static void cpr(file_list *tmp) {
     char path[PATH_MAX + 1];
     
-    strcpy(path, tmp->name);
+    strncpy(path, tmp->name, PATH_MAX);
     distance_from_root = strlen(dirname(path));
     nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
 }
@@ -293,7 +293,7 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
     int len, fd_to, fd_from, ret = 0;
     char pasted_file[PATH_MAX + 1];
 
-    sprintf(pasted_file, "%s%s", thread_h->full_path, path + distance_from_root);
+    snprintf(pasted_file, PATH_MAX, "%s%s", thread_h->full_path, path + distance_from_root);
     if (typeflag == FTW_D) {
         mkdir(pasted_file, sb->st_mode);
     } else {
@@ -408,7 +408,7 @@ void save_old_pos(int win) {
     char *str;
     
     str = strrchr(ps[win].nl[ps[win].curr_pos], '/') + 1;
-    strcpy(ps[win].old_file, str);
+    strncpy(ps[win].old_file, str, PATH_MAX);
 }
 
 int get_mimetype(const char *path, const char *test) {

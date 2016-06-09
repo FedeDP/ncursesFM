@@ -52,7 +52,7 @@ static int mount_fs(const char *str, int mount) {
         * is inside mounted path.
         * If unmount fails, we'll restore our previous cwd.
         */
-        strcpy(old_cwd, ps[active].my_cwd);
+        strncpy(old_cwd, ps[active].my_cwd, PATH_MAX);
         get_mount_point(str, mounted_path);
         win = check_cwd(mounted_path);
         strcpy(method, "Unmount");
@@ -80,7 +80,7 @@ static int mount_fs(const char *str, int mount) {
     ret = 1;
     if (!mount) {
         sd_bus_message_read(mess, "s", &path);
-        sprintf(mount_str, _(dev_mounted), str, path);
+        snprintf(mount_str, PATH_MAX, _(dev_mounted), str, path);
         INFO("Mounted.");
         /* if it's a loop dev, set autoclear after mounting it */
         if (!strncmp(str, "/dev/loop", strlen("/dev/loop"))) {
@@ -102,7 +102,7 @@ static int mount_fs(const char *str, int mount) {
          * to be sure we carry the right path
          */
         getcwd(ps[active].my_cwd, PATH_MAX);
-        sprintf(mount_str, _(dev_unmounted), str);
+        snprintf(mount_str, PATH_MAX, _(dev_unmounted), str);
         INFO("Unmounted.");
     }
 
@@ -218,7 +218,7 @@ static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
     udev_list_entry_foreach(dev_list_entry, devices) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
         dev = udev_device_new_from_syspath(udev, path);
-        strcpy(loop_dev, udev_device_get_devnode(dev));
+        strncpy(loop_dev, udev_device_get_devnode(dev), PATH_MAX);
         iso_backing_file(s, loop_dev);
         udev_device_unref(dev);
         if (!strcmp(s, resolved_path)) {
@@ -394,10 +394,10 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
     } else {
         if (!strncmp(obj, path, strlen(obj))) {
             INFO("InterfaceAdded signal received!");
-            strcpy(name, strrchr(path, '/') + 1);
+            strncpy(name, strrchr(path, '/') + 1, NAME_MAX);
             dev = udev_device_new_from_subsystem_sysname(udev, "block", name);
             if (dev) {
-                sprintf(devname, "/dev/%s", name);
+                snprintf(devname, PATH_MAX, "/dev/%s", name);
                 r = add_device(dev, devname);
                 udev_device_unref(dev);
                 if (!quit && r != -1) {
@@ -432,8 +432,8 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
     } else {
         if (!strncmp(obj, path, strlen(obj))) {
             INFO("InterfaceRemoved signal received!");
-            strcpy(name, strrchr(path, '/') + 1);
-            sprintf(devname, "/dev/%s", name);
+            strncpy(name, strrchr(path, '/') + 1, NAME_MAX);
+            snprintf(devname, PATH_MAX, "/dev/%s", name);
             r = remove_device(devname);
             if (!quit && r != -1) {
                 for (int i = 0; i < cont; i++) {
@@ -467,7 +467,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
         if (!strncmp(obj, path, strlen(obj))) {
             INFO("PropertiesChanged UDisks2 signal received!");
             const char *name = sd_bus_message_get_path(m);
-            sprintf(devname, "/dev/%s", strrchr(name, '/') + 1);
+            snprintf(devname, PATH_MAX, "/dev/%s", strrchr(name, '/') + 1);
             int present = is_present(devname);
             if (present != -1) {
                 change_mounted_status(present, devname);
@@ -560,7 +560,7 @@ static int get_mount_point(const char *dev_path, char *path) {
     while ((part = getmntent(mtab))) {
         if ((part->mnt_fsname) && (!strcmp(part->mnt_fsname, dev_path))) {
             if (path) {
-                strcpy(path, part->mnt_dir);
+                strncpy(path, part->mnt_dir, PATH_MAX);
             }
             ret = 1;
             break;
@@ -585,7 +585,7 @@ void manage_mount_device(void) {
     char *ptr = strchr(my_devices[pos], ',');
     char name[PATH_MAX + 1];
 
-    strcpy(name, my_devices[pos]);
+    strncpy(name, my_devices[pos], PATH_MAX);
     name[len - strlen(ptr)] = '\0';
     mount = my_devices[pos][len - 1] - '0';
     mount_fs(name, mount);
@@ -605,7 +605,7 @@ static int check_cwd(char *mounted_path) {
         }
     }
     if (ret) {
-        strcpy(mounted_path, dirname(mounted_path));
+        strncpy(mounted_path, dirname(mounted_path), PATH_MAX);
         /*
          * if ret == 1 + active means that active tab only
          * was inside mounted_path.
@@ -631,7 +631,7 @@ void manage_enter_device(void) {
     char dev_path[PATH_MAX + 1], name[PATH_MAX + 1] = {0};
 
     mount = my_devices[pos][len - 1] - '0';
-    strcpy(dev_path, my_devices[pos]);
+    strncpy(dev_path, my_devices[pos], PATH_MAX);
     dev_path[len - strlen(ptr)] = '\0';
     if (!mount) {
         ret = mount_fs(dev_path, mount);
@@ -648,9 +648,9 @@ static void change_mounted_status(int pos, const char *name) {
     sprintf(my_devices[pos] + len - 1, "%d", !mount);
     if (!strlen(mount_str)) {
         if (mount == 1) {
-            sprintf(mount_str, _(ext_dev_unmounted), name);
+            snprintf(mount_str, PATH_MAX, _(ext_dev_unmounted), name);
         } else {
-            sprintf(mount_str, _(ext_dev_mounted), name);
+            snprintf(mount_str, PATH_MAX, _(ext_dev_mounted), name);
         }
     }
     print_info(mount_str, INFO_LINE);
@@ -700,10 +700,10 @@ static int add_device(struct udev_device *dev, const char *name) {
                 change_unit((float)size, s);
             }
             if (udev_device_get_property_value(dev, "ID_MODEL")) {
-                sprintf(my_devices[number_of_devices], "%s, %s, Size: %s, Mounted: %d",
+                snprintf(my_devices[number_of_devices], PATH_MAX, "%s, %s, Size: %s, Mounted: %d",
                         name, udev_device_get_property_value(dev, "ID_MODEL"), s, mount);
             } else {
-                sprintf(my_devices[number_of_devices], "%s, Size: %s, Mounted: %d",
+                snprintf(my_devices[number_of_devices], PATH_MAX, "%s, Size: %s, Mounted: %d",
                         name, s, mount);
             }
             number_of_devices++;

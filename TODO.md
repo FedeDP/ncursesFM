@@ -12,7 +12,7 @@ As soon as arch updates libarchive to 3.2.
 
 **IMAGE PREVIEW**:  
 
-- [x] fix first line while scrolling down (xterm only)
+- [ ] fix first line while scrolling down (xterm only) (the fix caused the crash while scrolling image too fast)
 - [ ] understand why konsole is perfect only when scrolling...
 
 **TEXT/PDF PREVIEW**:  
@@ -23,5 +23,7 @@ As soon as arch updates libarchive to 3.2.
 
 - [x] fix crash when scrolling image previews too fast
 - [ ] vi keybindings/keybinding profiles
-- [ ] add a testing section to wiki (eg explaining how to properly give backtrace in case of crash)
+- [x] add a testing section to wiki (eg explaining how to properly give backtrace in case of crash)
+- [ ] add image preview section to wiki
+- [x] switch to strncpy and snprintf (safer)
 - [ ] update doc

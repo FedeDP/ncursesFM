@@ -38,7 +38,7 @@ static void archiver_func(void) {
     char path[PATH_MAX + 1];
 
     while (tmp) {
-        strcpy(path, tmp->name);
+        strncpy(path, tmp->name, PATH_MAX);
         distance_from_root = strlen(dirname(path));
         nftw(tmp->name, recursive_archive, 64, FTW_MOUNT | FTW_PHYS);
         tmp = tmp->next;
@@ -52,7 +52,7 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     int len, fd;
     struct archive_entry *entry = archive_entry_new();
 
-    strcpy(entry_name, path + distance_from_root + 1);
+    strncpy(entry_name, path + distance_from_root + 1, PATH_MAX);
     archive_entry_set_pathname(entry, entry_name);
     archive_entry_copy_stat(entry, sb);
     archive_write_header(archive, entry);
@@ -90,7 +90,7 @@ static int try_extractor(file_list *tmp) {
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
     if ((a) && (archive_read_open_filename(a, tmp->name, BUFF_SIZE) == ARCHIVE_OK)) {
-        strcpy(path, tmp->name);
+        strncpy(path, tmp->name, PATH_MAX);
         current_dir = dirname(path);
         extractor_thread(a, current_dir);
         return 0;
@@ -117,20 +117,20 @@ static void extractor_thread(struct archive *a, const char *current_dir) {
     archive_write_disk_set_options(ext, flags);
     archive_write_disk_set_standard_lookup(ext);
     while (archive_read_next_header(a, &entry) != ARCHIVE_EOF) {
-        strcpy(name, archive_entry_pathname(entry));
+        strncpy(name, archive_entry_pathname(entry), PATH_MAX);
         num = 0;
         /* avoid overwriting a file/dir in path if it has the same name of a file being extracted there */
         if (strchr(name, '/')) {
-            strcpy(tmp_name, strchr(name, '/'));
+            strncpy(tmp_name, strchr(name, '/'), PATH_MAX);
         } else {
             tmp_name[0] = '\0';
         }
         len = strlen(name) - strlen(tmp_name);
         while (access(name, F_OK) == 0) {
             num++;
-            sprintf(name + len, "%d%s", num, tmp_name);
+            snprintf(name + len, PATH_MAX - len, "%d%s", num, tmp_name);
         }
-        sprintf(fullpathname, "%s/%s", current_dir, name);
+        snprintf(fullpathname, PATH_MAX, "%s/%s", current_dir, name);
         archive_entry_set_pathname(entry, fullpathname);
         archive_write_header(ext, entry);
         len = archive_read_data(a, buff, sizeof(buff));

@@ -27,7 +27,7 @@ static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void)) {
         h->selected_files = NULL;
         h->next = NULL;
         h->f = f;
-        strcpy(h->full_path, ps[active].my_cwd);
+        strncpy(h->full_path, ps[active].my_cwd, PATH_MAX);
         h->type = type;
         h->num = num_of_jobs;
         current_th = h;
@@ -86,7 +86,7 @@ static int init_thread_helper(void) {
             return -1;
         }
         if (!strlen(name)) {
-            strcpy(name, strrchr(selected->name, '/') + 1);
+            strncpy(name, strrchr(selected->name, '/') + 1, NAME_MAX);
         }
         /* avoid overwriting a compressed file in path if it has the same name of the archive being created there */
         len = strlen(name);
@@ -95,7 +95,7 @@ static int init_thread_helper(void) {
             sprintf(name + len, "%d.tgz", num);
             num++;
         }
-        sprintf(current_th->filename, "%s/%s", current_th->full_path, name);
+        snprintf(current_th->filename, PATH_MAX, "%s/%s", current_th->full_path, name);
     }
     current_th->selected_files = selected;
     selected = NULL;
@@ -162,7 +162,7 @@ file_list *select_file(file_list *h, const char *str) {
             ERROR("could not malloc. Leaving.");
             return NULL;
         }
-        strcpy(h->name, str);
+        strncpy(h->name, str, PATH_MAX);
         h->next = NULL;
     }
     return h;

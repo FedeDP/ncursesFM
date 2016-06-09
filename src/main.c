@@ -157,7 +157,7 @@ static void set_pollfd(void) {
 static void sig_handler(int signum) {
     char str[50];
 
-    sprintf(str, "received signal %d. Leaving.", signum);
+//     sprintf(str, "received signal %d. Leaving.", signum);
     WARN(str);
     quit = NORM_QUIT;
 }
@@ -215,7 +215,7 @@ static void helper_function(int argc, const char *argv[]) {
     }
     
     /* some default values */
-    sprintf(preview_bin, "%s/ncursesfm_previewer", BINDIR);
+    snprintf(preview_bin, PATH_MAX, "%s/ncursesfm_previewer", BINDIR);
     previewer_script_available = !access(preview_bin, X_OK);
     previewer_available = !access("/usr/lib/w3m/w3mimgdisplay", X_OK);
     config.starting_helper = 1;
@@ -223,15 +223,15 @@ static void helper_function(int argc, const char *argv[]) {
 #ifdef SYSTEMD_PRESENT
     device_init = DEVMON_STARTING;
 #endif
-    strcpy(config.border_chars, "||--++++");
-    strcpy(config.cursor_chars, "->");
+    strncpy(config.border_chars, "||--++++", sizeof(config.border_chars) - 1);
+    strncpy(config.cursor_chars, "->", sizeof(config.cursor_chars) - 1);
     /* 
      * default sysinfo layout: 
      * Clock
      * Process monitor
      * Battery monitor
      */
-    strcpy(config.sysinfo_layout, "CPB");
+    strncpy(config.sysinfo_layout, "CPB", sizeof(config.sysinfo_layout) - 1);
 #ifdef LIBX11_PRESENT
     check_X();
 #endif
@@ -247,9 +247,9 @@ static void parse_cmd(int argc, const char *argv[]) {
 
     while (j < argc) {
         if ((!strcmp(cmd_switch[0], argv[j])) && (argv[j + 1])) {
-            strcpy(config.editor, argv[j + 1]);
+            strncpy(config.editor, argv[j + 1], PATH_MAX);
         } else if ((!strcmp(cmd_switch[1], argv[j])) && (argv[j + 1])) {
-            strcpy(config.starting_dir, argv[j + 1]);
+            strncpy(config.starting_dir, argv[j + 1], PATH_MAX);
         } else if ((!strcmp(cmd_switch[2], argv[j])) && (argv[j + 1])) {
             config.starting_helper = atoi(argv[j + 1]);
         } else if ((!strcmp(cmd_switch[3], argv[j])) && (argv[j + 1])) {
@@ -284,7 +284,7 @@ static void check_config_files() {
     
     char home_config_path[PATH_MAX + 1];
     
-    sprintf(home_config_path, "%s/.config", getpwuid(getuid())->pw_dir);
+    snprintf(home_config_path, PATH_MAX, "%s/.config", getpwuid(getuid())->pw_dir);
     read_config_file(home_config_path);
 }
 
@@ -294,7 +294,7 @@ static void read_config_file(const char *dir) {
     const char *str_editor, *str_starting_dir, 
                 *str_borders, *str_cursor, *sysinfo;
 
-    sprintf(config_file_name, "%s/ncursesFM.conf", dir);
+    snprintf(config_file_name, PATH_MAX, "%s/ncursesFM.conf", dir);
     if (access(config_file_name, F_OK ) == -1) {
         fprintf(stderr, "Config file %s not found.\n", config_file_name);
         return;
@@ -302,11 +302,11 @@ static void read_config_file(const char *dir) {
     config_init(&cfg);
     if (config_read_file(&cfg, config_file_name) == CONFIG_TRUE) {
         if (config_lookup_string(&cfg, "editor", &str_editor) == CONFIG_TRUE) {
-            strcpy(config.editor, str_editor);
+            strncpy(config.editor, str_editor, PATH_MAX);
         }
         config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
         if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) == CONFIG_TRUE) {
-            strcpy(config.starting_dir, str_starting_dir);
+            strncpy(config.starting_dir, str_starting_dir, PATH_MAX);
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
         config_lookup_int(&cfg, "starting_helper", &config.starting_helper);
@@ -345,7 +345,7 @@ static void config_checks(void) {
         memset(config.editor, 0, strlen(config.editor));
         WARN("no editor defined. Trying to get one from env.");
         if ((str = getenv("EDITOR"))) {
-            strcpy(config.editor, str);
+            strncpy(config.editor, str, PATH_MAX);
         } else {
             WARN("no editor env var found.");
         }
@@ -413,7 +413,7 @@ static void main_loop(void) {
     while (!quit) {
         if (ps[1].mode == _preview && strcmp(old_file, str_ptr[active][ps[active].curr_pos])) {
             preview_img(str_ptr[active][ps[active].curr_pos]);
-            strcpy(old_file, str_ptr[active][ps[active].curr_pos]);
+            strncpy(old_file, str_ptr[active][ps[active].curr_pos], PATH_MAX);
         }
         wint_t c = main_poll(ps[active].mywin.fm);
         if ((ps[active].mode == fast_browse_) && iswgraph(c) && !wcschr(not_graph_wchars, c)) {
@@ -618,7 +618,7 @@ static void manage_enter_search(struct stat current_file_stat) {
     char *str = NULL;
     char path[PATH_MAX + 1];
     
-    strcpy(path, sv.found_searched[ps[active].curr_pos]);
+    strncpy(path, sv.found_searched[ps[active].curr_pos], PATH_MAX);
     if (!S_ISDIR(current_file_stat.st_mode)) {
         int index = search_enter_press(path);
         /* save in str current file's name */
@@ -628,7 +628,7 @@ static void manage_enter_search(struct stat current_file_stat) {
         if (ptr) {
             str[strlen(str) - strlen(ptr)] = '\0';
         }
-        strcpy(ps[active].old_file, str);
+        strncpy(ps[active].old_file, str, PATH_MAX);
         path[index] = '\0';
     } else {
         memset(ps[active].old_file, 0, strlen(ps[active].old_file));

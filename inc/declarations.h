@@ -102,7 +102,7 @@ struct conf {
  * List used to store file names when selecting them
  */
 typedef struct list {
-    char name[PATH_MAX];
+    char name[PATH_MAX + 1];
     struct list *next;
 } file_list;
 
@@ -133,7 +133,7 @@ enum working_mode {normal, fast_browse_, bookmarks_, search_, device_, _preview}
  */
 struct tab {
     int curr_pos;
-    char my_cwd[PATH_MAX];
+    char my_cwd[PATH_MAX + 1];
     char (*nl)[PATH_MAX + 1];
     int number_of_files;
     char title[PATH_MAX + 1];

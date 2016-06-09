@@ -129,7 +129,7 @@ static void generate_list(int win) {
     str_ptr[win] = ps[win].nl;
     for (int i = 0; i < ps[win].number_of_files; i++) {
         if (!quit) {
-            sprintf(ps[win].nl[i], "%s/%s", ps[win].my_cwd, files[i]->d_name);
+            snprintf(ps[win].nl[i], PATH_MAX, "%s/%s", ps[win].my_cwd, files[i]->d_name);
         }
         free(files[i]);
     }
@@ -332,7 +332,7 @@ void resize_tab(int win, int resizing) {
 static void initialize_tab_cwd(int win) {
     if (strlen(config.starting_dir)) {
         if ((cont == 1) || (config.second_tab_starting_dir)) {
-            strcpy(ps[win].my_cwd, config.starting_dir);
+            strncpy(ps[win].my_cwd, config.starting_dir, PATH_MAX);
         }
     }
     if (!strlen(ps[win].my_cwd)) {
@@ -652,7 +652,7 @@ static void info_print(const char *str, int i) {
     }
     if (i == INFO_LINE) {
         if (selected) {
-            strcpy(st, _(selected_mess));
+            strncpy(st, _(selected_mess), sizeof(st) - 1);
         }
         if (thread_h) {
             sprintf(st + strlen(st), "[%d/%d] %s", thread_h->num, num_of_jobs, _(thread_job_mesg[thread_h->type]));
@@ -997,7 +997,7 @@ void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title, int
     ps[active].number_of_files = num;
     if (str != NULL) {
         str_ptr[active] = str;
-        strcpy(ps[active].title, title);
+        strncpy(ps[active].title, title, PATH_MAX);
         save_old_pos(active);
         print_additional_wins(HELPER_HEIGHT[normal], 0);
         reset_win(active);
@@ -1254,13 +1254,13 @@ void preview_img(const char *path) {
         if (get_mimetype(path, "image")) {
             // 1 to print image
             cmd = 1;
-            sprintf(ps[1].title, "Image: %s", path);
+            snprintf(ps[1].title, PATH_MAX, "Image: %s", path);
         } else {
             // 6 to only clear screen
             cmd = 6;
             memset(ps[1].title, 0, strlen(ps[1].title));
         }
-        sprintf(full_cmd, "%s %d %d %d %d %d %d %d \"%s\"", preview_bin, cmd, COLS / 2 + 2, 2, COLS / 2 - 5, dim - 4, COLS, LINES, path);
+        snprintf(full_cmd, PATH_MAX, "%s %d %d %d %d %d %d %d \"%s\"", preview_bin, cmd, COLS / 2 + 2, 2, COLS / 2 - 5, dim - 4, COLS, LINES, path);
         print_border_and_title(1);
         int pid = vfork();
         if (pid == 0) {
