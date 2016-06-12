@@ -6,7 +6,7 @@
 
 Written in C, with ncurses library, it aims to be as user friendly and lightweight as possible, while being good looking and simple.  
 Being simple doesn't imply being useless; indeed it is a full featured fm.  
-For a full list of deps and how to build, please refer to wiki pages!
+For a full list of features, deps and how to build, please refer to [wiki pages](https://github.com/FedeDP/ncursesFM/wiki/).
 
 ![](https://github.com/FedeDP/ncursesFM/raw/master/ncursesFM.png)
 
@@ -35,6 +35,3 @@ For a full list of deps and how to build, please refer to wiki pages!
 * Powermanagement inhibition while processing a job (eg: while pasting a file) to avoid data loss.
 * Internal udisks2 monitor, to poll for new devices. It can automount new connected devices too. Device monitor will list only mountable devices, eg: dvd reader will not be listed until a cd/dvd is inserted.
 * Drives/usb sticks/ISO files (un)mount through udisks2.
-
-For a full list of feature, have a look at the wiki page: https://github.com/FedeDP/ncursesFM/wiki/Getting-Started.  
-Wiki has lots of information. You'll find info about how to build, deps, config file...have a look: https://github.com/FedeDP/ncursesFM/wiki.
