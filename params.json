@@ -1,6 +1,6 @@
 {
   "name": "Ncursesfm",
   "tagline": "Ncurses File Manager for linux",
-  "body": "# NcursesFM\r\n\r\n*Ncurses File Manager for linux*\r\n\r\nWritten in C, with ncurses library, it aims to be as user friendly and lightweight as possible, while being good looking and simple.  \r\nBeing simple doesn't imply being useless; indeed it is a full featured fm.  \r\nFor a full list of deps and how to build, please refer to wiki pages!\r\n\r\n![](https://github.com/FedeDP/ncursesFM/raw/master/ncursesFM.png)\r\n\r\nFor a full list of feature, have a look at the wiki page: https://github.com/FedeDP/ncursesFM/wiki/Getting-Started.  \r\nWiki has lots of information. You'll find info about how to build, deps, config file...have a look: https://github.com/FedeDP/ncursesFM/wiki.\r\n",
+  "body": "# NcursesFM\r\n\r\n*Ncurses File Manager for linux*\r\n\r\nWritten in C, with ncurses library, it aims to be as user friendly and lightweight as possible, while being good looking and simple.  \r\nBeing simple doesn't imply being useless; indeed it is a full featured fm.  \r\nFor a full list of features, deps and how to build, please refer to [wiki pages](https://github.com/FedeDP/ncursesFM/wiki/).\r\n\r\n![](https://github.com/FedeDP/ncursesFM/raw/master/ncursesFM.png)",
   "note": "Don't delete this file! It's used internally to help with page regeneration."
 }
