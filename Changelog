@@ -1,3 +1,6 @@
+06 / 15 / 2016
+* switched to signalfd instead of ppoll (cleaner)
+
 06 / 05 / 2016
 * i18n support -> english/italian for now!
 * added a "make local" target to makefile, to test CONFDIR, BINDIR and LOCALEDIR in current dir (instead of passing to make "CONFDIR=./ BINDIR=./" etc etc)

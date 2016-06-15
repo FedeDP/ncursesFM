@@ -30,7 +30,7 @@ int change_dir(const char *str, int win) {
     
     if (chdir(str) != -1) {
         getcwd(ps[win].my_cwd, PATH_MAX);
-        snprintf(ps[win].title, PATH_MAX, "%s", ps[win].my_cwd);
+        strncpy(ps[win].title, ps[win].my_cwd, PATH_MAX);
         tab_refresh(win);
         inotify_rm_watch(ps[win].inot.fd, ps[win].inot.wd);
         ps[win].inot.wd = inotify_add_watch(ps[win].inot.fd, ps[win].my_cwd, event_mask);
@@ -91,7 +91,7 @@ void manage_file(const char *str) {
         print_info(package_warn, INFO_LINE);
         ask_user(_(pkg_quest), &c, 1);
         print_info("", INFO_LINE);
-        if (!quit && c == _(yes)[0]) {
+        if (c == _(yes)[0]) {
             pthread_create(&install_th, NULL, install_package, (void *)str);
         }
         return;
@@ -153,10 +153,10 @@ static void open_file(const char *str) {
  * Notifies user.
  */
 void fast_file_operations(const int index) {
-    char new_name[NAME_MAX + 1];
+    char new_name[NAME_MAX + 1] = {0};
 
     ask_user(_(ask_name), new_name, NAME_MAX);
-    if (quit || !strlen(new_name) || new_name[0] == 27) {
+    if (!strlen(new_name) || new_name[0] == 27) {
         return;
     }
     int r = short_func[index](new_name);
@@ -229,7 +229,7 @@ void manage_space_press(const char *str) {
  * from where it was copied. If it is the case, it does not copy it.
  */
 int paste_file(void) {
-    char *copied_file_dir, path[PATH_MAX + 1];
+    char *copied_file_dir, path[PATH_MAX + 1] = {0};
 
     for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
         strncpy(path, tmp->name, PATH_MAX);
@@ -248,7 +248,7 @@ int paste_file(void) {
  * Else, the function has to copy it and rm copied file.
  */
 int move_file(void) {
-    char pasted_file[PATH_MAX + 1], *copied_file_dir, path[PATH_MAX + 1];
+    char pasted_file[PATH_MAX + 1] = {0}, *copied_file_dir, path[PATH_MAX + 1] = {0};
     struct stat file_stat_copied, file_stat_pasted;
 
     lstat(thread_h->full_path, &file_stat_pasted);
@@ -282,7 +282,7 @@ int move_file(void) {
  * 2) /path/to/pasted/folder/Scripts/me, that is exactly what we wanted.
  */
 static void cpr(file_list *tmp) {
-    char path[PATH_MAX + 1];
+    char path[PATH_MAX + 1] = {0};
     
     strncpy(path, tmp->name, PATH_MAX);
     distance_from_root = strlen(dirname(path));
@@ -291,7 +291,7 @@ static void cpr(file_list *tmp) {
 
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     int len, fd_to, fd_from, ret = 0;
-    char pasted_file[PATH_MAX + 1];
+    char pasted_file[PATH_MAX + 1] = {0};
 
     snprintf(pasted_file, PATH_MAX, "%s%s", thread_h->full_path, path + distance_from_root);
     if (typeflag == FTW_D) {
@@ -362,7 +362,7 @@ static void rmrf(const char *path) {
  */
 void fast_browse(wint_t c) {
     int i = 0;
-    char mbstr[NAME_MAX + 1];
+    char mbstr[NAME_MAX + 1] = {0};
     uint64_t diff = (MILLION * timer.tv_sec) + timer.tv_usec;
 
     gettimeofday(&timer, NULL);
@@ -408,7 +408,7 @@ void save_old_pos(int win) {
     char *str;
     
     str = strrchr(ps[win].nl[ps[win].curr_pos], '/') + 1;
-    strncpy(ps[win].old_file, str, PATH_MAX);
+    strncpy(ps[win].old_file, str, NAME_MAX);
 }
 
 int get_mimetype(const char *path, const char *test) {

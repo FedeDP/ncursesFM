@@ -73,7 +73,7 @@ static void update_battery(int where) {
                     perc[i] = -1;
                 }
                 if (udev_device_get_property_value(dev, "POWER_SUPPLY_NAME")) {
-                    strncpy(name[i], udev_device_get_property_value(dev, "POWER_SUPPLY_NAME"), 9);
+                    strcpy(name[i], udev_device_get_property_value(dev, "POWER_SUPPLY_NAME"));
                 } else {
                     strcpy(name[i], "BAT");
                 }

@@ -52,7 +52,7 @@ void init_thread(int type, int (* const f)(void)) {
     if (!(thread_h = add_job(thread_h, type, f))) {
         return;
     }
-    if (init_thread_helper()) {
+    if (init_thread_helper() == -1) {
         return;
     }
     if (num_of_jobs > 1) {
@@ -75,12 +75,12 @@ void init_thread(int type, int (* const f)(void)) {
  * Fixes some needed current_th variables.
  */
 static int init_thread_helper(void) {
-    char name[NAME_MAX + 1];
+    char name[NAME_MAX + 1] = {0};
     int num = 1, len;
 
-    if (current_th->type == ARCHIVER_TH && !quit) {
+    if (current_th->type == ARCHIVER_TH) {
         ask_user(_(archiving_mesg), name, NAME_MAX);
-        if (quit || name[0] == 27) {
+        if (name[0] == 27) {
             free(current_th);
             current_th = NULL;
             return -1;

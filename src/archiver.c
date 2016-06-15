@@ -35,7 +35,7 @@ int create_archive(void) {
  */
 static void archiver_func(void) {
     file_list *tmp = thread_h->selected_files;
-    char path[PATH_MAX + 1];
+    char path[PATH_MAX + 1] = {0};
 
     while (tmp) {
         strncpy(path, tmp->name, PATH_MAX);
@@ -48,7 +48,7 @@ static void archiver_func(void) {
 }
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    char buff[BUFF_SIZE], entry_name[PATH_MAX + 1];
+    char buff[BUFF_SIZE], entry_name[PATH_MAX + 1] = {0};
     int len, fd;
     struct archive_entry *entry = archive_entry_new();
 
@@ -84,7 +84,7 @@ int extract_file(void) {
 
 static int try_extractor(file_list *tmp) {
     struct archive *a;
-    char *current_dir, path[PATH_MAX + 1];
+    char *current_dir, path[PATH_MAX + 1] = {0};
 
     a = archive_read_new();
     archive_read_support_filter_all(a);
@@ -111,7 +111,7 @@ static void extractor_thread(struct archive *a, const char *current_dir) {
     int len, num;
     int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
     char buff[BUFF_SIZE], fullpathname[PATH_MAX + 1];
-    char name[PATH_MAX + 1], tmp_name[PATH_MAX + 1];
+    char name[PATH_MAX + 1] = {0}, tmp_name[PATH_MAX + 1] = {0};
 
     ext = archive_write_disk_new();
     archive_write_disk_set_options(ext, flags);

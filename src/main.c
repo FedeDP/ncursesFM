@@ -28,9 +28,8 @@
 #endif
 
 static void locale_init(void);
-static void set_signals(void);
+static int set_signals(void);
 static void set_pollfd(void);
-static void sig_handler(int signum);
 static void sigsegv_handler(int signum);
 #ifdef LIBX11_PRESENT
 static void check_X(void);
@@ -66,7 +65,6 @@ int previewer_available, previewer_script_available;
 int main(int argc, const char *argv[])
 {
     locale_init();
-    set_signals();
     helper_function(argc, argv);
 #ifdef LIBCONFIG_PRESENT
     check_config_files();
@@ -78,9 +76,7 @@ int main(int argc, const char *argv[])
     set_pollfd();
     if (!quit) {
         screen_init();
-        if (!quit) {
-            main_loop();
-        }
+        main_loop();
     }
     program_quit();
 }
@@ -94,25 +90,27 @@ static void locale_init(void) {
     textdomain("ncursesFM");
 }
 
-static void set_signals(void) {
-    struct sigaction main_act = {{0}};
+static int set_signals(void) {
     sigset_t mask;
-
-    main_act.sa_handler = sig_handler;
-    sigaction(SIGINT, &main_act, 0);
-    sigaction(SIGTERM, &main_act, 0);
+    
+    // when receiving segfault signal,
+    // call our sigsegv handler that just logs
+    // a debug message before dying
+    signal(SIGSEGV, sigsegv_handler);
+    
     sigemptyset(&mask);
     sigaddset(&mask, SIGINT);
     sigaddset(&mask, SIGTERM);
-    sigprocmask(SIG_BLOCK, &mask, &main_mask);
-    signal(SIGSEGV, sigsegv_handler);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
+    
+    return signalfd(-1, &mask, 0);
 }
 
 static void set_pollfd(void) {
 #ifdef SYSTEMD_PRESENT
-    nfds = 6;
+    nfds = 7;
 #else
-    nfds = 5;
+    nfds = 6;
 #endif
     
     main_p = malloc(nfds * sizeof(struct pollfd));
@@ -142,24 +140,16 @@ static void set_pollfd(void) {
         .fd = info_fd[0],
         .events = POLLIN,
     };
+    main_p[SIGNAL_IX] = (struct pollfd) {
+        .fd = set_signals(),
+        .events = POLLIN,
+    };
 #ifdef SYSTEMD_PRESENT
     main_p[DEVMON_IX] = (struct pollfd) {
         .fd = start_monitor(),
         .events = POLLIN,
     };
 #endif
-}
-
-/*
- * if received an external SIGINT or SIGTERM,
- * just switch the quit flag to 1 and log a warn.
- */
-static void sig_handler(int signum) {
-    char str[50];
-
-//     sprintf(str, "received signal %d. Leaving.", signum);
-    WARN(str);
-    quit = NORM_QUIT;
 }
 
 /*
@@ -282,7 +272,7 @@ static void parse_cmd(int argc, const char *argv[]) {
 static void check_config_files() {
     read_config_file(CONFDIR);
     
-    char home_config_path[PATH_MAX + 1];
+    char home_config_path[PATH_MAX + 1] = {0};
     
     snprintf(home_config_path, PATH_MAX, "%s/.config", getpwuid(getuid())->pw_dir);
     read_config_file(home_config_path);
@@ -290,7 +280,7 @@ static void check_config_files() {
 
 static void read_config_file(const char *dir) {
     config_t cfg;
-    char config_file_name[PATH_MAX + 1];
+    char config_file_name[PATH_MAX + 1] = {0};
     const char *str_editor, *str_starting_dir, 
                 *str_borders, *str_cursor, *sysinfo;
 
@@ -411,7 +401,7 @@ static void main_loop(void) {
 #endif
 
     while (!quit) {
-        if (ps[1].mode == _preview && strcmp(old_file, str_ptr[active][ps[active].curr_pos])) {
+        if (ps[1].mode == preview_ && strcmp(old_file, str_ptr[active][ps[active].curr_pos])) {
             preview_img(str_ptr[active][ps[active].curr_pos]);
             strncpy(old_file, str_ptr[active][ps[active].curr_pos], PATH_MAX);
         }
@@ -435,7 +425,7 @@ static void main_loop(void) {
             break;
         case KEY_RIGHT:
         case KEY_LEFT:
-            if (cont == MAX_TABS && ps[1].mode != _preview) {
+            if (cont == MAX_TABS && ps[1].mode != preview_) {
                 change_tab();
             }
             break;
@@ -523,9 +513,9 @@ static void main_loop(void) {
             break;
         case 'j': // j to trigger image previewer
             if (cont == 1 && previewer_available && has_X && previewer_script_available) {
-                ps[1].mode = _preview;
+                ps[1].mode = preview_;
                 add_new_tab();
-            } else if (ps[1].mode == _preview) {
+            } else if (ps[1].mode == preview_) {
                 cont--;
                 delete_tab(1);
                 resize_tab(0, 0);
@@ -616,7 +606,7 @@ static void manage_enter(struct stat current_file_stat) {
 
 static void manage_enter_search(struct stat current_file_stat) {
     char *str = NULL;
-    char path[PATH_MAX + 1];
+    char path[PATH_MAX + 1] = {0};
     
     strncpy(path, sv.found_searched[ps[active].curr_pos], PATH_MAX);
     if (!S_ISDIR(current_file_stat.st_mode)) {
@@ -674,7 +664,7 @@ static int check_init(int index) {
     }
     if (index == EXTRACTOR_TH) {
         ask_user(_(extr_question), &x, 1);
-        if (quit || x == _(no)[0] || x == 27) {
+        if (x == _(no)[0] || x == 27) {
             return 0;
         }
     }
@@ -682,7 +672,7 @@ static int check_init(int index) {
         return check_access();
     }
     ask_user(_(sure), &x, 1);
-    if (quit || x != _(yes)[0]) {
+    if (x != _(yes)[0]) {
         return 0;
     }
     return 1;

@@ -70,7 +70,8 @@
 #define INOTIFY_IX1 2
 #define INOTIFY_IX2 3
 #define INFO_IX 4
-#define DEVMON_IX 5
+#define SIGNAL_IX 5
+#define DEVMON_IX 6
 
 /*
  * Useful macro to know number of elements in arrays
@@ -126,7 +127,7 @@ struct scrstr {
     char tot_size[30];
 };
 
-enum working_mode {normal, fast_browse_, bookmarks_, search_, device_, _preview};
+enum working_mode {normal, fast_browse_, bookmarks_, search_, device_, preview_};
 
 /*
  * Struct used to store tab's information
@@ -178,7 +179,6 @@ typedef struct thread_list {
  * to be printed to main_poll.
  */
 struct pollfd *main_p;
-sigset_t main_mask;
 int nfds, info_fd[2];
 
 thread_job_list *thread_h;

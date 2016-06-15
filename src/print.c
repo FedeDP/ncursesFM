@@ -8,7 +8,7 @@ void print_support(const char *str) {
     char c;
 
     ask_user(_(print_question), &c, 1);
-    if (!quit && c == _(yes)[0]) {
+    if (c == _(yes)[0]) {
         print_file(str);
     }
 }

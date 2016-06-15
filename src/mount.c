@@ -37,7 +37,7 @@ static int mount_fs(const char *str, int mount) {
     char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
     char tmp[30], method[10];
     int r, ret = -1;
-    char mounted_path[PATH_MAX + 1] = {0}, old_cwd[PATH_MAX + 1];
+    char mounted_path[PATH_MAX + 1] = {0}, old_cwd[PATH_MAX + 1] = {0};
     int win;
 
     r = sd_bus_open_system(&mount_bus);
@@ -384,8 +384,8 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
     int r;
     const char *path;
     const char obj[] = "/org/freedesktop/UDisks2/block_devices/";
-    char devname[PATH_MAX + 1];
-    char name[NAME_MAX + 1];
+    char devname[PATH_MAX + 1] = {0};
+    char name[NAME_MAX + 1] = {0};
     struct udev_device *dev;
 
     r = sd_bus_message_read(m, "o", &path);
@@ -423,8 +423,8 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
     int r;
     const char *path;
     const char obj[] = "/org/freedesktop/UDisks2/block_devices/";
-    char devname[PATH_MAX + 1];
-    char name[NAME_MAX + 1];
+    char devname[PATH_MAX + 1] = {0};
+    char name[NAME_MAX + 1] = {0};
 
     r = sd_bus_message_read(m, "o", &path);
     if (r < 0) {
@@ -458,7 +458,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
     int r;
     const char *path;
     const char obj[] = "org.freedesktop.UDisks2.Filesystem";
-    char devname[PATH_MAX + 1];
+    char devname[PATH_MAX + 1] = {0};
 
     r = sd_bus_message_read(m, "s", &path);
     if (r < 0) {
@@ -628,7 +628,7 @@ void manage_enter_device(void) {
     int pos = ps[active].curr_pos;
     int len = strlen(my_devices[pos]);
     char *ptr = strchr(my_devices[pos], ',');
-    char dev_path[PATH_MAX + 1], name[PATH_MAX + 1] = {0};
+    char dev_path[PATH_MAX + 1] = {0}, name[PATH_MAX + 1] = {0};
 
     mount = my_devices[pos][len - 1] - '0';
     strncpy(dev_path, my_devices[pos], PATH_MAX);

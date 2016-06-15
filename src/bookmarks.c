@@ -37,7 +37,7 @@ static void get_xdg_dirs(void) {
     int i = 0;
     FILE *f;
     char str[PATH_MAX + 1] = {0};
-    char line[1000], file_path[PATH_MAX + 1];
+    char line[1000], file_path[PATH_MAX + 1] = {0};
     const char path[] = "/.config/user-dirs.dirs";
 
     snprintf(file_path, PATH_MAX, "%s%s", home_dir, path);
@@ -65,7 +65,7 @@ void add_file_to_bookmarks(const char *str) {
     char c;
 
     ask_user(_(bookmarks_add_quest), &c, 1);
-    if (quit || c == _(no)[0] || c == 27) {
+    if (c == _(no)[0] || c == 27) {
         return;
     }
     if ((f = fopen(fullpath, "a+"))) {
@@ -91,7 +91,7 @@ void remove_bookmark_from_file(void) {
         print_info(bookmarks_xdg_err, ERR_LINE);
     } else {
         ask_user(_(bookmarks_rm_quest), &c, 1);
-        if (quit || c ==  _(no)[0] || c == 27) {
+        if (c ==  _(no)[0] || c == 27) {
             return;
         }
         remove_bookmark();
@@ -134,7 +134,7 @@ void show_bookmarks(void) {
 
 void manage_enter_bookmarks(struct stat current_file_stat) {
     char c;
-    char str[PATH_MAX + 1];
+    char str[PATH_MAX + 1] = {0};
     
     if (access(str_ptr[active][ps[active].curr_pos], F_OK ) != -1 ) {
         strncpy(str, str_ptr[active][ps[active].curr_pos], PATH_MAX);
@@ -148,7 +148,7 @@ void manage_enter_bookmarks(struct stat current_file_stat) {
         leave_special_mode(str);
     } else {
         ask_user(_(inexistent_bookmark), &c, 1);
-        if (!quit && c != _(no)[0] && c != 27) {
+        if (c != _(no)[0] && c != 27) {
             remove_bookmark();
         }
     }

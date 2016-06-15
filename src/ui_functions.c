@@ -21,6 +21,7 @@ static void show_stat(int init, int end, int win);
 static void erase_stat(void);
 static void info_print(const char *str, int i);
 static void fix_input_cursor_pos(void);
+static void sig_handler(int fd);
 static void info_refresh(int fd);
 static void inotify_refresh(int win);
 static void print_additional_wins(int helper_height, int resizing);
@@ -186,8 +187,7 @@ static int typesort(const struct dirent **d1, const struct dirent **d2) {
  * Clear tab, reset every var, if stat_active was idle, turn it on,
  * then call list_everything.
  */
-void reset_win(int win)
-{
+void reset_win(int win) {
     wclear(ps[win].mywin.fm);
     ps[win].mywin.delta = 0;
     ps[win].curr_pos = 0;
@@ -206,9 +206,9 @@ void reset_win(int win)
  */
 static void list_everything(int win, int old_dim, int end) {
     char *str;
-    wchar_t name[NAME_MAX + 1];
+    wchar_t name[NAME_MAX + 1] = {0};
     
-    if (ps[win].mode == _preview) {
+    if (ps[win].mode == preview_) {
         return;
     }
     
@@ -297,7 +297,7 @@ void new_tab(int win) {
     idlok(ps[win].mywin.fm, TRUE);
     notimeout(ps[win].mywin.fm, TRUE);
     nodelay(ps[win].mywin.fm, TRUE);
-    if (ps[win].mode != _preview) {
+    if (ps[win].mode != preview_) {
         initialize_tab_cwd(win);
     }
 }
@@ -820,7 +820,11 @@ void ask_user(const char *str, char *input, int d) {
             break;
         }
     } while ((wcslen(wstring) < d) && (!quit) && (!leave));
-    if (wcslen(wstring) > 0 && !quit) {
+    if (quit) {
+        wmemset(wstring, 0,  wcslen(wstring));
+        input[0] = 27;
+    }
+    if (wcslen(wstring) > 0) {
         wcstombs(input, wstring, d);
     }
     curs_set(0);
@@ -838,14 +842,8 @@ static void fix_input_cursor_pos(void) {
 }
 
 /*
- * call ppoll; it is interruptable from SIGINT and SIGTERM signals.
- * It will poll for getch, timerfd, inotify, pipe and bus events.
- * If occurred event is not a getch event, return recursively main_poll
- * (ie: we don't need to come back to the cycle that called main_poll, because no buttons has been pressed)
- * else return getch value (it will be ERR if a signal has been received, as ppoll gets interrupted but
- * getch is in notimeout mode)
- * If ppoll return -1 it means: window has been resized or we received a signal (sigint/sigterm).
- * Either case, just return wgetch.
+ * call poll; it is interruptable from SIGINT and SIGTERM signals (signalfd)
+ * It will poll for getch, timerfd, inotify, pipe, signalfd and bus events.
  */
 wint_t main_poll(WINDOW *win) {;
     uint64_t t;
@@ -858,13 +856,13 @@ wint_t main_poll(WINDOW *win) {;
     while ((ret == ERR) && (!quit)) {
         fix_input_cursor_pos(); // if we're currently asking a question, move cursor to its correct position on ASK_LINE
         /*
-        * resize event returns -EPERM error with ppoll (-1)
+        * resize event returns -EPERM error with poll (-1)
         * see here: http://keyvanfatehi.com/2011/08/02/Asynchronous-c-programs-an-event-loop-and-ncurses/.
         * plus, this is needed when a signal is caught (sigint/sigterm)
         */
-        int r = ppoll(main_p, nfds, NULL, &main_mask);
+        int r = poll(main_p, nfds, -1);
         if (r == -1) {
-            ret = wget_wch(win, &c);
+            ret = wget_wch(win, &c); // ungetch(KEY_RESIZE);
         } else {
             for (int i = 0; i < nfds && r > 0; i++) {
                 if (main_p[i].revents & POLLIN) {
@@ -887,6 +885,10 @@ wint_t main_poll(WINDOW *win) {;
                     /* we received an event from pipe to print an info msg */
                         info_refresh(main_p[i].fd);
                         break;
+                    case SIGNAL_IX:
+                    /* we received a signal */
+                        sig_handler(main_p[i].fd);
+                        break;
 #ifdef SYSTEMD_PRESENT
                     case DEVMON_IX:
                     /* we received a bus event */
@@ -900,6 +902,25 @@ wint_t main_poll(WINDOW *win) {;
         }
     }
     return c;
+}
+
+/*
+ * if received an external SIGINT or SIGTERM,
+ * just switch the quit flag to 1 and log a warn.
+ */
+static void sig_handler(int fd) {
+    char str[50];
+    struct signalfd_siginfo fdsi;
+    ssize_t s;
+    
+    s = read(fd, &fdsi, sizeof(struct signalfd_siginfo));
+    if (s != sizeof(struct signalfd_siginfo)) {
+        ERROR("an error occurred while getting signalfd data.");
+    } else {
+        sprintf(str, "received signal %d. Leaving.", fdsi.ssi_signo);
+        WARN(str);
+    }
+    quit = NORM_QUIT;
 }
 
 void timer_event(void) {
@@ -1250,7 +1271,7 @@ void preview_img(const char *path) {
     int cmd;
     char full_cmd[PATH_MAX + 1];
     
-    if (ps[1].mode == _preview) {
+    if (ps[1].mode == preview_) {
         if (get_mimetype(path, "image")) {
             // 1 to print image
             cmd = 1;
