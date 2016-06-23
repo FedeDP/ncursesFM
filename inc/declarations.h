@@ -139,7 +139,7 @@ struct scrstr {
     char tot_size[30];
 };
 
-enum working_mode {normal, fast_browse_, bookmarks_, search_, device_, selected_, jobs_};
+enum working_mode {normal, fast_browse_, bookmarks_, search_, device_, selected_};
 
 /*
  * Struct used to store tab's information

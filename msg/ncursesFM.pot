@@ -59,7 +59,7 @@ msgstr ""
 msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract."
 msgstr ""
 
-msgid "g -> switch to bookmarks mode. j -> switch to selected mode. e -> add/remove current file to bookmarks."
+msgid "g -> switch to bookmarks mode. e -> add/remove current file to bookmarks. k -> switch to selected mode."
 msgstr ""
 
 msgid "o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."

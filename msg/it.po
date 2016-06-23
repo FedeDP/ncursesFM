@@ -59,8 +59,8 @@ msgstr "v/x -> incolla/taglia, b -> comprimi, r -> rimuovi, z -> estrai, p -> st
 msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract."
 msgstr "v/x -> incolla/taglia, b -> comprimi, r -> rimuovi, z -> estrai."
 
-msgid "g -> switch to bookmarks mode. j -> switch to selected mode. e -> add/remove current file to bookmarks."
-msgstr "g -> accedi modalità segnalibri. j -> accedi modalità selezionati, e -> aggiungi/rimuovi file corrente dai segnalibri."
+msgid "g -> switch to bookmarks mode. e -> add/remove current file to bookmarks. k -> switch to selected mode."
+msgstr "g -> accedi modalità segnalibri. e -> aggiungi/rimuovi file corrente dai segnalibri. k -> accedi modalità selezionati."
 
 msgid "o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."
 msgstr "o -> rinomina il file/cartella corrente; n/d -> crea un nuovo file/nuova cartella. f -> cerca."

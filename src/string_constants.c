@@ -123,7 +123,7 @@ const char helper_string[][16][150] =
         {"v/x -> paste/cut, b -> compress, r -> remove, z -> extract."},
 #endif
         {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
-        {"g -> switch to bookmarks mode. j -> switch to selected mode. e -> add/remove current file to bookmarks."},
+        {"g -> switch to bookmarks mode. e -> add/remove current file to bookmarks. k -> switch to selected mode."},
 #ifdef SYSTEMD_PRESENT
         {"m -> switch to device mode."},
 #endif
