@@ -51,6 +51,7 @@ static void manage_enter_search(struct stat current_file_stat);
 static void manage_space(const char *str);
 static void manage_quit(void);
 static void switch_search(void);
+static void check_remove(void (*f)(void));
 static int check_init(int index);
 static int check_access(void);
 
@@ -60,7 +61,6 @@ static int check_access(void);
 static int (*const long_func[LONG_FILE_OPERATIONS])(void) = {
     move_file, paste_file, remove_file, create_archive, extract_file
 };
-int previewer_available, previewer_script_available;
 
 int main(int argc, const char *argv[])
 {
@@ -107,10 +107,13 @@ static int set_signals(void) {
 }
 
 static void set_pollfd(void) {
-#ifdef SYSTEMD_PRESENT
+#if ARCHIVE_VERSION_NUMBER >= 3002000
     nfds = 7;
 #else
     nfds = 6;
+#endif
+#ifdef SYSTEMD_PRESENT
+    nfds++;
 #endif
     
     main_p = malloc(nfds * sizeof(struct pollfd));
@@ -144,6 +147,14 @@ static void set_pollfd(void) {
         .fd = set_signals(),
         .events = POLLIN,
     };
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+    archive_cb_fd[0] = eventfd(0, 0);
+    archive_cb_fd[1] = eventfd(0, 0);
+    main_p[ARCHIVE_IX] = (struct pollfd) {
+        .fd = archive_cb_fd[0],
+        .events = POLLIN,
+    };
+#endif
 #ifdef SYSTEMD_PRESENT
     main_p[DEVMON_IX] = (struct pollfd) {
         .fd = start_monitor(),
@@ -191,25 +202,30 @@ static void helper_function(int argc, const char *argv[]) {
         printf("\t* --editor /path/to/editor to set an editor for current session. Fallbacks to $EDITOR env var.\n");
         printf("\t* --starting_dir /path/to/dir to set a starting directory for current session. Defaults to current dir.\n");
         printf("\t* --helper_win {0,1} to switch (off,on) starting helper message. Defaults to 1.\n");
+#ifdef SYSTEMD_PRESENT
         printf("\t* --inhibit {0,1} to switch {off,on} powermanagement functions while a job is being processed. Defaults to 0.\n");
         printf("\t* --automount {0,1} to switch {off,on} automounting of external drives/usb sticks. Defaults to 0.\n");
+#endif
         printf("\t* --loglevel {0,1,2,3} to change loglevel. Defaults to 0.\n");
         printf("\t\t* 0 to log only errors.\n\t\t* 1 to log warn messages and errors.\n");
         printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable logs.\n");
         printf("\t* --persistent_log {0,1} to switch {off,on} persistent logs across program restarts. Defaults to 0.\n");
-        printf("\t* --low_level {$level} to set low battery signal's threshold. Defaults to 15%%.\n\n");
-        printf(" Have a look at /etc/default/ncursesFM.conf to set your preferred defaults.\n");
+        printf("\t* --low_level {$level} to set low battery signal's threshold. Defaults to 15%%.\n");
+        printf("\t* --safe {0,1,2} to change safety level. Defaults to 2.\n");
+        printf("\t\t* 0 don't ask ay confirmation.\n");
+        printf("\t\t* 1 ask confirmation for file remotions/packages installs/printing files.\n");
+        printf("\t\t* 2 ask confirmation for every action.\n\n");
+        printf(" Have a look at /etc/default/ncursesFM.conf to set your global defaults.\n");
+        printf(" You can copy default conf file to $HOME/.config/ncursesFM.conf to set your user defaults.\n");
         printf(" Just use arrow keys to move up and down, and enter to change directory or open a file.\n");
         printf(" Press 'L' while in program to view a more detailed helper message.\n\n");
         exit(EXIT_SUCCESS);
     }
     
     /* some default values */
-    snprintf(preview_bin, PATH_MAX, "%s/ncursesfm_previewer", BINDIR);
-    previewer_script_available = !access(preview_bin, X_OK);
-    previewer_available = !access("/usr/lib/w3m/w3mimgdisplay", X_OK);
     config.starting_helper = 1;
     config.bat_low_level = 15;
+    config.safe = FULL_SAFE;
 #ifdef SYSTEMD_PRESENT
     device_init = DEVMON_STARTING;
 #endif
@@ -230,9 +246,11 @@ static void helper_function(int argc, const char *argv[]) {
 static void parse_cmd(int argc, const char *argv[]) {
     int j = 1;
 #ifdef SYSTEMD_PRESENT
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--low_level", "--inhibit", "--automount"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", 
+        "--persistent_log", "--low_level", "--safe", "--inhibit", "--automount"};
 #else
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", "--persistent_log", "--low_level"};
+    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", 
+        "--persistent_log", "--low_level", "--safe"};
 #endif
 
     while (j < argc) {
@@ -248,12 +266,14 @@ static void parse_cmd(int argc, const char *argv[]) {
             config.persistent_log = atoi(argv[j + 1]);
         } else if ((!strcmp(cmd_switch[5], argv[j])) && (argv[j + 1])) {
             config.bat_low_level = atoi(argv[j + 1]);
+        } else if ((!strcmp(cmd_switch[6], argv[j])) && (argv[j + 1])) {
+            config.safe = atoi(argv[j + 1]);
         }
 #ifdef SYSTEMD_PRESENT
-        else if ((!strcmp(cmd_switch[6], argv[j])) && (argv[j + 1])) {
+        else if ((!strcmp(cmd_switch[7], argv[j])) && (argv[j + 1])) {
             config.inhibit = atoi(argv[j + 1]);
         }
-        else if ((!strcmp(cmd_switch[7], argv[j])) && (argv[j + 1])) {
+        else if ((!strcmp(cmd_switch[8], argv[j])) && (argv[j + 1])) {
             config.automount = atoi(argv[j + 1]);
         }
 #endif
@@ -316,6 +336,10 @@ static void read_config_file(const char *dir) {
         if (config_lookup_string(&cfg, "sysinfo_layout", &sysinfo) == CONFIG_TRUE) {
             strncpy(config.sysinfo_layout, sysinfo, sizeof(config.sysinfo_layout));
         }
+        config_lookup_int(&cfg, "safe", &config.safe);
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+        config_lookup_int(&cfg, "password_archive", &config.pwd_archive);
+#endif
     } else {
         fprintf(stderr, "Config file: %s at line %d.\n",
                 config_error_text(&cfg),
@@ -343,6 +367,9 @@ static void config_checks(void) {
     if ((config.loglevel < LOG_ERR) || (config.loglevel > NO_LOG)) {
         config.loglevel = LOG_ERR;
     }
+    if (config.safe < UNSAFE || config.safe > FULL_SAFE) {
+        config.safe = FULL_SAFE;
+    }
 }
 
 /*
@@ -353,6 +380,7 @@ static void config_checks(void) {
  */
 static void main_loop(void) {
     int index;
+    char *ptr;
     
     /*
      * x to move,
@@ -373,11 +401,11 @@ static void main_loop(void) {
      * l switch helper_win,
      * t new tab,
      * m only in device_mode to {un}mount device,
-     * e only in bookmarks_mode to remove device from bookmarks
+     * r in bookmarks_mode/selected mode to remove file from bookmarks/selected.
      * s to show stat
      * i to trigger fullname win
      */
-    const char special_mode_allowed_chars[] = "ltmesi";
+    const char special_mode_allowed_chars[] = "ltmrsi";
     
     /*
      * Not graphical wchars:
@@ -390,7 +418,6 @@ static void main_loop(void) {
     swprintf(not_graph_wchars, 10, L"%lc%lc%lc%lc%lc%lc%lc%lc%lc",  KEY_UP, KEY_DOWN, KEY_RIGHT,
                                                                     KEY_LEFT, KEY_RESIZE, KEY_PPAGE,
                                                                     KEY_NPAGE, KEY_MOUSE, 32);
-    char *ptr, old_file[PATH_MAX + 1] = {0};
     struct stat current_file_stat;
     
     MEVENT event;
@@ -401,10 +428,6 @@ static void main_loop(void) {
 #endif
 
     while (!quit) {
-        if (ps[1].mode == preview_ && strcmp(old_file, str_ptr[active][ps[active].curr_pos])) {
-            preview_img(str_ptr[active][ps[active].curr_pos]);
-            strncpy(old_file, str_ptr[active][ps[active].curr_pos], PATH_MAX);
-        }
         wint_t c = main_poll(ps[active].mywin.fm);
         if ((ps[active].mode == fast_browse_) && iswgraph(c) && !wcschr(not_graph_wchars, c)) {
             fast_browse(c);
@@ -425,7 +448,7 @@ static void main_loop(void) {
             break;
         case KEY_RIGHT:
         case KEY_LEFT:
-            if (cont == MAX_TABS && ps[1].mode != preview_) {
+            if (cont == MAX_TABS) {
                 change_tab();
             }
             break;
@@ -464,12 +487,8 @@ static void main_loop(void) {
         case 's': // show stat about files (size and perms)
             trigger_stats();
             break;
-        case 'e': // add dir to bookmarks
-            if (ps[active].mode == normal) {
-                add_file_to_bookmarks(str_ptr[active][ps[active].curr_pos]);
-            } else if (ps[active].mode == bookmarks_) {
-                remove_bookmark_from_file();
-            }
+        case 'e': // add file to bookmarks
+            add_file_to_bookmarks(str_ptr[active][ps[active].curr_pos]);
             break;
         case 'f': // f to search
             switch_search();
@@ -511,21 +530,14 @@ static void main_loop(void) {
         case 'g': // g to show bookmarks
             show_bookmarks();
             break;
-        case 'j': // j to trigger image previewer
-            if (cont == 1 && previewer_available && has_X && previewer_script_available) {
-                ps[1].mode = preview_;
-                add_new_tab();
-            } else if (ps[1].mode == preview_) {
-                cont--;
-                delete_tab(1);
-                resize_tab(0, 0);
-                memset(old_file, 0, strlen(old_file));
-            } else if (!previewer_available) {
-                print_info("You need w3mimgdisplay from w3m to preview images.", INFO_LINE);
-            } else if (!previewer_script_available) {
-                print_info( "Previewing script not found.", ERR_LINE);
-            } else if (!has_X) {
-                print_info("You need to be in a X session for image preview to work.", INFO_LINE);
+        case 'k': // k to show selected files
+            show_selected();
+            break;
+        case KEY_DC: // del to delete all selected files in selected mode/ all user bookmarks in bookmark mode
+            if (ps[active].mode == bookmarks_) {
+                check_remove(remove_all_user_bookmarks);
+            } else if (ps[active].mode == selected_) {
+                check_remove(remove_all_selected);
             }
             break;
         case KEY_MOUSE:
@@ -556,9 +568,16 @@ static void main_loop(void) {
         default:
             ptr = strchr(long_table, c);
             if (ptr) {
-                index = LONG_FILE_OPERATIONS - strlen(ptr);
-                if (check_init(index)) {
-                    init_thread(index, long_func[index]);
+                if (ps[active].mode == normal) {
+                    index = LONG_FILE_OPERATIONS - strlen(ptr);
+                    if (check_init(index)) {
+                        init_thread(index, long_func[index]);
+                    }
+                // in mode != normal, only 'r' to remove is accepted while in bookmarks/selected mode
+                } else if (ps[active].mode == bookmarks_) {
+                    remove_bookmark_from_file();
+                } else if (ps[active].mode == selected_) {
+                    check_remove(remove_selected);
                 }
             }
             break;
@@ -597,6 +616,8 @@ static void manage_enter(struct stat current_file_stat) {
 #endif
     else if (ps[active].mode == bookmarks_) {
         manage_enter_bookmarks(current_file_stat);
+    } else if (ps[active].mode == selected_) {
+        leave_mode_helper(current_file_stat);
     } else if (S_ISDIR(current_file_stat.st_mode)) {
         change_dir(str_ptr[active][ps[active].curr_pos], active);
     } else {
@@ -618,7 +639,7 @@ static void manage_enter_search(struct stat current_file_stat) {
         if (ptr) {
             str[strlen(str) - strlen(ptr)] = '\0';
         }
-        strncpy(ps[active].old_file, str, PATH_MAX);
+        strncpy(ps[active].old_file, str, NAME_MAX);
         path[index] = '\0';
     } else {
         memset(ps[active].old_file, 0, strlen(ps[active].old_file));
@@ -627,7 +648,15 @@ static void manage_enter_search(struct stat current_file_stat) {
 }
 
 static void manage_space(const char *str) {
-    if (strcmp(strrchr(str, '/') + 1, "..") && ps[active].mode <= fast_browse_) {
+    if (ps[active].mode > fast_browse_) {
+        return;
+    }
+    
+    int all = !strcmp(strrchr(str, '/') + 1, "..");
+    
+    if (all) {
+        manage_all_space_press();
+    } else {
         manage_space_press(str);
     }
 }
@@ -636,9 +665,9 @@ static void manage_quit(void) {
     if (ps[active].mode == search_) {
         leave_search_mode(ps[active].my_cwd);
     } else if (ps[active].mode > fast_browse_) {
-        leave_special_mode(ps[active].my_cwd);
+        leave_special_mode(ps[active].my_cwd, active);
     } else if (ps[active].mode == fast_browse_) {
-        leave_special_mode(NULL);
+        leave_special_mode(NULL, active);
         print_info("", INFO_LINE); // clear fast browse string from info line
     } else {
         quit = NORM_QUIT;
@@ -655,6 +684,15 @@ static void switch_search(void) {
     }
 }
 
+static void check_remove(void (*f)(void)) {
+    char c;
+    ask_user(_(sure), &c, 1);
+    if (c != _(yes)[0]) {
+        return;
+    }
+    f();
+}
+
 static int check_init(int index) {
     char x;
 
@@ -662,7 +700,7 @@ static int check_init(int index) {
         print_info(no_selected_files, ERR_LINE);
         return 0;
     }
-    if (index == EXTRACTOR_TH) {
+    if (index == EXTRACTOR_TH && config.safe == FULL_SAFE) {
         ask_user(_(extr_question), &x, 1);
         if (x == _(no)[0] || x == 27) {
             return 0;
@@ -671,9 +709,11 @@ static int check_init(int index) {
     if (index != RM_TH) {
         return check_access();
     }
-    ask_user(_(sure), &x, 1);
-    if (x != _(yes)[0]) {
-        return 0;
+    if (config.safe != UNSAFE) {
+        ask_user(_(sure), &x, 1);
+        if (x != _(yes)[0]) {
+            return 0;
+        }
     }
     return 1;
 }

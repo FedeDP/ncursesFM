@@ -20,7 +20,6 @@ For a full list of features, deps and how to build, please refer to [wiki pages]
 * Terminal window resize support.
 * i18n support: for now en, it.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
-* image previewing support through w3mimgdisplay.
 * config support through libconfig.
 * Basic mouse support.
 * Simple sysinfo monitor that will refresh every 30s: clock, battery and some system info.

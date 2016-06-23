@@ -152,7 +152,7 @@ void leave_search_mode(const char *str) {
         sv.searching = NO_SEARCH;
         print_info("", SEARCH_LINE);
     }
-    leave_special_mode(str);
+    leave_special_mode(str, active);
 }
 
 /*

@@ -67,12 +67,12 @@ static void update_battery(int where) {
         if (!online) {
             for (int i = 0; i < num_of_batt; i++) {
                 dev = udev_device_new_from_syspath(udev, batt[i]);
-                if (udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY")) {
+                if (dev && udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY")) {
                     perc[i] = strtol(udev_device_get_property_value(dev, "POWER_SUPPLY_CAPACITY"), NULL, 10);
                 } else {
                     perc[i] = -1;
                 }
-                if (udev_device_get_property_value(dev, "POWER_SUPPLY_NAME")) {
+                if (dev && udev_device_get_property_value(dev, "POWER_SUPPLY_NAME")) {
                     strcpy(name[i], udev_device_get_property_value(dev, "POWER_SUPPLY_NAME"));
                 } else {
                     strcpy(name[i], "BAT");

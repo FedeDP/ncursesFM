@@ -2,7 +2,10 @@
 
 static void archiver_func(void);
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-static int try_extractor(file_list *tmp);
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+static const char *passphrase_callback(struct archive *a, void *_client_data);
+#endif
+static int try_extractor(const char *tmp);
 static void extractor_thread(struct archive *a, const char *current_dir);
 
 static struct archive *archive;
@@ -15,14 +18,16 @@ static int distance_from_root;
  */
 int create_archive(void) {
     archive = archive_write_new();
-    if (((archive_write_add_filter_gzip(archive) == ARCHIVE_FATAL) || (archive_write_set_format_pax_restricted(archive) == ARCHIVE_FATAL)) ||
-        (archive_write_open_filename(archive, thread_h->filename) != ARCHIVE_OK)) {
-        archive_write_free(archive);
-        archive = NULL;
-        return -1;
+    if ((archive_write_add_filter_gzip(archive) == ARCHIVE_OK) &&
+        (archive_write_set_format_pax_restricted(archive) == ARCHIVE_OK) &&
+        (archive_write_open_filename(archive, thread_h->filename) == ARCHIVE_OK)) {
+        archiver_func();
+        return 0;
     }
-    archiver_func();
-    return 0;
+    ERROR(archive_error_string(archive));
+    archive_write_free(archive);
+    archive = NULL;
+    return -1;
 }
 
 /*
@@ -34,14 +39,12 @@ int create_archive(void) {
  * The entry will be written to the new archive, and then data will be copied.
  */
 static void archiver_func(void) {
-    file_list *tmp = thread_h->selected_files;
     char path[PATH_MAX + 1] = {0};
 
-    while (tmp) {
-        strncpy(path, tmp->name, PATH_MAX);
+    for (int i = 0; i < thread_h->num_selected; i++) {
+        strncpy(path, thread_h->selected_files[i], PATH_MAX);
         distance_from_root = strlen(dirname(path));
-        nftw(tmp->name, recursive_archive, 64, FTW_MOUNT | FTW_PHYS);
-        tmp = tmp->next;
+        nftw(thread_h->selected_files[i], recursive_archive, 64, FTW_MOUNT | FTW_PHYS);
     }
     archive_write_free(archive);
     archive = NULL;
@@ -72,9 +75,9 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
 int extract_file(void) {
     int ret = 0;
     
-    for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
-        if (is_ext(tmp->name, arch_ext, NUM(arch_ext))) {
-            ret += try_extractor(tmp);
+    for (int i = 0; i < thread_h->num_selected; i++) {
+        if (is_ext(thread_h->selected_files[i], arch_ext, NUM(arch_ext))) {
+            ret += try_extractor(thread_h->selected_files[i]);
         } else {
             ret--;
         }
@@ -82,15 +85,37 @@ int extract_file(void) {
     return !ret ? 0 : -1;
 }
 
-static int try_extractor(file_list *tmp) {
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+static const char *passphrase_callback(struct archive *a, void *_client_data) {
+    uint64_t u = 1;
+    
+    if (eventfd_write(archive_cb_fd[0], u) == -1) {
+        return NULL;
+    }
+    if (eventfd_read(archive_cb_fd[1], &u) == -1) {
+        return NULL;
+    }
+    if (quit || passphrase[0] == 27) {
+        return NULL;
+    }
+    return passphrase;
+}
+#endif
+
+static int try_extractor(const char *tmp) {
     struct archive *a;
     char *current_dir, path[PATH_MAX + 1] = {0};
 
     a = archive_read_new();
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
-    if ((a) && (archive_read_open_filename(a, tmp->name, BUFF_SIZE) == ARCHIVE_OK)) {
-        strncpy(path, tmp->name, PATH_MAX);
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+    if (config.pwd_archive) {
+        archive_read_set_passphrase_callback(a, NULL, passphrase_callback);
+    }
+#endif
+    if ((a) && (archive_read_open_filename(a, tmp, BUFF_SIZE) == ARCHIVE_OK)) {
+        strncpy(path, tmp, PATH_MAX);
         current_dir = dirname(path);
         extractor_thread(a, current_dir);
         return 0;

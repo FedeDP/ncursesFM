@@ -12,8 +12,7 @@ depends=('ncurses' 'libconfig' 'libarchive' 'glibc' 'libcups' 'libx11' 'systemd'
 optdepends=('xdg-utils: xdg-open support'
             'udisks2: mountable drives and ISO mount support'
             'packagekit: package installation support'
-            'upower: AC (dis)connection events support'
-            'w3m: images preview support')
+            'upower: AC (dis)connection events support')
 # libcups, libconfig and libx11 are optional build dep.
 # If compiled without them, the program will run just fine;
 # but that would disable xdg-open, config file read and printing support.

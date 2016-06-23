@@ -1,7 +1,7 @@
 #define LONG_FILE_OPERATIONS 5
 #define SHORT_FILE_OPERATIONS 3
 
-#define MODES 5
+#define MODES 6
 
 extern const char yes[];
 extern const char no[];
@@ -18,7 +18,6 @@ extern const char *arch_ext[6];
 
 extern const char *sorting_str[4];
 
-extern const char too_many_bookmarks[];
 extern const char bookmarks_add_quest[];
 extern const char bookmarks_rm_quest[];
 extern const char bookmarks_xdg_err[];
@@ -26,11 +25,14 @@ extern const char bookmarks_file_err[];
 extern const char bookmark_added[];
 extern const char bookmarks_rm[];
 extern const char no_bookmarks[];
+extern const char inexistent_bookmark_quest[];
 extern const char inexistent_bookmark[];
+extern const char bookmark_already_present[];
+extern const char bookmarks_cleared[];
 
-extern const char file_selected[];
 extern const char no_selected_files[];
-extern const char *file_sel[3];
+extern const char *file_sel[6];
+extern const char selected_cleared[];
 
 extern const char sure[];
 
@@ -55,6 +57,8 @@ extern const char archiving_mesg[];
 extern const char ask_name[];
 
 extern const char extr_question[];
+
+extern const char pwd_archive[];
 
 extern const char *thread_job_mesg[LONG_FILE_OPERATIONS];
 extern const char *thread_str[LONG_FILE_OPERATIONS];
@@ -83,6 +87,7 @@ extern const char no_proc_mounts[];
 #endif
 extern const char bookmarks_mode_str[];
 extern const char search_mode_str[];
+extern const char selected_mode_str[];
 
 extern const char ac_online[];
 extern const char power_fail[];

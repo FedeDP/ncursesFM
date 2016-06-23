@@ -85,9 +85,9 @@ static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_e
     *(int *)userdata = 1;
     sd_bus_message_read(m, "u", &ret);
     if (ret == 1) {
-        print_info(_(install_success), INFO_LINE);
+        print_info(install_success, INFO_LINE);
     } else {
-        print_info(_(install_failed), ERR_LINE);
+        print_info(install_failed, ERR_LINE);
     }
     return 0;
 }

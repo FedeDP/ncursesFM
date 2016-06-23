@@ -2,24 +2,30 @@
 
 **DEVICE MODE**:  
 
-- [ ] Add available space for mounted fs?
-- [ ] Move available space (and other info, may be, such as mount opts) to show_stat?
+- [x] Add available space for mounted fs?
+- [x] Move available space (and other info, may be, such as mount opts) to show_stat?
+- [x] FIX: if unmount a dev while stats are active, stats get not updated
+- [x] FIX: move_cursor_to_file fucked up with stats when delta > 0
 
 **PWD-PROTECTED ARCHIVE**:  
 
-- [ ] add support for pwd protected archives -> https://groups.google.com/forum/#!topic/libarchive-discuss/8KO_Hrt4OE4
-As soon as arch updates libarchive to 3.2.
-
-**IMAGE PREVIEW**:  
-
-- [ ] fix first line while scrolling down (xterm only) (the fix caused the crash while scrolling image too fast)
-- [ ] understand why konsole is perfect only when scrolling...
-
-**TEXT/PDF PREVIEW**:  
-
-- [ ] understand how that can be implemented
+- [x] add support for pwd protected archives
+- [x] Add pwd for every archive that needs to be extracted... For now it is same pwd for every archive!
+- [x] fix: ask_user in archiver_callback must be done in main thread (write a byte in a eventfd)
+- [x] what happens if ask_user is called from archive_callback while user is being asked another question? AVOID
+- [x] add new ask strings to msg.po
 
 **VARIOUS**:  
 
-- [ ] vi keybindings/keybinding profiles
+- [x] selected_mode: 'k' to remove from list. del to delete every selected file.
+- [x] del to delete all user bookmarks
+- [x] question before removing in selected mode/bookmarks mode
+- [x] add a "safe" config /cmd line option.
+- [x] space on ".." to select all visible files in current folder
+- [x] space twice on ".." to remove all selected files from current folder
+- [x] move generic funcs to "helper.c/h" file
+- [x] drop image previewer support (really useless)
+- [ ] update wiki pages (remove image previewer section, document safe config/cmd line option, pwd archive option etc etc, remove pwd archive from list of bugs), add "MODES" section
+- [ ] add SEARCH section (explain serch_inside_archive and search LAZY)
+- [ ] vi keybindings/keybinding profiles (probably WON'T IMPLEMENT)
 - [ ] update doc

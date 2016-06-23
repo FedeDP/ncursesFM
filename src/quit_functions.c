@@ -32,7 +32,7 @@ static void free_everything(void) {
     free_timer();
     free(main_p);
     if (selected) {
-        free_copied_list(selected);
+        free(selected);
     }
 }
 
@@ -79,14 +79,8 @@ static void close_fds(void) {
     close(ps[1].inot.fd);
     close(info_fd[0]);
     close(info_fd[1]);
-}
-
-void free_copied_list(file_list *h) {
-    file_list *tmp = h;
-    
-    while (h) {
-        h = h->next;
-        free(tmp);
-        tmp = h;
-    }
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+    close(archive_cb_fd[0]);
+    close(archive_cb_fd[1]);
+#endif
 }

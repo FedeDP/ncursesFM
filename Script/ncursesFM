@@ -18,8 +18,12 @@ _ncursesFM()
             COMPREPLY=( $( compgen -W "0 1 2 3" -- ${cur}) )
             return 0
             ;;
+         "--safe")
+            COMPREPLY=( $( compgen -W "0 1 2" -- ${cur}) )
+            return 0
+            ;;
     esac
-    opts="--editor --helper_win --inhibit --automount --loglevel --persistent_log --starting_dir --help --low_level"
+    opts="--editor --helper_win --inhibit --automount --loglevel --persistent_log --starting_dir --help --low_level --safe"
     if [[ "$cur" == -* ]] || [[ -z "$cur" ]]; then
         COMPREPLY=( $( compgen -W "${opts}" -- ${cur}) )
     fi

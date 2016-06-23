@@ -1,5 +1,18 @@
-06 / 15 / 2016
+06 / 20 / 2016
 * switched to signalfd instead of ppoll (cleaner)
+* unified lots of functions under utils.c/h
+* removed limit of 30 for bookmarks
+* lots of code improvements
+* fixed some bugs
+* space press on ".." will select all visible files in current directory (ie: not hidden files, if not shown)
+* pressing space on ".." again, will remove all visible files from selected files.
+* pressing 'e' on a bookmark (in normal_mode), if bookmark is already present, ncursesFM will now ask user if he wants to remove it.
+* internationalized datetime string too (using strftime)
+* added support for extracting pwd-protected archive if libarchive >= 3.2.0
+* added selected_ mode to manage list of selected files
+* bookmarks and selected mode will leave if no more bookmarks/selected files exist
+* fixed a nasty bug in change_dir: force process dir to be active tab's one
+* fixed a very nasty bug (and stupid) in scroll_up/down...
 
 06 / 05 / 2016
 * i18n support -> english/italian for now!

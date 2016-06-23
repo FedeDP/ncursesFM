@@ -38,17 +38,29 @@ static void log_current_options(void) {
     fprintf(log_file, "* CONFDIR: %s\n", CONFDIR);
     fprintf(log_file, "* BINDIR: %s\n", BINDIR);
     fprintf(log_file, "* LOCALEDIR: %s\n", LOCALEDIR);
+    fprintf(log_file, "* LIBX11_PRESENT: ");
 #ifdef LIBX11_PRESENT
-    fprintf(log_file, "* LIBX11_PRESENT: 1\n");
+    fprintf(log_file, "true\n");
+#else
+    fprintf(log_file, "false\n");
 #endif
+    fprintf(log_file, "* LIBCUPS_PRESENT: ");
 #ifdef LIBCUPS_PRESENT
-    fprintf(log_file, "* LIBCUPS_PRESENT: 1\n");
+    fprintf(log_file, "true\n");
+#else
+    fprintf(log_file, "false\n");
 #endif
+    fprintf(log_file, "* LIBCONFIG_PRESENT: ");
 #ifdef LIBCONFIG_PRESENT
-    fprintf(log_file, "* LIBCONFIG_PRESENT: 1\n");
+    fprintf(log_file, "true\n");
+#else
+    fprintf(log_file, "false\n");
 #endif
+    fprintf(log_file, "* SYSTEMD_PRESENT:");
 #ifdef SYSTEMD_PRESENT
-    fprintf(log_file, "* SYSTEMD_PRESENT: 1\n");
+    fprintf(log_file, "true\n");
+#else
+    fprintf(log_file, "false\n");
 #endif
     fprintf(log_file, "\nStarting options:\n");
     fprintf(log_file, "* Editor: %s\n", config.editor);
@@ -61,7 +73,11 @@ static void log_current_options(void) {
     fprintf(log_file, "* Starting with helper window: %d\n", config.starting_helper);
     fprintf(log_file, "* Log level: %d\n", config.loglevel);
     fprintf(log_file, "* Log persistency: %d\n", config.persistent_log);
-    fprintf(log_file, "* Low battery threshold: %d\n\n", config.bat_low_level);
+    fprintf(log_file, "* Low battery threshold: %d\n", config.bat_low_level);
+    fprintf(log_file, "* Border chars: \"%s\"\n", config.border_chars);
+    fprintf(log_file, "* Cursor chars: \"%s\"\n", config.cursor_chars);
+    fprintf(log_file, "* Sysinfo layout: \"%s\"\n", config.sysinfo_layout);
+    fprintf(log_file, "* Safe level: %d\n\n", config.safe);
 }
 
 void log_message(const char *filename, int lineno, const char *funcname, const char *log_msg, char type, int log_level) {

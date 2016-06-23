@@ -6,11 +6,14 @@ static void print_file(const char *filename);
 
 void print_support(const char *str) {
     char c;
-
-    ask_user(_(print_question), &c, 1);
-    if (c == _(yes)[0]) {
-        print_file(str);
+    
+    if (config.safe != UNSAFE) {
+        ask_user(_(print_question), &c, 1);
+        if (c != _(yes)[0]) {
+            return;
+        }
     }
+    print_file(str);
 }
 
 /*

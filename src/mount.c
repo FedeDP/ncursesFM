@@ -17,8 +17,6 @@ static int check_cwd(char *mounted_path);
 static void change_mounted_status(int pos, const char *name);
 static int add_device(struct udev_device *dev, const char *name);
 static int remove_device(const char *name);
-static int is_present(const char *name);
-static void *safe_realloc(const size_t size);
 
 static char mount_str[PATH_MAX + 1];
 static struct udev *udev;
@@ -401,11 +399,7 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
                 r = add_device(dev, devname);
                 udev_device_unref(dev);
                 if (!quit && r != -1) {
-                    for (int i = 0; i < cont; i++) {
-                        if (ps[i].mode == device_) {
-                            update_special_mode(number_of_devices, i, my_devices);
-                        }
-                    }
+                    update_special_mode(number_of_devices, my_devices, device_);
                 }
             }
         } else {
@@ -436,10 +430,10 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             snprintf(devname, PATH_MAX, "/dev/%s", name);
             r = remove_device(devname);
             if (!quit && r != -1) {
-                for (int i = 0; i < cont; i++) {
-                    if (ps[i].mode == device_) {
-                        update_special_mode(number_of_devices, i, my_devices);
-                    }
+                if (number_of_devices) {
+                    update_special_mode(number_of_devices, my_devices, device_);
+                } else {
+                    switch_back_normal_mode(device_); 
                 }
             }
         } else {
@@ -468,14 +462,10 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             INFO("PropertiesChanged UDisks2 signal received!");
             const char *name = sd_bus_message_get_path(m);
             snprintf(devname, PATH_MAX, "/dev/%s", strrchr(name, '/') + 1);
-            int present = is_present(devname);
+            int present = is_present(devname, my_devices, number_of_devices, strlen(devname), 0);
             if (present != -1) {
                 change_mounted_status(present, devname);
-                for (int i = 0; i < cont; i++) {
-                    if (ps[i].mode == device_) {
-                        update_special_mode(present, i, NULL);
-                    }
-                }
+                update_special_mode(present, NULL, device_);
             }
         } else {
             INFO("signal discarded.");
@@ -533,12 +523,13 @@ static void enumerate_block_devices(void) {
     devices = udev_enumerate_get_list_entry(enumerate);
     udev_list_entry_foreach(dev_list_entry, devices) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
-        dev = udev_device_new_from_syspath(udev, path);
-        const char *name = udev_device_get_devnode(dev);
-        add_device(dev, name);
-        udev_device_unref(dev);
-        if (quit) {
-            break;
+        if ((dev = udev_device_new_from_syspath(udev, path))) {
+            const char *name = udev_device_get_devnode(dev);
+            add_device(dev, name);
+            udev_device_unref(dev);
+            if (quit) {
+                break;
+            }
         }
     }
     udev_enumerate_unref(enumerate);
@@ -638,7 +629,7 @@ void manage_enter_device(void) {
     }
     if (ret == 1 && get_mount_point(dev_path, name) != -1) {
         memset(ps[active].old_file, 0, strlen(ps[active].old_file));
-        leave_special_mode(name);
+        leave_special_mode(name, active);
     }
 }
 
@@ -680,8 +671,6 @@ void free_device_monitor(void) {
  */
 static int add_device(struct udev_device *dev, const char *name) {
     int mount;
-    uint64_t size;
-    char s[20] = {0};
     const char *ignore = udev_device_get_property_value(dev, "UDISKS_IGNORE");
     const char *fs_type = udev_device_get_property_value(dev, "ID_FS_TYPE");
 
@@ -691,20 +680,14 @@ static int add_device(struct udev_device *dev, const char *name) {
         mount = get_mount_point(name, NULL);
     }
     if (mount != -1) {
-        my_devices = safe_realloc((PATH_MAX + 1) * (number_of_devices + 1));
+        my_devices = safe_realloc(number_of_devices + 1, my_devices);
         if (!quit) {
-            /* calculates current device size */
-            if (udev_device_get_sysattr_value(dev, "size")) {
-                size = strtol(udev_device_get_sysattr_value(dev, "size"), NULL, 10);
-                size = (size / (uint64_t) 2) * (uint64_t)1024;
-                change_unit((float)size, s);
-            }
             if (udev_device_get_property_value(dev, "ID_MODEL")) {
-                snprintf(my_devices[number_of_devices], PATH_MAX, "%s, %s, Size: %s, Mounted: %d",
-                        name, udev_device_get_property_value(dev, "ID_MODEL"), s, mount);
+                snprintf(my_devices[number_of_devices], PATH_MAX, "%s, %s, Mounted: %d",
+                        name, udev_device_get_property_value(dev, "ID_MODEL"), mount);
             } else {
-                snprintf(my_devices[number_of_devices], PATH_MAX, "%s, Size: %s, Mounted: %d",
-                        name, s, mount);
+                snprintf(my_devices[number_of_devices], PATH_MAX, "%s, Mounted: %d",
+                        name, mount);
             }
             number_of_devices++;
             INFO(device_added);
@@ -719,13 +702,11 @@ static int add_device(struct udev_device *dev, const char *name) {
 }
 
 static int remove_device(const char *name) {
-    int i = is_present(name);
+    int i = is_present(name, my_devices, number_of_devices, strlen(name), 0);
 
     if (i != -1) {
-        memmove(&my_devices[i], &my_devices[i + 1], (number_of_devices - 1 - i) * sizeof(my_devices[0]));
-        my_devices = safe_realloc(PATH_MAX * (number_of_devices - 1));
+        my_devices = remove_from_list(&number_of_devices, my_devices, i);
         if (!quit) {
-            number_of_devices--;
             print_info(device_removed, INFO_LINE);
             INFO(device_removed);
         }
@@ -733,23 +714,56 @@ static int remove_device(const char *name) {
     return i;
 }
 
-static int is_present(const char *name) {
-    for (int i = 0; i < number_of_devices; i++) {
-        if (strncmp(my_devices[i], name, strlen(name)) == 0) {
-            return i;
+void show_devices_stat(int i, int win, char *str) {
+    const int flags[] = {  ST_MANDLOCK, ST_NOATIME, ST_NODEV, 
+                            ST_NODIRATIME, ST_NOEXEC, ST_NOSUID, 
+                            ST_RDONLY, ST_RELATIME, ST_SYNCHRONOUS};
+    const char *fl[] = {"mand", "noatime", "nodev", "nodiratime",  
+                        "noexec", "nosuid", "ro", "relatime", "sync"};
+    struct statvfs stat;
+    char dev_path[PATH_MAX + 1] = {0}, path[PATH_MAX + 1] = {0};
+    char s[20] = {0};
+    uint64_t total;
+    
+    int len = strlen(my_devices[i]);
+    int mount = my_devices[i][len - 1] - '0';
+    strncpy(dev_path, my_devices[i], PATH_MAX);
+    char *ptr = strchr(my_devices[i], ',');
+    dev_path[len - strlen(ptr)] = '\0';
+    // if device is mounted
+    if (mount && get_mount_point(dev_path, path) != -1) {
+        statvfs(path, &stat);
+        uint64_t free = stat.f_bavail * stat.f_bsize;
+        change_unit((float) free, s);
+        sprintf(str, "Free: %s/", s);
+        memset(s, 0, strlen(s));
+        total = stat.f_blocks * stat.f_frsize;
+        change_unit((float) total, s);
+        strcat(str, s);
+        sprintf(str + strlen(str), ", mount opts:");
+        for (int j = 0; j < 9; j++) {
+            if (stat.f_flag & flags[j]) {
+                sprintf(str + strlen(str), " %s", fl[j]);
+            }
+        }
+        if (!(stat.f_flag & ST_RDONLY)) {
+            sprintf(str + strlen(str), " rw");
+        }
+        if (!(stat.f_flag & ST_SYNCHRONOUS)) {
+            sprintf(str + strlen(str), " async");
+        }
+    } else {
+        // use udev system to get device size
+        struct udev_device *dev;
+        char *name = strrchr(dev_path, '/') + 1;
+        dev = udev_device_new_from_subsystem_sysname(udev, "block", name);
+        if (dev && udev_device_get_sysattr_value(dev, "size")) {
+            total = strtol(udev_device_get_sysattr_value(dev, "size"), NULL, 10);
+            total = (total / (uint64_t) 2) * (uint64_t)1024;
+            change_unit((float)total, s);
+            sprintf(str, "Total size: %s", s);
+            udev_device_unref(dev);
         }
     }
-    return -1;
-}
-
-static void *safe_realloc(const size_t size) {
-    void *tmp = realloc(my_devices, size);
-
-    if (!tmp) {
-        quit = MEM_ERR_QUIT;
-        ERROR("could not realloc. Leaving monitor th.");
-        return my_devices;
-    }
-    return tmp;
 }
 #endif

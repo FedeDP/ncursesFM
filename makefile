@@ -12,7 +12,6 @@ BINNAME = ncursesFM
 CONFNAME = ncursesFM.conf
 COMPLNAME = ncursesFM
 SCRIPTDIR = Script
-PREVIEWERNAME = ncursesfm_previewer
 SRCDIR = src/
 COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
 MSGLANGS = $(notdir $(wildcard msg/*po))
@@ -126,10 +125,6 @@ install:
 	$(info installing bash autocompletion.)
 	@$(INSTALL_DIR) "$(DESTDIR)$(COMPLDIR)"
 	@$(INSTALL_DATA) $(SCRIPTDIR)/$(COMPLNAME) "$(DESTDIR)$(COMPLDIR)/$(COMPLNAME)"
-# 	install image previewing script
-	$(info installing img previewer.)
-	@$(INSTALL_DIR) "$(DESTDIR)$(BINDIR)"
-	@$(INSTALL_PROGRAM) $(SCRIPTDIR)/$(PREVIEWERNAME) "$(DESTDIR)$(BINDIR)"
 #	install locales
 	$(info installing locales.)
 	@for MSGOBJ in $(MSGOBJS) ; do \
@@ -148,9 +143,6 @@ uninstall:
 # 	remove bash autocompletion script
 	$(info uninstalling bash autocompletion.)
 	@$(RM) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
-# 	remove image previewing script
-	$(info uninstalling img previewer.)
-	@$(RM) "$(DESTDIR)$(BINDIR)/$(PREVIEWERNAME)"
 # 	remove locales
 	$(info uninstalling locales.)
 	@$(RM) "$(DESTDIR)$(MSGFILES)"

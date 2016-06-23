@@ -28,6 +28,7 @@ static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void)) {
         h->next = NULL;
         h->f = f;
         strncpy(h->full_path, ps[active].my_cwd, PATH_MAX);
+        h->num_selected = num_selected;
         h->type = type;
         h->num = num_of_jobs;
         current_th = h;
@@ -43,7 +44,7 @@ static void free_running_h(void) {
 
     thread_h = thread_h->next;
     if (tmp->selected_files)
-        free_copied_list(tmp->selected_files);
+        free(tmp->selected_files);
     free(tmp);
     tmp = NULL;
 }
@@ -86,7 +87,7 @@ static int init_thread_helper(void) {
             return -1;
         }
         if (!strlen(name)) {
-            strncpy(name, strrchr(selected->name, '/') + 1, NAME_MAX);
+            strncpy(name, strrchr(selected[0], '/') + 1, NAME_MAX);
         }
         /* avoid overwriting a compressed file in path if it has the same name of the archive being created there */
         len = strlen(name);
@@ -99,6 +100,7 @@ static int init_thread_helper(void) {
     }
     current_th->selected_files = selected;
     selected = NULL;
+    num_selected = 0;
     erase_selected_highlight();
     return 0;
 }
@@ -131,39 +133,4 @@ static void *execute_thread(void *x) {
 #endif
     pthread_detach(pthread_self());
     pthread_exit(NULL);
-}
-
-int remove_from_list(const char *name) {
-    file_list *temp = NULL, *tmp = selected;
-
-    if (!strcmp(name, tmp->name)) {
-        selected = selected->next;
-        free(tmp);
-        return 1;
-    }
-    while(tmp->next) {
-        if (!strcmp(name, tmp->next->name)) {
-            temp = tmp->next;
-            tmp->next = tmp->next->next;
-            free(temp);
-            return 1;
-        }
-        tmp = tmp->next;
-    }
-    return 0;
-}
-
-file_list *select_file(file_list *h, const char *str) {
-    if (h) {
-        h->next = select_file(h->next, str);
-    } else {
-        if (!(h = malloc(sizeof(struct list)))) {
-            quit = MEM_ERR_QUIT;
-            ERROR("could not malloc. Leaving.");
-            return NULL;
-        }
-        strncpy(h->name, str, PATH_MAX);
-        h->next = NULL;
-    }
-    return h;
 }

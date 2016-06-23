@@ -21,6 +21,9 @@ static void show_stat(int init, int end, int win);
 static void erase_stat(void);
 static void info_print(const char *str, int i);
 static void fix_input_cursor_pos(void);
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+static void archiver_cb_func(void);
+#endif
 static void sig_handler(int fd);
 static void info_refresh(int fd);
 static void inotify_refresh(int win);
@@ -191,10 +194,7 @@ void reset_win(int win) {
     wclear(ps[win].mywin.fm);
     ps[win].mywin.delta = 0;
     ps[win].curr_pos = 0;
-    if (ps[win].mywin.stat_active) {
-        memset(ps[win].mywin.tot_size, 0, strlen(ps[win].mywin.tot_size));
-        ps[win].mywin.stat_active = STATS_ON;
-    }
+    memset(ps[win].mywin.tot_size, 0, strlen(ps[win].mywin.tot_size));
     list_everything(win, 0, dim - 2);
 }
 
@@ -208,12 +208,10 @@ static void list_everything(int win, int old_dim, int end) {
     char *str;
     wchar_t name[NAME_MAX + 1] = {0};
     
-    if (ps[win].mode == preview_) {
-        return;
-    }
-    
     wattron(ps[win].mywin.fm, A_BOLD);
     for (int i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
+        wmove(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, 1);
+        wclrtoeol(ps[win].mywin.fm);
         if (ps[win].mode > fast_browse_) {
             str = *(str_ptr[win] + i);
         } else {
@@ -225,10 +223,11 @@ static void list_everything(int win, int old_dim, int end) {
         mvwprintw(ps[win].mywin.fm, 1 + i - ps[win].mywin.delta, 4, "%.*ls", ps[win].mywin.width - 5, name);
         wattroff(ps[win].mywin.fm, COLOR_PAIR);
     }
-    print_arrow(win, 1 + ps[win].curr_pos - ps[win].mywin.delta);
-    if (ps[win].mywin.stat_active == STATS_ON) {
+    wattroff(ps[win].mywin.fm, A_BOLD);
+    if (ps[win].mywin.stat_active) {
         show_stat(old_dim, end, win);
     }
+    print_arrow(win, 1 + ps[win].curr_pos - ps[win].mywin.delta);
     print_border_and_title(win);
 }
 
@@ -297,9 +296,7 @@ void new_tab(int win) {
     idlok(ps[win].mywin.fm, TRUE);
     notimeout(ps[win].mywin.fm, TRUE);
     nodelay(ps[win].mywin.fm, TRUE);
-    if (ps[win].mode != preview_) {
-        initialize_tab_cwd(win);
-    }
+    initialize_tab_cwd(win);
 }
 
 /*
@@ -315,9 +312,6 @@ void resize_tab(int win, int resizing) {
             ps[win].mywin.delta = ps[win].curr_pos - (dim - 3);
         } else {
             ps[win].mywin.delta = 0;
-        }
-        if (ps[win].mywin.stat_active == STATS_IDLE) {
-            ps[win].mywin.stat_active = STATS_ON;
         }
     }
     list_everything(win, ps[win].mywin.delta, dim - 2);
@@ -355,7 +349,7 @@ void delete_tab(int win) {
     ps[win].mywin.fm = NULL;
     memset(ps[win].my_cwd, 0, sizeof(ps[win].my_cwd));
     memset(ps[win].mywin.tot_size, 0, strlen(ps[win].mywin.tot_size));
-    ps[win].mywin.stat_active = STATS_OFF;
+    ps[win].mywin.stat_active = 0;
     ps[win].mode = normal;
     free(ps[win].nl);
     inotify_rm_watch(ps[win].inot.fd, ps[win].inot.wd);
@@ -363,24 +357,21 @@ void delete_tab(int win) {
 }
 
 void scroll_down(int win, int lines) {
-    int delta = ps[active].mywin.delta;
-    int old_pos = ps[active].curr_pos;
+    int delta = ps[win].mywin.delta;
+    int old_pos = ps[win].curr_pos;
     
     while (lines > 0) {
         if (ps[win].curr_pos < ps[win].number_of_files - 1) {
             ps[win].curr_pos++;
             if (ps[win].curr_pos - (dim - 2) == ps[win].mywin.delta) {
-                scroll_helper_func(dim - 2, 1, win);
-                /* as we scrolled, if stat were active, we need to force them ON */
-                if (ps[win].mywin.stat_active == STATS_IDLE) {
-                    ps[win].mywin.stat_active = STATS_ON;
-                }
+                ps[win].mywin.delta++;
             }
         }
         lines--;
     }
-    if (ps[active].mywin.delta > delta) {
-        delta = ps[active].mywin.delta - delta;
+    if (ps[win].mywin.delta > delta) {
+        delta = ps[win].mywin.delta - delta;
+        scroll_helper_func(dim - 2, delta, win);
         list_everything(win, ps[win].curr_pos - delta + 1, delta);
     } else {
         mvwprintw(ps[win].mywin.fm, old_pos - ps[win].mywin.delta + 1, 1, "  ");
@@ -390,24 +381,21 @@ void scroll_down(int win, int lines) {
 }
 
 void scroll_up(int win, int lines) {
-    int delta = ps[active].mywin.delta;
-    int old_pos = ps[active].curr_pos;
+    int delta = ps[win].mywin.delta;
+    int old_pos = ps[win].curr_pos;
     
     while (lines > 0) {
         if (ps[win].curr_pos > 0) {
             ps[win].curr_pos--;
             if (ps[win].curr_pos < ps[win].mywin.delta) {
-                scroll_helper_func(1, -1, win);
-                /* as we scrolled, if stat were active, we need to force them ON */
-                if (ps[win].mywin.stat_active == STATS_IDLE) {
-                    ps[win].mywin.stat_active = STATS_ON;
-                }
+                ps[win].mywin.delta--;
             }
         }
         lines--;
     }
-    if (delta > ps[active].mywin.delta) {
-        delta = delta - ps[active].mywin.delta;
+    if (delta > ps[win].mywin.delta) {
+        delta = delta - ps[win].mywin.delta;
+        scroll_helper_func(1, -delta, win);
         list_everything(win, ps[win].mywin.delta, delta);
     } else {
         mvwprintw(ps[win].mywin.fm, old_pos - ps[win].mywin.delta + 1, 1, "  ");
@@ -420,7 +408,6 @@ static void scroll_helper_func(int x, int direction, int win) {
     mvwprintw(ps[win].mywin.fm, x, 1, "  ");
     wborder(ps[win].mywin.fm, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wscrl(ps[win].mywin.fm, direction);
-    ps[win].mywin.delta += direction;
 }
 
 /*
@@ -454,7 +441,6 @@ static void trigger_show_additional_win(int height, WINDOW **win, void (*f)(void
     } else {
         remove_additional_win(height, win, 0);
     }
-    preview_img(str_ptr[active][ps[active].curr_pos]);
 }
 
 /*
@@ -494,9 +480,6 @@ static void remove_additional_win(int height, WINDOW **win, int resizing) {
         mvwhline(ps[i].mywin.fm, dim - 1 - height, 0, ' ', COLS);
         wresize(ps[i].mywin.fm, dim, ps[i].mywin.width);
         if (!resizing) {
-            if (ps[i].mywin.stat_active == STATS_IDLE) {
-                ps[i].mywin.stat_active = STATS_ON;
-            }
             list_everything(i, dim - 2 - height + ps[i].mywin.delta, height);
         }
     }
@@ -549,11 +532,12 @@ static void show_stat(int init, int end, int win) {
     int check = strlen(ps[win].mywin.tot_size);
     const int perm_bit[9] = {S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, S_IROTH, S_IWOTH, S_IXOTH};
     const char perm_sign[3] = {'r', 'w', 'x'};
-    char str[30];
+    char str[100] = {0};
     float total_size = 0;
     struct stat file_stat;
     const int perm_col = ps[win].mywin.width - PERM_LENGTH;
     const int size_col = ps[win].mywin.width - STAT_LENGTH;
+    int col;
     
     if (ps[win].mode <= fast_browse_) {
         check %= check - 1; // "check" should be 0 or 1 (strlen(tot_size) will never be 1, so i can safely divide for check - 1)
@@ -561,20 +545,37 @@ static void show_stat(int init, int end, int win) {
         check = 1;  // if we're in special mode, we don't need printing total size.
     }
     for (int i = check * init; i < ps[win].number_of_files; i++) {
-        if (stat(str_ptr[win][i], &file_stat) == -1) {
+        if (stat(str_ptr[win][i], &file_stat) == -1 && ps[win].mode != device_) {
             continue;
         }
         if (!check) {
             total_size += file_stat.st_size;
         }
         if ((i >= init) && (i < init + end)) {
-            change_unit(file_stat.st_size, str);
-            wmove(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, size_col);
-            wclrtoeol(ps[win].mywin.fm);
-            mvwprintw(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, size_col, str);
-            wmove(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, perm_col);
-            for (int j = 0; j < 9; j++) {
-                wprintw(ps[win].mywin.fm, (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
+            if (ps[win].mode == device_) {
+#ifdef SYSTEMD_PRESENT
+                show_devices_stat(i, win, str);
+                col = ps[win].mywin.width - strlen(str) - cont;
+                if (col < 0) {
+                    col = 4;
+                }
+#endif
+            } else {
+                col = size_col;
+                change_unit(file_stat.st_size, str);
+            }
+            // if show_devices_stat returned a non-empty string
+            // or we are not in device_mode
+            if (strlen(str)) {
+                wmove(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, col);
+                wclrtoeol(ps[win].mywin.fm);
+                mvwprintw(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, col, "%.*s", ps[win].mywin.width - 5, str);
+            }
+            if (ps[win].mode != device_) {
+                for (int j = 0; j < 9; j++) {
+                    mvwprintw(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, perm_col + j, 
+                              (file_stat.st_mode & perm_bit[j]) ? "%c" : "-", perm_sign[j % 3]);
+                }
             }
             if ((i == init + end - 1) && (check)) {
                 break;
@@ -585,22 +586,6 @@ static void show_stat(int init, int end, int win) {
         change_unit(total_size, str);
         sprintf(ps[win].mywin.tot_size, "Total size: %s", str);
     }
-    ps[win].mywin.stat_active = STATS_IDLE;
-}
-
-/*
- * Helper function used in show_stat: received a size,
- * it changes the unit from Kb to Mb to Gb if size > 1024(previous unit)
- */
-void change_unit(float size, char *str) {
-    char *unit[] = {"B", "KB", "MB", "GB", "TB"};
-    int i = 0;
-
-    while ((size > 1024) && (i < NUM(unit) - 1)) {
-        size /= 1024;
-        i++;
-    }
-    sprintf(str, "%.2f%s", size, unit[i]);
 }
 
 /*
@@ -608,16 +593,11 @@ void change_unit(float size, char *str) {
  * then shows stats or erase stats.
  */
 void trigger_stats(void) {
-    /* FIXME: here we will print statvfs for current fs if it is mounted */
-    if (ps[active].mode >= device_) {
-        return;
-    }
     ps[active].mywin.stat_active = !ps[active].mywin.stat_active;
     if (ps[active].mywin.stat_active) {
         show_stat(ps[active].mywin.delta, dim - 2, active);
     } else {
         erase_stat();
-        list_everything(active, ps[active].mywin.delta, dim - 2);
     }
     print_border_and_title(active);
 }
@@ -627,11 +607,8 @@ void trigger_stats(void) {
  * It deletes ps[active].mywin.tot_size too.
  */
 static void erase_stat(void) {
-    for (int i = 0; (i < ps[active].number_of_files) && (i < dim - 2); i++) {
-        wmove(ps[active].mywin.fm, i + 1, ps[active].mywin.width - STAT_LENGTH);
-        wclrtoeol(ps[active].mywin.fm);
-    }
     memset(ps[active].mywin.tot_size, 0, strlen(ps[active].mywin.tot_size));
+    list_everything(active, ps[active].mywin.delta, dim - 2);
 }
 
 /*
@@ -730,6 +707,11 @@ void ask_user(const char *str, char *input, int d) {
     print_info(str, ASK_LINE);
     curs_set(1);
     input_mode = 1;
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+    // avoid getting other ask_user calls from archiver_cb_func
+    // while already asking another question.
+    main_p[ARCHIVE_IX].fd = -1;
+#endif
     do {
         wint_t s = main_poll(info_win);
         switch (s) {
@@ -829,6 +811,10 @@ void ask_user(const char *str, char *input, int d) {
     }
     curs_set(0);
     input_mode = 0;
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+    // return to get archive_cb ask_user events as we now finished.
+    main_p[ARCHIVE_IX].fd = archive_cb_fd[0];
+#endif
     mvwchgat(info_win, 0, 1, -1, A_NORMAL, 0, NULL);
     print_info("", ASK_LINE); // clear ASK_LINE
 }
@@ -889,6 +875,12 @@ wint_t main_poll(WINDOW *win) {;
                     /* we received a signal */
                         sig_handler(main_p[i].fd);
                         break;
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+                    case ARCHIVE_IX:
+                    /* archiver thread needs a pwd for a protected archive */
+                        archiver_cb_func();
+                        break;
+#endif
 #ifdef SYSTEMD_PRESENT
                     case DEVMON_IX:
                     /* we received a bus event */
@@ -903,6 +895,19 @@ wint_t main_poll(WINDOW *win) {;
     }
     return c;
 }
+
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+static void archiver_cb_func(void) {
+    uint64_t u = 1;
+    
+    if (eventfd_read(archive_cb_fd[0], &u) == -1) {
+        eventfd_write(archive_cb_fd[1], u);
+        return;
+    }
+    ask_user(_(pwd_archive), passphrase, sizeof(passphrase));
+    eventfd_write(archive_cb_fd[1], u);
+}
+#endif
 
 /*
  * if received an external SIGINT or SIGTERM,
@@ -991,22 +996,26 @@ void tab_refresh(int win) {
 /*
  * Used to refresh special_mode windows.
  */
-void update_special_mode(int num,  int win, char (*str)[PATH_MAX + 1]) {
-    if (str) {
-        /* Do not reset win if a device/bookmark has been added. Just print next line */
-        int check = num - ps[win].number_of_files;
-        ps[win].number_of_files = num;
-        str_ptr[win] = str;
-        if (check < 0) {
-            /* update all */
-            reset_win(win);
-        } else {
-            /* only update latest */
-            list_everything(win, num - 1, 1);
+void update_special_mode(int num,  char (*str)[PATH_MAX + 1], int mode) {
+    for (int win = 0; win < cont; win++) {
+        if (ps[win].mode == mode) {
+            if (str) {
+            /* Do not reset win if a device/bookmark has been added. Just print next line */
+                int check = num - ps[win].number_of_files;
+                ps[win].number_of_files = num;
+                str_ptr[win] = str;
+                if (check < 0) {
+                    /* update all */
+                    reset_win(win);
+                } else {
+                    /* only update latest */
+                    list_everything(win, num - 1, 1);
+                }
+            } else {
+            /* Only used in device_monitor: change mounted status event */
+                list_everything(win, num, 1);
+            }
         }
-    } else {
-        /* Only used in device_monitor: change mounted status event */
-        list_everything(win, num, 1);
     }
 }
 
@@ -1032,14 +1041,16 @@ void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title, int
 /*
  * used when leaving special mode.
  */
-void leave_special_mode(const char *str) {
-    int old_mode = ps[active].mode;
+void leave_special_mode(const char *str,int win) {
+    int old_mode = ps[win].mode;
     
-    ps[active].mode = normal;
+    ps[win].mode = normal;
     if (str) {
-        change_dir(str, active);
+        change_dir(str, win);
     }
-    print_additional_wins(HELPER_HEIGHT[old_mode], 0);
+    if (win == active) {
+        print_additional_wins(HELPER_HEIGHT[old_mode], 0);
+    }
 }
 
 /*
@@ -1055,7 +1066,6 @@ void resize_win(void) {
     info_win_init();
     print_additional_wins(HELPER_HEIGHT[ps[active].mode], 1);
     resize_fm_win();
-    preview_img(str_ptr[active][ps[active].curr_pos]);
 }
 
 static void print_additional_wins(int helper_height, int resizing) {
@@ -1106,29 +1116,22 @@ void change_sort(void) {
  * if the file to be highlighted is visible inside "win" -> useful only if win is not the active one.
  * Then prints c char before current filename and refreshes win.
  */
-void highlight_selected(int line, const char c) {
-    for (int i = 0; i < cont; i++) {
-        if (ps[i].mode <= fast_browse_) {
-            if ((i == active) || ((!strcmp(ps[i].my_cwd, ps[active].my_cwd))
-            && (line - ps[i].mywin.delta > 0) && (line - ps[i].mywin.delta < dim - 2))) {
-                wattron(ps[i].mywin.fm, A_BOLD);
-                mvwprintw(ps[i].mywin.fm, 1 + line - ps[i].mywin.delta, SEL_COL, "%c", c);
-                wattroff(ps[i].mywin.fm, A_BOLD);
-                wrefresh(ps[i].mywin.fm);
-            }
+void highlight_selected(const char *str, const char c, int win) {
+    if (ps[win].mode <= fast_browse_) {
+        int line = is_present(str, ps[win].nl, ps[win].number_of_files, -1, 0);
+        if (line != -1 && (line - ps[win].mywin.delta >= 0) && (line - ps[win].mywin.delta < dim - 2)) {
+            wattron(ps[win].mywin.fm, A_BOLD);
+            mvwprintw(ps[win].mywin.fm, 1 + line - ps[win].mywin.delta, SEL_COL, "%c", c);
+            wattroff(ps[win].mywin.fm, A_BOLD);
+            wrefresh(ps[win].mywin.fm);
         }
     }
 }
 
 static void check_selected(const char *str, int win, int line) {
-    file_list *tmp = selected;
-
-    while (tmp) {
-        if (!strcmp(tmp->name, str)) {
-            mvwprintw(ps[win].mywin.fm, 1 + line - ps[win].mywin.delta, SEL_COL, "*");
-            break;
-        }
-        tmp = tmp->next;
+    int i = is_present(str, selected, num_selected, -1, 0);
+    if (i != -1) {
+        mvwprintw(ps[win].mywin.fm, 1 + line - ps[win].mywin.delta, SEL_COL, "*");
     }
 }
 
@@ -1153,9 +1156,8 @@ void update_time(int where) {
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     char date[70];
-
-    sprintf(date, "%d-%d-%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-    sprintf(date + strlen(date), ", %02d:%02d", tm.tm_hour, tm.tm_min);
+    
+    strftime(date, sizeof(date), "%a %e %b %Y %k:%M", &tm);
     int x = check_sysinfo_where(where, strlen(date));
     if (x != -1) {
         mvwprintw(info_win, SYSTEM_INFO_LINE, x, "%.*s", COLS, date);
@@ -1265,34 +1267,4 @@ static void fullname_print(void) {
 static void update_fullname_win(void) {
     remove_additional_win(fullname_win_height, &fullname_win, 0);
     trigger_fullname_win();
-}
-
-void preview_img(const char *path) {
-    int cmd;
-    char full_cmd[PATH_MAX + 1];
-    
-    if (ps[1].mode == preview_) {
-        if (get_mimetype(path, "image")) {
-            // 1 to print image
-            cmd = 1;
-            snprintf(ps[1].title, PATH_MAX, "Image: %s", path);
-        } else {
-            // 6 to only clear screen
-            cmd = 6;
-            memset(ps[1].title, 0, strlen(ps[1].title));
-        }
-        snprintf(full_cmd, PATH_MAX, "%s %d %d %d %d %d %d %d \"%s\"", preview_bin, cmd, COLS / 2 + 2, 2, COLS / 2 - 5, dim - 4, COLS, LINES, path);
-        print_border_and_title(1);
-        int pid = vfork();
-        if (pid == 0) {
-            // redirect output to /dev/null
-            int fd = open("/dev/null",O_WRONLY);
-            dup2(fd, 1);
-            dup2(fd, 2);
-            close(fd);
-            execl("/usr/bin/sh", "/bin/sh", "-c", full_cmd, (char *) 0);
-        } else {
-            waitpid(pid, NULL, 0);
-        }
-    }
 }

@@ -4,9 +4,14 @@
 #include <pthread.h>
 #include <poll.h>
 #include <signal.h>
+#include <sys/signalfd.h>
 #include <sys/inotify.h>
+#include <sys/eventfd.h>
 #include <ncurses.h>
 #include <libintl.h>
+#include <archive.h>
+#include <archive_entry.h>
+
 #include "version.h"
 
 // used for internationalization
@@ -14,7 +19,6 @@
 
 #define MAX_TABS 2
 #define MAX_NUMBER_OF_FOUND 100
-#define MAX_BOOKMARKS 30
 #define BUFF_SIZE 8192
 
 /*
@@ -63,6 +67,13 @@
 #define SEARCHED 2
 
 /*
+ * Safe values
+ */
+#define FULL_SAFE 2
+#define SAFE 1
+#define UNSAFE 0
+
+/*
  * struct pollfd indexes
  */
 #define GETCH_IX 0
@@ -71,7 +82,12 @@
 #define INOTIFY_IX2 3
 #define INFO_IX 4
 #define SIGNAL_IX 5
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+#define ARCHIVE_IX 6
+#define DEVMON_IX 7
+#else
 #define DEVMON_IX 6
+#endif
 
 /*
  * Useful macro to know number of elements in arrays
@@ -94,18 +110,14 @@ struct conf {
     int loglevel;
     int persistent_log;
     int bat_low_level;
+    int safe;
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+    int pwd_archive;
+#endif
     char border_chars[9];
     char cursor_chars[3];
     char sysinfo_layout[4];
 };
-
-/*
- * List used to store file names when selecting them
- */
-typedef struct list {
-    char name[PATH_MAX + 1];
-    struct list *next;
-} file_list;
 
 /*
  * for each tab: an fd to catch inotify events,
@@ -127,7 +139,7 @@ struct scrstr {
     char tot_size[30];
 };
 
-enum working_mode {normal, fast_browse_, bookmarks_, search_, device_, preview_};
+enum working_mode {normal, fast_browse_, bookmarks_, search_, device_, selected_, jobs_};
 
 /*
  * Struct used to store tab's information
@@ -162,12 +174,22 @@ struct search_vars {
  * Struct that defines a list of thread job to be executed one after the other.
  */
 typedef struct thread_list {
-    file_list *selected_files;
+    // list of file selected for this job
+    char (*selected_files)[PATH_MAX + 1];
+    // number of files selected for this job
+    int num_selected;
+    // function associated to this job
     int (*f)(void);
+    // when needed: fullpath  (eg where to extract each file)
     char full_path[PATH_MAX + 1];
+    // when needed: (only in archiving for now): filename of the archive to be created
     char filename[PATH_MAX + 1];
+    // next job pointer
     struct thread_list *next;
+    // num of this job (index of this job in thread_h list)
+    // needed when printing "job [1/4]" on INFO_LINE
     int num;
+    // type of this job (needed to associate it with its function)
     int type;
 } thread_job_list;
 
@@ -180,9 +202,12 @@ typedef struct thread_list {
  */
 struct pollfd *main_p;
 int nfds, info_fd[2];
-
+#if ARCHIVE_VERSION_NUMBER >= 3002000
+int archive_cb_fd[2];
+char passphrase[100];
+#endif
 thread_job_list *thread_h;
-file_list *selected;
+char (*selected)[PATH_MAX + 1];
 struct conf config;
 struct tab ps[MAX_TABS];
 struct search_vars sv;
@@ -190,8 +215,10 @@ struct search_vars sv;
 /*
  * active win, quit status, number of worker thread jobs,
  * tabs counter and device_init status.
+ * Has_X-> needed for xdg-open (if we're on a X env)
+ * num_selected -> number of selected files
  */
-int active, quit, num_of_jobs, cont, device_init, has_X;
+int active, quit, num_of_jobs, cont, device_init, has_X, num_selected;
 
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;
@@ -203,8 +230,3 @@ pthread_t worker_th, search_th;
  * is active for current tab
  */
 char (*str_ptr[MAX_TABS])[PATH_MAX + 1];
-
-/*
- * previewer script path 
- */
-char preview_bin[PATH_MAX + 1];

@@ -59,8 +59,8 @@ msgstr "v/x -> incolla/taglia, b -> comprimi, r -> rimuovi, z -> estrai, p -> st
 msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract."
 msgstr "v/x -> incolla/taglia, b -> comprimi, r -> rimuovi, z -> estrai."
 
-msgid "g -> switch to bookmarks window. j -> trigger image previewer, e -> add current file to bookmarks"
-msgstr "g -> vai alla finestra dei segnalibri. j -> abilita/disabilita anteprima delle immagini, e -> aggiungi file corrente ai segnalibri."
+msgid "g -> switch to bookmarks mode. j -> switch to selected mode. e -> add/remove current file to bookmarks."
+msgstr "g -> accedi modalità segnalibri. j -> accedi modalità selezionati, e -> aggiungi/rimuovi file corrente dai segnalibri."
 
 msgid "o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."
 msgstr "o -> rinomina il file/cartella corrente; n/d -> crea un nuovo file/nuova cartella. f -> cerca."
@@ -68,8 +68,8 @@ msgstr "o -> rinomina il file/cartella corrente; n/d -> crea un nuovo file/nuova
 msgid "t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."
 msgstr "t -> crea la seconda tab. w -> chiudi la seconda tab. Frecce -> muoviti tra le tab."
 
-msgid "m -> switch to devices tab."
-msgstr "m -> vai alla finestra dei device."
+msgid "m -> switch to device mode."
+msgstr "m -> accedi modalità device."
 
 msgid "ESC -> quit."
 msgstr "ESC -> esci."
@@ -83,23 +83,20 @@ msgstr "ESC -> lascia la modalità fast browse."
 msgid "s -> see files stats. i -> check files fullname."
 msgstr "s -> controlla stat dei file. i -> controlla il nome completo dei file."
 
-msgid "e -> remove selected file from bookmarks."
-msgstr "e -> rimuovi il file selezionato dai segnalibri."
+msgid "r -> remove selected file from bookmarks. del -> remove all user bookmakrs."
+msgstr "r -> rimuovi il file selezionato dai segnalibri. canc -> rimuove tutti i segnalibri dell'utente."
 
-msgid "enter on a bookmark will move to the folder/file selected."
-msgstr "invio su un segnalibro ti porterà alla cartella/file selezionato."
+msgid "enter on a file will move to the folder/file selected."
+msgstr "invio su un file ti porterà alla cartella/file selezionato."
 
 msgid "ESC -> leave bookmarks mode."
 msgstr "ESC -> lascia la modalità segnalibri."
 
-msgid "enter on a file to move right to it."
-msgstr "invio su un file per muoverti direttamente su di lui."
-
-msgid "enter on a folder to move inside it."
-msgstr "invio su una cartella per muoverti dentro di essa."
-
 msgid "ESC -> leave search mode."
 msgstr "ESC -> lascia la modalità ricerca."
+
+msgid "ESC -> leave selected mode."
+msgstr "ESC -> lascia la lista selezionati."
 
 msgid "m -> (un)mount current device."
 msgstr "m -> (s)monta il device corrente."
@@ -128,9 +125,6 @@ msgstr "File ordinati per ultimo accesso."
 msgid "Files will be sorted by type now."
 msgstr "File ordinati per tipo."
 
-msgid "Too many bookmarks. Max 30."
-msgstr "Troppi segnalibri. Al massimo 30."
-
 msgid "Adding current file to bookmarks. Proceed? Y/n:> "
 msgstr "Aggiungere il file corrente ai segnalibri? S/n:> "
 
@@ -146,17 +140,23 @@ msgstr "Non sono riuscito ad aprire il file dei segnalibri."
 msgid "Added to bookmarks!"
 msgstr "Aggiunto ai segnalibri!"
 
-msgid "Removed fron bookmarks!"
+msgid "Removed from bookmarks!"
 msgstr "Rimosso dai segnalibri!"
 
 msgid "No bookmarks found."
 msgstr "Nessun segnalibro trovato."
 
-msgid "It seems current bookmark no longer exists. Remove it? Y/n:>"
+msgid "Bookmark was deleted as it was no more existent."
+msgstr "Il segnalibro corrente è stato rimosso perché non esisteva più."
+
+msgid "It seems current bookmark no longer exists. Remove it? Y/n:> "
 msgstr "Sembra che il segnalibro corrente non esista più. Rimuoverlo? S/n:> "
 
-msgid "This file is already selected. Cancel its selection before."
-msgstr "Questo file è già selezionato. Rimuovi la sua selezione prima."
+msgid "Bookmark already present. Would you like to remove it? Y/n:> "
+msgstr "Segnalibro già presente. Desideri rimuoverlo? S/n:> "
+
+msgid "User bookmarks have been cleared."
+msgstr "Segnalibri dell'utente azzerati."
 
 msgid "There are no selected files."
 msgstr "Nessun file selezionato."
@@ -164,11 +164,26 @@ msgstr "Nessun file selezionato."
 msgid "File selected."
 msgstr "File selezionato."
 
-msgid "File deleted from selected list."
-msgstr "File rimosso dalla lista dei selezionati."
+msgid "File unselected."
+msgstr "File deselezionato."
 
-msgid "File deleted from selected list. Selected list empty."
-msgstr "File rimosso dalla lista dei selezionati. Lista dei selezionati vuota."
+msgid "File unselected. Selected list empty."
+msgstr "File deselezionato. Non ci sono più file selezionati."
+
+msgid "Every file in this directory has been selected."
+msgstr "Tutti i file nella cartella corrente sono stati selezionati."
+
+msgid "Every file in this directory has been unselected."
+msgstr "Tutti i file nella cartella corrente sono stati deselezionati."
+
+msgid "Every file in this directory has been unselected. Selected list empty."
+msgstr "Tutti i file nella cartella corrente sono stati deselezionati. Non ci sono più file selezionati."
+
+msgid "List of selected files has been cleared."
+msgstr "La lista dei file selezionati è stata azzerata."
+
+msgid "r -> remove current file selection. del -> remove all selected files."
+msgstr "r -> rimuove il file corrente dai selezionati. canc -> azzera i selezionati."
 
 msgid "Are you serious? y/N:> "
 msgstr "Sei sicuro? s/N:> "
@@ -197,8 +212,8 @@ msgstr "Nessun file trovato."
 msgid "Searching..."
 msgstr "Ricerca..."
 
-msgid "Search finished. Press f anytime to view the results."
-msgstr "Ricerca finita. Premi f quando desideri vedere i risultati."
+msgid "Search finished. Press f anytime from normal mode to view the results."
+msgstr "Ricerca finita. Premi f in modalità normale quando desideri vedere i risultati."
 
 msgid "Do you really want to print this file? Y/n:> "
 msgstr "Desideri davvero stampare questo file? S/n:> "
@@ -217,6 +232,9 @@ msgstr "Inserisci il nuovo nome:> "
 
 msgid "Do you really want to extract this archive? Y/n:> "
 msgstr "Desideri veramente estrarre l'archivio? S/n:> "
+
+msgid "Current archive is encrypted. Enter a pwd:> "
+msgstr "L'archivio corrente è criptato. Inserisci una password:> "
 
 msgid "Cutting..."
 msgstr "Sposto..."
@@ -243,7 +261,7 @@ msgid "File/dir removed."
 msgstr "File/cartella rimosso."
 
 msgid "Archive is ready."
-msgstr "L'archivio è pronto.'"
+msgstr "L'archivio è pronto."
 
 msgid "Succesfully extracted."
 msgstr "Estratto con successo."
@@ -258,7 +276,7 @@ msgid "Could not remove every file."
 msgstr "Impossibile rimuovere tutti i file."
 
 msgid "Could not archive."
-msgstr "Impossibile creare l'archivio.'"
+msgstr "Impossibile creare l'archivio."
 
 msgid "Could not extract every file."
 msgstr "Impossibile estrarre tutti i file."
@@ -295,6 +313,9 @@ msgstr "Dispositivi:"
 
 msgid "Bookmarks:"
 msgstr "Segnalibri:"
+
+msgid "Selected files:"
+msgstr "File selezionati:"
 
 # if you've got to switch format modifiers, see here:
 # http://www.gnu.org/software/gettext/manual/gettext.html#c_002dformat-Flag

@@ -5,7 +5,10 @@ static void open_file(const char *str);
 static int new_file(const char *name);
 static int new_dir(const char *name);
 static int rename_file_folders(const char *name);
-static void cpr(file_list *tmp);
+static void select_file(const char *str);
+static void select_all(void);
+static void deselect_all(void);
+static void cpr(const char *tmp);
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
 static loff_t copy_file_range(int fd_in, loff_t *off_in, int fd_out,
@@ -17,9 +20,7 @@ static void rmrf(const char *path);
 #ifdef SYSTEMD_PRESENT
 static const char *pkg_ext[] = {".pkg.tar.xz", ".deb", ".rpm"};
 #endif
-static struct timeval timer;
-static wchar_t fast_browse_str[NAME_MAX + 1];
-static int distance_from_root;
+static int distance_from_root, is_selecting;
 static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
     new_file, new_dir, rename_file_folders
 };
@@ -35,9 +36,16 @@ int change_dir(const char *str, int win) {
         inotify_rm_watch(ps[win].inot.fd, ps[win].inot.wd);
         ps[win].inot.wd = inotify_add_watch(ps[win].inot.fd, ps[win].my_cwd, event_mask);
         ret = 0;
+        // reset selecting status (double space to select all)
+        // when changing dir
+        is_selecting = 0;
     } else {
         print_info(strerror(errno), ERR_LINE);
         ret = -1;
+    }
+    // force process dir to be active tab's one
+    if (win != active) {
+        chdir(ps[active].my_cwd);
     }
     return ret;
 }
@@ -55,25 +63,6 @@ void switch_hidden(void) {
 }
 
 /*
- * Check if filename has "." in it (otherwise surely it has not extension)
- * Then for each extension in *ext[], check if last strlen(ext[i]) chars of filename are 
- * equals to ext[i].
- */
-int is_ext(const char *filename, const char *ext[], int size) {
-    int i = 0, len = strlen(filename);
-    
-    if (strrchr(filename, '.')) {
-        while (i < size) {
-            if (!strcmp(filename + len - strlen(ext[i]), ext[i])) {
-                return 1;
-            }
-            i++;
-        }
-    }
-    return 0;
-}
-
-/*
  * Check if it is an iso, then try to mount it.
  * If it is a package, ask user to mount it.
  * If it is an archive, initialize a thread job to extract it.
@@ -88,12 +77,15 @@ void manage_file(const char *str) {
     }
     if (is_ext(str, pkg_ext, NUM(pkg_ext))) {
         char c;
-        print_info(package_warn, INFO_LINE);
-        ask_user(_(pkg_quest), &c, 1);
-        print_info("", INFO_LINE);
-        if (c == _(yes)[0]) {
-            pthread_create(&install_th, NULL, install_package, (void *)str);
+        if (config.safe != UNSAFE) {
+            print_info(package_warn, INFO_LINE);
+            ask_user(_(pkg_quest), &c, 1);
+            print_info("", INFO_LINE);
+            if (c != _(yes)[0]) {
+                return;
+            }
         }
+        pthread_create(&install_th, NULL, install_package, (void *)str);
         return;
     }
 #endif
@@ -191,14 +183,12 @@ static int rename_file_folders(const char *name) {
  */
 int remove_file(void) {
     int ok = 0;
-    file_list *tmp = thread_h->selected_files;
 
-    while (tmp) {
-        if (access(tmp->name, W_OK) == 0) {
+    for (int i = 0; i < thread_h->num_selected; i++) {
+        if (access(thread_h->selected_files[i], W_OK) == 0) {
             ok++;
-            rmrf(tmp->name);
+            rmrf(thread_h->selected_files[i]);
         }
-        tmp = tmp->next;
     }
     return (ok ? 0 : -1);
 }
@@ -208,34 +198,133 @@ int remove_file(void) {
  * add this file to select list.
  */
 void manage_space_press(const char *str) {
-    const char *s;
+    int idx;
     char c;
+    int i = is_present(str, selected, num_selected, -1, 0);
 
-    if ((!selected) || (remove_from_list(str) == 0)) {
-        selected = select_file(selected, str);
-        s = file_sel[0];
+    if (i == -1) {
+        select_file(str);
+        idx = 0;
         c = '*';
     } else {
+        selected = remove_from_list(&num_selected, selected, i);
         c = ' ';
-        ((selected) ? (s = file_sel[1]) : (s = file_sel[2]));
+        num_selected ? (idx = 1) : (idx = 2);
     }
-    print_info(s, INFO_LINE);
-    highlight_selected(ps[active].curr_pos, c);
+    print_info(file_sel[idx], INFO_LINE);
+    highlight_selected(str, c, active);
+    if (!strcmp(ps[active].my_cwd, ps[!active].my_cwd)) {
+        highlight_selected(str, c, !active);
+    }
+    if (num_selected) {
+        update_special_mode(num_selected, selected, selected_);
+    } else {
+        switch_back_normal_mode(selected_);
+    }
+}
+
+static void select_file(const char *str) {
+    selected = safe_realloc(++num_selected, selected);
+    if (quit) {
+        return;
+    }
+    memset(selected[num_selected - 1], 0, PATH_MAX + 1);
+    strncpy(selected[num_selected - 1], str, PATH_MAX);
+}
+
+void manage_all_space_press(void) {
+    int idx;
+    
+    is_selecting = !is_selecting;
+    if (is_selecting) {
+        select_all();
+        idx = 3;
+    } else {
+        deselect_all();
+        selected ? (idx = 4) : (idx = 5);
+    }
+    print_info(file_sel[idx], INFO_LINE);
+    if (num_selected) {
+        update_special_mode(num_selected, selected, selected_);
+    } else {
+        switch_back_normal_mode(selected_);
+    }
+}
+
+static void select_all(void) {
+    for (int i = 0; i < ps[active].number_of_files; i++) {
+        if (strcmp(strrchr(ps[active].nl[i], '/') + 1, "..")) {
+            if (is_present(ps[active].nl[i], selected, num_selected, -1, 0) != -1) {
+                continue;
+            }
+            select_file(ps[active].nl[i]);
+            highlight_selected(ps[active].nl[i], '*', active);
+            if (!strcmp(ps[active].my_cwd, ps[!active].my_cwd)) {
+                highlight_selected(ps[active].nl[i], '*', !active);
+            }
+        }
+    }
+}
+
+static void deselect_all(void) {
+    for (int i = 0; i < ps[active].number_of_files; i++) {
+        int j = is_present(ps[active].nl[i], selected, num_selected, -1, 0);
+        if (j != -1) {
+            selected = remove_from_list(&num_selected, selected, j);
+            highlight_selected(ps[active].nl[i], ' ', active);
+            if (!strcmp(ps[active].my_cwd, ps[!active].my_cwd)) {
+                highlight_selected(ps[active].nl[i], ' ', !active);
+            }
+        }
+    }
+}
+
+void remove_selected(void) {
+    if (!strcmp(ps[active].my_cwd, ps[!active].my_cwd)) {
+        highlight_selected(selected[ps[active].curr_pos], ' ', !active);
+    }
+    selected = remove_from_list(&num_selected, selected, ps[active].curr_pos);
+    if (num_selected) {
+        update_special_mode(num_selected, selected, selected_);
+    } else {
+        switch_back_normal_mode(selected_);
+    }
+}
+
+void remove_all_selected(void) {
+    for (int i = 0; i < num_selected; i++) {
+        if (cont == 2) {
+            highlight_selected(selected[i], ' ', !active);
+        }
+    }
+    free(selected);
+    selected = NULL;
+    num_selected = 0;
+    switch_back_normal_mode(selected_);
+    print_info(selected_cleared, INFO_LINE);
+}
+
+void show_selected(void) {
+    if (num_selected) {
+        show_special_tab(num_selected, selected, bookmarks_mode_str, selected_);
+    } else {
+        print_info(no_selected_files, INFO_LINE);
+    }
 }
 
 /*
- * For each file being paste, it performs a check: 
+ * For each file being pasted, it performs a check: 
  * it checks if file is being pasted in the same dir
  * from where it was copied. If it is the case, it does not copy it.
  */
 int paste_file(void) {
     char *copied_file_dir, path[PATH_MAX + 1] = {0};
 
-    for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
-        strncpy(path, tmp->name, PATH_MAX);
+    for (int i = 0; i < thread_h->num_selected; i++) {
+        strncpy(path, thread_h->selected_files[i], PATH_MAX);
         copied_file_dir = dirname(path);
         if (strcmp(thread_h->full_path, copied_file_dir)) {
-            cpr(tmp);
+            cpr(thread_h->selected_files[i]);
         }
     }
     return 0;
@@ -252,19 +341,21 @@ int move_file(void) {
     struct stat file_stat_copied, file_stat_pasted;
 
     lstat(thread_h->full_path, &file_stat_pasted);
-    for (file_list *tmp = thread_h->selected_files; tmp; tmp = tmp->next) {
-        strncpy(path, tmp->name, PATH_MAX);
+    for (int i = 0; i < thread_h->num_selected; i++) {
+        strncpy(path, thread_h->selected_files[i], PATH_MAX);
         copied_file_dir = dirname(path);
         if (strcmp(thread_h->full_path, copied_file_dir)) {
             lstat(copied_file_dir, &file_stat_copied);
             if (file_stat_copied.st_dev == file_stat_pasted.st_dev) { // if on the same fs, just rename the file
-                snprintf(pasted_file, PATH_MAX, "%s%s", thread_h->full_path, strrchr(tmp->name, '/'));
-                if (rename(tmp->name, pasted_file) == - 1) {
+                snprintf(pasted_file, PATH_MAX, "%s%s", 
+                         thread_h->full_path, 
+                         strrchr(thread_h->selected_files[i], '/'));
+                if (rename(thread_h->selected_files[i], pasted_file) == - 1) {
                     print_info(strerror(errno), ERR_LINE);
                 }
             } else { // copy file and remove original file
-                cpr(tmp);
-                rmrf(tmp->name);
+                cpr(thread_h->selected_files[i]);
+                rmrf(thread_h->selected_files[i]);
             }
         }
     }
@@ -281,12 +372,12 @@ int move_file(void) {
  * 1) /path/to/pasted/folder/Scripts/,
  * 2) /path/to/pasted/folder/Scripts/me, that is exactly what we wanted.
  */
-static void cpr(file_list *tmp) {
+static void cpr(const char *tmp) {
     char path[PATH_MAX + 1] = {0};
     
-    strncpy(path, tmp->name, PATH_MAX);
+    strncpy(path, tmp, PATH_MAX);
     distance_from_root = strlen(dirname(path));
-    nftw(tmp->name, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
+    nftw(tmp, recursive_copy, 64, FTW_MOUNT | FTW_PHYS);
 }
 
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
@@ -361,13 +452,19 @@ static void rmrf(const char *path) {
  * If nothing was found, deletes fast_browse_str.
  */
 void fast_browse(wint_t c) {
+    static struct timeval timer;
+    static wchar_t fast_browse_str[NAME_MAX + 1] = {0};
+    
+    const int FAST_BROWSE_THRESHOLD = 500000; // 0.5s
+    const int MILLION = 1000000;
+    
     int i = 0;
     char mbstr[NAME_MAX + 1] = {0};
     uint64_t diff = (MILLION * timer.tv_sec) + timer.tv_usec;
-
+   
     gettimeofday(&timer, NULL);
     diff = MILLION * (timer.tv_sec) + timer.tv_usec - diff;
-    if ((diff < FAST_BROWSE_THRESHOLD) && (wcslen(fast_browse_str))) { // 0,5s
+    if ((diff < FAST_BROWSE_THRESHOLD) && (wcslen(fast_browse_str))) {
         i = ps[active].curr_pos;
     } else {
         wmemset(fast_browse_str, 0, NAME_MAX + 1);
@@ -378,61 +475,4 @@ void fast_browse(wint_t c) {
     if (!move_cursor_to_file(i, mbstr, active)) {
         wmemset(fast_browse_str, 0, NAME_MAX + 1);
     }
-}
-
-int move_cursor_to_file(int i, const char *filename, int win) {
-    char *str;
-    void (*f)(int, int);
-    int len = strlen(filename), delta;
-    
-    for (; i < ps[win].number_of_files; i++) {
-        str = strrchr(ps[win].nl[i], '/') + 1;
-        if (strncmp(filename, str, len) == 0) {
-            if (i != ps[win].curr_pos) {
-                if (i < ps[win].curr_pos) {
-                    f = scroll_up;
-                    delta = ps[win].curr_pos - i;
-                } else {
-                    f = scroll_down;
-                    delta = i - ps[win].curr_pos;
-                }
-                f(win, delta);
-            }
-            return 1;
-        }
-    }
-    return 0;
-}
-
-void save_old_pos(int win) {
-    char *str;
-    
-    str = strrchr(ps[win].nl[ps[win].curr_pos], '/') + 1;
-    strncpy(ps[win].old_file, str, NAME_MAX);
-}
-
-int get_mimetype(const char *path, const char *test) {
-    int ret = 0;
-    const char *mimetype;
-    magic_t magic;
-    
-    if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
-        ERROR("An error occurred while loading libmagic database.");
-        return ret;
-    }
-    if (magic_load(magic, NULL) == -1) {
-        ERROR("An error occurred while loading libmagic database.");
-        goto end;
-    }
-    if ((mimetype = magic_file(magic, path)) == NULL) {
-        ERROR("An error occurred while loading libmagic database.");
-        goto end;
-    }
-    if (strstr(mimetype, test)) {
-        ret = 1;
-    }
-    
-end:
-    magic_close(magic);
-    return ret;
 }
