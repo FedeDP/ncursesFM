@@ -27,7 +27,8 @@ const char bookmark_already_present[] = "Bookmark already present. Would you lik
 const char bookmarks_cleared[] = "User bookmarks have been cleared.";
 
 const char no_selected_files[] = "There are no selected files.";
-const char *file_sel[] = {"File selected.", "File deleted from selected list.", 
+const char *file_sel[] = {"File selected.", 
+                        "File unselected.", 
                         "File unselected. Selected list empty.", 
                         "Every file in this directory has been selected.",
                         "Every file in this directory has been unselected.",

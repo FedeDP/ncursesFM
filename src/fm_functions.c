@@ -280,15 +280,20 @@ static void deselect_all(void) {
 }
 
 void remove_selected(void) {
+    int idx;
+    
     if (!strcmp(ps[active].my_cwd, ps[!active].my_cwd)) {
         highlight_selected(selected[ps[active].curr_pos], ' ', !active);
     }
     selected = remove_from_list(&num_selected, selected, ps[active].curr_pos);
     if (num_selected) {
+        idx = 1;
         update_special_mode(num_selected, selected, selected_);
     } else {
+        idx = 2;
         switch_back_normal_mode(selected_);
     }
+    print_info(file_sel[idx], INFO_LINE);
 }
 
 void remove_all_selected(void) {
