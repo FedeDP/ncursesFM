@@ -111,9 +111,6 @@ struct conf {
     int persistent_log;
     int bat_low_level;
     int safe;
-#if ARCHIVE_VERSION_NUMBER >= 3002000
-    int pwd_archive;
-#endif
     char border_chars[9];
     char cursor_chars[3];
     char sysinfo_layout[4];

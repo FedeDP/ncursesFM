@@ -25,7 +25,15 @@
 - [x] space twice on ".." to remove all selected files from current folder
 - [x] move generic funcs to "helper.c/h" file
 - [x] drop image previewer support (really useless)
-- [ ] update wiki pages (remove image previewer section, document safe config/cmd line option, pwd archive option etc etc, remove pwd archive from list of bugs), add "MODES" section
+
+**WIKI**:  
+
+- [x] remove image previewer section
+- [x] document safe config/cmd line option 
+- [ ] add "MODES" section
 - [ ] add SEARCH section (explain serch_inside_archive and search LAZY)
+
+**GENERIC**:  
+
 - [ ] vi keybindings/keybinding profiles (probably WON'T IMPLEMENT)
 - [ ] update doc

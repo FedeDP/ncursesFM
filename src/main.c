@@ -337,9 +337,6 @@ static void read_config_file(const char *dir) {
             strncpy(config.sysinfo_layout, sysinfo, sizeof(config.sysinfo_layout));
         }
         config_lookup_int(&cfg, "safe", &config.safe);
-#if ARCHIVE_VERSION_NUMBER >= 3002000
-        config_lookup_int(&cfg, "password_archive", &config.pwd_archive);
-#endif
     } else {
         fprintf(stderr, "Config file: %s at line %d.\n",
                 config_error_text(&cfg),

@@ -110,9 +110,7 @@ static int try_extractor(const char *tmp) {
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
 #if ARCHIVE_VERSION_NUMBER >= 3002000
-    if (config.pwd_archive) {
-        archive_read_set_passphrase_callback(a, NULL, passphrase_callback);
-    }
+    archive_read_set_passphrase_callback(a, NULL, passphrase_callback);
 #endif
     if ((a) && (archive_read_open_filename(a, tmp, BUFF_SIZE) == ARCHIVE_OK)) {
         strncpy(path, tmp, PATH_MAX);
