@@ -10,7 +10,7 @@ For a full list of features, deps and how to build, please refer to [wiki pages]
 
 ![](https://github.com/FedeDP/ncursesFM/raw/master/ncursesFM.png)
 
-## Features:
+## Main features:
 
 **Remember that every shortcut in ncursesFM is case insensitive!**
 

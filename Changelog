@@ -10,7 +10,7 @@
 * internationalized datetime string too (using strftime)
 * added support for extracting pwd-protected archive if libarchive >= 3.2.0
 * added selected_ mode to manage list of selected files
-* bookmarks and selected mode will leave if no more bookmarks/selected files exist
+* bookmarks/selected/device mode will leave if no more bookmarks/selected/devices exist
 * fixed a nasty bug in change_dir: force process dir to be active tab's one
 * fixed a very nasty bug (and stupid) in scroll_up/down...
 * stats available in every mode. In device mode will print Size of unmounted fs, and Free/total size for mounted fs, and mount flags.
