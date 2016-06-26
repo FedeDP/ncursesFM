@@ -59,8 +59,8 @@ msgstr "v/x -> incolla/taglia, b -> comprimi, r -> rimuovi, z -> estrai, p -> st
 msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract."
 msgstr "v/x -> incolla/taglia, b -> comprimi, r -> rimuovi, z -> estrai."
 
-msgid "g -> switch to bookmarks mode. e -> add/remove current file to bookmarks. k -> switch to selected mode."
-msgstr "g -> accedi modalità segnalibri. e -> aggiungi/rimuovi file corrente dai segnalibri. k -> accedi modalità selezionati."
+msgid "g -> switch to bookmarks mode. e -> add/remove current file to bookmarks."
+msgstr "g -> accedi modalità segnalibri. e -> aggiungi/rimuovi file corrente dai segnalibri."
 
 msgid "o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."
 msgstr "o -> rinomina il file/cartella corrente; n/d -> crea un nuovo file/nuova cartella. f -> cerca."
@@ -68,8 +68,8 @@ msgstr "o -> rinomina il file/cartella corrente; n/d -> crea un nuovo file/nuova
 msgid "t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."
 msgstr "t -> crea la seconda tab. w -> chiudi la seconda tab. Frecce -> muoviti tra le tab."
 
-msgid "m -> switch to device mode."
-msgstr "m -> accedi modalità device."
+msgid "m -> switch to device mode. k -> switch to selected mode."
+msgstr "m -> accedi modalità device. k -> accedi modalità selezionati."
 
 msgid "ESC -> quit."
 msgstr "ESC -> esci."

@@ -59,7 +59,7 @@ msgstr ""
 msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract."
 msgstr ""
 
-msgid "g -> switch to bookmarks mode. e -> add/remove current file to bookmarks. k -> switch to selected mode."
+msgid "g -> switch to bookmarks mode. e -> add/remove current file to bookmarks."
 msgstr ""
 
 msgid "o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."
@@ -68,7 +68,7 @@ msgstr ""
 msgid "t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."
 msgstr ""
 
-msgid "m -> switch to device mode."
+msgid "m -> switch to device mode. k -> switch to selected mode."
 msgstr ""
 
 msgid "ESC -> quit."
