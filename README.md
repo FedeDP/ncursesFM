@@ -6,7 +6,7 @@
 
 Written in C, with ncurses library, it aims to be as user friendly and lightweight as possible, while being good looking and simple.  
 Being simple doesn't imply being useless; indeed it is a full featured fm.  
-For a full list of features, deps and how to build, please refer to [wiki pages](https://github.com/FedeDP/ncursesFM/wiki/).
+For a **full list of features**, **deps** and **how to build**, please refer to [wiki pages](https://github.com/FedeDP/ncursesFM/wiki/).
 
 ![](https://github.com/FedeDP/ncursesFM/raw/master/ncursesFM.png)
 
