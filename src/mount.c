@@ -13,7 +13,6 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
 static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 static void enumerate_block_devices(void);
 static int get_mount_point(const char *dev_path, char *path);
-static int check_cwd(char *mounted_path);
 static void change_mounted_status(int pos, const char *name);
 static int add_device(struct udev_device *dev, const char *name);
 static int remove_device(const char *name);
@@ -21,7 +20,7 @@ static int remove_device(const char *name);
 static char mount_str[PATH_MAX + 1];
 static struct udev *udev;
 static int number_of_devices;
-char (*my_devices)[PATH_MAX + 1];
+static char (*devices)[PATH_MAX + 1];
 static sd_bus *bus;
 
 /*
@@ -35,8 +34,8 @@ static int mount_fs(const char *str, int mount) {
     char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
     char tmp[30], method[10];
     int r, ret = -1;
-    char mounted_path[PATH_MAX + 1] = {0}, old_cwd[PATH_MAX + 1] = {0};
-    int win;
+    char mounted_path[PATH_MAX + 1] = {0};
+    int len, len2;
 
     r = sd_bus_open_system(&mount_bus);
     if (r < 0) {
@@ -44,15 +43,18 @@ static int mount_fs(const char *str, int mount) {
         goto finish;
     }
     if (mount) {
-        /* 
-        * before unmount, save old cwd as we'll need
-        * to chdir anyway to another dir if current cwd 
-        * is inside mounted path.
-        * If unmount fails, we'll restore our previous cwd.
-        */
-        strncpy(old_cwd, ps[active].my_cwd, PATH_MAX);
-        get_mount_point(str, mounted_path);
-        win = check_cwd(mounted_path);
+        if (get_mount_point(str, mounted_path) == -1) {
+            ERROR("Could not get mount point.");
+        }
+        // calculate root dir of mounted path
+        strncpy(mounted_path, dirname(mounted_path), PATH_MAX);
+        len = strlen(mounted_path);
+        len2 = strlen(ps[active].my_cwd);
+        // if active win is inside mounted path
+        if (!strncmp(ps[active].my_cwd, mounted_path, len) && len2 > len) {
+            // move away process' cwd from mounted path as it would raise an error while unmounting
+            chdir(mounted_path);
+        }
         strcpy(method, "Unmount");
     } else {
         strcpy(method, "Mount");
@@ -71,7 +73,7 @@ static int mount_fs(const char *str, int mount) {
                            NULL);
     if (r < 0) {
         /* if it was not succesful, restore old_cwd */
-        chdir(old_cwd);
+        chdir(ps[active].my_cwd);
         print_and_warn(error.message, ERR_LINE);
         goto finish;
     }
@@ -85,21 +87,20 @@ static int mount_fs(const char *str, int mount) {
             set_autoclear(str);
         }
     } else {
-        /* 
-         * if not active tab was inside mountpoint, move it away:
-         * check_cwd will return summation of (1 + win) 
-         * for each win inside mountpoint, so r here means
-         * that OR both win were inside path, or only !active.
-         */
-        if (win == 1 + !active || win == 3) {
-            change_dir(mounted_path, !active);
+        len2 = strlen(ps[!active].my_cwd);
+        // if !active tab is inside mounted path
+        if (!strncmp(ps[!active].my_cwd, mounted_path, len) && len2 > len) {
+            if (ps[!active].mode <= fast_browse_) {
+                change_dir(mounted_path, !active);
+            } else {
+                strncpy(ps[!active].my_cwd, mounted_path, PATH_MAX);
+            }
         }
         /*
-         * here we don't care about unmount success:
          * save back in ps[active].my_cwd, process' cwd
          * to be sure we carry the right path
          */
-        getcwd(ps[active].my_cwd, PATH_MAX);
+        strncpy(ps[active].my_cwd, mounted_path, PATH_MAX);
         snprintf(mount_str, PATH_MAX, _(dev_unmounted), str);
         INFO("Unmounted.");
     }
@@ -200,7 +201,7 @@ static void set_autoclear(const char *loopname) {
 static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
     struct udev *tmp_udev;
     struct udev_enumerate *enumerate;
-    struct udev_list_entry *devices, *dev_list_entry;
+    struct udev_list_entry *devlist, *dev_list_entry;
     struct udev_device *dev;
     char s[PATH_MAX + 1] = {0};
     char resolved_path[PATH_MAX + 1];
@@ -212,8 +213,8 @@ static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
     udev_enumerate_add_match_subsystem(enumerate, "block");
     udev_enumerate_add_match_property(enumerate, "ID_FS_TYPE", "udf");
     udev_enumerate_scan_devices(enumerate);
-    devices = udev_enumerate_get_list_entry(enumerate);
-    udev_list_entry_foreach(dev_list_entry, devices) {
+    devlist = udev_enumerate_get_list_entry(enumerate);
+    udev_list_entry_foreach(dev_list_entry, devlist) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
         dev = udev_device_new_from_syspath(udev, path);
         strncpy(loop_dev, udev_device_get_devnode(dev), PATH_MAX);
@@ -399,7 +400,7 @@ static int add_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_err
                 r = add_device(dev, devname);
                 udev_device_unref(dev);
                 if (!quit && r != -1) {
-                    update_special_mode(number_of_devices, my_devices, device_);
+                    update_special_mode(number_of_devices, devices, device_);
                 }
             }
         } else {
@@ -431,7 +432,7 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             r = remove_device(devname);
             if (!quit && r != -1) {
                 if (number_of_devices) {
-                    update_special_mode(number_of_devices, my_devices, device_);
+                    update_special_mode(number_of_devices, devices, device_);
                 } else {
                     switch_back_normal_mode(device_); 
                 }
@@ -446,7 +447,7 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
 /*
  * If message received == org.freedesktop.UDisks2.Filesystem, then
  * only possible signal is "mounted status has changed".
- * So, change mounted status of device (device name =  sd_bus_message_get_path(m))
+ * So, change mounted status of device (device name = sd_bus_message_get_path(m))
  */
 static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
     int r;
@@ -462,7 +463,7 @@ static int change_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             INFO("PropertiesChanged UDisks2 signal received!");
             const char *name = sd_bus_message_get_path(m);
             snprintf(devname, PATH_MAX, "/dev/%s", strrchr(name, '/') + 1);
-            int present = is_present(devname, my_devices, number_of_devices, strlen(devname), 0);
+            int present = is_present(devname, devices, number_of_devices, strlen(devname), 0);
             if (present != -1) {
                 change_mounted_status(present, devname);
                 update_special_mode(present, NULL, device_);
@@ -501,7 +502,7 @@ void devices_bus_process(void) {
  */
 void show_devices_tab(void) {
     if (number_of_devices) {
-        show_special_tab(number_of_devices, my_devices, device_mode_str, device_);
+        show_special_tab(number_of_devices, devices, device_mode_str, device_);
     } else {
         print_info(no_devices, INFO_LINE);
     }
@@ -510,18 +511,18 @@ void show_devices_tab(void) {
 /*
  * Scan "block" subsystem for devices.
  * For each device check if it is a really mountable external fs,
- * add it to my_devices{} and increment number_of_devices.
+ * add it to devices{} and increment number_of_devices.
  */
 static void enumerate_block_devices(void) {
     struct udev_enumerate *enumerate;
-    struct udev_list_entry *devices, *dev_list_entry;
+    struct udev_list_entry *devlist, *dev_list_entry;
     struct udev_device *dev;
 
     enumerate = udev_enumerate_new(udev);
     udev_enumerate_add_match_subsystem(enumerate, "block");
     udev_enumerate_scan_devices(enumerate);
-    devices = udev_enumerate_get_list_entry(enumerate);
-    udev_list_entry_foreach(dev_list_entry, devices) {
+    devlist = udev_enumerate_get_list_entry(enumerate);
+    udev_list_entry_foreach(dev_list_entry, devlist) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
         if ((dev = udev_device_new_from_syspath(udev, path))) {
             const char *name = udev_device_get_devnode(dev);
@@ -572,42 +573,14 @@ static int get_mount_point(const char *dev_path, char *path) {
 void manage_mount_device(void) {
     int mount;
     int pos = ps[active].curr_pos;
-    int len = strlen(my_devices[pos]);
-    char *ptr = strchr(my_devices[pos], ',');
+    int len = strlen(devices[pos]);
+    char *ptr = strchr(devices[pos], ',');
     char name[PATH_MAX + 1];
 
-    strncpy(name, my_devices[pos], PATH_MAX);
+    strncpy(name, devices[pos], PATH_MAX);
     name[len - strlen(ptr)] = '\0';
-    mount = my_devices[pos][len - 1] - '0';
+    mount = devices[pos][len - 1] - '0';
     mount_fs(name, mount);
-}
-
-/*
- * For each tab, checks if it is inside mounted_path.
- * If the active tab is inside, calculate the path just before the mountpoint,
- * and chdir there. Else, returns 1.
- */
-static int check_cwd(char *mounted_path) {
-    int ret = 0;
-
-    for (int i = 0; i < cont; i++) {
-        if (!strncmp(ps[i].my_cwd, mounted_path, strlen(mounted_path))) {
-            ret += 1 + i;
-        }
-    }
-    if (ret) {
-        strncpy(mounted_path, dirname(mounted_path), PATH_MAX);
-        /*
-         * if ret == 1 + active means that active tab only
-         * was inside mounted_path.
-         * if ret == 3 means that every tab was inside mounted_path;
-         * in both case we need to change process' cwd.
-         */
-        if (ret == 1 + active || ret == 3) {
-            chdir(mounted_path);
-        }
-    }
-    return ret;
 }
 
 /*
@@ -617,12 +590,12 @@ static int check_cwd(char *mounted_path) {
 void manage_enter_device(void) {
     int mount, ret = 1;
     int pos = ps[active].curr_pos;
-    int len = strlen(my_devices[pos]);
-    char *ptr = strchr(my_devices[pos], ',');
+    int len = strlen(devices[pos]);
+    char *ptr = strchr(devices[pos], ',');
     char dev_path[PATH_MAX + 1] = {0}, name[PATH_MAX + 1] = {0};
 
-    mount = my_devices[pos][len - 1] - '0';
-    strncpy(dev_path, my_devices[pos], PATH_MAX);
+    mount = devices[pos][len - 1] - '0';
+    strncpy(dev_path, devices[pos], PATH_MAX);
     dev_path[len - strlen(ptr)] = '\0';
     if (!mount) {
         ret = mount_fs(dev_path, mount);
@@ -634,11 +607,11 @@ void manage_enter_device(void) {
 }
 
 static void change_mounted_status(int pos, const char *name) {
-    int len = strlen(my_devices[pos]);
-    int mount = my_devices[pos][len - 1] - '0';
-    sprintf(my_devices[pos] + len - 1, "%d", !mount);
+    int len = strlen(devices[pos]);
+    int mount = devices[pos][len - 1] - '0';
+    sprintf(devices[pos] + len - 1, "%d", !mount);
     if (!strlen(mount_str)) {
-        if (mount == 1) {
+        if (mount) {
             snprintf(mount_str, PATH_MAX, _(ext_dev_unmounted), name);
         } else {
             snprintf(mount_str, PATH_MAX, _(ext_dev_mounted), name);
@@ -653,8 +626,8 @@ void free_device_monitor(void) {
     if (bus) {
         sd_bus_flush_close_unref(bus);
     }
-    if (my_devices) {
-        free(my_devices);
+    if (devices) {
+        free(devices);
     }
     if (udev) {
         udev_unref(udev);
@@ -665,7 +638,7 @@ void free_device_monitor(void) {
 /*
  * Check if dev must be ignored, then
  * check if it is a mountable fs (eg: a dvd reader without a dvd inserted, is NOT a moutable fs),
- * and its mount status. Then add the device to my_devices.
+ * and its mount status. Then add the device to devices.
  * If the dev is not mounted and it is a loop_dev or if config.automount is == 1,
  * it will mount the device.
  */
@@ -680,13 +653,13 @@ static int add_device(struct udev_device *dev, const char *name) {
         mount = get_mount_point(name, NULL);
     }
     if (mount != -1) {
-        my_devices = safe_realloc(number_of_devices + 1, my_devices);
+        devices = safe_realloc(number_of_devices + 1, devices);
         if (!quit) {
             if (udev_device_get_property_value(dev, "ID_MODEL")) {
-                snprintf(my_devices[number_of_devices], PATH_MAX, "%s, %s, Mounted: %d",
+                snprintf(devices[number_of_devices], PATH_MAX, "%s, %s, Mounted: %d",
                         name, udev_device_get_property_value(dev, "ID_MODEL"), mount);
             } else {
-                snprintf(my_devices[number_of_devices], PATH_MAX, "%s, Mounted: %d",
+                snprintf(devices[number_of_devices], PATH_MAX, "%s, Mounted: %d",
                         name, mount);
             }
             number_of_devices++;
@@ -702,10 +675,10 @@ static int add_device(struct udev_device *dev, const char *name) {
 }
 
 static int remove_device(const char *name) {
-    int i = is_present(name, my_devices, number_of_devices, strlen(name), 0);
+    int i = is_present(name, devices, number_of_devices, strlen(name), 0);
 
     if (i != -1) {
-        my_devices = remove_from_list(&number_of_devices, my_devices, i);
+        devices = remove_from_list(&number_of_devices, devices, i);
         if (!quit) {
             print_info(device_removed, INFO_LINE);
             INFO(device_removed);
@@ -725,10 +698,10 @@ void show_devices_stat(int i, int win, char *str) {
     char s[20] = {0};
     uint64_t total;
     
-    int len = strlen(my_devices[i]);
-    int mount = my_devices[i][len - 1] - '0';
-    strncpy(dev_path, my_devices[i], PATH_MAX);
-    char *ptr = strchr(my_devices[i], ',');
+    int len = strlen(devices[i]);
+    int mount = devices[i][len - 1] - '0';
+    strncpy(dev_path, devices[i], PATH_MAX);
+    char *ptr = strchr(devices[i], ',');
     dev_path[len - strlen(ptr)] = '\0';
     // if device is mounted
     if (mount && get_mount_point(dev_path, path) != -1) {

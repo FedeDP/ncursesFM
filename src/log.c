@@ -74,8 +74,7 @@ static void log_current_options(void) {
     fprintf(log_file, "* Log level: %d\n", config.loglevel);
     fprintf(log_file, "* Log persistency: %d\n", config.persistent_log);
     fprintf(log_file, "* Low battery threshold: %d\n", config.bat_low_level);
-    fprintf(log_file, "* Border chars: \"%s\"\n", config.border_chars);
-    fprintf(log_file, "* Cursor chars: \"%s\"\n", config.cursor_chars);
+    fprintf(log_file, "* Cursor chars: \"%ls\"\n", config.cursor_chars);
     fprintf(log_file, "* Sysinfo layout: \"%s\"\n", config.sysinfo_layout);
     fprintf(log_file, "* Safe level: %d\n\n", config.safe);
 }

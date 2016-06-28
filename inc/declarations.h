@@ -111,8 +111,7 @@ struct conf {
     int persistent_log;
     int bat_low_level;
     int safe;
-    char border_chars[9];
-    char cursor_chars[3];
+    wchar_t cursor_chars[3];
     char sysinfo_layout[4];
 };
 

@@ -54,6 +54,7 @@ static void switch_search(void);
 static void check_remove(void (*f)(void));
 static int check_init(int index);
 static int check_access(void);
+static void go_root_dir(void);
 
 /*
  * pointers to long_file_operations functions, used in main loop;
@@ -229,8 +230,7 @@ static void helper_function(int argc, const char *argv[]) {
 #ifdef SYSTEMD_PRESENT
     device_init = DEVMON_STARTING;
 #endif
-    strncpy(config.border_chars, "||--++++", sizeof(config.border_chars) - 1);
-    strncpy(config.cursor_chars, "->", sizeof(config.cursor_chars) - 1);
+    wcscpy(config.cursor_chars, L"->");
     /* 
      * default sysinfo layout: 
      * Clock
@@ -301,8 +301,7 @@ static void check_config_files() {
 static void read_config_file(const char *dir) {
     config_t cfg;
     char config_file_name[PATH_MAX + 1] = {0};
-    const char *str_editor, *str_starting_dir, 
-                *str_borders, *str_cursor, *sysinfo;
+    const char *str_editor, *str_starting_dir, *str_cursor, *sysinfo;
 
     snprintf(config_file_name, PATH_MAX, "%s/ncursesFM.conf", dir);
     if (access(config_file_name, F_OK ) == -1) {
@@ -327,11 +326,9 @@ static void read_config_file(const char *dir) {
         config_lookup_int(&cfg, "loglevel", &config.loglevel);
         config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
         config_lookup_int(&cfg, "bat_low_level", &config.bat_low_level);
-        if (config_lookup_string(&cfg, "border_chars", &str_borders) == CONFIG_TRUE) {
-            strncpy(config.border_chars, str_borders, sizeof(config.border_chars));
-        }
         if (config_lookup_string(&cfg, "cursor_chars", &str_cursor) == CONFIG_TRUE) {
-            strncpy(config.cursor_chars, str_cursor, sizeof(config.cursor_chars));
+            mbstowcs(config.cursor_chars, str_cursor, sizeof(config.cursor_chars));
+//             strncpy(config.cursor_chars, str_cursor, sizeof(config.cursor_chars));
         }
         if (config_lookup_string(&cfg, "sysinfo_layout", &sysinfo) == CONFIG_TRUE) {
             strncpy(config.sysinfo_layout, sysinfo, sizeof(config.sysinfo_layout));
@@ -431,8 +428,7 @@ static void main_loop(void) {
             continue;
         }
         c = tolower(c);
-        // key_tab (9) is not useful in mode > fast_browse
-        if (ps[active].mode > fast_browse_ && ((isprint(c) && !strchr(special_mode_allowed_chars, c)) || c == 9)) {
+        if (ps[active].mode > fast_browse_ && (isprint(c) && !strchr(special_mode_allowed_chars, c))) {
             continue;
         }
         stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
@@ -454,6 +450,11 @@ static void main_loop(void) {
             break;
         case KEY_NPAGE:
             scroll_down(active, ps[active].number_of_files - ps[active].curr_pos);
+            break;
+        case 127: case KEY_BACKSPACE: // backspace to go to root folder
+            if (ps[active].mode <= fast_browse_) {
+                go_root_dir();
+            }
             break;
         case 'h': // h to show hidden files
             switch_hidden();
@@ -512,7 +513,9 @@ static void main_loop(void) {
             resize_win();
             break;
         case 9: // TAB to change sorting function
-            change_sort();
+            if (ps[active].mode <= fast_browse_) {
+                change_sort();
+            }
             break;
         case 'i': // i to view current file fullname (in case it is too long)
             trigger_fullname_win();
@@ -543,14 +546,13 @@ static void main_loop(void) {
                     /* left click will send an enter event */
                     manage_enter(current_file_stat);
                 } else if (event.bstate & BUTTON2_RELEASED) {
-                    /* middle click will send a "new tab" event */
-                    if (cont < MAX_TABS) {
-                        add_new_tab();
-                        change_tab();
-                    }
-                } else if (event.bstate & BUTTON3_RELEASED) {
-                    /* right click will send a space event */
+                    /* middle click will send a space event */
                     manage_space(str_ptr[active][ps[active].curr_pos]);
+                } else if (event.bstate & BUTTON3_RELEASED) {
+                    /* right click will send a back to root dir event */
+                    if (ps[active].mode <= fast_browse_) {
+                        go_root_dir();
+                    }
                 }
                 /* scroll up and down events associated with mouse wheel */
 #if NCURSES_MOUSE_VERSION > 1
@@ -721,4 +723,15 @@ static int check_access(void) {
         return 0;
     }
     return 1;
+}
+
+static void go_root_dir(void) {
+    char root[PATH_MAX + 1] = {0};
+    
+    // if we're not on root of fs
+    if (strcmp(ps[active].my_cwd, "/")) {
+        strncpy(root, ps[active].my_cwd, PATH_MAX);
+        strcat(root, "/..");
+        change_dir(root, active);
+    }
 }

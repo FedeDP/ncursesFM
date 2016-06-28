@@ -26,7 +26,7 @@ static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
 };
 
 int change_dir(const char *str, int win) {
-    int ret;
+    int ret = 0;
     const int event_mask = IN_MODIFY | IN_ATTRIB | IN_CREATE | IN_DELETE | IN_MOVE;
     
     if (chdir(str) != -1) {
@@ -35,7 +35,6 @@ int change_dir(const char *str, int win) {
         tab_refresh(win);
         inotify_rm_watch(ps[win].inot.fd, ps[win].inot.wd);
         ps[win].inot.wd = inotify_add_watch(ps[win].inot.fd, ps[win].my_cwd, event_mask);
-        ret = 0;
         // reset selecting status (double space to select all)
         // when changing dir
         is_selecting = 0;

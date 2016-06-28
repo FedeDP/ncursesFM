@@ -233,7 +233,7 @@ static void list_everything(int win, int old_dim, int end) {
 
 static void print_arrow(int win, int y) {
     check_active(win);
-    mvwprintw(ps[win].mywin.fm, y, 1, config.cursor_chars);
+    mvwprintw(ps[win].mywin.fm, y, 1, "%ls", config.cursor_chars);
     wattroff(ps[win].mywin.fm, COLOR_PAIR);
     wattroff(ps[win].mywin.fm, A_BOLD);
     if (fullname_win && win == active) {
@@ -258,9 +258,7 @@ static void check_active(int win) {
 static void print_border_and_title(int win) {
     if (ps[win].mywin.fm) {
         check_active(win);
-        wborder(ps[win].mywin.fm, config.border_chars[0], config.border_chars[1],
-            config.border_chars[2], config.border_chars[3], config.border_chars[4],
-            config.border_chars[5], config.border_chars[6], config.border_chars[7]);
+        wborder(ps[win].mywin.fm, 0, 0, 0, 0, 0, 0 , 0 , 0);
         if (strlen(ps[win].title)) {
             mvwprintw(ps[win].mywin.fm, 0, 0, "%.*s", ps[win].mywin.width - 1, _(ps[win].title));
         }
@@ -506,12 +504,9 @@ void trigger_show_helper_message(void) {
 static void helper_print(void) {
     char ncursesFM[40] = "NcursesFM ";
 
-    wborder(helper_win, config.border_chars[0], config.border_chars[1],
-            config.border_chars[2], config.border_chars[3], config.border_chars[4],
-            config.border_chars[5], config.border_chars[6], config.border_chars[7]);
-
+    wborder(helper_win, 0, 0, 0, 0, 0, 0 , 0 , 0);
     for (int i = 0; i < HELPER_HEIGHT[ps[active].mode] - 2; i++) {
-        mvwprintw(helper_win, i + 1, 0, "| * %.*s", COLS - 5, _(helper_string[ps[active].mode][i]));
+        mvwprintw(helper_win, i + 1, 2, "* %.*s", COLS - 5, _(helper_string[ps[active].mode][i]));
     }
     sprintf(ncursesFM + strlen(ncursesFM), "%s", VERSION);
     wattron(helper_win, A_BOLD);
@@ -712,6 +707,9 @@ void ask_user(const char *str, char *input, int d) {
     // while already asking another question.
     main_p[ARCHIVE_IX].fd = -1;
 #endif
+    
+    MEVENT event;
+    
     do {
         wint_t s = main_poll(info_win);
         switch (s) {
@@ -757,8 +755,35 @@ void ask_user(const char *str, char *input, int d) {
             }
             break;
         // why are they wprintable??
-        case KEY_UP: case KEY_DOWN: case KEY_MOUSE:
+        case KEY_UP: case KEY_DOWN:
         case KEY_PPAGE:  case KEY_NPAGE:
+            break;
+        case KEY_MOUSE:    
+            if(getmouse(&event) == OK) {
+                if (event.bstate & BUTTON1_RELEASED) {
+                    /* left click will send an enter event */
+                    leave = 1;
+                } else if (event.bstate & BUTTON3_RELEASED) {
+                    /* right click will send a ESC event */
+                    wmemset(wstring, 0,  wcslen(wstring));
+                    input[0] = 27;
+                    leave = 1;
+                }
+                /* scroll back and forth string events associated with mouse wheel */
+#if NCURSES_MOUSE_VERSION > 1
+                else if (event.bstate & BUTTON4_PRESSED) {
+                    if (index > 0) {
+                        index--;
+                        input_cursor_pos -= wcwidth(wstring[index]);
+                    }
+                } else if (event.bstate & BUTTON5_PRESSED) {
+                    if (index < wcslen(wstring)) {
+                        input_cursor_pos += wcwidth(wstring[index]);
+                        index++;
+                    }
+                }
+#endif
+            }
             break;
         case 27:   // ESC to leave input mode
             // return a string with ESC as only char
