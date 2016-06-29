@@ -327,8 +327,7 @@ static void read_config_file(const char *dir) {
         config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
         config_lookup_int(&cfg, "bat_low_level", &config.bat_low_level);
         if (config_lookup_string(&cfg, "cursor_chars", &str_cursor) == CONFIG_TRUE) {
-            mbstowcs(config.cursor_chars, str_cursor, sizeof(config.cursor_chars));
-//             strncpy(config.cursor_chars, str_cursor, sizeof(config.cursor_chars));
+            mbstowcs(config.cursor_chars, str_cursor, 2);
         }
         if (config_lookup_string(&cfg, "sysinfo_layout", &sysinfo) == CONFIG_TRUE) {
             strncpy(config.sysinfo_layout, sysinfo, sizeof(config.sysinfo_layout));
@@ -593,11 +592,11 @@ static void add_new_tab(void) {
 #ifdef SYSTEMD_PRESENT
 static void check_device_mode(void) {
     if (device_init == DEVMON_STARTING) {
-        print_info("Still polling for initial devices.", INFO_LINE);
+        print_info(_(polling), INFO_LINE);
     } else if (device_init == DEVMON_READY && ps[active].mode == normal) {
         show_devices_tab();
     } else if (device_init == DEVMON_OFF) {
-        print_info("Monitor is not active. An error occurred, check log file.", INFO_LINE);
+        print_info(_(monitor_err), INFO_LINE);
     } else if (ps[active].mode == device_) {
         manage_mount_device();
     }
@@ -677,7 +676,7 @@ static void switch_search(void) {
     if (sv.searching == NO_SEARCH) {
         search();
     } else if (sv.searching == SEARCHING) {
-        print_info(already_searching, INFO_LINE);
+        print_info(_(already_searching), INFO_LINE);
     } else if (sv.searching == SEARCHED) {
         list_found();
     }
@@ -696,7 +695,7 @@ static int check_init(int index) {
     char x;
 
     if (!selected) {
-        print_info(no_selected_files, ERR_LINE);
+        print_info(_(no_selected_files), ERR_LINE);
         return 0;
     }
     if (index == EXTRACTOR_TH && config.safe == FULL_SAFE) {

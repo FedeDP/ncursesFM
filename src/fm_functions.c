@@ -77,7 +77,7 @@ void manage_file(const char *str) {
     if (is_ext(str, pkg_ext, NUM(pkg_ext))) {
         char c;
         if (config.safe != UNSAFE) {
-            print_info(package_warn, INFO_LINE);
+            print_info(_(package_warn), INFO_LINE);
             ask_user(_(pkg_quest), &c, 1);
             print_info("", INFO_LINE);
             if (c != _(yes)[0]) {
@@ -134,7 +134,7 @@ static void open_file(const char *str) {
 
         }
     } else {
-        print_info(editor_missing, ERR_LINE);
+        print_info(_(editor_missing), ERR_LINE);
     }
 }
 
@@ -152,7 +152,7 @@ void fast_file_operations(const int index) {
     }
     int r = short_func[index](new_name);
     if (r == 0) {
-        print_info(short_msg[index], INFO_LINE);
+        print_info(_(short_msg[index]), INFO_LINE);
     } else {
         print_info(strerror(-r), ERR_LINE);
     }
@@ -210,7 +210,7 @@ void manage_space_press(const char *str) {
         c = ' ';
         num_selected ? (idx = 1) : (idx = 2);
     }
-    print_info(file_sel[idx], INFO_LINE);
+    print_info(_(file_sel[idx]), INFO_LINE);
     highlight_selected(str, c, active);
     if (!strcmp(ps[active].my_cwd, ps[!active].my_cwd)) {
         highlight_selected(str, c, !active);
@@ -242,7 +242,7 @@ void manage_all_space_press(void) {
         deselect_all();
         selected ? (idx = 4) : (idx = 5);
     }
-    print_info(file_sel[idx], INFO_LINE);
+    print_info(_(file_sel[idx]), INFO_LINE);
     if (num_selected) {
         update_special_mode(num_selected, selected, selected_);
     } else {
@@ -292,7 +292,7 @@ void remove_selected(void) {
         idx = 2;
         switch_back_normal_mode(selected_);
     }
-    print_info(file_sel[idx], INFO_LINE);
+    print_info(_(file_sel[idx]), INFO_LINE);
 }
 
 void remove_all_selected(void) {
@@ -305,14 +305,14 @@ void remove_all_selected(void) {
     selected = NULL;
     num_selected = 0;
     switch_back_normal_mode(selected_);
-    print_info(selected_cleared, INFO_LINE);
+    print_info(_(selected_cleared), INFO_LINE);
 }
 
 void show_selected(void) {
     if (num_selected) {
         show_special_tab(num_selected, selected, bookmarks_mode_str, selected_);
     } else {
-        print_info(no_selected_files, INFO_LINE);
+        print_info(_(no_selected_files), INFO_LINE);
     }
 }
 

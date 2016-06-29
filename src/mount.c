@@ -504,7 +504,7 @@ void show_devices_tab(void) {
     if (number_of_devices) {
         show_special_tab(number_of_devices, devices, device_mode_str, device_);
     } else {
-        print_info(no_devices, INFO_LINE);
+        print_info(_(no_devices), INFO_LINE);
     }
 }
 
@@ -546,7 +546,7 @@ static int get_mount_point(const char *dev_path, char *path) {
 
     if (!(mtab = setmntent("/proc/mounts", "r"))) {
         WARN(no_proc_mounts);
-        print_info(no_proc_mounts, ERR_LINE);
+        print_info(_(no_proc_mounts), ERR_LINE);
         return -1;
     }
     while ((part = getmntent(mtab))) {
@@ -617,7 +617,7 @@ static void change_mounted_status(int pos, const char *name) {
             snprintf(mount_str, PATH_MAX, _(ext_dev_mounted), name);
         }
     }
-    print_info(mount_str, INFO_LINE);
+    print_info(_(mount_str), INFO_LINE);
     memset(mount_str, 0, strlen(mount_str));
 }
 
@@ -664,7 +664,7 @@ static int add_device(struct udev_device *dev, const char *name) {
             }
             number_of_devices++;
             INFO(device_added);
-            print_info(device_added, INFO_LINE);
+            print_info(_(device_added), INFO_LINE);
             int is_loop_dev = !strncmp(name, "/dev/loop", strlen("/dev/loop"));
             if (device_init != DEVMON_STARTING && (!mount && (config.automount || is_loop_dev))) {
                 mount_fs(name, mount);
@@ -680,7 +680,7 @@ static int remove_device(const char *name) {
     if (i != -1) {
         devices = remove_from_list(&number_of_devices, devices, i);
         if (!quit) {
-            print_info(device_removed, INFO_LINE);
+            print_info(_(device_removed), INFO_LINE);
             INFO(device_removed);
         }
     }

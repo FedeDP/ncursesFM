@@ -29,12 +29,12 @@ static void print_file(const char *filename) {
         r = cupsPrintFile(default_dest->name, filename, "ncursesFM job",
                       default_dest->num_options, default_dest->options);
         if (r) {
-            print_info(print_ok, INFO_LINE);
+            print_info(_(print_ok), INFO_LINE);
         } else {
             print_info(ippErrorString(cupsLastError()), ERR_LINE);
         }
     } else {
-        print_info(print_fail, ERR_LINE);
+        print_info(_(print_fail), ERR_LINE);
     }
 }
 

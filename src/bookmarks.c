@@ -73,12 +73,12 @@ void add_file_to_bookmarks(const char *str) {
     if ((f = fopen(fullpath, "a+"))) {
         fprintf(f, "%s\n", str);
         fclose(f);
-        print_info(bookmark_added, INFO_LINE);
+        print_info(_(bookmark_added), INFO_LINE);
         bookmarks = safe_realloc(++num_bookmarks, bookmarks);
         strncpy(bookmarks[num_bookmarks - 1], str, PATH_MAX);
         update_special_mode(num_bookmarks, bookmarks, bookmarks_);
     } else {
-        print_info(bookmarks_file_err, ERR_LINE);
+        print_info(_(bookmarks_file_err), ERR_LINE);
     }
 }
 
@@ -86,7 +86,7 @@ void remove_bookmark_from_file(void) {
     char c;
 
     if (ps[active].curr_pos < xdg_bookmarks) {
-        print_info(bookmarks_xdg_err, ERR_LINE);
+        print_info(_(bookmarks_xdg_err), ERR_LINE);
     } else {
         if (config.safe == FULL_SAFE) {
             ask_user(_(bookmarks_rm_quest), &c, 1);
@@ -103,7 +103,7 @@ static void remove_bookmark(int idx) {
     
     if ((f = fopen(fullpath, "w"))) {
         bookmarks = remove_from_list(&num_bookmarks, bookmarks, idx);
-        print_info(bookmarks_rm, INFO_LINE);
+        print_info(_(bookmarks_rm), INFO_LINE);
         for (idx = xdg_bookmarks; idx < num_bookmarks; idx++) {
             fprintf(f, "%s\n", bookmarks[idx]);
         }
@@ -114,7 +114,7 @@ static void remove_bookmark(int idx) {
             switch_back_normal_mode(bookmarks_); 
         }
     } else {
-        print_info(bookmarks_file_err, ERR_LINE);
+        print_info(_(bookmarks_file_err), ERR_LINE);
     }
 }
 
@@ -122,7 +122,7 @@ void show_bookmarks(void) {
     if (num_bookmarks) {
         show_special_tab(num_bookmarks, bookmarks, bookmarks_mode_str, bookmarks_);
     } else {
-        print_info(no_bookmarks, INFO_LINE);
+        print_info(_(no_bookmarks), INFO_LINE);
     }
 }
 
@@ -139,7 +139,7 @@ void manage_enter_bookmarks(struct stat current_file_stat) {
             }
         }
         remove_bookmark(ps[active].curr_pos);
-        print_info(inexistent_bookmark, INFO_LINE);
+        print_info(_(inexistent_bookmark), INFO_LINE);
     }
 }
 
@@ -147,5 +147,5 @@ void remove_all_user_bookmarks(void) {
     for (int i = num_bookmarks - 1; i >= xdg_bookmarks; i--) {
         remove_bookmark(i);
     }
-    print_info(bookmarks_cleared, INFO_LINE);
+    print_info(_(bookmarks_cleared), INFO_LINE);
 }

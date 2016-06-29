@@ -57,7 +57,7 @@ void init_thread(int type, int (* const f)(void)) {
         return;
     }
     if (num_of_jobs > 1) {
-        print_info(thread_running, INFO_LINE);
+        print_info(_(thread_running), INFO_LINE);
         INFO("job added to job's queue.");
     } else {
 #ifdef SYSTEMD_PRESENT
@@ -111,7 +111,7 @@ static int init_thread_helper(void) {
  * When job's queue is empty, reset some vars and returns.
  */
 static void *execute_thread(void *x) {
-    print_info(thread_m.str, thread_m.line);
+    print_info(_(thread_m.str), thread_m.line);
     if (thread_h) {
         if (thread_h->f() == -1) {
             thread_m.str = thread_fail_str[thread_h->type];

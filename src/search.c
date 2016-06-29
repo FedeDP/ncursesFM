@@ -8,7 +8,7 @@ void search(void) {
     ask_user(_(search_insert_name), sv.searched_string, 20);
     if (strlen(sv.searched_string) < 5 || sv.searched_string[0] == 27) {
         if (strlen(sv.searched_string) > 0 && sv.searched_string[0] != 27) {
-            print_info(searched_string_minimum, ERR_LINE);
+            print_info(_(searched_string_minimum), ERR_LINE);
         }
     } else {
         char c;
@@ -126,9 +126,9 @@ static void *search_thread(void *x) {
         if ((sv.found_cont == MAX_NUMBER_OF_FOUND) || (sv.found_cont == 0)) {
             sv.searching = NO_SEARCH;
             if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
-                print_info(too_many_found, INFO_LINE);
+                print_info(_(too_many_found), INFO_LINE);
             } else {
-                print_info(no_found, INFO_LINE);
+                print_info(_(no_found), INFO_LINE);
             }
         } else {
             sv.searching = SEARCHED;

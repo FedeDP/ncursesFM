@@ -361,3 +361,18 @@ msgstr ""
 
 msgid "No power supply info available."
 msgstr ""
+
+msgid "Disabled overtype mode."
+msgstr ""
+
+msgid "Enabled overtype mode."
+msgstr ""
+
+msgid "Window too small. Enlarge it."
+msgstr ""
+
+msgid "Still polling for devices."
+msgstr ""
+
+msgid "Monitor is not active. An error occurred, check log file."
+msgstr ""

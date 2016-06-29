@@ -85,6 +85,8 @@ const char ext_dev_unmounted[] = "External tool has unmounted %s.";
 const char device_added[] = "New device connected.";
 const char device_removed[] = "Device removed.";
 const char no_proc_mounts[] = "Could not find /proc/mounts.";
+const char polling[] = "Still polling for devices.";
+const char monitor_err[] = "Monitor is not active. An error occurred, check log file.";
 #endif
 
 const char bookmarks_mode_str[] = "Bookmarks:";
@@ -95,6 +97,10 @@ const char selected_mode_str[] = "Selected files:";
 
 const char ac_online[] = "On AC";
 const char power_fail[] = "No power supply info available.";
+
+const char *insert_string[] = {"Disabled overtype mode.", "Enabled overtype mode."};
+
+const char win_too_small[] = "Window too small. Enlarge it.";
 
 #ifdef SYSTEMD_PRESENT
 const int HELPER_HEIGHT[] = {16, 9, 9, 9, 9, 9};

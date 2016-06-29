@@ -84,6 +84,8 @@ extern const char ext_dev_unmounted[];
 extern const char device_added[];
 extern const char device_removed[];
 extern const char no_proc_mounts[];
+extern const char polling[];
+extern const char monitor_err[];
 #endif
 extern const char bookmarks_mode_str[];
 extern const char search_mode_str[];
@@ -91,6 +93,11 @@ extern const char selected_mode_str[];
 
 extern const char ac_online[];
 extern const char power_fail[];
+
+extern const char *insert_string[];
+
+extern const char win_too_small[];
+
 
 extern const char helper_title[];
 extern const char helper_string[MODES][16][150];

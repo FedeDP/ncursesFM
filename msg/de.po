@@ -361,3 +361,18 @@ msgstr "Batteriebetrieb"
 
 msgid "No power supply info available."
 msgstr "Keine Stromanschlussinformation verfügbar."
+
+msgid "Disabled overtype mode."
+msgstr "Deaktiviert Überschreibmodus."
+
+msgid "Enabled overtype mode."
+msgstr "Aktiviert Überschreibmodus."
+
+msgid "Window too small. Enlarge it."
+msgstr "Schaufenster zu klein. Vergrößern."
+
+msgid "Still polling for devices."
+msgstr "Noch Polling für Geräte."
+
+msgid "Monitor is not active. An error occurred, check log file."
+msgstr "Monitor ist nicht aktiv. Ein Fehler ist aufgetreten, Überprüfe den Log."

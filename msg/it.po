@@ -361,3 +361,18 @@ msgstr "Collegato"
 
 msgid "No power supply info available."
 msgstr "Nessuna informazione energetica disponibile."
+
+msgid "Disabled overtype mode."
+msgstr "Disabilitata modalità sovrascrittura."
+
+msgid "Enabled overtype mode."
+msgstr "Abilitata modalità sovrascrittura."
+
+msgid "Window too small. Enlarge it."
+msgstr "Finestra troppo piccola. Allargala."
+
+msgid "Still polling for devices."
+msgstr "Controllando i dispositivi."
+
+msgid "Monitor is not active. An error occurred, check log file."
+msgstr "Il monitor non è attivo. È occorso un errore, controlla il file di log."

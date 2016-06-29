@@ -18,7 +18,7 @@ For a **full list of features**, **deps** and **how to build**, please refer to 
 
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
-* i18n support: for now en, it.
+* i18n support: for now en, it, de.
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
 * config support through libconfig.
 * Basic mouse support.
