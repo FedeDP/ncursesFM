@@ -705,7 +705,7 @@ void ask_user(const char *str, char *input, int d) {
     
     MEVENT event;
     
-    do {
+     while ((wcslen(wstring) < d) && (!quit) && (!leave)) {
         wint_t s = main_poll(info_win);
         switch (s) {
         case KEY_RESIZE:
@@ -753,7 +753,7 @@ void ask_user(const char *str, char *input, int d) {
         case KEY_UP: case KEY_DOWN:
         case KEY_PPAGE:  case KEY_NPAGE:
             break;
-        case KEY_MOUSE:    
+        case KEY_MOUSE:
             if(getmouse(&event) == OK) {
                 if (event.bstate & BUTTON1_RELEASED) {
                     /* left click will send an enter event */
@@ -821,7 +821,7 @@ void ask_user(const char *str, char *input, int d) {
             }
             break;
         }
-    } while ((wcslen(wstring) < d) && (!quit) && (!leave));
+    }
     if (quit) {
         wmemset(wstring, 0,  wcslen(wstring));
         input[0] = 27;
@@ -832,8 +832,20 @@ void ask_user(const char *str, char *input, int d) {
     curs_set(0);
     input_mode = 0;
 #if ARCHIVE_VERSION_NUMBER >= 3002000
-    // return to get archive_cb ask_user events as we now finished.
-    main_p[ARCHIVE_IX].fd = archive_cb_fd[0];
+    if (quit) {
+        /*
+         * if we're quitting, try to unlock
+         * extractor thread (if any) before leaving.
+         * otherwise it could stop on its eventfd read
+         * eg: extracting thread is stopped on read on eventfd, 
+         * but main thread is in another ask_user, and we receive a SIGTERM/SIGINT,
+         * main thread will leave ask_user, but extracting thread will be blocked on eventfd.
+         */
+        archiver_cb_func();
+    } else {
+        // return to listen to archive_cb ask_user events as we now finished.
+        main_p[ARCHIVE_IX].fd = archive_cb_fd[0];
+    }
 #endif
     mvwchgat(info_win, 0, 1, -1, A_NORMAL, 0, NULL);
     print_info("", ASK_LINE); // clear ASK_LINE
@@ -920,7 +932,8 @@ wint_t main_poll(WINDOW *win) {;
 static void archiver_cb_func(void) {
     uint64_t u = 1;
     
-    if (eventfd_read(archive_cb_fd[0], &u) == -1) {
+    if (eventfd_read(archive_cb_fd[0], &u) == -1 || quit) {
+        memset(passphrase, 0, strlen(passphrase));
         eventfd_write(archive_cb_fd[1], u);
         return;
     }

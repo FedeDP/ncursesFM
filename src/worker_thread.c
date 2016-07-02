@@ -111,7 +111,6 @@ static int init_thread_helper(void) {
  * When job's queue is empty, reset some vars and returns.
  */
 static void *execute_thread(void *x) {
-    print_info(_(thread_m.str), thread_m.line);
     if (thread_h) {
         if (thread_h->f() == -1) {
             thread_m.str = thread_fail_str[thread_h->type];
@@ -124,6 +123,7 @@ static void *execute_thread(void *x) {
             thread_m.line = INFO_LINE;
         }
         free_running_h();
+        print_info(_(thread_m.str), thread_m.line);
         return execute_thread(NULL);
     }
     INFO("ended all queued jobs.");

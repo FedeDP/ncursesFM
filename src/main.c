@@ -22,6 +22,7 @@
  * END_COMMON_COPYRIGHT_HEADER */
 
 #include "../inc/bookmarks.h"
+#include <getopt.h>
 
 #ifdef LIBCONFIG_PRESENT
 #include <libconfig.h>
@@ -34,8 +35,8 @@ static void sigsegv_handler(int signum);
 #ifdef LIBX11_PRESENT
 static void check_X(void);
 #endif
-static void helper_function(int argc, const char *argv[]);
-static void parse_cmd(int argc, const char *argv[]);
+static void helper_function(int argc, char * const argv[]);
+static void parse_cmd(int argc, char * const argv[]);
 #ifdef LIBCONFIG_PRESENT
 static void check_config_files();
 static void read_config_file(const char *dir);
@@ -63,7 +64,7 @@ static int (*const long_func[LONG_FILE_OPERATIONS])(void) = {
     move_file, paste_file, remove_file, create_archive, extract_file
 };
 
-int main(int argc, const char *argv[])
+int main(int argc, char * const argv[])
 {
     locale_init();
     helper_function(argc, argv);
@@ -149,7 +150,10 @@ static void set_pollfd(void) {
         .events = POLLIN,
     };
 #if ARCHIVE_VERSION_NUMBER >= 3002000
-    archive_cb_fd[0] = eventfd(0, 0);
+    // NONBLOCK needed for EXTRACTOR_TH workaround when blocked 
+    // inside a eventf read -> archive_cb_fd[0] is fd read by main_poll
+    // this way it will return -1 if no data is waiting to be read.
+    archive_cb_fd[0] = eventfd(0, EFD_NONBLOCK);
     archive_cb_fd[1] = eventfd(0, 0);
     main_p[ARCHIVE_IX] = (struct pollfd) {
         .fd = archive_cb_fd[0],
@@ -187,7 +191,7 @@ static void check_X(void) {
 }
 #endif
 
-static void helper_function(int argc, const char *argv[]) {
+static void helper_function(int argc, char * const argv[]) {
     char ncursesfm[150];
     sprintf(ncursesfm, "NcursesFM, version: %s, commit: %s, build time: %s.", VERSION, build_git_sha, build_git_time);
     if ((argc > 1) && (!strcmp(argv[1], "--help"))) {
@@ -232,59 +236,69 @@ static void helper_function(int argc, const char *argv[]) {
 #endif
     wcscpy(config.cursor_chars, L"->");
     /* 
-     * default sysinfo layout: 
+     * default sysinfo layout:
      * Clock
      * Process monitor
      * Battery monitor
      */
-    strncpy(config.sysinfo_layout, "CPB", sizeof(config.sysinfo_layout) - 1);
+    strcpy(config.sysinfo_layout, "CPB");
 #ifdef LIBX11_PRESENT
     check_X();
 #endif
 }
 
-static void parse_cmd(int argc, const char *argv[]) {
-    int j = 1;
+static void parse_cmd(int argc, char * const argv[]) {
+    int idx = 0, opt;
+    struct option opts[] =
+    {
+        {"editor", 1, 0, 0},
+        {"starting_dir", 1, 0, 0},
+        {"helper_win", 1, 0, 0},
+        {"loglevel",  1, 0, 0},
+        {"persistent_log",  1, 0, 0},
+        {"low_level",  1, 0, 0},
+        {"safe",    1, 0, 0},
 #ifdef SYSTEMD_PRESENT
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", 
-        "--persistent_log", "--low_level", "--safe", "--inhibit", "--automount"};
-#else
-    const char *cmd_switch[] = {"--editor", "--starting_dir", "--helper_win", "--loglevel", 
-        "--persistent_log", "--low_level", "--safe"};
+        {"inhibit",    1, 0, 0},
+        {"automount",    1, 0, 0},
 #endif
-
-    while (j < argc) {
-        if ((!strcmp(cmd_switch[0], argv[j])) && (argv[j + 1])) {
-            strncpy(config.editor, argv[j + 1], PATH_MAX);
-        } else if ((!strcmp(cmd_switch[1], argv[j])) && (argv[j + 1])) {
-            strncpy(config.starting_dir, argv[j + 1], PATH_MAX);
-        } else if ((!strcmp(cmd_switch[2], argv[j])) && (argv[j + 1])) {
-            config.starting_helper = atoi(argv[j + 1]);
-        } else if ((!strcmp(cmd_switch[3], argv[j])) && (argv[j + 1])) {
-            config.loglevel = atoi(argv[j + 1]);
-        } else if ((!strcmp(cmd_switch[4], argv[j])) && (argv[j + 1])) {
-            config.persistent_log = atoi(argv[j + 1]);
-        } else if ((!strcmp(cmd_switch[5], argv[j])) && (argv[j + 1])) {
-            config.bat_low_level = atoi(argv[j + 1]);
-        } else if ((!strcmp(cmd_switch[6], argv[j])) && (argv[j + 1])) {
-            config.safe = atoi(argv[j + 1]);
-        }
+        {0, 0, 0, 0}
+    };
+    
+    while ((opt = getopt_long(argc, argv, "", opts, &idx)) != -1) {
+        if (optarg) {
+            switch (idx) {
+            case 0:
+                strncpy(config.editor, optarg, PATH_MAX);
+                break;
+            case 1:
+                strncpy(config.starting_dir, optarg, PATH_MAX);
+                break;
+            case 2:
+                config.starting_helper = atoi(optarg);
+                break;
+            case 3:
+                config.loglevel = atoi(optarg);
+                break;
+            case 4:
+                config.persistent_log = atoi(optarg);
+                break;
+            case 5:
+                config.bat_low_level = atoi(optarg);
+                break;
+            case 6:
+                config.safe = atoi(optarg);
+                break;
 #ifdef SYSTEMD_PRESENT
-        else if ((!strcmp(cmd_switch[7], argv[j])) && (argv[j + 1])) {
-            config.inhibit = atoi(argv[j + 1]);
-        }
-        else if ((!strcmp(cmd_switch[8], argv[j])) && (argv[j + 1])) {
-            config.automount = atoi(argv[j + 1]);
-        }
+            case 7:
+                config.inhibit = atoi(optarg);
+                break;
+            case 8:
+                config.automount = atoi(optarg);
+                break;
 #endif
-        else {
-            break;
+            }
         }
-        j += 2;
-    }
-    if (j != argc) {
-        fprintf(stderr, "Options not recognized. Use '--help' to view helper message.\n");
-        exit(EXIT_FAILURE);
     }
 }
 

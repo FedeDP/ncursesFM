@@ -1,4 +1,4 @@
-06 / 29 / 2016
+07 / 2 / 2016
 * added backspace to go back to root folder
 * added right click to go back to root folder
 * added mouse support to ask_user function(when taking user input) : wheel to go back and forth along the inputted string, left click = enter, right click = ESC
@@ -7,6 +7,8 @@
 * fixed a bug while unmounting devices, when !active tab was inside mount point
 * fixed a bug when entering/leaving special mode, if no additional wins are present
 * fixed a stupid but really nasty bug related to i18n, print_info function and fast browse string
+* fixed a sneaking locking bug: if extracting thread is stopped on read on eventfd (while asking a pwd), but main thread is in another ask_user, and we receive a SIGTERM/SIGINT, main thread will leave ask_user, but extracting thread will be blocked on eventfd. (it would be so unusual that nobody would have ever noticed)
+* switched to GNU getopt for cmdline options parsing
 
 06 / 20 / 2016
 * switched to signalfd instead of ppoll (cleaner)
