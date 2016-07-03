@@ -1,4 +1,4 @@
-07 / 2 / 2016
+07 / 4 / 2016
 * added backspace to go back to root folder
 * added right click to go back to root folder
 * added mouse support to ask_user function(when taking user input) : wheel to go back and forth along the inputted string, left click = enter, right click = ESC
@@ -11,6 +11,7 @@
 * switched to GNU getopt for cmdline options parsing
 * fixed a small bug while unmounting devices
 * fixed bug when external tool removed a device while !active tab was inside its mountpoint (!active tab path was not fixed, and !active tab remained in a not-existent path)
+* fixed a bug: backspace on getty wouldn't move to root dir while in fast browse mode
 
 06 / 20 / 2016
 * switched to signalfd instead of ppoll (cleaner)

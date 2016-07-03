@@ -421,10 +421,11 @@ static void main_loop(void) {
      * PG_UP/DOWN to move straight to first/last file.
      * 32 -> space to select files
      */
-    wchar_t not_graph_wchars[10];
-    swprintf(not_graph_wchars, 10, L"%lc%lc%lc%lc%lc%lc%lc%lc%lc",  KEY_UP, KEY_DOWN, KEY_RIGHT,
+    wchar_t not_graph_wchars[12];
+    swprintf(not_graph_wchars, 12, L"%lc%lc%lc%lc%lc%lc%lc%lc%lc%lc%lc",  KEY_UP, KEY_DOWN, KEY_RIGHT,
                                                                     KEY_LEFT, KEY_RESIZE, KEY_PPAGE,
-                                                                    KEY_NPAGE, KEY_MOUSE, 32);
+                                                                    KEY_NPAGE, KEY_MOUSE, 32,
+                                                                    127, KEY_BACKSPACE);
     struct stat current_file_stat;
     
     MEVENT event;
