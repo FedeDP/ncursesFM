@@ -9,6 +9,7 @@
 * fixed a stupid but really nasty bug related to i18n, print_info function and fast browse string
 * fixed a sneaking locking bug: if extracting thread is stopped on read on eventfd (while asking a pwd), but main thread is in another ask_user, and we receive a SIGTERM/SIGINT, main thread will leave ask_user, but extracting thread will be blocked on eventfd. (it would be so unusual that nobody would have ever noticed)
 * switched to GNU getopt for cmdline options parsing
+* fixed a small bug while unmounting devices
 
 06 / 20 / 2016
 * switched to signalfd instead of ppoll (cleaner)

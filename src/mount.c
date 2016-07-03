@@ -100,7 +100,7 @@ static int mount_fs(const char *str, int mount) {
          * save back in ps[active].my_cwd, process' cwd
          * to be sure we carry the right path
          */
-        strncpy(ps[active].my_cwd, mounted_path, PATH_MAX);
+        getcwd(ps[active].my_cwd, PATH_MAX);
         snprintf(mount_str, PATH_MAX, _(dev_unmounted), str);
         INFO("Unmounted.");
     }

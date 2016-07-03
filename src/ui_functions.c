@@ -932,6 +932,8 @@ wint_t main_poll(WINDOW *win) {;
 static void archiver_cb_func(void) {
     uint64_t u = 1;
     
+    // if something fails, reset passphrase string and write in eventfd only to unlock 
+    // extractor thread
     if (eventfd_read(archive_cb_fd[0], &u) == -1 || quit) {
         memset(passphrase, 0, strlen(passphrase));
         eventfd_write(archive_cb_fd[1], u);
