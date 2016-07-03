@@ -32,7 +32,7 @@ msgid "Remember: every shortcut in ncursesFM is case insensitive."
 msgstr "Recuerde: cada atajo en ncursesFM es insensible a mayúsculas."
 
 msgid "Enter -> surf between folders or to open files."
-msgstr "Intro->permite acceder a carpetas o abrir archivos."
+msgstr "Intro ->permite acceder a carpetas o abrir archivos."
 
 msgid "It will eventually (un)mount your ISO files or install your distro downloaded packages."
 msgstr "Eventualmente puede (des)montar sus archivos ISO o instalar los paquetes descargados de su distribución."
