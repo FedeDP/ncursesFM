@@ -14,6 +14,7 @@ static int change_power_callback(sd_bus_message *m, void *userdata, sd_bus_error
 static void enumerate_block_devices(void);
 static int get_mount_point(const char *dev_path, char *path);
 static void change_mounted_status(int pos, const char *name);
+static void fix_not_active_tab_cwd(void);
 static int add_device(struct udev_device *dev, const char *name);
 static int remove_device(const char *name);
 
@@ -87,15 +88,6 @@ static int mount_fs(const char *str, int mount) {
             set_autoclear(str);
         }
     } else {
-        len2 = strlen(ps[!active].my_cwd);
-        // if !active tab is inside mounted path
-        if (!strncmp(ps[!active].my_cwd, mounted_path, len) && len2 > len) {
-            if (ps[!active].mode <= fast_browse_) {
-                change_dir(mounted_path, !active);
-            } else {
-                strncpy(ps[!active].my_cwd, mounted_path, PATH_MAX);
-            }
-        }
         /*
          * save back in ps[active].my_cwd, process' cwd
          * to be sure we carry the right path
@@ -619,6 +611,34 @@ static void change_mounted_status(int pos, const char *name) {
     }
     print_info(_(mount_str), INFO_LINE);
     memset(mount_str, 0, strlen(mount_str));
+    // if mount == 1, it means we're unmounting
+    // and we need to check !active tab
+    // to see if it was inside mountpoint
+    // and in case, move it away
+    if (mount) {
+        fix_not_active_tab_cwd();
+    }
+}
+
+/*
+ * If !active tab was inside unmounted mount point,
+ * move it away, and if it is in normal mode,
+ * refresh its dir
+ * 
+ */
+static void fix_not_active_tab_cwd(void) {
+    int i = 0;
+    
+    if (cont == 1) {
+        return;
+    }
+    while (access(ps[!active].my_cwd, F_OK) != 0) {
+        i++;
+        strncpy(ps[!active].my_cwd, dirname(ps[!active].my_cwd), PATH_MAX);
+    }
+    if (i && ps[!active].mode <= fast_browse_) {
+        change_dir(ps[!active].my_cwd, !active);
+    }
 }
 
 void free_device_monitor(void) {
