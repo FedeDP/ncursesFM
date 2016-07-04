@@ -99,5 +99,6 @@ extern const char *insert_string[];
 extern const char win_too_small[];
 
 
+extern const char * helper_string_token;
 extern const char helper_title[];
 extern const char helper_string[MODES][16][150];
