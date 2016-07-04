@@ -39,7 +39,7 @@ LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
 endif
 
 ifneq ("$(DISABLE_LIBSYSTEMD)","1")
-SYSTEMD_VERSION=$(shell pkg-config --modversion --silence-errors systemd)
+SYSTEMD_VERSION=$(shell pkg-config --modversion --silence-errors systemd || echo 0)
 ifeq ($(shell test $(SYSTEMD_VERSION) -ge 221; echo $$?), 0)
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
 else
