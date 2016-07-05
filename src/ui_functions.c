@@ -502,17 +502,15 @@ void trigger_show_helper_message(void) {
 
 
 static void helper_print_color(const char * help_line, const int y) {
-
 	unsigned short il = 0;
-	char * line = NULL;
-	char * save [2] = {NULL};
+	char * line = strdupa(help_line);
+	const char * save [2] = {NULL};
 	unsigned int clrpos = 4;
 
-	for (line = strdupa(help_line); ;line = NULL) {
+	for (;;) {
+		const char * token = strtok (line, helper_string_token);
 
-		char * token = strtok (line, helper_string_token);
-
-		if (token == NULL) // EOF.
+		if (token == NULL) // EOL.
 			break;
 
 		if (token == line){ // No token found, print normal.
@@ -534,8 +532,9 @@ static void helper_print_color(const char * help_line, const int y) {
 			clrpos += strlen(save[1]);
 			il = 0;
 		}
-	}
 
+		line = NULL;
+	}
 }
 
 static void helper_print(void) {
