@@ -110,72 +110,74 @@ const int HELPER_HEIGHT[] = {14, 8, 9, 9, 9, 9};
 
 const char helper_title[] = "Press 'L' to trigger helper";
 
+const char * helper_string_token = "%";
+
 const char helper_string[][16][150] =
 {
     {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"Enter -> surf between folders or to open files."},
+        {"%Enter% -> surf between folders or to open files."},
 #ifdef SYSTEMD_PRESENT
         {"It will eventually (un)mount your ISO files or install your distro downloaded packages."},
 #endif
-        {", -> enable fast browse mode: it lets you jump between files by just typing their name."},
-        {"PG_UP/DOWN -> jump straight to first/last file. i -> check files fullname."},
-        {"h -> trigger the showing of hidden files; s -> see files stats."},
-        {"TAB -> change sorting function: alphabetically (default), by size, by last modified or by type."},
-        {"Space -> select files. Once more to remove the file from selected files."},
-        {"o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."},
+        {"%,% -> enable fast browse mode: it lets you jump between files by just typing their name."},
+        {"%PG_UP/DOWN% -> jump straight to first/last file. %i% -> check files fullname."},
+        {"%h% -> trigger the showing of hidden files; %s% -> see files stats."},
+        {"%TAB% -> change sorting function: alphabetically (default), by size, by last modified or by type."},
+        {"%Space% -> select files. Once more to remove the file from selected files."},
+        {"%o% -> rename current file/dir; %n/d% -> create new file/dir. %f% -> search for a file."},
 #ifdef LIBCUPS_PRESENT
-        {"v/x -> paste/cut, b -> compress, r -> remove, z -> extract, p -> print."},
+        {"%v/x% -> paste/cut, %b% -> compress, %r% -> remove, %z% -> extract, %p% -> print."},
 #else
-        {"v/x -> paste/cut, b -> compress, r -> remove, z -> extract."},
+        {"%v/x% -> paste/cut, %b% -> compress, %r% -> remove, %z% -> extract."},
 #endif
-        {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
-        {"g -> switch to bookmarks mode. e -> add/remove current file to bookmarks."},
+        {"%t% -> create second tab. %w% -> close second tab. %Arrow keys% -> switch between tabs."},
+        {"%g% -> switch to bookmarks mode. %e% -> add/remove current file to bookmarks."},
 #ifdef SYSTEMD_PRESENT
-        {"m -> switch to device mode. k -> switch to selected mode."},
+        {"%m% -> switch to device mode. %k% -> switch to selected mode."},
 #endif
-        {"ESC -> quit."}
+        {"%ESC% -> quit."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
 
-        {"Enter -> surf between folders or to open files."},
+        {"%Enter% -> surf between folders or to open files."},
 #ifdef SYSTEMD_PRESENT
         {"It will eventually (un)mount your ISO files or install your distro downloaded packages."},
 #endif
         {"Just start typing your desired filename, to move right to its position."},
-        {"PG_UP/DOWN -> jump straight to first/last file."},
-        {"TAB -> change sorting function: alphabetically (default), by size, by last modified or by type."},
-        {"ESC -> leave fast browse mode."}
+        {"%PG_UP/DOWN% -> jump straight to first/last file."},
+        {"%TAB% -> change sorting function: alphabetically (default), by size, by last modified or by type."},
+        {"%ESC% -> leave fast browse mode."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"s -> see files stats. i -> check files fullname."},
-        {"PG_UP/DOWN -> jump straight to first/last file."},
-        {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
-        {"r -> remove selected file from bookmarks. del -> remove all user bookmakrs."},
+        {"%s% -> see files stats. %i% -> check files fullname."},
+        {"%PG_UP/DOWN% -> jump straight to first/last file."},
+        {"%t% -> create second tab. %w% -> close second tab. %Arrow keys% -> switch between tabs."},
+        {"%r% -> remove selected file from bookmarks. %del% -> remove all user bookmakrs."},
         {"enter on a file will move to the folder/file selected."},
-        {"ESC -> leave bookmarks mode."}
+        {"%ESC% -> leave bookmarks mode."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"s -> see files stats. i -> check files fullname."},
-        {"PG_UP/DOWN -> jump straight to first/last file."},
-        {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
+        {"%s% -> see files stats. %i% -> check files fullname."},
+        {"%PG_UP/DOWN% -> jump straight to first/last file."},
+        {"%t% -> create second tab. %w% -> close second tab. %Arrow keys% -> switch between tabs."},
         {"enter on a file will move to the folder/file selected."},
-        {"ESC -> leave search mode."}
+        {"%ESC% -> leave search mode."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"s -> see files stats. i -> check files fullname."},
-        {"PG_UP/DOWN -> jump straight to first/last file."},
-        {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
-        {"m -> (un)mount current device."},
-        {"enter -> move to current device mountpoint, mounting it if necessary."},
-        {"ESC -> leave device mode."}
+        {"%s% -> see files stats. %i% -> check files fullname."},
+        {"%PG_UP/DOWN% -> jump straight to first/last file."},
+        {"%t% -> create second tab. %w% -> close second tab. %Arrow keys% -> switch between tabs."},
+        {"%m% -> (un)mount current device."},
+        {"%enter% -> move to current device mountpoint, mounting it if necessary."},
+        {"%ESC% -> leave device mode."}
     },{
         {"Remember: every shortcut in ncursesFM is case insensitive."},
-        {"s -> see files stats. i -> check files fullname."},
-        {"PG_UP/DOWN -> jump straight to first/last file."},
-        {"t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."},
-        {"r -> remove current file selection. del -> remove all selected files."},
+        {"%s% -> see files stats. %i% -> check files fullname."},
+        {"%PG_UP/DOWN% -> jump straight to first/last file."},
+        {"%t% -> create second tab. %w% -> close second tab. %Arrow keys% -> switch between tabs."},
+        {"%r% -> remove current file selection. %del% -> remove all selected files."},
         {"enter on a file will move to the folder/file selected."},
-        {"ESC -> leave selected mode."}
+        {"%ESC% -> leave selected mode."}
     }
 };

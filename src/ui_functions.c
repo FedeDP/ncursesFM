@@ -14,6 +14,7 @@ static void initialize_tab_cwd(int win);
 static void scroll_helper_func(int x, int direction, int win);
 static void colored_folders(WINDOW *win, const char *name);
 static void helper_print(void);
+static void helper_print_color(const char * help_line, const int y);
 static void trigger_show_additional_win(int height, WINDOW **win, void (*f)(void));
 static void create_additional_win(int height, WINDOW **win, void (*f)(void));
 static void remove_additional_win(int height, WINDOW **win, int resizing);
@@ -499,13 +500,50 @@ void trigger_show_helper_message(void) {
     }
 }
 
+
+static void helper_print_color(const char * help_line, const int y) {
+	unsigned short il = 0;
+	char * line = strdupa(help_line);
+	const char * save [2] = {NULL};
+	unsigned int clrpos = 4;
+
+	for (;;) {
+		const char * token = strtok (line, helper_string_token);
+
+		if (token == NULL) // EOL.
+			break;
+
+		if (token == line){ // No token found, print normal.
+			mvwprintw(helper_win, y + 1, 2, "* %.*s", COLS - 5, line);
+			break;
+		}
+
+		save [il] = token;
+
+		if (il == 0) { // Command, print color.
+			mvwprintw(helper_win, y + 1, 2, "*");
+			wattron(helper_win, A_BOLD | COLOR_PAIR(3));
+			mvwprintw(helper_win, y + 1, clrpos, "%.*s", COLS - 5, save [0]);
+			wattroff(helper_win, A_BOLD | COLOR_PAIR(3));
+			++il;
+		} else  { // Description, print normal.
+			clrpos += strlen(save[0]);
+			mvwprintw(helper_win, y + 1 ,clrpos, "%.*s", COLS - 5,save [1]);
+			clrpos += strlen(save[1]);
+			il = 0;
+		}
+
+		line = NULL;
+	}
+}
+
 static void helper_print(void) {
     char ncursesFM[40] = "NcursesFM ";
 
     wborder(helper_win, 0, 0, 0, 0, 0, 0 , 0 , 0);
     for (int i = 0; i < HELPER_HEIGHT[ps[active].mode] - 2; i++) {
-        mvwprintw(helper_win, i + 1, 2, "* %.*s", COLS - 5, _(helper_string[ps[active].mode][i]));
-    }
+		helper_print_color (helper_string[ps[active].mode][i], i);
+	}
     sprintf(ncursesFM + strlen(ncursesFM), "%s", VERSION);
     wattron(helper_win, A_BOLD);
     mvwprintw(helper_win, 0, COLS - strlen(ncursesFM), "%.*s", COLS, ncursesFM);
