@@ -3,7 +3,7 @@
 #ifdef SYSTEMD_PRESENT
 #include "inhibit.h"
 #else
-#include "ui_functions.h"
+#include "ui.h"
 #endif
 
 struct thread_mesg {

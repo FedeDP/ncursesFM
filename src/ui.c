@@ -503,28 +503,26 @@ void trigger_show_helper_message(void) {
 
 static void helper_print_color(const int y) {
     unsigned short il = 0;
-    unsigned int xpos;
     char *token, key[30];
     char *line = strdup(helper_string[ps[active].mode][y]);
     
     mvwprintw(helper_win, y + 1, 1, "*");
-    xpos = getcurx(helper_win);
-    for (token = strtok(line, "%"); token && xpos < COLS - 1; token = strtok(NULL, "%")) {
+    for (token = strtok(line, "%");
+        token && getcurx(helper_win) < COLS - 1;
+        token = strtok(NULL, "%"),  il = !il) {
+
         if (token == line) { // No token found, print normal.
-            wprintw(helper_win, " %.*s", COLS - xpos, _(token));
+            wprintw(helper_win, " %.*s", COLS - getcurx(helper_win), _(token));
             break;
         }
         if (!il) { // Command, print color.
             wattron(helper_win, A_BOLD | COLOR_PAIR(3));
             sprintf(key, " %s -> ", _(token));
-            wprintw(helper_win, "%.*s", COLS - xpos, key);
+            wprintw(helper_win, "%.*s", COLS - getcurx(helper_win), key);
             wattroff(helper_win, A_BOLD | COLOR_PAIR(3));
-            xpos = getcurx(helper_win);
         } else  { // Description, print normal.
-            wprintw(helper_win, "%.*s", COLS - xpos, _(token));
-            xpos = getcurx(helper_win);
+            wprintw(helper_win, "%.*s", COLS - getcurx(helper_win), _(token));
         }
-        il = !il;
     }
     free(line);
 }
