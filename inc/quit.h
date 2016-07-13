@@ -1,5 +1,5 @@
 #pragma once
 
-#include "ui_functions.h"
+#include "ui.h"
 
 int program_quit(void);

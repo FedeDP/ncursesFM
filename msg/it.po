@@ -23,89 +23,141 @@ msgstr "s"
 msgid "n"
 msgstr "n"
 
+msgid "ENTER"
+msgstr "INVIO"
+
+msgid "SPACE"
+msgstr "SPAZIO"
+
+msgid "ARROW KEYS"
+msgstr "FRECCE"
+
+msgid "PG_UP/DOWN"
+msgstr "PG_UP/DOWN"
+
+msgid "DEL"
+msgstr "CANC"
+
 msgid "Press 'L' to trigger helper"
 msgstr "Premi 'L' per mostrare/nascondere l'aiuto"
 
 msgid "Remember: every shortcut in ncursesFM is case insensitive."
 msgstr "Ricorda: ogni scorciatoia in ncursesFM è case insensitive."
 
-msgid "Enter -> surf between folders or to open files."
-msgstr "Invio -> naviga tra le cartelle e apre i file."
+msgid "surf between folders or to open files."
+msgstr "naviga tra le cartelle e apre i file."
 
 msgid "It will eventually (un)mount your ISO files or install your distro downloaded packages."
 msgstr "Eventualmente (s)monterà i tuoi file ISO o installerà i pacchetti scaricati."
 
-msgid ", -> enable fast browse mode: it lets you jump between files by just typing their name."
-msgstr ", -> abilita la fast browse mode: ti permette di muoverti tra i file scrivendo il loro nome."
+msgid "enable fast browse mode: it lets you jump between files by just typing their name."
+msgstr "abilita la fast browse mode: ti permette di muoverti tra i file scrivendo il loro nome."
 
-msgid "PG_UP/DOWN -> jump straight to first/last file. i -> check files fullname."
-msgstr "PG_UP/DOWN -> vai direttamente al primo/ultimo file. i -> controlla il nome completo dei file."
+msgid "jump straight to first/last file."
+msgstr "vai direttamente al primo/ultimo file."
 
-msgid "PG_UP/DOWN -> jump straight to first/last file."
-msgstr "PG_UP/DOWN -> vai direttamente al primo/ultimo file."
+msgid "check files fullname."
+msgstr "controlla il nome completo dei file."
 
-msgid "h -> trigger the showing of hidden files; s -> see files stats."
-msgstr "h -> mostra/nascondi file nascosti; s -> controlla stat dei file."
+msgid "trigger the showing of hidden files."
+msgstr "mostra/nascondi file nascosti."
 
-msgid "TAB -> change sorting function: alphabetically (default), by size, by last modified or by type."
-msgstr "TAB -> cambia la funzione di ordinamento: alfabeticamente (default), per grandezza, per ultimo accesso, o per tipo."
+msgid "see files stats."
+msgstr "controlla stat dei file."
 
-msgid "Space -> select files. Once more to remove the file from selected files."
-msgstr "Spazio -> seleziona file. Un'altra volta per rimuovere il file dalla lista dei selezionati."
+msgid "change sorting function: alphabetically (default), by size, by last modified or by type."
+msgstr "cambia la funzione di ordinamento: alfabeticamente (default), per grandezza, per ultimo accesso, o per tipo."
 
-msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract, p -> print."
-msgstr "v/x -> incolla/taglia, b -> comprimi, r -> rimuovi, z -> estrai, p -> stampa."
+msgid "select files. Once more to remove the file from selected files."
+msgstr "seleziona file. Un'altra volta per rimuovere il file dalla lista dei selezionati."
 
-msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract."
-msgstr "v/x -> incolla/taglia, b -> comprimi, r -> rimuovi, z -> estrai."
 
-msgid "g -> switch to bookmarks mode. e -> add/remove current file to bookmarks."
-msgstr "g -> accedi modalità segnalibri. e -> aggiungi/rimuovi file corrente dai segnalibri."
+msgid "paste/cut."
+msgstr "incolla/taglia."
 
-msgid "o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."
-msgstr "o -> rinomina il file/cartella corrente; n/d -> crea un nuovo file/nuova cartella. f -> cerca."
+msgid "compress."
+msgstr "comprimi."
 
-msgid "t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."
-msgstr "t -> crea la seconda tab. w -> chiudi la seconda tab. Frecce -> muoviti tra le tab."
+msgid "remove."
+msgstr "rimuovi."
 
-msgid "m -> switch to device mode. k -> switch to selected mode."
-msgstr "m -> accedi modalità device. k -> accedi modalità selezionati."
+msgid "extract."
+msgstr "estrai."
 
-msgid "ESC -> quit."
-msgstr "ESC -> esci."
+msgid "print."
+msgstr "stampa."
+
+msgid "switch to bookmarks mode."
+msgstr "accedi modalità segnalibri."
+
+msgid "add/remove current file to bookmarks."
+msgstr "aggiungi/rimuovi file corrente dai segnalibri."
+
+msgid "rename current file/dir."
+msgstr "rinomina il file/cartella corrente."
+
+msgid "create new file/dir."
+msgstr "crea un nuovo file/nuova cartella."
+
+msgid "search for a file."
+msgstr "cerca."
+
+msgid "create second tab."
+msgstr "crea la seconda tab."
+
+msgid "close second tab."
+msgstr "chiudi la seconda tab."
+
+msgid "switch between tabs."
+msgstr "muoviti tra le tab."
+
+msgid "switch to device mode."
+msgstr "accedi modalità device."
+
+msgid "switch to selected mode."
+msgstr "accedi modalità selezionati."
+
+msgid "quit."
+msgstr "esci."
 
 msgid "Just start typing your desired filename, to move right to its position."
 msgstr "Inizia a scrivere il nome del file desiderato, per muoverti alla sua posizione."
 
-msgid "ESC -> leave fast browse mode."
-msgstr "ESC -> lascia la modalità fast browse."
+msgid "leave fast browse mode."
+msgstr "lascia la modalità fast browse."
 
-msgid "s -> see files stats. i -> check files fullname."
-msgstr "s -> controlla stat dei file. i -> controlla il nome completo dei file."
+msgid "remove selected file from bookmarks."
+msgstr "rimuovi il file selezionato dai segnalibri."
 
-msgid "r -> remove selected file from bookmarks. del -> remove all user bookmakrs."
-msgstr "r -> rimuovi il file selezionato dai segnalibri. canc -> rimuove tutti i segnalibri dell'utente."
+msgid "remove all user bookmakrs."
+msgstr "rimuove tutti i segnalibri dell'utente."
 
-msgid "enter on a file will move to the folder/file selected."
-msgstr "invio su un file ti porterà alla cartella/file selezionato."
+msgid "move to the folder/file selected."
+msgstr "muoviti alla cartella/file selezionato."
 
-msgid "ESC -> leave bookmarks mode."
-msgstr "ESC -> lascia la modalità segnalibri."
+msgid "leave bookmarks mode."
+msgstr "lascia la modalità segnalibri."
 
-msgid "ESC -> leave search mode."
-msgstr "ESC -> lascia la modalità ricerca."
+msgid "leave search mode."
+msgstr "lascia la modalità ricerca."
 
-msgid "ESC -> leave selected mode."
-msgstr "ESC -> lascia la lista selezionati."
+msgid "leave selected mode."
+msgstr "lascia la lista selezionati."
 
-msgid "m -> (un)mount current device."
-msgstr "m -> (s)monta il device corrente."
+msgid "(un)mount current device."
+msgstr "(s)monta il device corrente."
 
-msgid "enter -> move to current device mountpoint, mounting it if necessary."
-msgstr "invio -> muoviti al punto di mount del device corrente, montandolo se necessario."
+msgid "move to current device mountpoint, mounting it if necessary."
+msgstr "muoviti al punto di mount del device corrente, montandolo se necessario."
 
-msgid "ESC -> leave device mode."
-msgstr "ESC -> lascia la modalità device."
+msgid "leave device mode."
+msgstr "lascia la modalità device."
+
+msgid "remove current file selection."
+msgstr "rimuove il file corrente dai selezionati."
+
+msgid "remove all selected files."
+msgstr "azzera i selezionati."
 
 msgid "You have to specify a valid editor in config file."
 msgstr "Devi specificare un editor valido nel file di configurazione."
@@ -181,9 +233,6 @@ msgstr "Tutti i file nella cartella corrente sono stati deselezionati. Non ci so
 
 msgid "List of selected files has been cleared."
 msgstr "La lista dei file selezionati è stata azzerata."
-
-msgid "r -> remove current file selection. del -> remove all selected files."
-msgstr "r -> rimuove il file corrente dai selezionati. canc -> azzera i selezionati."
 
 msgid "Are you serious? y/N:> "
 msgstr "Sei sicuro? s/N:> "
@@ -361,12 +410,6 @@ msgstr "Collegato"
 
 msgid "No power supply info available."
 msgstr "Nessuna informazione energetica disponibile."
-
-msgid "Disabled overtype mode."
-msgstr "Disabilitata modalità sovrascrittura."
-
-msgid "Enabled overtype mode."
-msgstr "Abilitata modalità sovrascrittura."
 
 msgid "Window too small. Enlarge it."
 msgstr "Finestra troppo piccola. Allargala."

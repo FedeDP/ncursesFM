@@ -23,88 +23,139 @@ msgstr ""
 msgid "n"
 msgstr ""
 
+msgid "ENTER"
+msgstr ""
+
+msgid "SPACE"
+msgstr ""
+
+msgid "ARROW KEYS"
+msgstr ""
+
+msgid "PG_UP/DOWN"
+msgstr ""
+
+msgid "DEL"
+msgstr ""
+
 msgid "Press 'L' to trigger helper"
 msgstr ""
 
 msgid "Remember: every shortcut in ncursesFM is case insensitive."
 msgstr ""
 
-msgid "Enter -> surf between folders or to open files."
+msgid "surf between folders or to open files."
 msgstr ""
 
 msgid "It will eventually (un)mount your ISO files or install your distro downloaded packages."
 msgstr ""
 
-msgid ", -> enable fast browse mode: it lets you jump between files by just typing their name."
+msgid "enable fast browse mode: it lets you jump between files by just typing their name."
 msgstr ""
 
-msgid "PG_UP/DOWN -> jump straight to first/last file."
+msgid "jump straight to first/last file."
 msgstr ""
 
-msgid "PG_UP/DOWN -> jump straight to first/last file. i -> check files fullname."
+msgid "check files fullname."
 msgstr ""
 
-msgid "h -> trigger the showing of hidden files; s -> see files stats."
+msgid "trigger the showing of hidden files."
 msgstr ""
 
-msgid "TAB -> change sorting function: alphabetically (default), by size, by last modified or by type."
+msgid "see files stats."
 msgstr ""
 
-msgid "Space -> select files. Once more to remove the file from selected files."
+msgid "change sorting function: alphabetically (default), by size, by last modified or by type."
 msgstr ""
 
-msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract, p -> print."
+msgid "select files. Once more to remove the file from selected files."
 msgstr ""
 
-msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract."
+msgid "paste/cut."
 msgstr ""
 
-msgid "g -> switch to bookmarks mode. e -> add/remove current file to bookmarks."
+msgid "compress."
 msgstr ""
 
-msgid "o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."
+msgid "remove."
 msgstr ""
 
-msgid "t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."
+msgid "extract."
 msgstr ""
 
-msgid "m -> switch to device mode. k -> switch to selected mode."
+msgid "print."
 msgstr ""
 
-msgid "ESC -> quit."
+msgid "switch to bookmarks mode."
+msgstr ""
+
+msgid "add/remove current file to bookmarks."
+msgstr ""
+
+msgid "rename current file/dir."
+msgstr ""
+
+msgid "create new file/dir."
+msgstr ""
+
+msgid "search for a file."
+msgstr ""
+
+msgid "create second tab."
+msgstr ""
+
+msgid "close second tab."
+msgstr ""
+
+msgid "switch between tabs."
+msgstr ""
+
+msgid "switch to device mode."
+msgstr ""
+
+msgid "switch to selected mode."
+msgstr ""
+
+msgid "quit."
 msgstr ""
 
 msgid "Just start typing your desired filename, to move right to its position."
 msgstr ""
 
-msgid "ESC -> leave fast browse mode."
+msgid "leave fast browse mode."
 msgstr ""
 
-msgid "s -> see files stats. i -> check files fullname."
+msgid "remove selected file from bookmarks."
 msgstr ""
 
-msgid "r -> remove selected file from bookmarks. del -> remove all user bookmakrs."
+msgid "remove all user bookmakrs."
 msgstr ""
 
-msgid "enter on a file will move to the folder/file selected."
+msgid "move to the folder/file selected."
 msgstr ""
 
-msgid "ESC -> leave bookmarks mode."
+msgid "leave bookmarks mode."
 msgstr ""
 
-msgid "ESC -> leave search mode."
+msgid "leave search mode."
 msgstr ""
 
-msgid "ESC -> leave selected mode."
+msgid "leave selected mode."
 msgstr ""
 
-msgid "m -> (un)mount current device."
+msgid "(un)mount current device."
 msgstr ""
 
-msgid "enter -> move to current device mountpoint, mounting it if necessary."
+msgid "move to current device mountpoint, mounting it if necessary."
 msgstr ""
 
-msgid "ESC -> leave device mode."
+msgid "leave device mode."
+msgstr ""
+
+msgid "remove current file selection."
+msgstr ""
+
+msgid "remove all selected files."
 msgstr ""
 
 msgid "You have to specify a valid editor in config file."
@@ -180,9 +231,6 @@ msgid "Every file in this directory has been unselected. Selected list empty."
 msgstr ""
 
 msgid "List of selected files has been cleared."
-msgstr ""
-
-msgid "r -> remove current file selection. del -> remove all selected files."
 msgstr ""
 
 msgid "Are you serious? y/N:> "
@@ -360,12 +408,6 @@ msgid "On AC"
 msgstr ""
 
 msgid "No power supply info available."
-msgstr ""
-
-msgid "Disabled overtype mode."
-msgstr ""
-
-msgid "Enabled overtype mode."
 msgstr ""
 
 msgid "Window too small. Enlarge it."

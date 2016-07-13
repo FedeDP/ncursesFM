@@ -1,9 +1,9 @@
 #pragma once
 
-#include "timer.h"
-#include "mount.h"
+#include "sysinfo.h"
+#include "devices.h"
 #include "string_constants.h"
-#include "quit_functions.h"
+#include "quit.h"
 #include "utils.h"
 
 #include <locale.h>

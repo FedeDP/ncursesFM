@@ -1,4 +1,4 @@
-#include "../inc/fm_functions.h"
+#include "../inc/fm.h"
 
 static void xdg_open(const char *str);
 static void open_file(const char *str);

@@ -1,4 +1,4 @@
-#include "../inc/mount.h"
+#include "../inc/devices.h"
 
 #ifdef SYSTEMD_PRESENT
 static int mount_fs(const char *str, int mount);

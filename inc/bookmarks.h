@@ -1,4 +1,4 @@
-#include "fm_functions.h"
+#include "fm.h"
 
 void get_bookmarks(void);
 void add_file_to_bookmarks(const char *str);

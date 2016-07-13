@@ -1,4 +1,4 @@
-#include "../inc/ui_functions.h"
+#include "../inc/ui.h"
 
 static void info_win_init(void);
 static void generate_list(int win);
@@ -14,7 +14,7 @@ static void initialize_tab_cwd(int win);
 static void scroll_helper_func(int x, int direction, int win);
 static void colored_folders(WINDOW *win, const char *name);
 static void helper_print(void);
-static void helper_print_color(const char * help_line, const int y);
+static void helper_print_color(const int y);
 static void trigger_show_additional_win(int height, WINDOW **win, void (*f)(void));
 static void create_additional_win(int height, WINDOW **win, void (*f)(void));
 static void remove_additional_win(int height, WINDOW **win, int resizing);
@@ -501,49 +501,41 @@ void trigger_show_helper_message(void) {
 }
 
 
-static void helper_print_color(const char * help_line, const int y) {
-	unsigned short il = 0;
-	char * line = strdupa(help_line);
-	const char * save [2] = {NULL};
-	unsigned int clrpos = 4;
-
-	for (;;) {
-		const char * token = strtok (line, helper_string_token);
-
-		if (token == NULL) // EOL.
-			break;
-
-		if (token == line){ // No token found, print normal.
-			mvwprintw(helper_win, y + 1, 2, "* %.*s", COLS - 5, line);
-			break;
-		}
-
-		save [il] = token;
-
-		if (il == 0) { // Command, print color.
-			mvwprintw(helper_win, y + 1, 2, "*");
-			wattron(helper_win, A_BOLD | COLOR_PAIR(3));
-			mvwprintw(helper_win, y + 1, clrpos, "%.*s", COLS - 5, save [0]);
-			wattroff(helper_win, A_BOLD | COLOR_PAIR(3));
-			++il;
-		} else  { // Description, print normal.
-			clrpos += strlen(save[0]);
-			mvwprintw(helper_win, y + 1 ,clrpos, "%.*s", COLS - 5,save [1]);
-			clrpos += strlen(save[1]);
-			il = 0;
-		}
-
-		line = NULL;
-	}
+static void helper_print_color(const int y) {
+    unsigned short il = 0;
+    unsigned int xpos;
+    char *token, key[30];
+    char *line = strdup(helper_string[ps[active].mode][y]);
+    
+    mvwprintw(helper_win, y + 1, 1, "*");
+    xpos = getcurx(helper_win);
+    for (token = strtok(line, "%"); token && xpos < COLS - 1; token = strtok(NULL, "%")) {
+        if (token == line) { // No token found, print normal.
+            wprintw(helper_win, " %.*s", COLS - xpos, _(token));
+            break;
+        }
+        if (!il) { // Command, print color.
+            wattron(helper_win, A_BOLD | COLOR_PAIR(3));
+            sprintf(key, " %s -> ", _(token));
+            wprintw(helper_win, "%.*s", COLS - xpos, key);
+            wattroff(helper_win, A_BOLD | COLOR_PAIR(3));
+            xpos = getcurx(helper_win);
+        } else  { // Description, print normal.
+            wprintw(helper_win, "%.*s", COLS - xpos, _(token));
+            xpos = getcurx(helper_win);
+        }
+        il = !il;
+    }
+    free(line);
 }
 
 static void helper_print(void) {
     char ncursesFM[40] = "NcursesFM ";
 
-    wborder(helper_win, 0, 0, 0, 0, 0, 0 , 0 , 0);
     for (int i = 0; i < HELPER_HEIGHT[ps[active].mode] - 2; i++) {
-		helper_print_color (helper_string[ps[active].mode][i], i);
-	}
+        helper_print_color(i);
+    }
+    wborder(helper_win, 0, 0, 0, 0, 0, 0 , 0 , 0);
     sprintf(ncursesFM + strlen(ncursesFM), "%s", VERSION);
     wattron(helper_win, A_BOLD);
     mvwprintw(helper_win, 0, COLS - strlen(ncursesFM), "%.*s", COLS, ncursesFM);
@@ -826,7 +818,6 @@ void ask_user(const char *str, char *input, int d) {
             break;
         case KEY_IC:
             overtype_mode = !overtype_mode;
-            print_info(_(insert_string[overtype_mode]), INFO_LINE);
             curs_set(1 + overtype_mode);
             break;
         case KEY_HOME:
@@ -1033,18 +1024,16 @@ static void inotify_refresh(int win) {
     len = read(ps[win].inot.fd, buffer, BUF_LEN);
     while (i < len) {
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
-        if (ps[win].mode <= fast_browse_) {
-            /* ignore events for hidden files if ps[win].show_hidden is false */
-            if ((event->len) && ((event->name[0] != '.') || (ps[win].show_hidden))) {
-                if ((event->mask & IN_CREATE) || (event->mask & IN_DELETE) || event->mask & IN_MOVE) {
-                    save_old_pos(win);
-                    tab_refresh(win);
-                } else if (event->mask & IN_MODIFY || event->mask & IN_ATTRIB) {
-                    if (ps[win].mywin.stat_active) {
-                        memset(ps[win].mywin.tot_size, 0, strlen(ps[win].mywin.tot_size));
-                        show_stat(ps[win].mywin.delta, dim - 2, win);
-                        print_border_and_title(win);
-                    }
+        /* ignore events for hidden files if ps[win].show_hidden is false */
+        if ((event->len) && ((event->name[0] != '.') || (ps[win].show_hidden))) {
+            if ((event->mask & IN_CREATE) || (event->mask & IN_DELETE) || event->mask & IN_MOVE) {
+                save_old_pos(win);
+                tab_refresh(win);
+            } else if (event->mask & IN_MODIFY || event->mask & IN_ATTRIB) {
+                if (ps[win].mywin.stat_active) {
+                    memset(ps[win].mywin.tot_size, 0, strlen(ps[win].mywin.tot_size));
+                    show_stat(ps[win].mywin.delta, dim - 2, win);
+                    print_border_and_title(win);
                 }
             }
         }
@@ -1098,12 +1087,15 @@ void update_special_mode(int num,  char (*str)[PATH_MAX + 1], int mode) {
 void show_special_tab(int num, char (*str)[PATH_MAX + 1], const char *title, int mode) {
     ps[active].mode = mode;
     ps[active].number_of_files = num;
-    if (str != NULL) {
+    if (mode != fast_browse_) {
         str_ptr[active] = str;
         strncpy(ps[active].title, title, PATH_MAX);
         save_old_pos(active);
         print_additional_wins(HELPER_HEIGHT[normal], 0);
         reset_win(active);
+        // rm inotify watch for this special mode tab as it is not needed while in special mode.
+        // when leaving, change_dir will re-add this.
+        inotify_rm_watch(ps[active].inot.fd, ps[active].inot.wd);
     } else {
         // we're entering fast browse mode. We don't need to clear anything.
         // if we're entering special mode, we were in normal mode
@@ -1123,7 +1115,7 @@ void leave_special_mode(const char *str,int win) {
     int old_mode = ps[win].mode;
     
     ps[win].mode = normal;
-    if (str) {
+    if (old_mode != fast_browse_) {
         change_dir(str, win);
     }
     if (win == active) {

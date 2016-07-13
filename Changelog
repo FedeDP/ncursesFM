@@ -1,3 +1,8 @@
+07 / 15 / 2016
+* renamed some files
+* added colored commands in helper win
+* avoid getting inotify events when mode > fast_browse_
+
 07 / 4 / 2016
 * added backspace to go back to root folder
 * added right click to go back to root folder

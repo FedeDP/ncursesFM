@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "log.h"
-#include "ui_functions.h"
+#include "ui.h"
 
 void *remove_from_list(int *num, char (*str)[PATH_MAX + 1], int i);
 void *safe_realloc(const size_t size, char (*str)[PATH_MAX + 1]);

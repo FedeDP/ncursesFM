@@ -1,4 +1,4 @@
-#include "ui_functions.h"
+#include "ui.h"
 #include <sys/timerfd.h>
 #include <libudev.h>
 

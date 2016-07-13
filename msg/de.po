@@ -23,89 +23,140 @@ msgstr "j"
 msgid "n"
 msgstr "n"
 
+msgid "ENTER"
+msgstr "ENTER"
+
+msgid "SPACE"
+msgstr "LEERTASTE"
+
+msgid "ARROW KEYS"
+msgstr "PFEILTASTEN"
+
+msgid "PG_UP/DOWN"
+msgstr "PG_UP/DOWN"
+
+msgid "DEL"
+msgstr "DEL"
+
 msgid "Press 'L' to trigger helper"
 msgstr "Drücke 'L' um die Hilfe aufzurufen"
 
 msgid "Remember: every shortcut in ncursesFM is case insensitive."
 msgstr "Vergiss nicht: ncursesFM achtet nicht auf Groß/Kleinschreibung."
 
-msgid "Enter -> surf between folders or to open files."
-msgstr "Enter -> Wechsle zwischen Ordnern oder offenen Dateien."
+msgid "surf between folders or to open files."
+msgstr "Wechsle zwischen Ordnern oder offenen Dateien."
 
 msgid "It will eventually (un)mount your ISO files or install your distro downloaded packages."
 msgstr "Eventuel wird deine ISO ge(un)mounted oder heruntergelade Pakete installieren."
 
-msgid ", -> enable fast browse mode: it lets you jump between files by just typing their name."
-msgstr ", -> Aktiviere schnell-browse mode: Wechsle zwischen Dateien indem du ihren Namen eintippst."
+msgid "enable fast browse mode: it lets you jump between files by just typing their name."
+msgstr "Aktiviere schnell-browse mode: Wechsle zwischen Dateien indem du ihren Namen eintippst."
 
-msgid "PG_UP/DOWN -> jump straight to first/last file. i -> check files fullname."
-msgstr "PG_UP/DOWN -> Springe zur ersten/letzten Datei. i -> Überprüfe den vollen Namen der Dateien."
+msgid "jump straight to first/last file."
+msgstr "Springe zur ersten/letzten Datei."
 
-msgid "PG_UP/DOWN -> jump straight to first/last file."
-msgstr "PG_UP/DOWN -> Springe zu ersten/letzten Datei."
+msgid "check files fullname."
+msgstr "Überprüfe den vollen Namen der Dateien."
 
-msgid "h -> trigger the showing of hidden files; s -> see files stats."
-msgstr "h -> Zeige versteckte Dateien; s -> Zeige Dateistatistiken."
+msgid "trigger the showing of hidden files."
+msgstr "Zeige versteckte Dateien."
 
-msgid "TAB -> change sorting function: alphabetically (default), by size, by last modified or by type."
-msgstr "TAB -> Ändere Sortierfunktion: Alphabetisch (standard), nach Größe, nach Modifizierungszeit oder nach Typ."
+msgid "see files stats."
+msgstr "Zeige Dateistatistiken."
 
-msgid "Space -> select files. Once more to remove the file from selected files."
-msgstr "Leertaste -> Selektiere Dateien. Nochmals benutzen um eine Datei von den selektierten Dateien zu entfernen."
+msgid "change sorting function: alphabetically (default), by size, by last modified or by type."
+msgstr "Ändere Sortierfunktion: Alphabetisch (standard), nach Größe, nach Modifizierungszeit oder nach Typ."
 
-msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract, p -> print."
-msgstr "v/x -> einfügen/ausschneiden, b -> komprimieren, r -> löschen, z -> auspacken, p -> drucken."
+msgid "select files. Once more to remove the file from selected files."
+msgstr "Selektiere Dateien. Nochmals benutzen um eine Datei von den selektierten Dateien zu entfernen."
 
-msgid "v/x -> paste/cut, b -> compress, r -> remove, z -> extract."
-msgstr "v/x -> einfügen/ausschneiden, b -> komprimieren, r -> löschen, z -> auspacken."
+msgid "paste/cut."
+msgstr "einfügen/ausschneiden."
 
-msgid "g -> switch to bookmarks mode. e -> add/remove current file to bookmarks."
-msgstr "g -> Zum Lesenzeichen-Modus wechseln. e -> aktuelle Datei zu Lesenzeichen hinzufügen/entfernen."
+msgid "compress."
+msgstr "komprimieren."
 
-msgid "o -> rename current file/dir; n/d -> create new file/dir. f -> search for a file."
-msgstr "o -> Aktuelle Datei/Verzeichnis umbenennen; n/d -> Neue Datei/Verzeichnis anlegen. f -> Datei suchen."
+msgid "remove."
+msgstr "löschen."
 
-msgid "t -> create second tab. w -> close second tab. Arrow keys -> switch between tabs."
-msgstr "t -> neuen Tab anlegen. w -> zweiten Tab schließen. Pfeiltasten -> zwischn Tabs wechseln."
+msgid "extract."
+msgstr "auspacken."
 
-msgid "m -> switch to device mode. k -> switch to selected mode."
-msgstr "m -> Zum Gerätemodus wechseln. k -> Zum Selektierungsmodus wechseln."
+msgid "print."
+msgstr "drucken."
 
-msgid "ESC -> quit."
-msgstr "ESC -> Schließen."
+msgid "switch to bookmarks mode."
+msgstr "Zum Lesenzeichen-Modus wechseln."
+
+msgid "add/remove current file to bookmarks."
+msgstr "aktuelle Datei zu Lesenzeichen hinzufügen/entfernen."
+
+msgid "rename current file/dir."
+msgstr "Aktuelle Datei/Verzeichnis umbenennen."
+
+msgid "create new file/dir."
+msgstr "Neue Datei/Verzeichnis anlegen."
+
+msgid "search for a file."
+msgstr "Datei suchen."
+
+msgid "create second tab."
+msgstr "neuen Tab anlegen."
+
+msgid "close second tab."
+msgstr "zweiten Tab schließen."
+
+msgid "switch between tabs."
+msgstr "zwischn Tabs wechseln."
+
+msgid "switch to device mode."
+msgstr "Zum Gerätemodus wechseln."
+
+msgid "switch to selected mode."
+msgstr "Zum Selektierungsmodus wechseln."
+
+msgid "quit."
+msgstr "Schließen."
 
 msgid "Just start typing your desired filename, to move right to its position."
 msgstr "Beginn einfach, den gewünschten Dateinamen zu tippen um zur richtigen Position zu gelagen."
 
-msgid "ESC -> leave fast browse mode."
-msgstr "ESC -> Verlasse Schnell-Browse-Modus."
+msgid "leave fast browse mode."
+msgstr "Verlasse Schnell-Browse-Modus."
 
-msgid "s -> see files stats. i -> check files fullname."
-msgstr "s -> Dateistatistiken ansehen. i -> Vollen Namen der Datei überprüfen."
+msgid "remove selected file from bookmarks."
+msgstr "Entferne selektierte Datei von Lesezeichen."
 
-msgid "r -> remove selected file from bookmarks. del -> remove all user bookmakrs."
-msgstr "r -> Entferne selektierte Datei von Lesezeichen. del -> Alle Nutzer-Lesezeichen entfernen."
+msgid "remove all user bookmakrs."
+msgstr "Alle Nutzer-Lesezeichen entfernen."
 
-msgid "enter on a file will move to the folder/file selected."
-msgstr "enter auf einer Datei bewegt zum selektieren Ordner/Datei."
+msgid "move to the folder/file selected."
+msgstr "bewege zum selektieren Ordner/Datei."
 
-msgid "ESC -> leave bookmarks mode."
-msgstr "ESC -> Verlasse Lesezeichenmodus."
+msgid "leave bookmarks mode."
+msgstr "Verlasse Lesezeichenmodus."
 
-msgid "ESC -> leave search mode."
-msgstr "ESC -> Verlasse Suchmodus."
+msgid "leave search mode."
+msgstr "Verlasse Suchmodus."
 
-msgid "ESC -> leave selected mode."
-msgstr "ESC -> Verlasse Selektierungsmodus."
+msgid "leave selected mode."
+msgstr "Verlasse Selektierungsmodus."
 
-msgid "m -> (un)mount current device."
-msgstr "m -> (un)mount aktuelles Gerät."
+msgid "(un)mount current device."
+msgstr "(un)mount aktuelles Gerät."
 
-msgid "enter -> move to current device mountpoint, mounting it if necessary."
-msgstr "enter -> Bewege dich zum aktuellen Geräteeinhängepunkt, einbinden wenn notwendig."
+msgid "move to current device mountpoint, mounting it if necessary."
+msgstr "Bewege dich zum aktuellen Geräteeinhängepunkt, einbinden wenn notwendig."
 
-msgid "ESC -> leave device mode."
-msgstr "ESC -> Verlasse Gerätemodus."
+msgid "leave device mode."
+msgstr "Verlasse Gerätemodus."
+
+msgid "remove current file selection."
+msgstr "Entferne aktuelle Dateiselektion."
+
+msgid "remove all selected files."
+msgstr "Lösche alle selektierten Dateien."
 
 msgid "You have to specify a valid editor in config file."
 msgstr "Du musst einen validen Edtiro in der Konfiguration angeben."
@@ -181,9 +232,6 @@ msgstr "Jede Datei in diesem Verzeichnis wurde deselektiert. Selektionsliste lee
 
 msgid "List of selected files has been cleared."
 msgstr "Liste von selektierten Dateien wurde bereinigt."
-
-msgid "r -> remove current file selection. del -> remove all selected files."
-msgstr "r -> Entferne aktuelle Dateiselektion. del -> Lösche alle selektierten Dateien."
 
 msgid "Are you serious? y/N:> "
 msgstr "Sicher? j/N:> "
@@ -361,12 +409,6 @@ msgstr "Batteriebetrieb"
 
 msgid "No power supply info available."
 msgstr "Keine Stromanschlussinformation verfügbar."
-
-msgid "Disabled overtype mode."
-msgstr "Deaktiviert Überschreibmodus."
-
-msgid "Enabled overtype mode."
-msgstr "Aktiviert Überschreibmodus."
 
 msgid "Window too small. Enlarge it."
 msgstr "Schaufenster zu klein. Vergrößern."

@@ -1,4 +1,4 @@
-#include "../inc/quit_functions.h"
+#include "../inc/quit.h"
 
 static void free_everything(void);
 static void quit_thread_func(void);

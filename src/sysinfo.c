@@ -1,4 +1,4 @@
-#include "../inc/timer.h"
+#include "../inc/sysinfo.h"
 
 static void update_battery(int where);
 static void poll_batteries(void);
