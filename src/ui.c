@@ -576,7 +576,7 @@ static void show_stat(int init, int end, int win) {
             if (ps[win].mode == device_) {
 #ifdef SYSTEMD_PRESENT
                 show_devices_stat(i, win, str);
-                col = ps[win].mywin.width - strlen(str) - cont;
+                col = ps[win].mywin.width - strlen(str) - 1;
                 if (col < 0) {
                     col = 4;
                 }
