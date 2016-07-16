@@ -207,7 +207,6 @@ void reset_win(int win) {
  */
 static void list_everything(int win, int old_dim, int end) {
     char *str;
-    wchar_t name[NAME_MAX + 1] = {0};
     
     wattron(ps[win].mywin.fm, A_BOLD);
     for (int i = old_dim; (i < ps[win].number_of_files) && (i  < old_dim + end); i++) {
@@ -220,8 +219,7 @@ static void list_everything(int win, int old_dim, int end) {
             str = strrchr(*(str_ptr[win] + i), '/') + 1;
         }
         colored_folders(ps[win].mywin.fm, *(str_ptr[win] + i));
-        mbstowcs(name, str, NAME_MAX);
-        mvwprintw(ps[win].mywin.fm, 1 + i - ps[win].mywin.delta, 4, "%.*ls", ps[win].mywin.width - 5, name);
+        mvwprintw(ps[win].mywin.fm, 1 + i - ps[win].mywin.delta, 4, "%.*s", ps[win].mywin.width - 5, str);
         wattroff(ps[win].mywin.fm, COLOR_PAIR);
     }
     wattroff(ps[win].mywin.fm, A_BOLD);
@@ -366,12 +364,14 @@ void scroll_down(int win, int lines) {
         }
         lines--;
     }
+    // remove old cursor
+    mvwprintw(ps[win].mywin.fm, old_pos - delta + 1, 1, "  ");
     if (ps[win].mywin.delta > delta) {
         delta = ps[win].mywin.delta - delta;
         scroll_helper_func(dim - 2, delta, win);
         list_everything(win, ps[win].curr_pos - delta + 1, delta);
     } else {
-        mvwprintw(ps[win].mywin.fm, old_pos - ps[win].mywin.delta + 1, 1, "  ");
+        // no need to reprint anything as we did not scroll down our win
         print_arrow(win);
         wrefresh(ps[win].mywin.fm);
     }
@@ -390,12 +390,14 @@ void scroll_up(int win, int lines) {
         }
         lines--;
     }
+    // remove old cursor 
+    mvwprintw(ps[win].mywin.fm, old_pos - delta + 1, 1, "  ");
     if (delta > ps[win].mywin.delta) {
         delta = delta - ps[win].mywin.delta;
         scroll_helper_func(1, -delta, win);
         list_everything(win, ps[win].mywin.delta, delta);
     } else {
-        mvwprintw(ps[win].mywin.fm, old_pos - ps[win].mywin.delta + 1, 1, "  ");
+        // no need to reprint anything as we did not scroll up our win
         print_arrow(win);
         wrefresh(ps[win].mywin.fm);
     }
