@@ -1,5 +1,6 @@
 07 / 17 / 2016
 * fixed bug in makefile locale uninstall
+* added a ERROR_INT to log integers (my own testing purpose)
 
 07 / 16 / 2016
 * fixed a bug related to move_cursor_to_file and old cursor position not being cleared

@@ -79,7 +79,8 @@ static void log_current_options(void) {
     fprintf(log_file, "* Safe level: %d\n\n", config.safe);
 }
 
-void log_message(const char *filename, int lineno, const char *funcname, const char *log_msg, char type, int log_level) {
+void log_message(const char *filename, int lineno, const char *funcname, 
+                 const char *log_msg, char type, int log_level) {
     pid_t pid;
     time_t t;
     struct tm tm;

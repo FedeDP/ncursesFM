@@ -16,6 +16,12 @@
 #define INFO(msg) log_message(__FILE__, __LINE__, __func__, msg, 'I', LOG_INFO)
 #define WARN(msg) log_message(__FILE__, __LINE__, __func__, msg, 'W', LOG_WARN)
 #define ERROR(msg) log_message(__FILE__, __LINE__, __func__, msg, 'E', LOG_ERR)
+#define ERROR_INT(num) \
+    do { \
+        char str[50]; \
+        sprintf(str, "%d", num); \
+        log_message(__FILE__, __LINE__, __func__, str, 'E', LOG_ERR); \
+    } while (0)
 
 void open_log(void);
 void log_message(const char *filename, int lineno, const char *funcname, const char *log_msg, char type, int log_level);
