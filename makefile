@@ -16,7 +16,7 @@ SRCDIR = src/
 COMPLDIR = $(shell pkg-config --variable=completionsdir bash-completion)
 MSGLANGS = $(notdir $(wildcard msg/*po))
 MSGOBJS = $(MSGLANGS:.po=/LC_MESSAGES/ncursesFM.mo)
-MSGFILES = $(LOCALEDIR)/$(MSGOBJS)
+MSGFILES = $(addprefix $(LOCALEDIR)/,$(MSGOBJS))
 LIBS =-lpthread -lmagic $(shell pkg-config --libs libarchive ncursesw libudev)
 CFLAGS =-D_GNU_SOURCE $(shell pkg-config --cflags libarchive ncursesw libudev) -DCONFDIR=\"$(CONFDIR)\" -DBINDIR=\"$(BINDIR)\" -DLOCALEDIR=\"$(LOCALEDIR)\"
 
@@ -145,4 +145,4 @@ uninstall:
 	@$(RM) "$(DESTDIR)$(COMPLDIR)/$(BINNAME)"
 # 	remove locales
 	$(info uninstalling locales.)
-	@$(RM) "$(DESTDIR)$(MSGFILES)"
+	@$(RM) $(DESTDIR)$(MSGFILES)
