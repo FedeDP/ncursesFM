@@ -149,3 +149,9 @@ void remove_all_user_bookmarks(void) {
     }
     print_info(_(bookmarks_cleared), INFO_LINE);
 }
+
+void free_bookmarks(void) {
+    if (bookmarks) {
+        free(bookmarks);
+    }
+}

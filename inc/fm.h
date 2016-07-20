@@ -32,6 +32,7 @@ void manage_all_space_press(void);
 void remove_selected(void);
 void remove_all_selected(void);
 void show_selected(void);
+void free_selected(void);
 int paste_file(void);
 int move_file(void);
 void fast_browse(wint_t c);

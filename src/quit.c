@@ -31,9 +31,8 @@ static void free_everything(void) {
 #endif
     free_timer();
     free(main_p);
-    if (selected) {
-        free(selected);
-    }
+    free_selected();
+    free_bookmarks();
 }
 
 static void quit_thread_func(void) {

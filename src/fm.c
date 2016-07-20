@@ -310,9 +310,15 @@ void remove_all_selected(void) {
 
 void show_selected(void) {
     if (num_selected) {
-        show_special_tab(num_selected, selected, bookmarks_mode_str, selected_);
+        show_special_tab(num_selected, selected, selected_mode_str, selected_);
     } else {
         print_info(_(no_selected_files), INFO_LINE);
+    }
+}
+
+void free_selected(void) {
+    if (selected) {
+        free(selected);
     }
 }
 
