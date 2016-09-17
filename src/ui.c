@@ -1061,21 +1061,25 @@ void tab_refresh(int win) {
 void update_special_mode(int num,  char (*str)[PATH_MAX + 1], int mode) {
     for (int win = 0; win < cont; win++) {
         if (ps[win].mode == mode) {
-            if (str) {
-            /* Do not reset win if a device/bookmark has been added. Just print next line */
-                int check = num - ps[win].number_of_files;
-                ps[win].number_of_files = num;
-                str_ptr[win] = str;
-                if (check < 0) {
-                    /* update all */
-                    reset_win(win);
-                } else {
-                    /* only update latest */
-                    list_everything(win, num - 1, 1);
-                }
+            if (num == 0) {
+                leave_special_mode(ps[win].my_cwd, win);
             } else {
-            /* Only used in device_monitor: change mounted status event */
-                list_everything(win, num, 1);
+                if (str) {
+                    /* Do not reset win if a device/bookmark has been added. Just print next line */
+                    int check = num - ps[win].number_of_files;
+                    ps[win].number_of_files = num;
+                    str_ptr[win] = str;
+                    if (check < 0) { // it means a device/bookmark/selected file has been removed from list
+                        /* update all */
+                        reset_win(win);
+                    } else {
+                        /* only update latest */
+                        list_everything(win, num - 1, 1);
+                    }
+                } else {
+                    /* Only used in device_monitor: change mounted status event */
+                    list_everything(win, num, 1);
+                }
             }
         }
     }

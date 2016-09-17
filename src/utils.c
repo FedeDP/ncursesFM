@@ -133,11 +133,3 @@ void leave_mode_helper(struct stat s) {
     }
     leave_special_mode(str, active);
 }
-
-void switch_back_normal_mode(int mode) {
-    for (int i = 0; i < cont; i++) {
-        if (ps[i].mode == mode) {
-            leave_special_mode(ps[i].my_cwd, i);
-        }
-    }
-}

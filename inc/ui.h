@@ -12,6 +12,7 @@
 #include <sys/sysinfo.h>
 #include <wctype.h>
 #include <langinfo.h>
+#include <linux/limits.h>
 
 #define INFO_HEIGHT 4
 #define SEL_COL 3

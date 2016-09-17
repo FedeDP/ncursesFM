@@ -215,11 +215,7 @@ void manage_space_press(const char *str) {
     if (!strcmp(ps[active].my_cwd, ps[!active].my_cwd)) {
         highlight_selected(str, c, !active);
     }
-    if (num_selected) {
-        update_special_mode(num_selected, selected, selected_);
-    } else {
-        switch_back_normal_mode(selected_);
-    }
+    update_special_mode(num_selected, selected, selected_);
 }
 
 static void select_file(const char *str) {
@@ -243,11 +239,7 @@ void manage_all_space_press(void) {
         selected ? (idx = 4) : (idx = 5);
     }
     print_info(_(file_sel[idx]), INFO_LINE);
-    if (num_selected) {
-        update_special_mode(num_selected, selected, selected_);
-    } else {
-        switch_back_normal_mode(selected_);
-    }
+    update_special_mode(num_selected, selected, selected_);
 }
 
 static void select_all(void) {
@@ -287,11 +279,10 @@ void remove_selected(void) {
     selected = remove_from_list(&num_selected, selected, ps[active].curr_pos);
     if (num_selected) {
         idx = 1;
-        update_special_mode(num_selected, selected, selected_);
     } else {
         idx = 2;
-        switch_back_normal_mode(selected_);
     }
+    update_special_mode(num_selected, selected, selected_);
     print_info(_(file_sel[idx]), INFO_LINE);
 }
 
@@ -304,7 +295,7 @@ void remove_all_selected(void) {
     free(selected);
     selected = NULL;
     num_selected = 0;
-    switch_back_normal_mode(selected_);
+    update_special_mode(num_selected, selected, selected_);
     print_info(_(selected_cleared), INFO_LINE);
 }
 

@@ -108,11 +108,7 @@ static void remove_bookmark(int idx) {
             fprintf(f, "%s\n", bookmarks[idx]);
         }
         fclose(f);
-        if (num_bookmarks) {
-            update_special_mode(num_bookmarks, bookmarks, bookmarks_);
-        } else {
-            switch_back_normal_mode(bookmarks_); 
-        }
+        update_special_mode(num_bookmarks, bookmarks, bookmarks_);
     } else {
         print_info(_(bookmarks_file_err), ERR_LINE);
     }

@@ -423,11 +423,7 @@ static int remove_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_
             snprintf(devname, PATH_MAX, "/dev/%s", name);
             r = remove_device(devname);
             if (!quit && r != -1) {
-                if (number_of_devices) {
-                    update_special_mode(number_of_devices, devices, device_);
-                } else {
-                    switch_back_normal_mode(device_); 
-                }
+                update_special_mode(number_of_devices, devices, device_);
             }
         } else {
             INFO("signal discarded.");

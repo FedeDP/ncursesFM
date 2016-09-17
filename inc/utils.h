@@ -15,4 +15,3 @@ void save_old_pos(int win);
 int is_present(const char *name, char (*str)[PATH_MAX + 1], int num, int len, int start_idx);
 void change_unit(float size, char *str);
 void leave_mode_helper(struct stat s);
-void switch_back_normal_mode(int mode);
