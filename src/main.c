@@ -426,7 +426,6 @@ static void main_loop(void) {
                                                                     KEY_LEFT, KEY_RESIZE, KEY_PPAGE,
                                                                     KEY_NPAGE, KEY_MOUSE, 32,
                                                                     127, KEY_BACKSPACE);
-    struct stat current_file_stat;
     
     MEVENT event;
 #if NCURSES_MOUSE_VERSION > 1
@@ -445,6 +444,7 @@ static void main_loop(void) {
         if (ps[active].mode > fast_browse_ && (isprint(c) && !strchr(special_mode_allowed_chars, c))) {
             continue;
         }
+        struct stat current_file_stat = {0};
         stat(str_ptr[active][ps[active].curr_pos], &current_file_stat);
         switch (c) {
         case KEY_UP:
