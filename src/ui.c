@@ -68,7 +68,6 @@ void screen_init(void) {
     ESCDELAY = 25;
     raw();
     nodelay(stdscr, TRUE);
-    notimeout(stdscr, TRUE);
     dim = LINES - INFO_HEIGHT;
     if (config.starting_helper) {
         trigger_show_helper_message();
@@ -85,7 +84,6 @@ static void info_win_init(void) {
     info_win = subwin(stdscr, INFO_HEIGHT, COLS, LINES - INFO_HEIGHT, 0);
     keypad(info_win, TRUE);
     nodelay(info_win, TRUE);
-    notimeout(info_win, TRUE);
     for (int i = 0; i < INFO_HEIGHT - 1; i++) {     /* -1 because SYSINFO line has its own init func (timer_func) */
         print_info("", i);
     }
@@ -289,7 +287,6 @@ void new_tab(int win) {
     keypad(ps[win].mywin.fm, TRUE);
     scrollok(ps[win].mywin.fm, TRUE);
     idlok(ps[win].mywin.fm, TRUE);
-    notimeout(ps[win].mywin.fm, TRUE);
     nodelay(ps[win].mywin.fm, TRUE);
     initialize_tab_cwd(win);
 }
@@ -892,7 +889,7 @@ static void fix_input_cursor_pos(void) {
  * call poll; it is interruptable from SIGINT and SIGTERM signals (signalfd)
  * It will poll for getch, timerfd, inotify, pipe, signalfd and bus events.
  */
-wint_t main_poll(WINDOW *win) {;
+wint_t main_poll(WINDOW *win) {
     uint64_t t;
     wint_t c;
     int ret = wget_wch(win, &c);

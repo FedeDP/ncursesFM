@@ -92,6 +92,7 @@ void log_message(const char *filename, int lineno, const char *funcname,
         pthread_mutex_lock(&log_mutex);
         fprintf(log_file, "(%c) thread: %d, %02d:%02d:%02d, %-50s%s:%d (%s)\n",
                 type, pid, tm.tm_hour, tm.tm_min, tm.tm_sec, log_msg, filename, lineno, funcname);
+        fflush(log_file);
         pthread_mutex_unlock(&log_mutex);
     }
 }

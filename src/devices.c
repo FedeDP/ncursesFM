@@ -208,7 +208,7 @@ static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
     devlist = udev_enumerate_get_list_entry(enumerate);
     udev_list_entry_foreach(dev_list_entry, devlist) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
-        dev = udev_device_new_from_syspath(udev, path);
+        dev = udev_device_new_from_syspath(tmp_udev, path);
         strncpy(loop_dev, udev_device_get_devnode(dev), PATH_MAX);
         iso_backing_file(s, loop_dev);
         udev_device_unref(dev);
