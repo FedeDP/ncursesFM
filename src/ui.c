@@ -642,10 +642,14 @@ static void info_print(const char *str, int i) {
     wmove(info_win, i, 1);
     wclrtoeol(info_win);
     mvwprintw(info_win, i, 1, info_win_str[i]);
-    wattron(info_win, A_BOLD | COLOR_PAIR(i + 3));
-    wprintw(info_win, "%.*s", COLS - strlen(info_win_str[i]) - 1, str);
-    wattroff(info_win, A_BOLD | COLOR_PAIR(i + 3));
-    if (i == INFO_LINE) {
+    if (strlen(str) > 0) {
+        wattron(info_win, A_BOLD | COLOR_PAIR(i + 3));
+        wprintw(info_win, "%.*s", COLS - strlen(info_win_str[i]) - 1, str);
+        wattroff(info_win, A_BOLD | COLOR_PAIR(i + 3));
+    }
+    
+    switch (i) {
+    case INFO_LINE:
         if (selected) {
             strncpy(st, _(selected_mess), sizeof(st) - 1);
         }
@@ -653,15 +657,20 @@ static void info_print(const char *str, int i) {
             sprintf(st + strlen(st), "[%d/%d] %s", thread_h->num, num_of_jobs, _(thread_job_mesg[thread_h->type]));
         }
         mvwprintw(info_win, INFO_LINE, COLS - strlen(st), st);
-    } else if ((i == ERR_LINE) && (sv.searching)) {
-        mvwprintw(info_win, ERR_LINE, COLS - strlen(_(searching_mess[sv.searching - 1])), _(searching_mess[sv.searching - 1]));
+        break;
+    case ERR_LINE:
+        if (sv.searching) {
+            mvwprintw(info_win, ERR_LINE, COLS - strlen(_(searching_mess[sv.searching - 1])), _(searching_mess[sv.searching - 1]));
+        }
+        break;
     }
     wrefresh(info_win);
 }
 
 /*
  * if info_win is not NULL:
- * it needs to malloc (COLS - len) bytes as they're real printable chars on the screen.
+ * it needs to malloc (COLS - len) bytes (printable chars on the screen) 
+ * or strlen(str) bytes (it depends upon which value is smaller).
  * we need malloc because window can be resized (ie: COLS is not a constant)
  * then writes on the pipe the address of the heap-allocated struct info_msg.
  */
@@ -673,11 +682,11 @@ void print_info(const char *str, int line) {
         if (!(info = malloc(sizeof(struct info_msg)))) {
             goto error;
         }
-        if (!(info->msg = malloc(sizeof(char) * (COLS - len)))) {
+        info->msg = strndup(str, sizeof(char) * (COLS - len));
+        if (info->msg == NULL) {
             free(info);
             goto error;
         }
-        strncpy(info->msg, str, COLS - len);
         info->line = line;
         ssize_t r = write(info_fd[1], &info, sizeof(struct info_msg *));
         if (r <= 0) {

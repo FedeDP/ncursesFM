@@ -7,16 +7,32 @@ static void *execute_thread(void *x);
 
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
 static struct thread_mesg thread_m;
+static pthread_mutex_t job_lck;
 #ifdef SYSTEMD_PRESENT
 static int inhibit_fd;
 #endif
 
 /*
+ * Initializes mutex
+ */
+void init_job_queue(void) {
+    pthread_mutex_init(&job_lck, NULL);
+}
+
+/*
+ * Destroys mutex
+ */
+void destroy_job_queue(void) {
+    pthread_mutex_destroy(&job_lck);
+}
+
+/*
  * Creates a new job object for the worker_thread appending it to the end of job's queue.
  */
 static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void)) {
+    pthread_mutex_lock(&job_lck);
     if (h) {
-        h->next = add_job(h->next, type, f);
+        current_th->next = add_job(current_th->next, type, f);
     } else {
         if (!(h = malloc(sizeof(struct thread_list)))) {
             quit = MEM_ERR_QUIT;
@@ -33,6 +49,7 @@ static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void)) {
         h->num = num_of_jobs;
         current_th = h;
     }
+    pthread_mutex_unlock(&job_lck);
     return h;
 }
 
@@ -40,6 +57,7 @@ static thread_job_list *add_job(thread_job_list *h, int type, int (*f)(void)) {
  * Deletes current job object and updates job queue.
  */
 static void free_running_h(void) {
+    pthread_mutex_lock(&job_lck);
     thread_job_list *tmp = thread_h;
 
     thread_h = thread_h->next;
@@ -47,6 +65,7 @@ static void free_running_h(void) {
         free(tmp->selected_files);
     free(tmp);
     tmp = NULL;
+    pthread_mutex_unlock(&job_lck);
 }
 
 void init_thread(int type, int (* const f)(void)) {
@@ -65,8 +84,8 @@ void init_thread(int type, int (* const f)(void)) {
             inhibit_fd = inhibit_suspend("Job in process...");
         }
 #endif
-        thread_m.str = "";
-        thread_m.line = INFO_LINE;
+        // update info_line with newly added job
+        print_info("", INFO_LINE);
         INFO("starting a job.");
         pthread_create(&worker_th, NULL, execute_thread, NULL);
     }
@@ -128,6 +147,7 @@ static void *execute_thread(void *x) {
     }
     INFO("ended all queued jobs.");
     num_of_jobs = 0;
+    current_th = NULL;
 #ifdef SYSTEMD_PRESENT
     stop_inhibition(inhibit_fd);
 #endif

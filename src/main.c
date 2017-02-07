@@ -76,6 +76,7 @@ int main(int argc, char * const argv[])
     config_checks();
     get_bookmarks();
     set_pollfd();
+    init_job_queue();
     if (!quit) {
         screen_init();
         main_loop();

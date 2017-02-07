@@ -11,4 +11,6 @@ struct thread_mesg {
     int line;
 };
 
+void init_job_queue(void);
+void destroy_job_queue(void);
 void init_thread(int type, int (* const f)(void));

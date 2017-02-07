@@ -18,8 +18,8 @@
 #define ERROR(msg) log_message(__FILE__, __LINE__, __func__, msg, 'E', LOG_ERR)
 #define ERROR_INT(num) \
     do { \
-        char str[50]; \
-        sprintf(str, "%d", num); \
+        char num_str[50]; \
+        sprintf(num_str, "%d", num); \
         log_message(__FILE__, __LINE__, __func__, str, 'E', LOG_ERR); \
     } while (0)
 
