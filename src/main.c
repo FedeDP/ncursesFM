@@ -38,7 +38,7 @@ static void check_X(void);
 static void helper_function(int argc, char * const argv[]);
 static void parse_cmd(int argc, char * const argv[]);
 #ifdef LIBCONFIG_PRESENT
-static void check_config_files();
+static void check_config_files(void);
 static void read_config_file(const char *dir);
 #endif
 static void config_checks(void);
@@ -303,13 +303,23 @@ static void parse_cmd(int argc, char * const argv[]) {
 }
 
 #ifdef LIBCONFIG_PRESENT
-static void check_config_files() {
+static void check_config_files(void) {
+    char config_path[PATH_MAX + 1] = {0};
+    
+    // Read global conf file in /etc/default
     read_config_file(CONFDIR);
     
-    char home_config_path[PATH_MAX + 1] = {0};
-    
-    snprintf(home_config_path, PATH_MAX, "%s/.config", getpwuid(getuid())->pw_dir);
-    read_config_file(home_config_path);
+    // Try to get XDG_CONFIG_HOME from env
+    if (getenv("XDG_CONFIG_HOME")) {
+        // take only first user_config_dir set if more than one are set
+        char *path = getenv("XDG_CONFIG_HOME");
+        char *token = strtok(path, ":");
+        strncpy(config_path, token, PATH_MAX);
+    } else {
+        // fallback to ~/.config/
+        snprintf(config_path, PATH_MAX, "%s/.config", getpwuid(getuid())->pw_dir);
+    }
+    read_config_file(config_path);
 }
 
 static void read_config_file(const char *dir) {
