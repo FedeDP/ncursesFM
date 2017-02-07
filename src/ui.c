@@ -683,7 +683,7 @@ void print_info(const char *str, int line) {
             goto error;
         }
         info->msg = strndup(str, sizeof(char) * (COLS - len));
-        if (info->msg == NULL) {
+        if (!info->msg) {
             free(info);
             goto error;
         }
