@@ -115,7 +115,8 @@ static int init_thread_helper(void) {
             sprintf(name + len, "%d.tgz", num);
             num++;
         }
-        snprintf(current_th->filename, PATH_MAX, "%s/%s", current_th->full_path, name);
+        len = strlen(current_th->full_path);
+        snprintf(current_th->full_path + len, PATH_MAX - 1, "/%s", name);
     }
     current_th->selected_files = selected;
     selected = NULL;

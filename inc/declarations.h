@@ -10,9 +10,11 @@
 #include <ncurses.h>
 #include <libintl.h>
 #include <archive.h>
+#include <linux/limits.h>
 #include <archive_entry.h>
 
 #include "version.h"
+
 
 // used for internationalization
 #define _(str) gettext(str)
@@ -178,8 +180,6 @@ typedef struct thread_list {
     int (*f)(void);
     // when needed: fullpath  (eg where to extract each file)
     char full_path[PATH_MAX + 1];
-    // when needed: (only in archiving for now): filename of the archive to be created
-    char filename[PATH_MAX + 1];
     // next job pointer
     struct thread_list *next;
     // num of this job (index of this job in thread_h list)

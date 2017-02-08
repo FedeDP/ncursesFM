@@ -14,13 +14,13 @@ static int distance_from_root;
 /*
  * It tries to create a new archive to write inside it,
  * it fails if it cannot add the proper filter, or cannot set proper format, or
- * if it cannot open thread_h->filename (ie, the desired pathname of the new archive)
+ * if it cannot open thread_h->full_path (ie, the desired pathname of the new archive)
  */
 int create_archive(void) {
     archive = archive_write_new();
     if ((archive_write_add_filter_gzip(archive) == ARCHIVE_OK) &&
         (archive_write_set_format_pax_restricted(archive) == ARCHIVE_OK) &&
-        (archive_write_open_filename(archive, thread_h->filename) == ARCHIVE_OK)) {
+        (archive_write_open_filename(archive, thread_h->full_path) == ARCHIVE_OK)) {
         archiver_func();
         return 0;
     }
