@@ -22,11 +22,7 @@
  * END_COMMON_COPYRIGHT_HEADER */
 
 #include "../inc/bookmarks.h"
-#include <getopt.h>
-
-#ifdef LIBCONFIG_PRESENT
-#include <libconfig.h>
-#endif
+#include "../inc/config.h"
 
 static void locale_init(void);
 static int set_signals(void);
@@ -36,12 +32,6 @@ static void sigsegv_handler(int signum);
 static void check_X(void);
 #endif
 static void helper_function(int argc, char * const argv[]);
-static void parse_cmd(int argc, char * const argv[]);
-#ifdef LIBCONFIG_PRESENT
-static void check_config_files(void);
-static void read_config_file(const char *dir);
-#endif
-static void config_checks(void);
 static void main_loop(void);
 static void add_new_tab(void);
 #ifdef SYSTEMD_PRESENT
@@ -246,148 +236,6 @@ static void helper_function(int argc, char * const argv[]) {
 #ifdef LIBX11_PRESENT
     check_X();
 #endif
-}
-
-static void parse_cmd(int argc, char * const argv[]) {
-    int idx = 0, opt;
-    struct option opts[] =
-    {
-        {"editor", 1, 0, 0},
-        {"starting_dir", 1, 0, 0},
-        {"helper_win", 1, 0, 0},
-        {"loglevel",  1, 0, 0},
-        {"persistent_log",  1, 0, 0},
-        {"low_level",  1, 0, 0},
-        {"safe",    1, 0, 0},
-#ifdef SYSTEMD_PRESENT
-        {"inhibit",    1, 0, 0},
-        {"automount",    1, 0, 0},
-#endif
-        {0, 0, 0, 0}
-    };
-    
-    while ((opt = getopt_long(argc, argv, "", opts, &idx)) != -1) {
-        if (optarg) {
-            switch (idx) {
-            case 0:
-                strncpy(config.editor, optarg, PATH_MAX);
-                break;
-            case 1:
-                strncpy(config.starting_dir, optarg, PATH_MAX);
-                break;
-            case 2:
-                config.starting_helper = atoi(optarg);
-                break;
-            case 3:
-                config.loglevel = atoi(optarg);
-                break;
-            case 4:
-                config.persistent_log = atoi(optarg);
-                break;
-            case 5:
-                config.bat_low_level = atoi(optarg);
-                break;
-            case 6:
-                config.safe = atoi(optarg);
-                break;
-#ifdef SYSTEMD_PRESENT
-            case 7:
-                config.inhibit = atoi(optarg);
-                break;
-            case 8:
-                config.automount = atoi(optarg);
-                break;
-#endif
-            }
-        }
-    }
-}
-
-#ifdef LIBCONFIG_PRESENT
-static void check_config_files(void) {
-    char config_path[PATH_MAX + 1] = {0};
-    
-    // Read global conf file in /etc/default
-    read_config_file(CONFDIR);
-    
-    // Try to get XDG_CONFIG_HOME from env
-    if (getenv("XDG_CONFIG_HOME")) {
-        // take only first user_config_dir set if more than one are set
-        char *path = getenv("XDG_CONFIG_HOME");
-        char *token = strtok(path, ":");
-        strncpy(config_path, token, PATH_MAX);
-    } else {
-        // fallback to ~/.config/
-        snprintf(config_path, PATH_MAX, "%s/.config", getpwuid(getuid())->pw_dir);
-    }
-    read_config_file(config_path);
-}
-
-static void read_config_file(const char *dir) {
-    config_t cfg;
-    char config_file_name[PATH_MAX + 1] = {0};
-    const char *str_editor, *str_starting_dir, *str_cursor, *sysinfo;
-
-    snprintf(config_file_name, PATH_MAX, "%s/ncursesFM.conf", dir);
-    if (access(config_file_name, F_OK ) == -1) {
-        fprintf(stderr, "Config file %s not found.\n", config_file_name);
-        return;
-    }
-    config_init(&cfg);
-    if (config_read_file(&cfg, config_file_name) == CONFIG_TRUE) {
-        if (config_lookup_string(&cfg, "editor", &str_editor) == CONFIG_TRUE) {
-            strncpy(config.editor, str_editor, PATH_MAX);
-        }
-        config_lookup_int(&cfg, "show_hidden", &config.show_hidden);
-        if (config_lookup_string(&cfg, "starting_directory", &str_starting_dir) == CONFIG_TRUE) {
-            strncpy(config.starting_dir, str_starting_dir, PATH_MAX);
-        }
-        config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
-        config_lookup_int(&cfg, "starting_helper", &config.starting_helper);
-#ifdef SYSTEMD_PRESENT
-        config_lookup_int(&cfg, "inhibit", &config.inhibit);
-        config_lookup_int(&cfg, "automount", &config.automount);
-#endif
-        config_lookup_int(&cfg, "loglevel", &config.loglevel);
-        config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
-        config_lookup_int(&cfg, "bat_low_level", &config.bat_low_level);
-        if (config_lookup_string(&cfg, "cursor_chars", &str_cursor) == CONFIG_TRUE) {
-            mbstowcs(config.cursor_chars, str_cursor, 2);
-        }
-        if (config_lookup_string(&cfg, "sysinfo_layout", &sysinfo) == CONFIG_TRUE) {
-            strncpy(config.sysinfo_layout, sysinfo, sizeof(config.sysinfo_layout));
-        }
-        config_lookup_int(&cfg, "safe", &config.safe);
-    } else {
-        fprintf(stderr, "Config file: %s at line %d.\n",
-                config_error_text(&cfg),
-                config_error_line(&cfg));
-    }
-    config_destroy(&cfg);
-}
-#endif
-
-static void config_checks(void) {
-    const char *str;
-
-    if ((strlen(config.starting_dir)) && (access(config.starting_dir, F_OK) == -1)) {
-        memset(config.starting_dir, 0, strlen(config.starting_dir));
-    }
-    if (!strlen(config.editor) || (access(config.editor, X_OK) == -1)) {
-        memset(config.editor, 0, strlen(config.editor));
-        WARN("no editor defined. Trying to get one from env.");
-        if ((str = getenv("EDITOR"))) {
-            strncpy(config.editor, str, PATH_MAX);
-        } else {
-            WARN("no editor env var found.");
-        }
-    }
-    if ((config.loglevel < LOG_ERR) || (config.loglevel > NO_LOG)) {
-        config.loglevel = LOG_ERR;
-    }
-    if (config.safe < UNSAFE || config.safe > FULL_SAFE) {
-        config.safe = FULL_SAFE;
-    }
 }
 
 /*
