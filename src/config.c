@@ -1,5 +1,9 @@
 #include "../inc/config.h"
 
+#ifdef LIBCONFIG_PRESENT
+static void read_config_file(const char *dir);
+#endif
+
 void parse_cmd(int argc, char * const argv[]) {
     int idx = 0, opt;
     struct option opts[] =
@@ -72,7 +76,7 @@ void check_config_files(void) {
     read_config_file(config_path);
 }
 
-void read_config_file(const char *dir) {
+static void read_config_file(const char *dir) {
     config_t cfg;
     char config_file_name[PATH_MAX + 1] = {0};
     const char *str_editor, *str_starting_dir, *str_cursor, *sysinfo;
