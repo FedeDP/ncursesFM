@@ -64,10 +64,7 @@ void check_config_files(void) {
     
     // Try to get XDG_CONFIG_HOME from env
     if (getenv("XDG_CONFIG_HOME")) {
-        // take only first user_config_dir set if more than one are set
-        char *path = getenv("XDG_CONFIG_HOME");
-        char *token = strtok(path, ":");
-        strncpy(config_path, token, PATH_MAX);
+        strncpy(config_path, getenv("XDG_CONFIG_HOME"), PATH_MAX);
     } else {
         // fallback to ~/.config/
         snprintf(config_path, PATH_MAX, "%s/.config", getpwuid(getuid())->pw_dir);
