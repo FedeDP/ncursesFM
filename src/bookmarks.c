@@ -31,9 +31,13 @@ static void get_xdg_dirs(void) {
     FILE *f;
     char str[PATH_MAX + 1] = {0};
     char line[1000], file_path[PATH_MAX + 1] = {0};
-    const char path[] = "/.config/user-dirs.dirs";
+    
+    if (getenv("XDG_CONFIG_HOME")) {
+        snprintf(file_path, PATH_MAX, "%s/.user-dirs.dirs", getenv("XDG_CONFIG_HOME"));
+    } else {
+        snprintf(file_path, PATH_MAX, "%s/.config/user-dirs.dirs", home_dir);
+    }
 
-    snprintf(file_path, PATH_MAX, "%s%s", home_dir, path);
     if ((f = fopen(file_path, "r"))) {
         while (fgets(line, sizeof(line), f)) {
             // avoid comments
