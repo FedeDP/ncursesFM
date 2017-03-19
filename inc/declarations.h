@@ -1,3 +1,5 @@
+#pragma once
+
 #include <dirent.h>
 #include <libgen.h>
 #include <errno.h>
@@ -113,6 +115,9 @@ struct conf {
     int persistent_log;
     int bat_low_level;
     int safe;
+#ifdef LIBNOTIFY_PRESENT
+    int silent;
+#endif
     wchar_t cursor_chars[3];
     char sysinfo_layout[4];
 };

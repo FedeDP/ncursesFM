@@ -15,6 +15,9 @@ void parse_cmd(int argc, char * const argv[]) {
         {"persistent_log",  1, 0, 0},
         {"low_level",  1, 0, 0},
         {"safe",    1, 0, 0},
+#ifdef LIBNOTIFY_PRESENT
+        {"silent", 1, 0, 0},
+#endif
 #ifdef SYSTEMD_PRESENT
         {"inhibit",    1, 0, 0},
         {"automount",    1, 0, 0},
@@ -46,13 +49,27 @@ void parse_cmd(int argc, char * const argv[]) {
             case 6:
                 config.safe = atoi(optarg);
                 break;
+#ifdef LIBNOTIFY_PRESENT
+            case 7:
+                config.silent = atoi(optarg);
+                break;
+#endif
 #ifdef SYSTEMD_PRESENT
+#ifdef LIBNOTIFY_PRESENT
+            case 8:
+                config.inhibit = atoi(optarg);
+                break;
+            case 9:
+                config.automount = atoi(optarg);
+                break;
+#else
             case 7:
                 config.inhibit = atoi(optarg);
                 break;
             case 8:
                 config.automount = atoi(optarg);
                 break;
+#endif
 #endif
             }
         }
@@ -97,6 +114,9 @@ static void read_config_file(const char *dir) {
         }
         config_lookup_int(&cfg, "use_default_starting_dir_second_tab", &config.second_tab_starting_dir);
         config_lookup_int(&cfg, "starting_helper", &config.starting_helper);
+#ifdef LIBNOTIFY_PRESENT
+        config_lookup_int(&cfg, "silent", &config.silent);
+#endif
 #ifdef SYSTEMD_PRESENT
         config_lookup_int(&cfg, "inhibit", &config.inhibit);
         config_lookup_int(&cfg, "automount", &config.automount);

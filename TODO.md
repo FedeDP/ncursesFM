@@ -9,7 +9,8 @@
 - [ ] update doc
 - [x] libnotify support (easy)
 - [x] drop libx11 requirement
-- [ ] update wiki pages
+- [x] update wiki pages
+- [x] desktop notifications optional at runtime (--silent from cmdline and a config option)
 
 ### ssh support ideas:
 Config file with {

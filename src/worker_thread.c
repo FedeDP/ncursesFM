@@ -145,9 +145,7 @@ static void *execute_thread(void *x) {
         free_running_h();
         print_info(_(thread_m.str), thread_m.line);
 #ifdef LIBNOTIFY_PRESENT
-        if (has_desktop) {
-            send_notification(_(thread_m.str));
-        }
+        send_notification(_(thread_m.str));
 #endif
         return execute_thread(NULL);
     }

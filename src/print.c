@@ -49,9 +49,7 @@ static void print_file(const char *filename) {
     }
 
 #ifdef LIBNOTIFY_PRESENT
-    if (has_desktop) {
-        send_notification(str);
-    }
+    send_notification(str);
 #endif
 }
 

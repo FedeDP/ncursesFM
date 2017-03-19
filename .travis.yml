@@ -24,11 +24,10 @@ arch:
         - bash-completion
     script:
         - "echo $CC"
-        - make
-        - make DISABLE_LIBSYSTEMD=1
-        - make DISABLE_LIBCUPS=1
-        - make DISABLE_LIBCONFIG=1
-        - make DISABLE_LIBX11=1
+        - make DISABLE_LIBSYSTEMD=1 debug
+        - make DISABLE_LIBCUPS=1 debug
+        - make DISABLE_LIBCONFIG=1 debug
+        - make DISABLE_LIBNOTIFY=1 debug
         - make debug
 
 script:

@@ -10,9 +10,11 @@ void init_notify(void) {
 }
 
 void send_notification(const char *mesg) {
-    n = notify_notification_new(title, mesg, 0);
-    notify_notification_set_timeout(n, NOTIFY_EXPIRES_DEFAULT);
-    notify_notification_show(n, 0);
+    if (!config.silent && has_desktop) {
+        n = notify_notification_new(title, mesg, 0);
+        notify_notification_set_timeout(n, NOTIFY_EXPIRES_DEFAULT);
+        notify_notification_show(n, 0);
+    }
 }
 
 void destroy_notify(void) {

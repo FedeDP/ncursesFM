@@ -141,9 +141,7 @@ static void *search_thread(void *x) {
         }
         print_info("", SEARCH_LINE);
 #ifdef LIBNOTIFY_PRESENT
-        if (has_desktop) {
-            send_notification(str);
-        }
+        send_notification(str);
 #endif
     }
     pthread_detach(pthread_self());
