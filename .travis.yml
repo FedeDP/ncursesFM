@@ -20,7 +20,7 @@ arch:
         - libarchive
         - ncurses
         - libcups
-        - libx11
+        - libnotify
         - bash-completion
     script:
         - "echo $CC"
