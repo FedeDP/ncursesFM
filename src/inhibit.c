@@ -61,10 +61,8 @@ void close_bus(sd_bus_error *error, sd_bus_message *mess, sd_bus *bus) {
 }
 
 void stop_inhibition(int fd) {
-    if (config.inhibit) {
-        INFO("power management functions inhibition stopped.");
-        close(fd);
-    }
+    INFO("power management functions inhibition stopped.");
+    close(fd);
 }
 
 #endif

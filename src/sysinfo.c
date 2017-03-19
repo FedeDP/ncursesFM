@@ -103,7 +103,6 @@ void free_timer(void) {
 static void poll_batteries(void) {
     struct udev_enumerate *enumerate;
     struct udev_list_entry *devices, *dev_list_entry;
-    struct udev_device *dev;
     
     enumerate = udev_enumerate_new(udev);
     udev_enumerate_add_match_subsystem(enumerate, "power_supply");
@@ -111,7 +110,7 @@ static void poll_batteries(void) {
     devices = udev_enumerate_get_list_entry(enumerate);
     udev_list_entry_foreach(dev_list_entry, devices) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
-        dev = udev_device_new_from_syspath(udev, path);
+        struct udev_device * dev = udev_device_new_from_syspath(udev, path);
         if (udev_device_get_property_value(dev, "POWER_SUPPLY_ONLINE")) {
             strncpy(ac_path, path, PATH_MAX);
         } else {

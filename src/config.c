@@ -121,14 +121,14 @@ static void read_config_file(const char *dir) {
 #endif
 
 void config_checks(void) {
-    const char *str;
-
     if ((strlen(config.starting_dir)) && (access(config.starting_dir, F_OK) == -1)) {
         memset(config.starting_dir, 0, strlen(config.starting_dir));
     }
     if (!strlen(config.editor) || (access(config.editor, X_OK) == -1)) {
         memset(config.editor, 0, strlen(config.editor));
         WARN("no editor defined. Trying to get one from env.");
+        const char *str;
+        
         if ((str = getenv("EDITOR"))) {
             strncpy(config.editor, str, PATH_MAX);
         } else {

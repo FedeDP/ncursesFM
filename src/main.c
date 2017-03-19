@@ -28,9 +28,7 @@ static void locale_init(void);
 static int set_signals(void);
 static void set_pollfd(void);
 static void sigsegv_handler(int signum);
-#ifdef LIBX11_PRESENT
-static void check_X(void);
-#endif
+static void check_desktop(void);
 static void helper_function(int argc, char * const argv[]);
 static void main_loop(void);
 static void add_new_tab(void);
@@ -67,6 +65,9 @@ int main(int argc, char * const argv[])
     get_bookmarks();
     set_pollfd();
     init_job_queue();
+#ifdef LIBNOTIFY_PRESENT
+    init_notify();
+#endif
     if (!quit) {
         screen_init();
         main_loop();
@@ -114,6 +115,7 @@ static void set_pollfd(void) {
         .fd = STDIN_FILENO,
         .events = POLLIN,
     };
+    
     // do not start timer if no sysinfo info is enabled
     if (strlen(config.sysinfo_layout)) {
         main_p[TIMER_IX] = (struct pollfd) {
@@ -121,6 +123,8 @@ static void set_pollfd(void) {
             .events = POLLIN,
         };
     }
+    
+    // inotify watcher init for each tab
     ps[0].inot.fd = inotify_init();
     ps[1].inot.fd = inotify_init();
     main_p[INOTIFY_IX1] = (struct pollfd) {
@@ -131,15 +135,22 @@ static void set_pollfd(void) {
         .fd = ps[1].inot.fd,
         .events = POLLIN,
     };
+    
+    // info init. This is needed to let
+    // multiple threads print an information string
+    // without any issue.
     pipe(info_fd);
     main_p[INFO_IX] = (struct pollfd) {
         .fd = info_fd[0],
         .events = POLLIN,
     };
+    
+    // signalfd init to catch external signals
     main_p[SIGNAL_IX] = (struct pollfd) {
         .fd = set_signals(),
         .events = POLLIN,
     };
+    
 #if ARCHIVE_VERSION_NUMBER >= 3002000
     // NONBLOCK needed for EXTRACTOR_TH workaround when blocked 
     // inside a eventf read -> archive_cb_fd[0] is fd read by main_poll
@@ -151,7 +162,9 @@ static void set_pollfd(void) {
         .events = POLLIN,
     };
 #endif
+    
 #ifdef SYSTEMD_PRESENT
+    // device monitor watcher
     main_p[DEVMON_IX] = (struct pollfd) {
         .fd = start_monitor(),
         .events = POLLIN,
@@ -171,16 +184,13 @@ static void sigsegv_handler(int signum) {
     kill(getpid(), signum);
 }
 
-#ifdef LIBX11_PRESENT
-static void check_X(void) {
-    Display* display = XOpenDisplay(NULL);
-
-    if (display) {
-        XCloseDisplay(display);
-        has_X = 1;
-    }
+/*
+ * Check if ncursesFM is run by desktop environment (X or wayland)
+ * or from a getty
+ */
+static void check_desktop(void) {
+    has_desktop = getenv("XDG_SESSION_TYPE") != NULL;
 }
-#endif
 
 static void helper_function(int argc, char * const argv[]) {
     char ncursesfm[150];
@@ -233,9 +243,7 @@ static void helper_function(int argc, char * const argv[]) {
      * Battery monitor
      */
     strcpy(config.sysinfo_layout, "CPB");
-#ifdef LIBX11_PRESENT
-    check_X();
-#endif
+    check_desktop();
 }
 
 /*
@@ -278,13 +286,15 @@ static void main_loop(void) {
      * arrow KEYS, needed to move cursor.
      * KEY_RESIZE to catch resize signals.
      * PG_UP/DOWN to move straight to first/last file.
+     * KEY_MOUSE to catch mouse events
      * 32 -> space to select files
+     * 127, backspace to go up to root folder
      */
     wchar_t not_graph_wchars[12];
     swprintf(not_graph_wchars, 12, L"%lc%lc%lc%lc%lc%lc%lc%lc%lc%lc%lc",  KEY_UP, KEY_DOWN, KEY_RIGHT,
                                                                     KEY_LEFT, KEY_RESIZE, KEY_PPAGE,
-                                                                    KEY_NPAGE, KEY_MOUSE, 32,
-                                                                    127, KEY_BACKSPACE);
+                                                                    KEY_NPAGE, KEY_MOUSE, (unsigned long)32,
+                                                                    (unsigned long)127, KEY_BACKSPACE);
     
     MEVENT event;
 #if NCURSES_MOUSE_VERSION > 1
@@ -599,10 +609,10 @@ static int check_access(void) {
 }
 
 static void go_root_dir(void) {
-    char root[PATH_MAX + 1] = {0};
-    
     // if we're not on root of fs
     if (strcmp(ps[active].my_cwd, "/")) {
+        char root[PATH_MAX + 1] = {0};
+        
         strncpy(root, ps[active].my_cwd, PATH_MAX);
         strcat(root, "/..");
         change_dir(root, active);

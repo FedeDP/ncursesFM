@@ -51,8 +51,8 @@ static void archiver_func(void) {
 }
 
 static int recursive_archive(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    char buff[BUFF_SIZE], entry_name[PATH_MAX + 1] = {0};
-    int len, fd;
+    char entry_name[PATH_MAX + 1] = {0};
+    int fd;
     struct archive_entry *entry = archive_entry_new();
 
     strncpy(entry_name, path + distance_from_root + 1, PATH_MAX);
@@ -62,6 +62,9 @@ static int recursive_archive(const char *path, const struct stat *sb, int typefl
     archive_entry_free(entry);
     fd = open(path, O_RDONLY);
     if (fd != -1) {
+        char buff[BUFF_SIZE] = {0};
+        int len;
+        
         len = read(fd, buff, sizeof(buff));
         while (len > 0) {
             archive_write_data(archive, buff, len);
@@ -104,7 +107,6 @@ static const char *passphrase_callback(struct archive *a, void *_client_data) {
 
 static int try_extractor(const char *tmp) {
     struct archive *a;
-    char *current_dir, path[PATH_MAX + 1] = {0};
 
     a = archive_read_new();
     archive_read_support_filter_all(a);
@@ -113,8 +115,10 @@ static int try_extractor(const char *tmp) {
     archive_read_set_passphrase_callback(a, NULL, passphrase_callback);
 #endif
     if ((a) && (archive_read_open_filename(a, tmp, BUFF_SIZE) == ARCHIVE_OK)) {
+        char path[PATH_MAX + 1] = {0};
+        
         strncpy(path, tmp, PATH_MAX);
-        current_dir = dirname(path);
+        char *current_dir = dirname(path);
         extractor_thread(a, current_dir);
         return 0;
     }
@@ -131,7 +135,6 @@ static int try_extractor(const char *tmp) {
 static void extractor_thread(struct archive *a, const char *current_dir) {
     struct archive *ext;
     struct archive_entry *entry;
-    int len, num;
     int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
     char buff[BUFF_SIZE], fullpathname[PATH_MAX + 1];
     char name[PATH_MAX + 1] = {0}, tmp_name[PATH_MAX + 1] = {0};
@@ -141,14 +144,14 @@ static void extractor_thread(struct archive *a, const char *current_dir) {
     archive_write_disk_set_standard_lookup(ext);
     while (archive_read_next_header(a, &entry) != ARCHIVE_EOF) {
         strncpy(name, archive_entry_pathname(entry), PATH_MAX);
-        num = 0;
+        int num = 0;
         /* avoid overwriting a file/dir in path if it has the same name of a file being extracted there */
         if (strchr(name, '/')) {
             strncpy(tmp_name, strchr(name, '/'), PATH_MAX);
         } else {
             tmp_name[0] = '\0';
         }
-        len = strlen(name) - strlen(tmp_name);
+        int len = strlen(name) - strlen(tmp_name);
         while (access(name, F_OK) == 0) {
             num++;
             snprintf(name + len, PATH_MAX - len, "%d%s", num, tmp_name);

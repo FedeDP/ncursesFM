@@ -88,7 +88,7 @@ void manage_file(const char *str) {
         return;
     }
 #endif
-    if (!access("/usr/bin/xdg-open", X_OK) && has_X) {
+    if (has_desktop && !access("/usr/bin/xdg-open", X_OK)) {
         xdg_open(str);
     } else {
         open_file(str);
@@ -96,7 +96,7 @@ void manage_file(const char *str) {
 }
 
 /*
- * If we're on a X screen, open the file with xdg-open and redirect its output to /dev/null
+ * If we're in a desktop environment, open the file with xdg-open and redirect its output to /dev/null
  * not to make my ncurses screen dirty.
  */
 static void xdg_open(const char *str) {
@@ -111,9 +111,7 @@ static void xdg_open(const char *str) {
 }
 
 /*
- * If file size is > than 5 Mb, asks user if he really wants to open the file 
- * (maybe he pressed enter on a avi video for example), then, if config.editor is set,
- * opens the file with it.
+ * if config.editor is set opens the file with it.
  */
 static void open_file(const char *str) {
     if ((!get_mimetype(str, "text/")) && (!get_mimetype(str, "x-empty"))) {
@@ -319,11 +317,11 @@ void free_selected(void) {
  * from where it was copied. If it is the case, it does not copy it.
  */
 int paste_file(void) {
-    char *copied_file_dir, path[PATH_MAX + 1] = {0};
+    char path[PATH_MAX + 1] = {0};
 
     for (int i = 0; i < thread_h->num_selected; i++) {
         strncpy(path, thread_h->selected_files[i], PATH_MAX);
-        copied_file_dir = dirname(path);
+        char *copied_file_dir = dirname(path);
         if (strcmp(thread_h->full_path, copied_file_dir)) {
             cpr(thread_h->selected_files[i]);
         }
@@ -338,13 +336,13 @@ int paste_file(void) {
  * Else, the function has to copy it and rm copied file.
  */
 int move_file(void) {
-    char pasted_file[PATH_MAX + 1] = {0}, *copied_file_dir, path[PATH_MAX + 1] = {0};
+    char pasted_file[PATH_MAX + 1] = {0}, path[PATH_MAX + 1] = {0};
     struct stat file_stat_copied, file_stat_pasted;
 
     lstat(thread_h->full_path, &file_stat_pasted);
     for (int i = 0; i < thread_h->num_selected; i++) {
         strncpy(path, thread_h->selected_files[i], PATH_MAX);
-        copied_file_dir = dirname(path);
+        char *copied_file_dir = dirname(path);
         if (strcmp(thread_h->full_path, copied_file_dir)) {
             lstat(copied_file_dir, &file_stat_copied);
             if (file_stat_copied.st_dev == file_stat_pasted.st_dev) { // if on the same fs, just rename the file
@@ -382,21 +380,21 @@ static void cpr(const char *tmp) {
 }
 
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    int len, fd_to, fd_from, ret = 0;
+    int ret = 0;
     char pasted_file[PATH_MAX + 1] = {0};
 
     snprintf(pasted_file, PATH_MAX, "%s%s", thread_h->full_path, path + distance_from_root);
     if (typeflag == FTW_D) {
         mkdir(pasted_file, sb->st_mode);
     } else {
-        fd_to = open(pasted_file, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, sb->st_mode);
-        fd_from = open(path, O_RDONLY);
+        int fd_to = open(pasted_file, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, sb->st_mode);
+        int fd_from = open(path, O_RDONLY);
         if ((fd_to != -1) && (fd_from != -1)) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)  // if linux >= 4.5 let's use copy_file_range
             struct stat stat;
             
             fstat(fd_from, &stat);
-            len = stat.st_size;
+            int len = stat.st_size;
             do {
                 ret = copy_file_range(fd_from, NULL, fd_to, NULL, len, 0);
                 if (ret == -1) {

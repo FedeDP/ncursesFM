@@ -95,10 +95,10 @@ void init_thread(int type, int (* const f)(void)) {
  * Fixes some needed current_th variables.
  */
 static int init_thread_helper(void) {
-    char name[NAME_MAX + 1] = {0};
-    int num = 1, len;
-
     if (current_th->type == ARCHIVER_TH) {
+        char name[NAME_MAX + 1] = {0};
+        int num = 1, len;;
+        
         ask_user(_(archiving_mesg), name, NAME_MAX);
         if (name[0] == 27) {
             free(current_th);
@@ -144,13 +144,20 @@ static void *execute_thread(void *x) {
         }
         free_running_h();
         print_info(_(thread_m.str), thread_m.line);
+#ifdef LIBNOTIFY_PRESENT
+        if (has_desktop) {
+            send_notification(_(thread_m.str));
+        }
+#endif
         return execute_thread(NULL);
     }
     INFO("ended all queued jobs.");
     num_of_jobs = 0;
     current_th = NULL;
 #ifdef SYSTEMD_PRESENT
-    stop_inhibition(inhibit_fd);
+    if (config.inhibit) {
+        stop_inhibition(inhibit_fd);
+    }
 #endif
     pthread_detach(pthread_self());
     pthread_exit(NULL);

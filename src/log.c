@@ -7,9 +7,10 @@ static void log_current_options(void);
 
 void open_log(void) {
     const char log_name[] = "ncursesfm.log";
-    char log_path[PATH_MAX + 1] = {0};
     
     if (config.loglevel != NO_LOG) {
+        char log_path[PATH_MAX + 1] = {0};
+        
         snprintf(log_path, PATH_MAX, "%s/.%s", getpwuid(getuid())->pw_dir, log_name);
         if (config.persistent_log) {
             log_file = fopen(log_path, "a+");
@@ -83,11 +84,10 @@ void log_message(const char *filename, int lineno, const char *funcname,
                  const char *log_msg, char type, int log_level) {
     pid_t pid;
     time_t t;
-    struct tm tm;
     
     if ((log_file) && (log_level <= config.loglevel)) {
         t = time(NULL);
-        tm = *localtime(&t);
+        struct tm tm = *localtime(&t);
         pid = syscall(SYS_gettid);
         pthread_mutex_lock(&log_mutex);
         fprintf(log_file, "(%c) thread: %d, %02d:%02d:%02d, %-50s%s:%d (%s)\n",

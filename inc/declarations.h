@@ -211,10 +211,10 @@ struct search_vars sv;
 /*
  * active win, quit status, number of worker thread jobs,
  * tabs counter and device_init status.
- * Has_X-> needed for xdg-open (if we're on a X env)
+ * Has_X-> needed for xdg-open (if we're on a X env) and for notifications
  * num_selected -> number of selected files
  */
-int active, quit, num_of_jobs, cont, device_init, has_X, num_selected;
+int active, quit, num_of_jobs, cont, device_init, has_desktop, num_selected;
 
 #ifdef SYSTEMD_PRESENT
 pthread_t install_th;

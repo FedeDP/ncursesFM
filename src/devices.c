@@ -158,13 +158,14 @@ static void set_autoclear(const char *loopname) {
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_bus_message *mess = NULL;
     sd_bus *iso_bus = NULL;
-    char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
     int r;
     
     r = sd_bus_open_system(&iso_bus);
     if (r < 0) {
         print_and_warn(strerror(-r), ERR_LINE);
     } else {
+        char obj_path[PATH_MAX + 1] = "/org/freedesktop/UDisks2/block_devices/";
+        
         strcat(obj_path, strrchr(loopname, '/') + 1);
         INFO("calling SetAutoClear on bus.");
         r = sd_bus_call_method(iso_bus,
@@ -194,7 +195,6 @@ static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
     struct udev *tmp_udev;
     struct udev_enumerate *enumerate;
     struct udev_list_entry *devlist, *dev_list_entry;
-    struct udev_device *dev;
     char s[PATH_MAX + 1] = {0};
     char resolved_path[PATH_MAX + 1];
     int mount = -1;
@@ -208,7 +208,7 @@ static int is_iso_mounted(const char *filename, char loop_dev[PATH_MAX + 1]) {
     devlist = udev_enumerate_get_list_entry(enumerate);
     udev_list_entry_foreach(dev_list_entry, devlist) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
-        dev = udev_device_new_from_syspath(tmp_udev, path);
+        struct udev_device *dev = udev_device_new_from_syspath(tmp_udev, path);
         strncpy(loop_dev, udev_device_get_devnode(dev), PATH_MAX);
         iso_backing_file(s, loop_dev);
         udev_device_unref(dev);
@@ -504,7 +504,6 @@ void show_devices_tab(void) {
 static void enumerate_block_devices(void) {
     struct udev_enumerate *enumerate;
     struct udev_list_entry *devlist, *dev_list_entry;
-    struct udev_device *dev;
 
     enumerate = udev_enumerate_new(udev);
     udev_enumerate_add_match_subsystem(enumerate, "block");
@@ -512,6 +511,8 @@ static void enumerate_block_devices(void) {
     devlist = udev_enumerate_get_list_entry(enumerate);
     udev_list_entry_foreach(dev_list_entry, devlist) {
         const char *path = udev_list_entry_get_name(dev_list_entry);
+        struct udev_device *dev;
+        
         if ((dev = udev_device_new_from_syspath(udev, path))) {
             const char *name = udev_device_get_devnode(dev);
             add_device(dev, name);

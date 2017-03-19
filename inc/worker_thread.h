@@ -6,6 +6,10 @@
 #include "ui.h"
 #endif
 
+#ifdef LIBNOTIFY_PRESENT
+#include "notify.h"
+#endif
+
 struct thread_mesg {
     const char *str;
     int line;

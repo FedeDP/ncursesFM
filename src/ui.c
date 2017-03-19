@@ -984,7 +984,6 @@ static void archiver_cb_func(void) {
  * just switch the quit flag to 1 and log a warn.
  */
 static void sig_handler(int fd) {
-    char str[50];
     struct signalfd_siginfo fdsi;
     ssize_t s;
     
@@ -992,6 +991,8 @@ static void sig_handler(int fd) {
     if (s != sizeof(struct signalfd_siginfo)) {
         ERROR("an error occurred while getting signalfd data.");
     } else {
+        char str[50] = {0};
+        
         sprintf(str, "received signal %d. Leaving.", fdsi.ssi_signo);
         WARN(str);
     }

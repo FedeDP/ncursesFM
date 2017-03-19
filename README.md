@@ -35,3 +35,4 @@ For a **full list of features**, **deps** and **how to build**, please refer to 
 * Internal udisks2 monitor, to poll for new devices. It can automount new connected devices too. Device monitor will list only mountable devices, eg: dvd reader will not be listed until a cd/dvd is inserted.
 * Drives/usb sticks/ISO files (un)mount through udisks2.
 * Distro package files installation through packagekit.
+* libnotify support.

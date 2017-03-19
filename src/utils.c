@@ -19,9 +19,11 @@ void *safe_realloc(const size_t size, char (*str)[PATH_MAX + 1]) {
  * equals to ext[i].
  */
 int is_ext(const char *filename, const char *ext[], int size) {
-    int i = 0, len = strlen(filename);
+    int len = strlen(filename);
     
     if (strrchr(filename, '.')) {
+        int i = 0;
+        
         while (i < size) {
             if (!strcmp(filename + len - strlen(ext[i]), ext[i])) {
                 return 1;
@@ -59,8 +61,7 @@ end:
 }
 
 int move_cursor_to_file(int start_idx, const char *filename, int win) {
-    void (*f)(int, int);
-    int delta, len;
+    int len;
     char fullpath[PATH_MAX + 1] = {0};
     
     snprintf(fullpath, PATH_MAX, "%s/%s", ps[win].my_cwd, filename);
@@ -68,6 +69,9 @@ int move_cursor_to_file(int start_idx, const char *filename, int win) {
     int i = is_present(fullpath, ps[win].nl, ps[win].number_of_files, len, start_idx);
     if (i != -1) {
         if (i != ps[win].curr_pos) {
+            void (*f)(int, int);
+            int delta;
+            
             if (i < ps[win].curr_pos) {
                 f = scroll_up;
                 delta = ps[win].curr_pos - i;

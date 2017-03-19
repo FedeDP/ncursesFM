@@ -17,10 +17,6 @@
 #include "print.h"
 #endif
 
-#ifdef LIBX11_PRESENT
-#include <X11/Xlib.h>
-#endif
-
 int change_dir(const char *str, int win);
 void change_tab(void);
 void switch_hidden(void);

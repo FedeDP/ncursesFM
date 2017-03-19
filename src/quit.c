@@ -15,6 +15,9 @@ int program_quit(void) {
     close_fds();
     quit_thread_func();
     destroy_job_queue();
+#ifdef LIBNOTIFY_PRESENT
+    destroy_notify();
+#endif
     if (quit == MEM_ERR_QUIT || quit == GENERIC_ERR_QUIT) {
         fprintf(stderr, "%s\n", generic_error);
         ERROR("program exited with errors.");

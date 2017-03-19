@@ -30,12 +30,12 @@ endif
 
 ifeq (,$(findstring $(MAKECMDGOALS),"clean install uninstall"))
 
-ifneq ("$(DISABLE_LIBX11)","1")
-LIBX11=$(shell pkg-config --silence-errors --libs x11)
-endif
-
 ifneq ("$(DISABLE_LIBCONFIG)","1")
 LIBCONFIG=$(shell pkg-config --silence-errors --libs libconfig)
+endif
+
+ifneq ("$(DISABLE_LIBNOTIFY)","1")
+LIBNOTIFY=$(shell pkg-config --silence-errors --libs libnotify)
 endif
 
 ifneq ("$(DISABLE_LIBSYSTEMD)","1")
@@ -47,12 +47,7 @@ $(info systemd support disabled, minimum required version 221.)
 endif
 endif
 
-LIBS+=$(LIBX11) $(LIBCONFIG) $(LIBSYSTEMD)
-
-ifneq ("$(LIBX11)","")
-CFLAGS+=-DLIBX11_PRESENT $(shell pkg-config --silence-errors --cflags libx11)
-$(info libX11 support enabled.)
-endif
+LIBS+=$(LIBCONFIG) $(LIBNOTIFY) $(LIBSYSTEMD)
 
 ifneq ("$(DISABLE_LIBCUPS)","1")
 ifneq ("$(wildcard /usr/include/cups/cups.h)","")
@@ -65,6 +60,11 @@ endif
 ifneq ("$(LIBCONFIG)","")
 CFLAGS+=-DLIBCONFIG_PRESENT $(shell pkg-config --silence-errors --cflags libconfig)
 $(info libconfig support enabled.)
+endif
+
+ifneq ("$(LIBNOTIFY)","")
+CFLAGS+=-DLIBNOTIFY_PRESENT $(shell pkg-config --silence-errors --cflags libnotify)
+$(info libnotify support enabled.)
 endif
 
 ifneq ("$(LIBSYSTEMD)","")

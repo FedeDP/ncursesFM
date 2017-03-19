@@ -1,3 +1,15 @@
+03 / 19 / 2017
+* Added libnotify support
+* dropped libx11 requirement
+* fixed some style issues spotted by cppcheck
+
+02 / 14 / 2017
+* fixed bug in search mode when leaving by clicking on archived file
+* flush log file after every write
+* fixed some small issues and a memleak
+* honor XDG_CONFIG_HOME env variable to search for per-user config file/bookmarks
+* some small code improvements
+
 07 / 17 / 2016
 * fixed bug in makefile locale uninstall
 * added a ERROR_INT to log integers (my own testing purpose)

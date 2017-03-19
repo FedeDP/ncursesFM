@@ -4,20 +4,26 @@ static void get_xdg_dirs(void);
 static void remove_bookmark(int idx);
 
 static int num_bookmarks, xdg_bookmarks;
-static const char *bookmarks_file = "/.config/ncursesFM-bookmarks";
 static char home_dir[PATH_MAX + 1];
 static char fullpath[PATH_MAX + 1];
 static char (*bookmarks)[PATH_MAX + 1];
 
 void get_bookmarks(void) {
     FILE *f;
-    char str[PATH_MAX + 1] = {0};
+    const char *bookmarks_file = "ncursesFM-bookmarks";
     
     strncpy(home_dir, getpwuid(getuid())->pw_dir, PATH_MAX);
-    snprintf(fullpath, PATH_MAX, "%s%s", home_dir, bookmarks_file);
+    
+    if (getenv("XDG_CONFIG_HOME")) {
+        snprintf(fullpath, PATH_MAX, "%s/%s", getenv("XDG_CONFIG_HOME"), bookmarks_file);
+    } else {
+        snprintf(fullpath, PATH_MAX, "%s/.config/%s", home_dir, bookmarks_file);
+    }
     get_xdg_dirs();
     if ((f = fopen(fullpath, "r"))) {
-        while (fscanf(f, "%s", str) == 1) {
+        char str[PATH_MAX + 1] = {0};
+        
+        while (fgets(str, PATH_MAX, f)) {
             bookmarks = safe_realloc(++num_bookmarks, bookmarks);
             strncpy(bookmarks[num_bookmarks - 1], str, PATH_MAX);
         }
@@ -29,7 +35,6 @@ void get_bookmarks(void) {
 
 static void get_xdg_dirs(void) {
     FILE *f;
-    char str[PATH_MAX + 1] = {0};
     char line[1000], file_path[PATH_MAX + 1] = {0};
     
     if (getenv("XDG_CONFIG_HOME")) {
@@ -39,6 +44,8 @@ static void get_xdg_dirs(void) {
     }
 
     if ((f = fopen(file_path, "r"))) {
+        char str[PATH_MAX + 1] = {0};
+        
         while (fgets(line, sizeof(line), f)) {
             // avoid comments
             if (*line == '#') {

@@ -86,8 +86,7 @@ static int recursive_search(const char *path, const struct stat *sb, int typefla
  * while checking x, len will be strlen("bar/")
  */
 static int search_inside_archive(const char *path) {
-    char *ptr;
-    int len = 0, ret = FTW_CONTINUE, r = 0, string_length;
+    int ret = FTW_CONTINUE, string_length;
     struct archive_entry *entry;
     struct archive *a = archive_read_new();
 
@@ -96,6 +95,8 @@ static int search_inside_archive(const char *path) {
     string_length = strlen(sv.searched_string);
     if ((a) && (archive_read_open_filename(a, path, BUFF_SIZE) == ARCHIVE_OK)) {
         while ((!quit) && (ret == FTW_CONTINUE) && (archive_read_next_header(a, &entry) == ARCHIVE_OK)) {
+            int len = 0, r = 0;
+            
             if (!sv.search_lazy) {
                 r = !strncmp(archive_entry_pathname(entry) + len, sv.searched_string, string_length);
             } else if (strcasestr(archive_entry_pathname(entry) + len, sv.searched_string)) {
@@ -108,7 +109,7 @@ static int search_inside_archive(const char *path) {
                     ret = FTW_STOP;
                 }
             }
-            ptr = strrchr(archive_entry_pathname(entry), '/');
+            char *ptr = strrchr(archive_entry_pathname(entry), '/');
             if ((ptr) && (strlen(ptr) == 1)) {
                 len = strlen(archive_entry_pathname(entry));
             }
@@ -122,18 +123,28 @@ static void *search_thread(void *x) {
     INFO("starting recursive search...");
     nftw(ps[active].my_cwd, recursive_search, 64, FTW_MOUNT | FTW_PHYS | FTW_ACTIONRETVAL);
     if (!quit) {
+        char str[100];
+        
         INFO("ended recursive search");
         if ((sv.found_cont == MAX_NUMBER_OF_FOUND) || (sv.found_cont == 0)) {
             sv.searching = NO_SEARCH;
             if (sv.found_cont == MAX_NUMBER_OF_FOUND) {
                 print_info(_(too_many_found), INFO_LINE);
+                strncpy(str, _(too_many_found), 100);
             } else {
+                strncpy(str, _(no_found), 100);
                 print_info(_(no_found), INFO_LINE);
             }
         } else {
             sv.searching = SEARCHED;
+            snprintf(str, 100, "Search finished, %d files found.", sv.found_cont);
         }
         print_info("", SEARCH_LINE);
+#ifdef LIBNOTIFY_PRESENT
+        if (has_desktop) {
+            send_notification(str);
+        }
+#endif
     }
     pthread_detach(pthread_self());
     pthread_exit(NULL);
@@ -164,9 +175,10 @@ void leave_search_mode(const char *str) {
 int search_enter_press(const char *str) {
     char arch_str[PATH_MAX + 1] = {0};
     const char *tmp;
-    int len;
 
     if (sv.search_archive) {
+        int len;
+        
         strncpy(arch_str, str, PATH_MAX);
         while ((len = strlen(arch_str))) {
             tmp = strrchr(arch_str, '/');

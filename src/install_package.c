@@ -73,7 +73,9 @@ void *install_package(void *str) {
     }
 
 finish:
-    stop_inhibition(inhibit_fd);
+    if (config.inhibit) {
+        stop_inhibition(inhibit_fd);
+    }
     close_bus(&error, mess, install_bus);
     pthread_detach(pthread_self());
     pthread_exit(NULL);
@@ -81,14 +83,28 @@ finish:
 
 static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
     unsigned int ret;
-
+#ifdef LIBNOTIFY_PRESENT
+    char *str;
+#endif
+    
     *(int *)userdata = 1;
     sd_bus_message_read(m, "u", &ret);
     if (ret == 1) {
         print_info(_(install_success), INFO_LINE);
+#ifdef LIBNOTIFY_PRESENT
+        str = _(install_success);
+#endif
     } else {
         print_info(_(install_failed), ERR_LINE);
+#ifdef LIBNOTIFY_PRESENT
+        str = _(install_failed);
+#endif
     }
+#ifdef LIBNOTIFY_PRESENT
+    if (has_desktop) {
+        send_notification(str);
+    }
+#endif
     return 0;
 }
 
