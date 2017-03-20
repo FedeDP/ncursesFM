@@ -302,7 +302,7 @@ msgstr "Auspacken..."
 msgid "Every file has been cut."
 msgstr "Jede Datei wurde ausgeschnitten."
 
-msgid "Every files has been pasted."
+msgid "Every file has been pasted."
 msgstr "Jede Datei wurde eingefügt."
 
 msgid "File/dir removed."

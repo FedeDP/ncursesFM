@@ -302,7 +302,7 @@ msgstr ""
 msgid "Every file has been cut."
 msgstr ""
 
-msgid "Every files has been pasted."
+msgid "Every file has been pasted."
 msgstr ""
 
 msgid "File/dir removed."

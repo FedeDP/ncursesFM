@@ -61,7 +61,7 @@ const char extr_question[] = "Do you really want to extract this archive? Y/n:> 
 const char pwd_archive[] = "Current archive is encrypted. Enter a pwd:> ";
 
 const char *thread_job_mesg[] = {"Cutting...", "Pasting...", "Removing...", "Archiving...", "Extracting..."};
-const char *thread_str[] = {"Every file has been cut.", "Every files has been pasted.", "File/dir removed.", "Archive is ready.", "Succesfully extracted."};
+const char *thread_str[] = {"Every file has been cut.", "Every file has been pasted.", "File/dir removed.", "Archive is ready.", "Succesfully extracted."};
 const char *thread_fail_str[] = {"Could not cut", "Could not paste.", "Could not remove every file.", "Could not archive.", "Could not extract every file."};
 const char *short_msg[] = {"File created.", "Dir created.", "File renamed."};
 

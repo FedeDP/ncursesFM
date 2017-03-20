@@ -304,7 +304,7 @@ msgstr "Extrayendo..."
 msgid "Every file has been cut."
 msgstr "Todos los archivo se han cortado."
 
-msgid "Every files has been pasted."
+msgid "Every file has been pasted."
 msgstr "Todos los archivo se han pegado."
 
 msgid "File/dir removed."

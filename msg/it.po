@@ -303,7 +303,7 @@ msgstr "Estraggo..."
 msgid "Every file has been cut."
 msgstr "Tutti i file sono stati spostati."
 
-msgid "Every files has been pasted."
+msgid "Every file has been pasted."
 msgstr "Tutti i file sono stati copiati."
 
 msgid "File/dir removed."
