@@ -39,8 +39,7 @@ LIBNOTIFY=$(shell pkg-config --silence-errors --libs libnotify)
 endif
 
 ifneq ("$(DISABLE_LIBSYSTEMD)","1")
-SYSTEMD_VERSION=$(shell pkg-config --modversion --silence-errors systemd || echo 0)
-ifeq ($(shell test $(SYSTEMD_VERSION) -ge 221; echo $$?), 0)
+ifeq ("$(shell pkg-config --atleast-version=221 systemd && echo yes)", "yes")
 LIBSYSTEMD=$(shell pkg-config --silence-errors --libs libsystemd)
 else
 $(info systemd support disabled, minimum required version 221.)
