@@ -77,7 +77,7 @@ void parse_cmd(int argc, char * const argv[]) {
 }
 
 #ifdef LIBCONFIG_PRESENT
-void check_config_files(void) {
+void load_config_files(void) {
     char config_path[PATH_MAX + 1] = {0};
     
     // Read global conf file in /etc/default

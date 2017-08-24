@@ -57,7 +57,7 @@ int main(int argc, char * const argv[])
     locale_init();
     helper_function(argc, argv);
 #ifdef LIBCONFIG_PRESENT
-    check_config_files();
+    load_config_files();
 #endif
     parse_cmd(argc, argv);
     open_log();
@@ -609,12 +609,9 @@ static int check_access(void) {
 }
 
 static void go_root_dir(void) {
-    // if we're not on root of fs
-    if (strcmp(ps[active].my_cwd, "/")) {
-        char root[PATH_MAX + 1] = {0};
+    char root[PATH_MAX + 1] = {0};
         
-        strncpy(root, ps[active].my_cwd, PATH_MAX);
-        strcat(root, "/..");
-        change_dir(root, active);
-    }
+    strncpy(root, ps[active].my_cwd, PATH_MAX);
+    strcat(root, "/..");
+    change_dir(root, active);
 }
