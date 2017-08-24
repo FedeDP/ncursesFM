@@ -2,23 +2,21 @@
 
 ### Generic:
 
-- [ ] symlink() support?
+- [ ] symlink() support
 - [ ] add icon and desktop file 
 - [ ] update doc
-- [ ] switch to libpopt instead of getopt
 
 ### Modalities rework:  (HIGH)
 Every modality will be "loaded" and will set a char (eg: 'm') and a function (eg: 'change_modality(device_mode)').
 When user presses a char, strchr(char, modalities_string) will be checked and if index exist, proper function will be called.
 
-Moreover, let user switch modality from within each other (eg: from device_mode to bookmarks)
-
+- [ ] let user switch modality from within each other (eg: from device_mode to bookmarks)
 - [ ] let 'w' close current tab no matter if it is the first
 - [ ] rename bookmarks to "Places" and add mounted fs + trash there.
 - [ ] new mode: job's mode -> to check and review all queued jobs
 
 ### Trash support: (MID)
-- [ ] add trash support (https://specifications.freedesktop.org/trash-spec/trashspec-latest.html) (move file to trash, on click see trashed files. From there you can remove them all or only one of them. You can restore them too.)
+- [ ] add trash support using Trashd daemon (optional)
 - [ ] by default, "r" will move to trash instead of delete. User can customize this behaviour through a conf file setting. (move_to_trash = 0;)
 
 ### ssh support ideas: (LOW)
