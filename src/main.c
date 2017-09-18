@@ -354,8 +354,8 @@ static void main_loop(void) {
         case 'w': // w to close second tab
             if (active) {
                 cont--;
-                delete_tab(1);
-                resize_tab(0, 0);
+                delete_tab(active);
+                resize_tab(!active, 0);
                 change_tab();
             }
             break;
