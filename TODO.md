@@ -8,14 +8,9 @@
 - [ ] rename bookmarks to "Places" and add mounted fs + trash there.
 - [ ] new mode: job's mode -> to check and review all queued jobs
 - [ ] add a config to start with 2 tabs and to select for each tab the modality
-- [ ] Add man page and drop helper window/helper print
-- [ ] Drop resize support?
-- [ ] switch to libpopt instead of getopt
-- [ ] add icon and desktop file
 
-### Trash support: (MID)
-- [ ] add trash support using Trashd daemon (optional, if trashd is not present, trash support won't be loaded)
-- [ ] by default, "r" will move to trash instead of delete. User can customize this behaviour through a conf file setting. (use_trash = 0)
+### Trash support
+- [ ] add trash support using Trashd daemon (optional, if trashd is not present, trash support won't be loaded), with new key (d?)
 
 ### Ideas/Longterm
 - [ ] Port to C++?
