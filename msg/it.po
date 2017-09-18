@@ -129,7 +129,7 @@ msgstr "lascia la modalità fast browse."
 msgid "remove selected file from bookmarks."
 msgstr "rimuovi il file selezionato dai segnalibri."
 
-msgid "remove all user bookmakrs."
+msgid "remove all user bookmarks."
 msgstr "rimuove tutti i segnalibri dell'utente."
 
 msgid "move to the folder/file selected."

@@ -130,7 +130,7 @@ msgstr "salir del modo navegación."
 msgid "remove selected file from bookmarks."
 msgstr "remueve el archivo seleccionado de los marcadores."
 
-msgid "remove all user bookmakrs."
+msgid "remove all user bookmarks."
 msgstr "remueve todos los marcadores del usuario."
 
 msgid "move to the folder/file selected."

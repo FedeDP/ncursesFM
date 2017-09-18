@@ -3,30 +3,30 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 3.0\n"
 "Report-Msgid-Bugs-To: <email>\n"
 "POT-Creation-Date: 2016-05-28 17:09+0200\n"
 "PO-Revision-Date: 2011-05-27 22:37+0100\n"
-"Last-Translator: TRANSLATOR <email>\n"
+"Last-Translator: Alain Aupeix <alain.aupeix@wanadoo.fr>\n"
 "Language-Team: ncursesFM\n"
-"Language: \n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "y"
-msgstr ""
+msgstr "o"
 
 msgid "n"
 msgstr ""
 
 msgid "ENTER"
-msgstr ""
+msgstr "ENTRÉE"
 
-msgid "SPACE"
+msgid "ESPACE"
 msgstr ""
 
 msgid "ARROW KEYS"
@@ -36,16 +36,16 @@ msgid "PG_UP/DOWN"
 msgstr ""
 
 msgid "DEL"
-msgstr ""
+msgstr "SUPPR"
 
 msgid "Press 'L' to trigger helper"
-msgstr ""
+msgstr "Appuyez sur 'L' pour voir/cacher l'aide"
 
 msgid "Remember: every shortcut in ncursesFM is case insensitive."
-msgstr ""
+msgstr "Rappel: tous les raccourcis de nCursesFM sont sensibles à la casse"
 
 msgid "surf between folders or to open files."
-msgstr ""
+msgstr "naviguer parmi les dossiers ou ouvrir les fichiers"
 
 msgid "It will eventually (un)mount your ISO files or install your distro downloaded packages."
 msgstr ""
@@ -54,367 +54,367 @@ msgid "enable fast browse mode: it lets you jump between files by just typing th
 msgstr ""
 
 msgid "jump straight to first/last file."
-msgstr ""
+msgstr "saute au premier/dernier élément."
 
 msgid "check files fullname."
 msgstr ""
 
 msgid "trigger the showing of hidden files."
-msgstr ""
+msgstr "voir/cacher les fichiers cachés."
 
 msgid "see files stats."
-msgstr ""
+msgstr "affiche les statistiques des fichiers"
 
 msgid "change sorting function: alphabetically (default), by size, by last modified or by type."
-msgstr ""
+msgstr "Trier : alphabétique (par défaut), taille, dernière modification ou type."
 
 msgid "select files. Once more to remove the file from selected files."
-msgstr ""
+msgstr "sélection/désélection des fichiers"
 
 msgid "paste/cut."
-msgstr ""
+msgstr "coller/couper"
 
 msgid "compress."
-msgstr ""
+msgstr "compresser."
 
 msgid "remove."
-msgstr ""
+msgstr "supprimer."
 
 msgid "extract."
-msgstr ""
+msgstr "extraire."
 
 msgid "print."
-msgstr ""
+msgstr "imprimer."
 
 msgid "switch to bookmarks mode."
-msgstr ""
+msgstr "basculer en mode signet"
 
 msgid "add/remove current file to bookmarks."
-msgstr ""
+msgstr "ajout/suppression du fichier courant des signets"
 
 msgid "rename current file/dir."
-msgstr ""
+msgstr "renommer le fichier/dossier courant"
 
 msgid "create new file/dir."
-msgstr ""
+msgstr "créer un nouveau fichier/dossier"
 
 msgid "search for a file."
-msgstr ""
+msgstr "chercher un fichier"
 
 msgid "create second tab."
-msgstr ""
+msgstr "créer un second onglet"
 
 msgid "close second tab."
-msgstr ""
+msgstr "fermer le second onglet"
 
 msgid "switch between tabs."
-msgstr ""
+msgstr "changer d'onglet"
 
 msgid "switch to device mode."
-msgstr ""
+msgstr "basculer en mode périphérique."
 
 msgid "switch to selected mode."
-msgstr ""
+msgstr "basculer vers le mode sélectionné."
 
 msgid "quit."
-msgstr ""
+msgstr "Quitter"
 
 msgid "Just start typing your desired filename, to move right to its position."
-msgstr ""
+msgstr "Taper le nom du fichier cherché pour y accéder."
 
 msgid "leave fast browse mode."
-msgstr ""
+msgstr "quitter le mode de navigation rapide."
 
 msgid "remove selected file from bookmarks."
-msgstr ""
+msgstr "supprimer le fichier sélectionné des signets."
 
 msgid "remove all user bookmarks."
-msgstr ""
+msgstr "supprimer tous les signets utilisateurs"
 
 msgid "move to the folder/file selected."
-msgstr ""
+msgstr "passer au dossier/fichier sélectionné."
 
 msgid "leave bookmarks mode."
-msgstr ""
+msgstr "quitter le mode signet."
 
 msgid "leave search mode."
-msgstr ""
+msgstr "quitter le mode recherche."
 
 msgid "leave selected mode."
-msgstr ""
+msgstr "quitter le mode sélectionné"
 
 msgid "(un)mount current device."
-msgstr ""
+msgstr "(dé)monter le périphérique courant"
 
 msgid "move to current device mountpoint, mounting it if necessary."
-msgstr ""
+msgstr "passer au point de montage actuel de l'appareil, le monter si nécessaire."
 
 msgid "leave device mode."
-msgstr ""
+msgstr "quitter le mode périphérique."
 
 msgid "remove current file selection."
-msgstr ""
+msgstr "supprimer la sélection de fichiers en cours"
 
 msgid "remove all selected files."
-msgstr ""
+msgstr "supprimer tous les fichiers sélectionnés."
 
 msgid "You have to specify a valid editor in config file."
-msgstr ""
+msgstr "Vous devez spécifier un éditeur valide dans le fichier de configuration"
 
 msgid "A generic error occurred. Check log."
-msgstr ""
+msgstr "Une erreur générique est survenue. Vérifier le fichier journal"
 
 msgid "Files will be sorted alphabetically now."
-msgstr ""
+msgstr "Les fichiers seront triés par ordre alphabétique"
 
 msgid "Files will be sorted by size now."
-msgstr ""
+msgstr "Les fichiers seront triés par ordre de taille"
       
 msgid "Files will be sorted by last access now."
-msgstr ""
+msgstr "Les fichiers seront triés par ordre de dernier accès"
       
 msgid "Files will be sorted by type now."
-msgstr ""
+msgstr "Les fichiers seront triés par ordre de type"
 
 msgid "Adding current file to bookmarks. Proceed? Y/n:> "
-msgstr ""
+msgstr "Ajout du fichier courant aux signets. Procéder? O/n:> "
 
 msgid "Removing current file from bookmarks. Proceed? Y/n:> "
-msgstr ""
+msgstr "Suppression du fichier courant des signets. Procéder? O/n:> "
 
 msgid "You cannot remove xdg defined user dirs."
-msgstr ""
+msgstr "Vous ne pouvez pas supprimer le fichier de définition des dossiers xdg"
 
 msgid "Could not open bookmarks file."
-msgstr ""
+msgstr "Ouverture du fichier des signets impossible."
 
 msgid "Added to bookmarks!"
-msgstr ""
+msgstr "Ajouté aux signets!"
 
 msgid "Removed from bookmarks!"
-msgstr ""
+msgstr "Supprimé des signets!"
 
 msgid "No bookmarks found."
-msgstr ""
+msgstr "Aucun signet trouvé."
 
 msgid "Bookmark was deleted as it was no more existent."
-msgstr ""
+msgstr "Signet supprimé, car le fichier n'existe plus."
 
 msgid "It seems current bookmark no longer exists. Remove it? Y/n:> "
-msgstr ""
+msgstr "Il semble que le signet courant n'existe plus. Le supprimer? O/n:> "
 
 msgid "Bookmark already present. Would you like to remove it? Y/n:> "
-msgstr ""
+msgstr "Signet déjà existant. Voulez-le supprimer? O/n:> "
 
 msgid "User bookmarks have been cleared."
-msgstr ""
+msgstr "Les signets utilisateur ont été supprimés"
 
 msgid "There are no selected files."
-msgstr ""
+msgstr "Aucun fichier sélectionné"
 
 msgid "File selected."
-msgstr ""
+msgstr "Fichier sélectionné."
 
 msgid "File unselected."
-msgstr ""
+msgstr "Fichier désélectionné."
 
 msgid "File unselected. Selected list empty."
-msgstr ""
+msgstr "Fichier désélectionné. Liste de sélection vide."
 
 msgid "Every file in this directory has been selected."
-msgstr ""
+msgstr "Tous les fichiers de ce répertoire ont été sélectionnés."
 
 msgid "Every file in this directory has been unselected."
-msgstr ""
+msgstr "Tous les fichiers de ce répertoire ont été désélectionnés."
 
 msgid "Every file in this directory has been unselected. Selected list empty."
-msgstr ""
+msgstr "Tous les fichiers de ce répertoire ont été sélectionnés. Liste de sélection vide."
 
 msgid "List of selected files has been cleared."
-msgstr ""
+msgstr "La liste de sélection a été vidée"
 
 msgid "Are you serious? y/N:> "
-msgstr ""
+msgstr "Êtes-vous sûr? o/N:> "
 
 msgid "There's already a search in progress. Wait for it."
-msgstr ""
+msgstr "Recherche en cours actuellement. Veuillez patienter."
 
 msgid "Insert filename to be found, at least 5 chars, max 20 chars.:> "
-msgstr ""
+msgstr "Saisissez le nom du fichier à chercher, de 5 à 20 caractères:> "
 
 msgid "Do you want to search in archives too? y/N:> "
-msgstr ""
+msgstr "Rechercher également dans les archives? o/N:> "
 
 msgid "Do you want a lazy search (less precise but faster)? y/N:>"
-msgstr ""
+msgstr "Voulez vous d'une recherche paresseuse (moins précise, mais plus rapide)? o/N:>"
 
 msgid "At least 5 chars..."
-msgstr ""
+msgstr "Au moins 5 caractères..."
 
 msgid "Too many files found; try with a larger string."
-msgstr ""
+msgstr "Trop de fichiers trouvés; saisissez une chaîne plus longue."
 
 msgid "No files found."
-msgstr ""
+msgstr "Aucun fichier trouvé."
 
 msgid "Searching..."
-msgstr ""
+msgstr "Recherche en cours..."
 
 msgid "Search finished. Press f anytime from normal mode to view the results."
-msgstr ""
+msgstr "Recherche terminée. Tapez f en mode normal pour afficher les résultats."
 
 msgid "Do you really want to print this file? Y/n:> "
-msgstr ""
+msgstr "Voulez-vous imprimer ce fichier? O/n:> "
 
 msgid "Print job added."
-msgstr ""
+msgstr "Travail d'impression ajouté."
 
 msgid "No printers available."
-msgstr ""
+msgstr "Aucune imprimante disponible."
 
 msgid "Insert new file name (defaults to first entry name):> "
-msgstr ""
+msgstr "Saisissez le nouveau nom de fichier (par défaut, le nom actuel):> "
 
 msgid "Insert new name:> "
-msgstr ""
+msgstr "Saisissez le nouveau nom:> "
 
 msgid "Do you really want to extract this archive? Y/n:> "
-msgstr ""
+msgstr "Extraire les fichiers de cette archive? O/n:> "
 
 msgid "Current archive is encrypted. Enter a pwd:> "
-msgstr ""
+msgstr "L'archive courante est cryptée. Donnez le mot de passe:> "
 
 msgid "Cutting..."
-msgstr ""
+msgstr "Découpe..."
 
 msgid "Pasting..."
-msgstr ""
+msgstr "Collage..."
 
 msgid "Removing..."
-msgstr ""
+msgstr "Suppression..."
 
 msgid "Archiving..."
-msgstr ""
+msgstr "Création de l'archive"
 
 msgid "Extracting..."
-msgstr ""
+msgstr "Extraction"
 
 msgid "Every file has been cut."
-msgstr ""
+msgstr "Tous les fichiers ont été coupés."
 
 msgid "Every file has been pasted."
-msgstr ""
+msgstr "Tous les fichiers ont été collés."
 
 msgid "File/dir removed."
-msgstr ""
+msgstr "Fichier/dossier supprimé."
 
 msgid "Archive is ready."
-msgstr ""
+msgstr "L'archive est prête."
 
 msgid "Succesfully extracted."
-msgstr ""
+msgstr "Extraction réussie."
 
 msgid "Could not move"
-msgstr ""
+msgstr "Déplacement impossible"
 
 msgid "Could not paste."
-msgstr ""
+msgstr "Collage impossible."
 
 msgid "Could not remove every file."
-msgstr ""
+msgstr "Impossible de supprimer tous les fichiers."
 
 msgid "Could not archive."
-msgstr ""
+msgstr "Création impossible de l'archive."
 
 msgid "Could not extract every file."
-msgstr ""
+msgstr "Extraction de tous les fichiers impossible."
 
 msgid "File created."
-msgstr ""
+msgstr "Fichier créé."
 
 msgid "Dir created."
-msgstr ""
+msgstr "Dossier créé."
 
 msgid "File renamed."
-msgstr ""
+msgstr "Fichier renommé."
 
 msgid "There are selected files."
-msgstr ""
+msgstr "Il y a des fichiers sélectionnés."
 
 msgid "There's already an active job. This job will be queued."
-msgstr ""
+msgstr "Il y a déjà quelque chose en cours. Ce travail sera mis dans la queue."
 
 msgid "Queued jobs still running. Waiting..."
-msgstr ""
+msgstr "Queue des travaux en cours de traitement. Veuillez patienter..."
 
 msgid "Do you really want to install this package? y/N:> "
-msgstr ""
+msgstr "Voulez-vous réellement installer ce paquet? o/N:> "
 
 msgid "Waiting for package installation to finish..."
-msgstr ""
+msgstr "En attente de la fin de l'installation de ce paquet..."
 
 msgid "Currently there is no check against wrong package arch: it will crash packagekit and ncursesfm."
 msgstr ""
 
 msgid  "Devices:"
-msgstr ""
+msgstr "Périphériques:"
 
 msgid "Bookmarks:"
-msgstr ""
+msgstr "Signets:"
 
 msgid "Selected files:"
-msgstr ""
+msgstr "Fichiers sélectionnés:"
 
 # if you've got to switch format modifiers, see here:
 # http://www.gnu.org/software/gettext/manual/gettext.html#c_002dformat-Flag
 #, c-format
 msgid "%d files found searching %s:"
-msgstr ""
+msgstr "%d fichiers trouvés en cherchant %s:"
 
 msgid "Installed."
-msgstr ""
+msgstr "Installé."
 
 msgid "Could not install."
-msgstr ""
+msgstr "Installation impossible."
 
 msgid "No devices found."
-msgstr ""
+msgstr "Aucun périphérique trouvé."
 
 # if you've got to switch format modifiers, see here:
 # http://www.gnu.org/software/gettext/manual/gettext.html#c_002dformat-Flag
 #, c-format
 msgid "%s mounted in: %s."
-msgstr ""
+msgstr "%s monté dans: %s"
 
 msgid "%s unmounted."
-msgstr ""
+msgstr "%s démonté."
 
 msgid "External tool has mounted %s."
-msgstr ""
+msgstr "Un outil externe a monté %s."
 
 msgid "External tool has unmounted %s."
-msgstr ""
+msgstr "Un outil externe a démonté %s."
 
 msgid "New device connected."
-msgstr ""
+msgstr "Nouveau périphérique connecté."
 
 msgid "Device removed."
-msgstr ""
+msgstr "Périphérique enlevé."
 
 msgid "Could not find /proc/mounts."
-msgstr ""
+msgstr "Impossible de trouver /proc/mounts."
 
 msgid "On AC"
-msgstr ""
+msgstr "Au démarrage"
 
 msgid "No power supply info available."
-msgstr ""
+msgstr "Aucun info sur l'alimentation disponible."
 
 msgid "Window too small. Enlarge it."
-msgstr ""
+msgstr "Fenêtre trop petite. Agrandissez-la."
 
 msgid "Still polling for devices."
-msgstr ""
+msgstr "Recherche des périphériques en cours."
 
 msgid "Monitor is not active. An error occurred, check log file."
-msgstr ""
+msgstr "Le moniteur n'est pas actif. Une erreur est survenue, vérifiez le fichier journal."

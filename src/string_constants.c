@@ -149,7 +149,7 @@ const char helper_string[][16][150] =
         {"%S%see files stats.%I%check files fullname."},
         {"%PG_UP/DOWN%jump straight to first/last file."},
         {"%T%create second tab.%W%close second tab.%ARROW KEYS%switch between tabs."},
-        {"%R%remove selected file from bookmarks.%DEL%remove all user bookmakrs."},
+        {"%R%remove selected file from bookmarks.%DEL%remove all user bookmarks."},
         {"%ENTER%move to the folder/file selected."},
         {"%ESC%leave bookmarks mode."}
     }, {

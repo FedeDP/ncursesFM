@@ -128,7 +128,7 @@ msgstr "Verlasse Schnell-Browse-Modus."
 msgid "remove selected file from bookmarks."
 msgstr "Entferne selektierte Datei von Lesezeichen."
 
-msgid "remove all user bookmakrs."
+msgid "remove all user bookmarks."
 msgstr "Alle Nutzer-Lesezeichen entfernen."
 
 msgid "move to the folder/file selected."
