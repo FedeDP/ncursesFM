@@ -9,6 +9,7 @@ notifications:
 language: c
 
 compiler:
+  - gcc
   - clang
 
 arch:

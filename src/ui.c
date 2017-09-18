@@ -211,10 +211,10 @@ static void list_everything(int win, int old_dim, int end) {
         wmove(ps[win].mywin.fm, i + 1 - ps[win].mywin.delta, 1);
         wclrtoeol(ps[win].mywin.fm);
         if (ps[win].mode > fast_browse_) {
-            str = *(str_ptr[win] + i);
+            str = str_ptr[win][i];
         } else {
-            check_selected(*(str_ptr[win] + i), win, i);
-            str = strrchr(*(str_ptr[win] + i), '/') + 1;
+            check_selected(str_ptr[win][i], win, i);
+            str = strrchr(str_ptr[win][i], '/') + 1;
         }
         colored_folders(ps[win].mywin.fm, *(str_ptr[win] + i));
         mvwprintw(ps[win].mywin.fm, 1 + i - ps[win].mywin.delta, 4, "%.*s", ps[win].mywin.width - 5, str);

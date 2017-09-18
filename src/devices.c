@@ -706,8 +706,6 @@ void show_devices_stat(int i, int win, char *str) {
     const int flags[] = {  ST_MANDLOCK, ST_NOATIME, ST_NODEV, 
                             ST_NODIRATIME, ST_NOEXEC, ST_NOSUID, 
                             ST_RDONLY, ST_RELATIME, ST_SYNCHRONOUS};
-    const char *fl[] = {"mand", "noatime", "nodev", "nodiratime",  
-                        "noexec", "nosuid", "ro", "relatime", "sync"};
     struct statvfs stat;
     char dev_path[PATH_MAX + 1] = {0}, path[PATH_MAX + 1] = {0};
     char s[20] = {0};
@@ -720,6 +718,9 @@ void show_devices_stat(int i, int win, char *str) {
     dev_path[len - strlen(ptr)] = '\0';
     // if device is mounted
     if (mount && get_mount_point(dev_path, path) != -1) {
+        const char *fl[] = {"mand", "noatime", "nodev", "nodiratime",  
+            "noexec", "nosuid", "ro", "relatime", "sync"};
+
         statvfs(path, &stat);
         uint64_t free = stat.f_bavail * stat.f_bsize;
         change_unit((float) free, s);
