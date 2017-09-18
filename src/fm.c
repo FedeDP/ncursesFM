@@ -390,11 +390,12 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
         int fd_to = open(pasted_file, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, sb->st_mode);
         int fd_from = open(path, O_RDONLY);
         if ((fd_to != -1) && (fd_from != -1)) {
+            int len;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)  // if linux >= 4.5 let's use copy_file_range
             struct stat stat;
             
             fstat(fd_from, &stat);
-            int len = stat.st_size;
+            len = stat.st_size;
             do {
                 ret = copy_file_range(fd_from, NULL, fd_to, NULL, len, 0);
                 if (ret == -1) {
