@@ -18,7 +18,7 @@ For a **full list of features**, **deps** and **how to build**, please refer to 
 
 * Every feature you would expect by a basic FM.
 * Terminal window resize support.
-* i18n support: for now en, it, de, es_AR (list of translators: https://github.com/FedeDP/ncursesFM/wiki/I18n#translators).
+* i18n support: for now en, it, de, es_AR, fr (list of translators: https://github.com/FedeDP/ncursesFM/wiki/I18n#translators).
 * 2 tabs support. Their content is kept in sync. Jump between tabs with arrow keys (left/right).
 * config support through libconfig.
 * Basic mouse support.
