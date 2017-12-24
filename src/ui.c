@@ -12,7 +12,7 @@ static void print_border_and_title(int win);
 static int is_hidden(const struct dirent *current_file);
 static void initialize_tab_cwd(int win);
 static void scroll_helper_func(int x, int direction, int win);
-static void colored_folders(WINDOW *win, const char *name);
+static int colored_folders(const char *name);
 static void helper_print(void);
 static void helper_print_color(const int y);
 static void trigger_show_additional_win(int height, WINDOW **win, void (*f)(void));
@@ -216,9 +216,9 @@ static void list_everything(int win, int old_dim, int end) {
             check_selected(str_ptr[win][i], win, i);
             str = strrchr(str_ptr[win][i], '/') + 1;
         }
-        colored_folders(ps[win].mywin.fm, *(str_ptr[win] + i));
+        wattron(ps[win].mywin.fm, COLOR_PAIR(colored_folders(*(str_ptr[win] + i))));
         mvwprintw(ps[win].mywin.fm, 1 + i - ps[win].mywin.delta, 4, "%.*s", ps[win].mywin.width - 5, str);
-        wattroff(ps[win].mywin.fm, COLOR_PAIR);
+        wattroff(ps[win].mywin.fm, COLOR_PAIR(colored_folders(*(str_ptr[win] + i))));
     }
     wattroff(ps[win].mywin.fm, A_BOLD);
     if (ps[win].mywin.stat_active) {
@@ -411,19 +411,21 @@ static void scroll_helper_func(int x, int direction, int win) {
  * In search mode, it highlights paths inside archives in yellow.
  * In device mode, everything is printed in yellow.
  */
-static void colored_folders(WINDOW *win, const char *name) {
+static int colored_folders(const char *name) {
     struct stat file_stat;
 
     if (lstat(name, &file_stat) == 0) {
         if (S_ISDIR(file_stat.st_mode)) {
-            wattron(win, COLOR_PAIR(1));
-        } else if (S_ISLNK(file_stat.st_mode)) {
-            wattron(win, COLOR_PAIR(2));
-        } else if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
-            wattron(win, COLOR_PAIR(3));
+            return 1;
+        }
+        if (S_ISLNK(file_stat.st_mode)) {
+            return 2;
+        }
+        if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
+            return 3;
         }
     } else {
-        wattron(win, COLOR_PAIR(4));
+        return 4;
     }
 }
 
@@ -1346,9 +1348,9 @@ void trigger_fullname_win(void) {
 
 static void fullname_print(void) {
     wattron(fullname_win, A_BOLD);
-    colored_folders(fullname_win, str_ptr[active][ps[active].curr_pos]);
+    wattron(fullname_win, COLOR_PAIR(colored_folders(str_ptr[active][ps[active].curr_pos])));
     mvwprintw(fullname_win, 0, 0, str_ptr[active][ps[active].curr_pos]);
-    wattroff(fullname_win, COLOR_PAIR);
+    wattroff(fullname_win, COLOR_PAIR(colored_folders(str_ptr[active][ps[active].curr_pos])));
 }
 
 static void update_fullname_win(void) {

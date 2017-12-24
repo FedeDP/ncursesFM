@@ -76,7 +76,7 @@ endif
 NCURSESFM_VERSION = $(shell git describe --abbrev=0 --always --tags)
 CFLAGS+=-DVERSION=\"$(NCURSESFM_VERSION)\"
 
-all: version ncursesFM clean gettext
+all: version ncursesFM gettext clean
 
 debug: version ncursesFM-debug gettext
 
