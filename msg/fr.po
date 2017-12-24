@@ -408,7 +408,7 @@ msgid "On AC"
 msgstr "Au démarrage"
 
 msgid "No power supply info available."
-msgstr "Aucun info sur l'alimentation disponible."
+msgstr "Aucune info sur l'alimentation disponible."
 
 msgid "Window too small. Enlarge it."
 msgstr "Fenêtre trop petite. Agrandissez-la."
