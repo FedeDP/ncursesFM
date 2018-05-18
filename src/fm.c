@@ -10,10 +10,6 @@ static void select_all(void);
 static void deselect_all(void);
 static void cpr(const char *tmp);
 static int recursive_copy(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
-static loff_t copy_file_range(int fd_in, loff_t *off_in, int fd_out,
-                              loff_t *off_out, size_t len, unsigned int flags);
-#endif
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void rmrf(const char *path);
 
@@ -421,15 +417,6 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
     }
     return (ret == -1) ? ret : 0;
 }
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
-static loff_t copy_file_range(int fd_in, loff_t *off_in, int fd_out,
-                                          loff_t *off_out, size_t len, unsigned int flags)
-{
-    return syscall(__NR_copy_file_range, fd_in, off_in, fd_out,
-                   off_out, len, flags);
-}
-#endif
 
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     return remove(path);

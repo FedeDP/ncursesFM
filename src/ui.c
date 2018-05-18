@@ -424,9 +424,8 @@ static int colored_folders(const char *name) {
         if ((S_ISREG(file_stat.st_mode)) && (file_stat.st_mode & S_IXUSR)) {
             return 3;
         }
-    } else {
-        return 4;
-    }
+    } 
+    return 4;
 }
 
 static void trigger_show_additional_win(int height, WINDOW **win, void (*f)(void)) {
