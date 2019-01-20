@@ -8,15 +8,15 @@ msgstr ""
 "Project-Id-Version: 3.0\n"
 "Report-Msgid-Bugs-To: nierro92@gmail.com\n"
 "POT-Creation-Date: 2016-07-03 00:00-0300\n"
-"PO-Revision-Date: 2017-09-18 11:04-0300\n"
+"PO-Revision-Date: 2019-01-14 21:03-0300\n"
 "Language-Team: ncursesFM\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Last-Translator: Daniel T. Borelli <daltomi@aol.com>\n"
+"Last-Translator: Daniel T. Borelli <danieltborelli@gmail.com>\n"
 "MIME-Version: 1.0\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Language: es_AR\n"
-"X-Generator: Poedit 1.8.7.1\n"
+"X-Generator: Poedit 2.2\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 msgid "y"
@@ -35,13 +35,13 @@ msgid "ARROW KEYS"
 msgstr "TECLAS DE FLECHAS"
 
 msgid "PG_UP/DOWN"
-msgstr "AVPÀg/REPÀG"
+msgstr "RePág/AvPág"
 
 msgid "DEL"
 msgstr "SUPR"
 
 msgid "Press 'L' to trigger helper"
-msgstr "Pulse 'L' para activar la ayuda."
+msgstr "Pulse 'L' para activar la ayuda"
 
 msgid "Remember: every shortcut in ncursesFM is case insensitive."
 msgstr "Recuerde: cada atajo en ncursesFM es insensible a mayúsculas."
@@ -53,7 +53,7 @@ msgid "It will eventually (un)mount your ISO files or install your distro downlo
 msgstr "Eventualmente puede (des)montar sus archivos ISO o instalar los paquetes descargados de su distribución."
 
 msgid "enable fast browse mode: it lets you jump between files by just typing their name."
-msgstr "habilita el modo de navegación rápida. Esto le permite saltar entre archivos con sólo tipiar sus nombres."
+msgstr "habilita el modo de navegación rápida. Esto le permite saltar entre archivos con sólo escribir sus nombres."
 
 msgid "jump straight to first/last file."
 msgstr "salta hacia el primer o último archivo."
@@ -71,13 +71,13 @@ msgid "change sorting function: alphabetically (default), by size, by last modif
 msgstr "cambia la función de ordenamiento: alfabético (predeterminado), por tamaño, última modificación o por tipo."
 
 msgid "select files. Once more to remove the file from selected files."
-msgstr "seleciona los archivos. Una vez más para eliminar el archivo de la lista de seleccionados."
+msgstr "selecciona los archivos. Una vez más para eliminar el archivo de la lista de seleccionados."
 
 msgid "paste/cut."
 msgstr "pegar/cortar."
 
 msgid "compress."
-msgstr "comprimir"
+msgstr "comprimir."
 
 msgid "remove."
 msgstr "eliminar."
@@ -182,16 +182,16 @@ msgid "Adding current file to bookmarks. Proceed? Y/n:> "
 msgstr "Agregando el archivo actual a los marcadores. ¿Proceder? S/n:> "
 
 msgid "Removing current file from bookmarks. Proceed? Y/n:> "
-msgstr "Quitando el archivo actual desde los marcadores.  ¿Proceder? S/n:> "
+msgstr "Quitando el archivo actual desde los marcadores. ¿Proceder? S/n:> "
 
 msgid "You cannot remove xdg defined user dirs."
 msgstr "Usted no puede remover los directorios xdg definidos del usuario."
 
 msgid "Could not open bookmarks file."
-msgstr "No de pudo abrir el archivo de marcadores."
+msgstr "No se pudo abrir el archivo de marcadores."
 
 msgid "Added to bookmarks!"
-msgstr "Agragado a los marcadores!"
+msgstr "Agregado a los marcadores!"
 
 msgid "Removed from bookmarks!"
 msgstr "Removido de los marcadores!"
@@ -206,7 +206,7 @@ msgid "It seems current bookmark no longer exists. Remove it? Y/n:> "
 msgstr "Parece que el marcador actual ya no existe. ¿Quitarlo? S/n:> "
 
 msgid "Bookmark already present. Would you like to remove it? Y/n:> "
-msgstr "El marcador ya existe. ¿Desea quitarlo?"
+msgstr "El marcador ya existe. ¿Desea quitarlo? S/n:> "
 
 msgid "User bookmarks have been cleared."
 msgstr "Los marcadores del usuario se han limpiado."
@@ -221,7 +221,7 @@ msgid "File unselected."
 msgstr "Archivo deseleccionado."
 
 msgid "File unselected. Selected list empty."
-msgstr "Archivo deseleccionado. Lista de selección límpia."
+msgstr "Archivo deseleccionado. Lista de selección limpia."
 
 msgid "Every file in this directory has been selected."
 msgstr "Todos los archivos del directorio fueron seleccionados."
@@ -230,7 +230,7 @@ msgid "Every file in this directory has been unselected."
 msgstr "Todos los archivos del directorio fueron deseleccionados."
 
 msgid "Every file in this directory has been unselected. Selected list empty."
-msgstr "Todos los archivos del directorio fueron deseleccionados. Lista de selección límpia."
+msgstr "Todos los archivos del directorio fueron deseleccionados. Lista de selección limpia."
 
 msgid "List of selected files has been cleared."
 msgstr "La lista de archivos seleccionados fue limpiada."
@@ -248,7 +248,7 @@ msgid "Do you want to search in archives too? y/N:> "
 msgstr "¿Desea buscar en los archivos también? s/N:> "
 
 msgid "Do you want a lazy search (less precise but faster)? y/N:>"
-msgstr "¿Desea una busqueda perezosa (menos precisa pero rápida)? s/N:>"
+msgstr "¿Desea una búsqueda perezosa (menos precisa pero rápida)? s/N:>"
 
 msgid "At least 5 chars..."
 msgstr "Al menos 5 letras..."
@@ -263,7 +263,7 @@ msgid "Searching..."
 msgstr "Buscando..."
 
 msgid "Search finished. Press f anytime from normal mode to view the results."
-msgstr "Busqueda finalizada. Presione f en cualquier momento desde el modo normal para ver los resultados."
+msgstr "Búsqueda finalizada. Presione f en cualquier momento desde el modo normal para ver los resultados."
 
 msgid "Do you really want to print this file? Y/n:> "
 msgstr "¿Realmente desea imprimir éste archivo? S/n:> "
@@ -293,7 +293,7 @@ msgid "Pasting..."
 msgstr "Pegando..."
 
 msgid "Removing..."
-msgstr "Elimiando..."
+msgstr "Eliminando..."
 
 msgid "Archiving..."
 msgstr "Archivando..."
@@ -314,10 +314,10 @@ msgid "Archive is ready."
 msgstr "El archivo está listo."
 
 msgid "Succesfully extracted."
-msgstr "Extraido satisfactoriamente."
+msgstr "Extraído satisfactoriamente."
 
 msgid "Could not move"
-msgstr "No se pudo mover."
+msgstr "No se pudo mover"
 
 msgid "Could not paste."
 msgstr "No se pudo pegar."
@@ -407,7 +407,7 @@ msgid "Could not find /proc/mounts."
 msgstr "No se pudo encontrar /proc/mounts."
 
 msgid "On AC"
-msgstr "Conectado."
+msgstr "AC conectado"
 
 msgid "No power supply info available."
 msgstr "Ninguna información de energía disponible."
