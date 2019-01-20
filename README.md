@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/FedeDP/ncursesFM.svg?branch=master)](https://travis-ci.org/FedeDP/ncursesFM)
+[![builds.sr.ht status](https://builds.sr.ht/~fededp/ncursesfm/.build.yml.svg)](https://builds.sr.ht/~fededp/ncursesfm/.build.yml?)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/1c183099576b4a80a5bdcaced76571b6)](https://www.codacy.com/app/FedeDP/ncursesFM?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FedeDP/ncursesFM&amp;utm_campaign=Badge_Grade)
 
 # NcursesFM
