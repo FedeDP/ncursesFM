@@ -8,9 +8,7 @@ static void *execute_thread(void *x);
 static thread_job_list *current_th; // current_th: ptr to latest elem in thread_l list
 static struct thread_mesg thread_m;
 static pthread_mutex_t job_lck;
-#ifdef SYSTEMD_PRESENT
 static int inhibit_fd;
-#endif
 
 /*
  * Initializes mutex
@@ -79,11 +77,9 @@ void init_thread(int type, int (* const f)(void)) {
         print_info(_(thread_running), INFO_LINE);
         INFO("job added to job's queue.");
     } else {
-#ifdef SYSTEMD_PRESENT
         if (config.inhibit) {
             inhibit_fd = inhibit_suspend("Job in process...");
         }
-#endif
         // update info_line with newly added job
         print_info("", INFO_LINE);
         INFO("starting a job.");
@@ -152,11 +148,9 @@ static void *execute_thread(void *x) {
     INFO("ended all queued jobs.");
     num_of_jobs = 0;
     current_th = NULL;
-#ifdef SYSTEMD_PRESENT
     if (config.inhibit) {
         stop_inhibition(inhibit_fd);
     }
-#endif
     pthread_detach(pthread_self());
     pthread_exit(NULL);
 }

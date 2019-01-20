@@ -1,7 +1,5 @@
 #include "fm.h"
 
-#ifdef SYSTEMD_PRESENT
-
 #include <systemd/sd-bus.h>
 #include <libudev.h>
 #include <sys/statvfs.h>
@@ -15,4 +13,3 @@ void manage_mount_device(void);
 void manage_enter_device(void);
 void free_device_monitor(void);
 void show_devices_stat(int i, int win, char *str);
-#endif

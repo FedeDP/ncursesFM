@@ -1,5 +1,3 @@
-#ifdef SYSTEMD_PRESENT
-
 #include "../inc/install_package.h"
 
 static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
@@ -105,5 +103,3 @@ static int match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_e
 #endif
     return 0;
 }
-
-#endif

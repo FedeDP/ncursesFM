@@ -3,9 +3,7 @@
 static void free_everything(void);
 static void quit_thread_func(void);
 static void quit_worker_th(void);
-#ifdef SYSTEMD_PRESENT
 static void quit_install_th(void);
-#endif
 static void quit_search_th(void);
 static void close_fds(void);
 
@@ -30,9 +28,7 @@ int program_quit(void) {
 }
 
 static void free_everything(void) {
-#ifdef SYSTEMD_PRESENT
     free_device_monitor();
-#endif
     free_timer();
     free(main_p);
     free_selected();
@@ -41,9 +37,7 @@ static void free_everything(void) {
 
 static void quit_thread_func(void) {
     quit_worker_th();
-#ifdef SYSTEMD_PRESENT
     quit_install_th();
-#endif
     quit_search_th();
 }
 
@@ -57,7 +51,6 @@ static void quit_worker_th(void) {
     }
 }
 
-#ifdef SYSTEMD_PRESENT
 static void quit_install_th(void) {
     if ((install_th) && (pthread_kill(install_th, 0) != ESRCH)) {
         printf("%s\n", install_th_wait);
@@ -67,7 +60,6 @@ static void quit_install_th(void) {
         INFO("package installation finished. Leaving.");
     }
 }
-#endif
 
 static void quit_search_th(void) {
     if ((search_th) && (pthread_kill(search_th, 0) != ESRCH)) {

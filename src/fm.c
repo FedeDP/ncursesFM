@@ -13,9 +13,7 @@ static int recursive_copy(const char *path, const struct stat *sb, int typeflag,
 static int recursive_remove(const char *path, const struct stat *sb, int typeflag, struct FTW *ftwbuf);
 static void rmrf(const char *path);
 
-#ifdef SYSTEMD_PRESENT
 static const char *pkg_ext[] = {".pkg.tar.xz", ".deb", ".rpm"};
-#endif
 static int distance_from_root, is_selecting;
 static int (*const short_func[SHORT_FILE_OPERATIONS])(const char *) = {
     new_file, new_dir, rename_file_folders
@@ -65,7 +63,6 @@ void switch_hidden(void) {
  * else open the file with config.editor.
  */
 void manage_file(const char *str) {
-#ifdef SYSTEMD_PRESENT
     if (get_mimetype(str, "iso9660")) {
         isomount(str);
         return;
@@ -83,7 +80,6 @@ void manage_file(const char *str) {
         pthread_create(&install_th, NULL, install_package, (void *)str);
         return;
     }
-#endif
     if (has_desktop && !access("/usr/bin/xdg-open", X_OK)) {
         xdg_open(str);
     } else {

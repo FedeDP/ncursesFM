@@ -1,7 +1,4 @@
-#ifdef SYSTEMD_PRESENT
-
 #include "../inc/inhibit.h"
-
 
 /*
  * Thanks elogind project for some hints to improve my old implementation.
@@ -64,5 +61,3 @@ void stop_inhibition(int fd) {
     INFO("power management functions inhibition stopped.");
     close(fd);
 }
-
-#endif

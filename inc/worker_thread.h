@@ -1,11 +1,6 @@
 #pragma once
 
-#ifdef SYSTEMD_PRESENT
 #include "inhibit.h"
-#else
-#include "ui.h"
-#endif
-
 #ifdef LIBNOTIFY_PRESENT
 #include "notify.h"
 #endif

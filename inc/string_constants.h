@@ -69,7 +69,6 @@ extern const char selected_mess[];
 extern const char thread_running[];
 extern const char quit_with_running_thread[];
 
-#ifdef SYSTEMD_PRESENT
 extern const char pkg_quest[];
 extern const char install_th_wait[];
 extern const char install_success[];
@@ -86,7 +85,6 @@ extern const char device_removed[];
 extern const char no_proc_mounts[];
 extern const char polling[];
 extern const char monitor_err[];
-#endif
 extern const char bookmarks_mode_str[];
 extern const char search_mode_str[];
 extern const char selected_mode_str[];

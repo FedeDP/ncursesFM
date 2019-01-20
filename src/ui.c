@@ -574,13 +574,11 @@ static void show_stat(int init, int end, int win) {
         }
         if ((i >= init) && (i < init + end)) {
             if (ps[win].mode == device_) {
-#ifdef SYSTEMD_PRESENT
                 show_devices_stat(i, win, str);
                 col = ps[win].mywin.width - strlen(str) - 1;
                 if (col < 0) {
                     col = 4;
                 }
-#endif
             } else {
                 col = size_col;
                 change_unit(file_stat.st_size, str);
@@ -949,12 +947,10 @@ wint_t main_poll(WINDOW *win) {
                         archiver_cb_func();
                         break;
 #endif
-#ifdef SYSTEMD_PRESENT
                     case DEVMON_IX:
                     /* we received a bus event */
                         devices_bus_process();
                         break;
-#endif
                     }
                     r--;
                 }

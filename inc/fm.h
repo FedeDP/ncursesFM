@@ -1,9 +1,6 @@
 #pragma once
 
-#ifdef SYSTEMD_PRESENT
 #include "install_package.h"
-#endif
-
 #include "search.h"
 #include "archiver.h"
 #include "worker_thread.h"

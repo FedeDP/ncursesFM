@@ -1,8 +1,6 @@
 #include "../inc/config.h"
 
-#ifdef LIBCONFIG_PRESENT
 static void read_config_file(const char *dir);
-#endif
 
 void parse_cmd(int argc, char * const argv[]) {
     int idx = 0, opt;
@@ -18,10 +16,8 @@ void parse_cmd(int argc, char * const argv[]) {
 #ifdef LIBNOTIFY_PRESENT
         {"silent", 1, 0, 0},
 #endif
-#ifdef SYSTEMD_PRESENT
         {"inhibit",    1, 0, 0},
         {"automount",    1, 0, 0},
-#endif
         {0, 0, 0, 0}
     };
     
@@ -53,9 +49,6 @@ void parse_cmd(int argc, char * const argv[]) {
             case 7:
                 config.silent = atoi(optarg);
                 break;
-#endif
-#ifdef SYSTEMD_PRESENT
-#ifdef LIBNOTIFY_PRESENT
             case 8:
                 config.inhibit = atoi(optarg);
                 break;
@@ -70,13 +63,11 @@ void parse_cmd(int argc, char * const argv[]) {
                 config.automount = atoi(optarg);
                 break;
 #endif
-#endif
             }
         }
     }
 }
 
-#ifdef LIBCONFIG_PRESENT
 void load_config_files(void) {
     char config_path[PATH_MAX + 1] = {0};
     
@@ -117,10 +108,8 @@ static void read_config_file(const char *dir) {
 #ifdef LIBNOTIFY_PRESENT
         config_lookup_int(&cfg, "silent", &config.silent);
 #endif
-#ifdef SYSTEMD_PRESENT
         config_lookup_int(&cfg, "inhibit", &config.inhibit);
         config_lookup_int(&cfg, "automount", &config.automount);
-#endif
         config_lookup_int(&cfg, "loglevel", &config.loglevel);
         config_lookup_int(&cfg, "persistent_log", &config.persistent_log);
         config_lookup_int(&cfg, "bat_low_level", &config.bat_low_level);
@@ -138,7 +127,6 @@ static void read_config_file(const char *dir) {
     }
     config_destroy(&cfg);
 }
-#endif
 
 void config_checks(void) {
     if ((strlen(config.starting_dir)) && (access(config.starting_dir, F_OK) == -1)) {

@@ -70,7 +70,6 @@ const char selected_mess[] = "There are selected files.";
 const char thread_running[] = "There's already an active job. This job will be queued.";
 const char quit_with_running_thread[] = "Queued jobs still running. Waiting...";
 
-#ifdef SYSTEMD_PRESENT
 const char pkg_quest[] = "Do you really want to install this package? y/N:> ";
 const char install_th_wait[] = "Waiting for package installation to finish...";
 const char install_success[] = "Installed.";
@@ -87,7 +86,6 @@ const char device_removed[] = "Device removed.";
 const char no_proc_mounts[] = "Could not find /proc/mounts.";
 const char polling[] = "Still polling for devices.";
 const char monitor_err[] = "Monitor is not active. An error occurred, check log file.";
-#endif
 
 const char bookmarks_mode_str[] = "Bookmarks:";
 
@@ -100,12 +98,7 @@ const char power_fail[] = "No power supply info available.";
 
 const char win_too_small[] = "Window too small. Enlarge it.";
 
-#ifdef SYSTEMD_PRESENT
 const int HELPER_HEIGHT[] = {16, 10, 9, 9, 9, 9};
-#else
-const int HELPER_HEIGHT[] = {14, 9, 9, 9, 9, 9};
-#endif
-
 const char helper_title[] = "Press 'L' to trigger helper";
 
 const char helper_string[][16][150] =
@@ -113,9 +106,7 @@ const char helper_string[][16][150] =
     {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
         {"%ENTER%surf between folders or to open files."},
-#ifdef SYSTEMD_PRESENT
         {"It will eventually (un)mount your ISO files or install your distro downloaded packages."},
-#endif
         {"%,%enable fast browse mode: it lets you jump between files by just typing their name."},
         {"%PG_UP/DOWN%jump straight to first/last file.%I%check files fullname."},
         {"%H%trigger the showing of hidden files.%S%see files stats."},
@@ -129,17 +120,13 @@ const char helper_string[][16][150] =
 #endif
         {"%T%create second tab.%W%close second tab.%ARROW KEYS%switch between tabs."},
         {"%G%switch to bookmarks mode.%E%add/remove current file to bookmarks."},
-#ifdef SYSTEMD_PRESENT
         {"%M%switch to device mode.%K%switch to selected mode."},
-#endif
         {"%ESC%quit."}
     }, {
         {"Remember: every shortcut in ncursesFM is case insensitive."},
         {"Just start typing your desired filename, to move right to its position."},
         {"%ENTER%surf between folders or to open files.%ARROW KEYS%switch between tabs."},
-#ifdef SYSTEMD_PRESENT
         {"It will eventually (un)mount your ISO files or install your distro downloaded packages."},
-#endif
         {"%SPACE%select files. Once more to remove the file from selected files."},
         {"%PG_UP/DOWN%jump straight to first/last file."},
         {"%TAB%change sorting function: alphabetically (default), by size, by last modified or by type."},

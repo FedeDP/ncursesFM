@@ -1,6 +1,5 @@
 #include "../inc/devices.h"
 
-#ifdef SYSTEMD_PRESENT
 static int mount_fs(const char *str, int mount);
 static void set_autoclear(const char *loopname);
 static int is_iso_mounted(const char *filename, char *loop_dev);
@@ -755,4 +754,3 @@ void show_devices_stat(int i, int win, char *str) {
         }
     }
 }
-#endif

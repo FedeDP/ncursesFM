@@ -18,7 +18,7 @@ optdepends=('xdg-utils: xdg-open support'
 # but that would disable desktop notifications, config file read and printing support.
 # systemd too is an optdep. But in arch libudev is packaged together with it,
 # and libudev is a mandatory dep.
-makedepends=('git' 'bash-completion')
+makedepends=('git' 'bash-completion' 'cmake')
 source=("git://github.com/FedeDP/${_gitname}.git")
 backup=('etc/default/ncursesFM.conf')
 install=ncursesFM.install
@@ -29,13 +29,24 @@ pkgver() {
   git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
 }
 
-build()
-{
-    cd $srcdir/$_gitname
+prepare() {
+    cd "${srcdir}/${_gitname}"
+    mkdir -p build
+}
+
+build() {
+    cd $srcdir/$_gitname/build
+    cmake \
+        -G "Unix Makefiles" \ 
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DENABLE_CUPS=true \
+        -DENABLE_NOTIFY=true \
+        ..
     make
 }
 
 package() {
-    cd $srcdir/$_gitname
+    cd $srcdir/$_gitname/build
     make DESTDIR="$pkgdir" install
 }

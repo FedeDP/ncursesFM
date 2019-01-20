@@ -32,9 +32,7 @@ static void check_desktop(void);
 static void helper_function(int argc, char * const argv[]);
 static void main_loop(void);
 static void add_new_tab(void);
-#ifdef SYSTEMD_PRESENT
 static void check_device_mode(void);
-#endif
 static void manage_enter(struct stat current_file_stat);
 static void manage_enter_search(struct stat current_file_stat);
 static void manage_space(const char *str);
@@ -56,9 +54,7 @@ int main(int argc, char * const argv[])
 {
     locale_init();
     helper_function(argc, argv);
-#ifdef LIBCONFIG_PRESENT
     load_config_files();
-#endif
     parse_cmd(argc, argv);
     open_log();
     config_checks();
@@ -106,9 +102,7 @@ static void set_pollfd(void) {
 #else
     nfds = 6;
 #endif
-#ifdef SYSTEMD_PRESENT
     nfds++;
-#endif
     
     main_p = malloc(nfds * sizeof(struct pollfd));
     main_p[GETCH_IX] = (struct pollfd) {
@@ -163,13 +157,11 @@ static void set_pollfd(void) {
     };
 #endif
     
-#ifdef SYSTEMD_PRESENT
     // device monitor watcher
     main_p[DEVMON_IX] = (struct pollfd) {
         .fd = start_monitor(),
         .events = POLLIN,
     };
-#endif
 }
 
 /*
@@ -193,13 +185,9 @@ static void check_desktop(void) {
 }
 
 static void helper_function(int argc, char * const argv[]) {
-    char ncursesfm[150];
-    sprintf(ncursesfm, "NcursesFM, version: %s, commit: %s, build time: %s.", VERSION, build_git_sha, build_git_time);
     if ((argc > 1) && (!strcmp(argv[1], "--help"))) {
         printf("\n NcursesFM\n");
         printf(" Version: %s\n", VERSION);
-        printf(" Build time: %s\n", build_git_time);
-        printf(" Commit: %s\n", build_git_sha);
         printf("\n Copyright (C) 2016  Federico Di Pierro (https://github.com/FedeDP):\n");
         printf(" This program comes with ABSOLUTELY NO WARRANTY;\n");
         printf(" This is free software, and you are welcome to redistribute it under certain conditions;\n");
@@ -208,10 +196,8 @@ static void helper_function(int argc, char * const argv[]) {
         printf("\t* --editor /path/to/editor to set an editor for current session. Fallbacks to $EDITOR env var.\n");
         printf("\t* --starting_dir /path/to/dir to set a starting directory for current session. Defaults to current dir.\n");
         printf("\t* --helper_win {0,1} to switch (off,on) starting helper message. Defaults to 1.\n");
-#ifdef SYSTEMD_PRESENT
         printf("\t* --inhibit {0,1} to switch {off,on} powermanagement functions while a job is being processed. Defaults to 0.\n");
         printf("\t* --automount {0,1} to switch {off,on} automounting of external drives/usb sticks. Defaults to 0.\n");
-#endif
         printf("\t* --loglevel {0,1,2,3} to change loglevel. Defaults to 0.\n");
         printf("\t\t* 0 to log only errors.\n\t\t* 1 to log warn messages and errors.\n");
         printf("\t\t* 2 to log info messages too.\n\t\t* 3 to disable logs.\n");
@@ -232,9 +218,7 @@ static void helper_function(int argc, char * const argv[]) {
     config.starting_helper = 1;
     config.bat_low_level = 15;
     config.safe = FULL_SAFE;
-#ifdef SYSTEMD_PRESENT
     device_init = DEVMON_STARTING;
-#endif
     wcscpy(config.cursor_chars, L"->");
     /* 
      * default sysinfo layout:
@@ -381,11 +365,9 @@ static void main_loop(void) {
             }
             break;
 #endif
-#ifdef SYSTEMD_PRESENT
         case 'm': // m to mount/unmount fs
             check_device_mode();
             break;
-#endif
         case ',': // , to enable fast browse mode
             show_special_tab(ps[active].number_of_files, NULL, ps[active].title, fast_browse_);
             break;
@@ -473,7 +455,6 @@ static void add_new_tab(void) {
     new_tab(cont - 1);
 }
 
-#ifdef SYSTEMD_PRESENT
 static void check_device_mode(void) {
     if (device_init == DEVMON_STARTING) {
         print_info(_(polling), INFO_LINE);
@@ -485,17 +466,14 @@ static void check_device_mode(void) {
         manage_mount_device();
     }
 }
-#endif
 
 static void manage_enter(struct stat current_file_stat) {
     if (ps[active].mode == search_) {
         manage_enter_search(current_file_stat);
     }
-#ifdef SYSTEMD_PRESENT
     else if (ps[active].mode == device_) {
         manage_enter_device();
     }
-#endif
     else if (ps[active].mode == bookmarks_) {
         manage_enter_bookmarks(current_file_stat);
     } else if (ps[active].mode == selected_) {
