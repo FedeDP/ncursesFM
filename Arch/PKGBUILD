@@ -2,7 +2,7 @@
 
 pkgname=ncursesfm-git
 _gitname=ncursesFM
-pkgver=v3.0.r77.gf25cc3c
+pkgver=v3.1.r37.gd823532
 pkgrel=2
 pkgdesc="A FileManager written in c and ncurses library."
 arch=('i686' 'x86_64')
@@ -13,11 +13,9 @@ optdepends=('xdg-utils: xdg-open support'
             'udisks2: mountable drives and ISO mount support'
             'packagekit: package installation support'
             'upower: AC (dis)connection events support')
-# libcups, libconfig and libnotify are optional build dep.
+# libcups and libnotify are optional build dep.
 # If compiled without them, the program will run just fine;
-# but that would disable desktop notifications, config file read and printing support.
-# systemd too is an optdep. But in arch libudev is packaged together with it,
-# and libudev is a mandatory dep.
+# but that would disable desktop notifications and printing support.
 makedepends=('git' 'bash-completion' 'cmake')
 source=("git://github.com/FedeDP/${_gitname}.git")
 backup=('etc/default/ncursesFM.conf')
@@ -35,9 +33,9 @@ prepare() {
 }
 
 build() {
-    cd $srcdir/$_gitname/build
+    cd "${srcdir}/${_gitname}/build"
     cmake \
-        -G "Unix Makefiles" \ 
+        -G "Unix Makefiles" \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_INSTALL_LIBDIR=lib \
         -DENABLE_CUPS=true \
@@ -47,6 +45,6 @@ build() {
 }
 
 package() {
-    cd $srcdir/$_gitname/build
+    cd "${srcdir}/${_gitname}/build"
     make DESTDIR="$pkgdir" install
 }
